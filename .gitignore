@@ -19,5 +19,7 @@ ENV/
 # --- OS Generated Files ---
 .DS_Store
 Thumbs.db
+
 # VTube Studio Tokens
+config/tokens/
 **/tokens/*.json
