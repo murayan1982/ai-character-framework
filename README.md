@@ -112,27 +112,28 @@ You can adjust:
 ---
 
 ## 📄 License
+Please refer to LICENSE.txt for details. Redistribution and resale are prohibited.
 
-MIT License
+## ⚠️ Important Notice / Disclaimer
 
-## ⚠️ Disclaimer
+1. **API Keys**  
+   This product does **not** include any API keys. Users must supply their own keys for the following services:
+   - ElevenLabs (Text-to-Speech)
+   - Google Gemini API
 
-This project is provided "as is" without warranty of any kind.
+2. **User Responsibility**  
+   Users are responsible for complying with the terms of service, usage limits, and payment obligations of any third-party services they use.
 
-The author is not responsible for any damage, data loss, or issues arising from the use of this software.
+3. **Generated Content**  
+   Any content generated using third-party APIs may be used in the provider's machine learning, testing, or development processes according to their terms. The author of this product is **not responsible** for how generated content is used by these services.
 
-Users are responsible for complying with the terms of service and licenses of any third-party services used, including but not limited to:
+4. **Live2D / Other Assets**  
+   This product does **not** include any proprietary Live2D models or licensed assets. Users must obtain and use their own assets according to their licenses.
 
-* Google Gemini API
-* ElevenLabs API
-* Live2D
+5. **Liability**  
+   This software is provided "as-is" without warranty. The author is not responsible for any damages, data loss, or issues resulting from the use of this software.
 
-API keys and usage costs are the sole responsibility of the user.
-
-This repository does not include any proprietary Live2D models or licensed assets. Users must obtain and use their own assets in accordance with their respective licenses.
-
-Use this software at your own risk.
-
+By using this product, you agree to these terms.
 ---
 
 ## 💡 Author
