@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from elevenlabs.client import ElevenLabs
 from config.settings import ELEVENLABS_API_KEY, VOICE_ID, TTS_MODEL_ID
+from config.settings import OUTPUT_VOICE_ENABLED
 from config.calibration import (
     VOICE_STABILITY, SIMILARITY_BOOST, VOICE_STYLE, 
     VOICE_SPEED, POST_SPEECH_PAUSE
@@ -28,6 +29,8 @@ class VoiceEngine:
         self.worker_thread.start()
 
     def speak(self, partial_text: str):
+        if not OUTPUT_VOICE_ENABLED:
+            return
         self.text_buffer += partial_text
         
         # Buffer logic: Send to queue if punctuation exists and length > 25, or if newline occurs

@@ -128,6 +128,25 @@ You can adjust:
 - TTS speed
 - Engine switches (STT / TTS)
 
+### 🎛 Voice Control
+
+You can enable/disable voice input and output in:
+
+```
+config/settings.py
+```
+
+```python
+INPUT_VOICE_ENABLED = True   # Enable speech-to-text
+OUTPUT_VOICE_ENABLED = True  # Enable text-to-speech
+```
+
+Examples:
+
+* Input ON / Output OFF → Text chatbot with voice input
+* Input OFF / Output ON → Text-to-speech only
+* Both ON → Full voice interaction
+
 ---
 
 ## 🧪 Example Use Cases

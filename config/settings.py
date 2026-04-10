@@ -28,6 +28,11 @@ TTS_MODEL_ID = MODEL_MASTER["tts_models"][SELECT_TTS_MODEL_INDEX]
 STT_LANGUAGE = "ja-JP"
 TARGET_LANGUAGE = "Japanese"
 
+# --- Interaction Mode ---
+# True: Use Voice, False: Use Text
+INPUT_VOICE_ENABLED = True   # If True, STT starts
+OUTPUT_VOICE_ENABLED = True  # If True, TTS speaks
+
 # --- google safety settings ---
 SAFETY_SETTINGS = {
     "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",

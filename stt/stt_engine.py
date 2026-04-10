@@ -3,6 +3,7 @@
 import speech_recognition as sr
 import asyncio
 from config.settings import STT_LANGUAGE
+from config.settings import INPUT_VOICE_ENABLED
 class STTEngine:
     def __init__(self):
         self.recognizer = sr.Recognizer()
@@ -11,6 +12,9 @@ class STTEngine:
         self.recognizer.pause_threshold = 1.0 
 
     async def listen(self):
+        if not INPUT_VOICE_ENABLED:
+            return None
+        
         """Capture audio from microphone and convert to text"""
         with self.microphone as source:
             # Calibrate for ambient noise
