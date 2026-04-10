@@ -1,5 +1,9 @@
 # config/models.py
+import os
+import json
+from dotenv import load_dotenv
 
+load_dotenv()
 # --- Google (Gemini) ---
 GOOGLE_MODELS = [
     'gemini-2.5-flash',  # 0
@@ -39,10 +43,13 @@ GOOGLE_MODELS = [
 ]
 
 # --- TTS Voices (ElevenLabs) ---
-VOICE_MASTER = [
-    {"name": "Nicole - Bright, Friendly and Clear", "id": "aUNOP2y8xEvi4nZebjIw"},
-]
-
+VOICE_MASTER = json.loads(os.getenv("VOICE_MASTER", "[]"))
+raw = os.getenv("VOICE_MASTER")
+try:
+    VOICE_MASTER = json.loads(raw)
+except Exception as e:
+    print("VOICE_MASTER parse error:", e)
+    VOICE_MASTER = []
 # --- TTS Engines (ElevenLabs) ---
 TTS_MODEL_MASTER = [
     'eleven_v3',  # 0

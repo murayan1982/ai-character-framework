@@ -43,7 +43,44 @@ Create a `.env` file in the root directory:
 ```
 GEMINI_API_KEY=your_api_key_here
 ELEVENLABS_API_KEY=your_api_key_here
+
+# LLM Model (optional)
+GOOGLE_MODEL=gemini-2.5-flash
+
+# Voice settings (REQUIRED for TTS)
+# Replace with your own Voice ID from ElevenLabs
+VOICE_MASTER='[{"name":"My Voice","id":"YOUR_VOICE_ID"}]'
 ```
+
+---
+
+### 🔊 How to get Voice ID (ElevenLabs)
+
+1. Go to ElevenLabs
+2. Select a voice
+3. Copy the **Voice ID**
+4. Paste it into `.env`
+
+---
+
+⚠️ If you do not set a valid Voice ID, voice output will not work.
+
+---
+
+## ⚙️ Configuration
+
+Main settings are located in:
+
+```
+config/settings.py
+```
+
+You can adjust:
+
+* LLM model selection
+* Voice settings (via `.env`)
+* TTS speed
+* Engine switches (STT / TTS)
 
 ### 4. Run
 

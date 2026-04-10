@@ -31,17 +31,25 @@ def check_voice_ids():
         output_file = current_dir / "available_voices.txt"
         
         with open(output_file, "w", encoding="utf-8") as f:
-            f.write("Available ElevenLabs Voices:\n")
-            f.write("=" * 50 + "\n")
+            f.write("# Copy and paste the following into VOICE_MASTER in models.py\n")
+            f.write("VOICE_MASTER = [\n")
             
-            # Print to console and save to file
-            for voice in voices_data.get('voices', []):
-                line = f"Name: {voice['name']:<20} | ID: {voice['voice_id']}"
+            voices = voices_data.get('voices', [])
+            for i, voice in enumerate(voices):
+                name = voice['name']
+                v_id = voice['voice_id']
+                
+                # Format as a Python dictionary with an index comment at the end
+                comma = "," if i < len(voices) - 1 else ""
+                line = f'    {{"name": "{name}", "id": "{v_id}"}}{comma}  # {i}'
+                
                 print(line)
                 f.write(line + "\n")
+            
+            f.write("]\n")
                 
         print("=" * 50)
-        print(f"Success! List saved to: {output_file}")
+        print(f"Success! Python-formatted list with indices saved to: {output_file}")
 
     except Exception as e:
         print(f"Error fetching voices: {e}")
