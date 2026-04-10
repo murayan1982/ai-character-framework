@@ -12,7 +12,7 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 # --- Index Selection ---
 SELECT_LLM_INDEX = 25
-SELECT_VOICE_INDEX = 1
+SELECT_VOICE_INDEX = 0
 SELECT_TTS_MODEL_INDEX = 2
 
 # ---  Mode Switches ---
@@ -24,6 +24,10 @@ ACTIVE_LLM_MODEL = MODEL_MASTER["google"][SELECT_LLM_INDEX]
 VOICE_ID = MODEL_MASTER["voices"][SELECT_VOICE_INDEX]["id"]
 TTS_MODEL_ID = MODEL_MASTER["tts_models"][SELECT_TTS_MODEL_INDEX]
 
+# --- STT Settings ---
+STT_LANGUAGE = "en-US"
+TARGET_LANGUAGE = "English"
+
 # --- google safety settings ---
 SAFETY_SETTINGS = {
     "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
@@ -33,6 +37,4 @@ SAFETY_SETTINGS = {
 }
 
 # --- VTube Studio Settings ---
-# VTSの認証トークンを保存するファイルのパスです。
-# 最初の実行時にここにトークンが書き込まれ、次から自動ログインできるようになります。
 VTS_TOKEN_PATH = os.path.join("config", "tokens", "vts_token.json")

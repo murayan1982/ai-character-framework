@@ -2,7 +2,7 @@
 
 import speech_recognition as sr
 import asyncio
-
+from config.settings import STT_LANGUAGE
 class STTEngine:
     def __init__(self):
         self.recognizer = sr.Recognizer()
@@ -29,7 +29,9 @@ class STTEngine:
                 print("\r[STT] Recognizing...          ", end="", flush=True)
                 # Google Web Speech API Recognition
                 text = await asyncio.to_thread(
-                    self.recognizer.recognize_google, audio, language="ja-JP"
+                    self.recognizer.recognize_google, 
+                    audio, 
+                    language=STT_LANGUAGE
                 )
                 if text:
                     # Move to next line after successful recognition to keep history

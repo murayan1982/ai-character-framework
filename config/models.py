@@ -40,8 +40,7 @@ GOOGLE_MODELS = [
 
 # --- TTS Voices (ElevenLabs) ---
 VOICE_MASTER = [
-    {"name": "Default (Soft)", "id": "acCWxmzPBgXdHwA63uzP"},
-    {"name": "Whisper-like", "id": "acCWxmzPBgXdHwA63uzP"},
+    {"name": "Nicole - Bright, Friendly and Clear", "id": "aUNOP2y8xEvi4nZebjIw"},
 ]
 
 # --- TTS Engines (ElevenLabs) ---

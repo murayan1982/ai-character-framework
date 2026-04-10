@@ -2,13 +2,13 @@ import os
 import speech_recognition as sr
 
 class SecurityManager:
-    """プロジェクトの安全性を確保するクラス"""
+    """Class to ensure the safety and environment setup of the project."""
     @staticmethod
     def ensure_safe_environment():
-        # 1. フォルダ作成
+        # 1. Create necessary directories
         os.makedirs("config/tokens", exist_ok=True)
         
-        # 2. .gitignore の確認と追記
+        # 2. Check and update .gitignore for security
         ignore_content = "\n# VTube Studio Tokens\n**/tokens/*.json\n"
         if not os.path.exists(".gitignore"):
             with open(".gitignore", "w") as f:
@@ -20,29 +20,25 @@ class SecurityManager:
                         f.write(ignore_content)
 
 class STTEngine:
-    """音声入力（耳）を担当するクラス"""
+    """Class handled for voice input (STT)."""
     def __init__(self):
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
 
     async def listen(self):
-        # VSCodeのターミナルを汚さないようにステータスを表示
-        # (以前作成した ANSIクリーナー等のロジックをここに適用)
+        # Display status without cluttering the VSCode terminal
         print("\r[Status] Listening...", end="", flush=True)
         
         with self.microphone as source:
-            # 周囲の雑音に合わせて調整
+            # Adjust for ambient noise
             self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
             audio = self.recognizer.listen(source)
 
         try:
             print("\r[Status] Recognizing...", end="", flush=True)
+            # Recognize speech using Google Web Speech API (default: ja-JP)
             text = self.recognizer.recognize_google(audio, language="ja-JP")
             print(f"\rUser (Voice): {text}")
             return text
-        except sr.UnknownValueError:
-            print("\r[Status] Could not understand audio.")
-            return None
-        except sr.RequestError:
-            print("\r[Status] Could not request results from STT service.")
+        except Exception:
             return None

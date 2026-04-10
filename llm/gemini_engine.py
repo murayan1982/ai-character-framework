@@ -3,20 +3,20 @@
 from google import genai
 import re
 from typing import Generator, Tuple, List
-from config.settings import ACTIVE_LLM_MODEL, GOOGLE_API_KEY
 from config.calibration import MAX_TOKENS_NORMAL, LLM_TEMPERATURE
+from config.settings import ACTIVE_LLM_MODEL, GOOGLE_API_KEY, TARGET_LANGUAGE
 
 class GeminiEngine:
     def __init__(self, system_instruction: str):
         if not GOOGLE_API_KEY:
             raise EnvironmentError("GOOGLE_API_KEY is not defined.")
-            
+        localized_instruction = f"{system_instruction}\n\n[IMPORTANT]\nPlease always respond in {TARGET_LANGUAGE}."
         self.client = genai.Client(api_key=GOOGLE_API_KEY)
         self.model_id = ACTIVE_LLM_MODEL
-        self.base_instruction = system_instruction
         self.turn_count = 0
         self.current_mood = "Normal"
-        
+        self.base_instruction = localized_instruction
+
         # Start initial chat session
         self._start_new_session()
 
