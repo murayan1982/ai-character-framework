@@ -31,22 +31,22 @@ def check_voice_ids():
         output_file = current_dir / "available_voices.txt"
         
         with open(output_file, "w", encoding="utf-8") as f:
-            f.write("# Copy and paste the following into VOICE_MASTER in models.py\n")
-            f.write("VOICE_MASTER = [\n")
-            
+            f.write("# [Copy the ID you like and paste it into your .env file]\n")
+            f.write("# Example: ELEVENLABS_VOICE_ID=your_selected_id\n\n")
+            f.write("VOICE_MASTER = '[")
+
             voices = voices_data.get('voices', [])
             for i, voice in enumerate(voices):
                 name = voice['name']
                 v_id = voice['voice_id']
-                
-                # Format as a Python dictionary with an index comment at the end
+
                 comma = "," if i < len(voices) - 1 else ""
-                line = f'    {{"name": "{name}", "id": "{v_id}"}}{comma}  # {i}'
-                
-                print(line)
-                f.write(line + "\n")
+                line = f'    {{"name": "{name}", "id": "{v_id}"}}{comma}'
+
+                print(f"Name: {name:<20} | ID: {v_id}")
+                f.write(line)
             
-            f.write("]\n")
+            f.write("]'\n")
                 
         print("=" * 50)
         print(f"Success! Python-formatted list with indices saved to: {output_file}")
