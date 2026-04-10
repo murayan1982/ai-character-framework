@@ -19,22 +19,32 @@ class STTEngine:
             print("\r[STT/Text Waiting...] ", end="", flush=True)
             try:
                 # Capture voice data asynchronously
-                audio = await asyncio.to_thread(self.recognizer.listen, source, timeout=10)
+                audio = await asyncio.to_thread(
+                    self.recognizer.listen, 
+                    source, 
+                    timeout=10,
+                    phrase_time_limit=8
+                    )
                 
                 print("\r[STT] Recognizing...          ", end="", flush=True)
                 # Google Web Speech API Recognition
                 text = await asyncio.to_thread(
                     self.recognizer.recognize_google, audio, language="ja-JP"
                 )
-                
-                # Move to next line after successful recognition to keep history
-                print(f"\nUser (Voice): {text}")
-                return text
-                
+                if text:
+                    # Move to next line after successful recognition to keep history
+                    print(f"\nUser (Voice): {text}")
+                    return text
+            
+            except (sr.WaitTimeoutError, sr.UnknownValueError):  
+                  return ""
             except sr.WaitTimeoutError:
-                return None
+                return ""
             except sr.UnknownValueError:
-                return None
+                return ""
             except Exception as e:
                 print(f"\n[STT Error]: {e}")
+                return ""
+            except Exception:
                 return None
+        return ""

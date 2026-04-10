@@ -54,29 +54,27 @@ async def main():
             user_input = ""
 
             if is_voice_mode:
-                # Concurrent wait for Voice and Keyboard input
                 stt_task = asyncio.create_task(stt.listen())
-                input_task = asyncio.create_task(ainput())
+                kb_task = asyncio.create_task(ainput("\n[Keyboard Input or Speak]: "))
 
-                done, pending = await asyncio.wait(
-                    [stt_task, input_task],
-                    return_when=asyncio.FIRST_COMPLETED
+                done,pending = await asyncio.wait(
+                    [stt_task,kb_task],
+                    return_when = asyncio.FIRST_COMPLETED
                 )
-                
+
                 for task in done:
                     result = task.result()
                     if result:
                         user_input = str(result).strip()
-                
-                for task in pending:
-                    task.cancel()
-                    try: await task
-                    except asyncio.CancelledError: pass
+
             else:
                 user_input = await ainput("\nUser: ")
                 user_input = user_input.strip()
 
-            if not user_input: continue
+            if not user_input: 
+                continue
+            if not user_input.strip():
+                continue
 
             if user_input.lower() in ["exit", "quit"]:
                 print("System shutting down...")
@@ -116,8 +114,11 @@ async def main():
                 f.write(f"[{start_ts}] User: {user_input}\n[{start_ts}] AI: {full_log_text}\n\n")
 
         except KeyboardInterrupt: break
-        except Exception as e: print(f"\n[Main Error]: {e}")
-
+        except Exception as e: 
+            print(f"\n[Main Error]: {e}")
+            await asyncio.sleep(1)
+            continue
+    
     await vts.close()
 
 if __name__ == "__main__":
