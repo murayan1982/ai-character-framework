@@ -57,7 +57,7 @@ else:
 TTS_MODEL_ID = MODEL_MASTER["tts_models"][SELECT_TTS_MODEL_INDEX]
 
 # --- STT Settings ---
-LANGUAGE_CODE = "ja-JP"
+LANGUAGE_CODE = "en-US"
 LANG_MAP = {
     "ja-JP": "Japanese",
     "en-US": "English",
