@@ -41,7 +41,24 @@ GOOGLE_MODELS = [
     'gemini-2.5-computer-use-preview-10-2025',  # 32
     'deep-research-pro-preview-12-2025'  # 33
 ]
-
+# --- xAI (Grok) ---
+# Added latest Grok 4 models based on the console available list
+XAI_MODELS = [
+    'grok-3',  # 0
+    'grok-3-mini',  # 1
+    'grok-4-0709',  # 2
+    'grok-4-1-fast-non-reasoning',  # 3
+    'grok-4-1-fast-reasoning',  # 4
+    'grok-4-fast-non-reasoning',  # 5
+    'grok-4-fast-reasoning',  # 6
+    'grok-4.20-0309-non-reasoning',  # 7
+    'grok-4.20-0309-reasoning',  # 8
+    'grok-4.20-multi-agent-0309',  # 9
+    'grok-code-fast-1',  # 10
+    'grok-imagine-image',  # 11
+    'grok-imagine-image-pro',  # 12
+    'grok-imagine-video'  # 13
+]
 # --- TTS Voices (ElevenLabs) ---
 VOICE_MASTER = json.loads(os.getenv("VOICE_MASTER", "[]"))
 raw = os.getenv("VOICE_MASTER")
@@ -70,16 +87,11 @@ OPENAI_MODELS = [
     "o1-preview"             # 2
 ]
 
-# --- xAI ---
-XAI_MODELS = [
-    "grok-beta",             # 0
-    "grok-2"                 # 1
-]
-
 # Master Dictionarys
 MODEL_MASTER = {
     "google": GOOGLE_MODELS,
     "voices": VOICE_MASTER,
     "tts_models": TTS_MODEL_MASTER,
+    "openai": OPENAI_MODELS,
     "xai": XAI_MODELS
 }

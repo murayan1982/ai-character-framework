@@ -8,21 +8,38 @@ load_dotenv()
 
 # --- Get API Key ---
 GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
+XAI_API_KEY = os.getenv("XAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
-# --- Index Selection ---
-SELECT_LLM_INDEX = 25
+# --- LLM Provider Selection ---
+# "google" or "xai"
+LLM_PROVIDER = "xai"
+
+# Define current index for each provider (Set based on models.py tables)
+# google table size: 34, xai table size: 6
+CURRENT_SELECTIONS = {
+    "google": 25,  # gemini-3.1-flash-lite-preview
+    "xai": 5      # grok-4-1-fast-non-reasoning
+}
+# --- Dynamic Assignment (LLM Model) ---
+try:
+    target_index = CURRENT_SELECTIONS[LLM_PROVIDER]
+    ACTIVE_LLM_MODEL = MODEL_MASTER[LLM_PROVIDER][target_index]
+except (KeyError, IndexError) as e:
+    # Failsafe: Default to Gemini
+    print(f"[Config Error]: Invalid provider or index ({e}). Falling back to Gemini.")
+    ACTIVE_LLM_MODEL = MODEL_MASTER["google"][0]
+
+# --- TTS & Voice Selection ---
 SELECT_VOICE_INDEX = 0
 SELECT_TTS_MODEL_INDEX = 2
 
-# ---  Mode Switches ---
-STT_ENGINE = "text"        # "text", "google", "whisper"
-TTS_ENGINE = "elevenlabs"  # "elevenlabs", "none"
-
-# --- Dynamic Assignment ---
-ACTIVE_LLM_MODEL = MODEL_MASTER["google"][SELECT_LLM_INDEX]
 VOICE_ID = MODEL_MASTER["voices"][SELECT_VOICE_INDEX]["id"]
 TTS_MODEL_ID = MODEL_MASTER["tts_models"][SELECT_TTS_MODEL_INDEX]
+
+# --- Engine Switches ---
+STT_ENGINE = "text"        # "text", "google", "whisper"
+TTS_ENGINE = "elevenlabs"  # "elevenlabs", "none"
 
 # --- STT Settings ---
 LANGUAGE_CODE = "ja-JP"

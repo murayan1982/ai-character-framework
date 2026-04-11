@@ -8,11 +8,12 @@ from pathlib import Path
 
 # --- User-defined Modules ---
 from llm.gemini_engine import GeminiEngine
+from llm.grok_engine import GrokEngine
 from tts.voice_engine import VoiceEngine
 from live2d.vts_client import VTSClient
 from utils.security import SecurityManager
 from stt.stt_engine import STTEngine
-from config.settings import INPUT_VOICE_ENABLED, OUTPUT_VOICE_ENABLED 
+from config.settings import INPUT_VOICE_ENABLED, OUTPUT_VOICE_ENABLED, LLM_PROVIDER
 
 # Async helper for keyboard input to prevent blocking
 async def ainput(prompt: str = ""):
@@ -40,7 +41,11 @@ async def main():
         return
 
     # 4. Initialize Core Components
-    llm = GeminiEngine(system_instruction)
+    if LLM_PROVIDER == "xai":
+        llm = GrokEngine(system_instruction)
+    else:
+        llm = GeminiEngine(system_instruction)
+    
     vts = VTSClient()
     stt = STTEngine() if use_stt else None
     tts = VoiceEngine() if use_tts else None

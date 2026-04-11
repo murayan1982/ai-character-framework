@@ -6,5 +6,8 @@ websockets==16.0
 pydantic==2.12.5
 elevenlabs==2.41.0
 SpeechRecognition==3.14.3
-# Optional (may fail on Python 3.13+)
+# Required for xAI (Grok) Support
+openai
+xai-sdk
+# Optional: May fail on some Python versions
 PyAudio==0.2.14
