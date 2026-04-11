@@ -7,21 +7,27 @@ from pathlib import Path
 from config.settings import INPUT_VOICE_ENABLED, OUTPUT_VOICE_ENABLED
 from live2d.vts_client import VTSClient
 from llm.factory import create_llm
+from llm.fallback_llm import FallbackLLM
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
 
+from llm.router_llm import RouterLLM
+from config.settings import (
+    CHAT_PRIMARY_LLM,
+    CHAT_FALLBACK_LLM,
+    CODE_PRIMARY_LLM,
+    CODE_FALLBACK_LLM,
+)
 
 ANSI_CLEANER = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
 
 
 async def ainput(prompt: str = "") -> str:
-    # Async wrapper for blocking keyboard input
     return await asyncio.to_thread(input, prompt)
 
 
 def create_log_file() -> Path:
-    # Create output directory and log file path
     log_dir = Path("output")
     log_dir.mkdir(exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
@@ -29,32 +35,28 @@ def create_log_file() -> Path:
 
 
 def load_system_prompt() -> str:
-    # Load system prompt from file
     prompt_path = Path("prompts/system_base.txt")
     if not prompt_path.exists():
         raise FileNotFoundError("prompts/system_base.txt not found.")
     return prompt_path.read_text(encoding="utf-8")
 
 
-def print_system_status(use_stt: bool, use_tts: bool) -> None:
-    # Print current runtime mode
+def print_system_status(use_stt: bool, use_tts: bool, llm) -> None:
     input_mode = "Voice (STT)" if use_stt else "Keyboard (Text)"
     output_mode = "Voice (TTS)" if use_tts else "Text Only"
 
     print("\n--- System Active ---")
     print(f"Input Mode:  {input_mode}")
     print(f"Output Mode: {output_mode}")
-
+    print(f"LLM:         {llm.provider_name} / {llm.model_name}")
 
 def append_log(log_file: Path, timestamp: str, user_input: str, ai_text: str) -> None:
-    # Append a single conversation turn to log file
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"[{timestamp}] User: {user_input}\n")
         f.write(f"[{timestamp}] AI: {ai_text}\n\n")
 
 
 def handle_background_task_result(task: asyncio.Task) -> None:
-    # Consume background task exceptions to avoid silent async failures
     with suppress(asyncio.CancelledError):
         exc = task.exception()
         if exc is not None:
@@ -62,13 +64,11 @@ def handle_background_task_result(task: asyncio.Task) -> None:
 
 
 def schedule_expression_change(vts: VTSClient, emotion: str) -> None:
-    # Trigger expression change as a tracked background task
     task = asyncio.create_task(vts.change_expression(emotion))
     task.add_done_callback(handle_background_task_result)
 
 
 async def get_user_input(use_stt: bool, stt: STTEngine | None) -> str:
-    # Get user input from keyboard or hybrid voice/keyboard mode
     if not use_stt or stt is None:
         return (await ainput("\nUser: ")).strip()
 
@@ -98,7 +98,6 @@ async def get_user_input(use_stt: bool, stt: STTEngine | None) -> str:
 
 
 async def wait_for_tts_playback(tts: VoiceEngine) -> None:
-    # Flush queued speech and wait for playback to finish
     tts.flush()
     while tts.is_speaking_active:
         await asyncio.sleep(0.1)
@@ -111,7 +110,6 @@ async def process_ai_response(
     tts: VoiceEngine | None,
     use_tts: bool,
 ) -> str:
-    # Stream AI response, trigger expressions, and optionally speak text
     print("\n  AI: ", end="", flush=True)
 
     full_log_text = ""
@@ -135,7 +133,6 @@ async def process_ai_response(
 
 
 async def initialize_components():
-    # Initialize environment and core runtime components
     SecurityManager.ensure_safe_environment()
 
     use_stt = INPUT_VOICE_ENABLED
@@ -144,13 +141,41 @@ async def initialize_components():
     system_instruction = load_system_prompt()
     log_file = create_log_file()
 
-    llm = create_llm(system_instruction)
+    chat_primary = create_llm(
+        provider=CHAT_PRIMARY_LLM["provider"],
+        model=CHAT_PRIMARY_LLM["model"],
+        system_instruction=system_instruction,
+    )
+
+    chat_fallback = create_llm(
+        provider=CHAT_FALLBACK_LLM["provider"],
+        model=CHAT_FALLBACK_LLM["model"],
+        system_instruction=system_instruction,
+    )
+
+    code_primary = create_llm(
+        provider=CODE_PRIMARY_LLM["provider"],
+        model=CODE_PRIMARY_LLM["model"],
+        system_instruction=system_instruction,
+    )
+
+    code_fallback = create_llm(
+        provider=CODE_FALLBACK_LLM["provider"],
+        model=CODE_FALLBACK_LLM["model"],
+        system_instruction=system_instruction,
+    )
+
+    chat_llm = FallbackLLM(chat_primary, chat_fallback)
+    code_llm = FallbackLLM(code_primary, code_fallback)
+
+    llm = RouterLLM(chat_llm, code_llm)
+
     vts = VTSClient()
     stt = STTEngine() if use_stt else None
     tts = VoiceEngine() if use_tts else None
 
     await vts.connect()
-    print_system_status(use_stt, use_tts)
+    print_system_status(use_stt, use_tts, llm)
 
     return {
         "use_stt": use_stt,
@@ -164,7 +189,6 @@ async def initialize_components():
 
 
 async def shutdown_components(vts: VTSClient) -> None:
-    # Close runtime components gracefully
     await vts.close()
 
 

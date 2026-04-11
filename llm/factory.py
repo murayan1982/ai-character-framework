@@ -1,11 +1,17 @@
 from llm.gemini_engine import GeminiEngine
 from llm.grok_engine import GrokEngine
-from config.settings import LLM_PROVIDER
 
-def create_llm(system_instruction: str):
-    if LLM_PROVIDER == "google":
-        return GeminiEngine(system_instruction)
-    elif LLM_PROVIDER == "xai":
-        return GrokEngine(system_instruction)
-    else:
-        raise ValueError(f"Unsupported LLM_PROVIDER: {LLM_PROVIDER}")
+LLM_REGISTRY = {
+    "google": GeminiEngine,
+    "xai": GrokEngine,
+}
+
+def create_llm(provider: str, system_instruction: str, model: str):
+    engine_cls = LLM_REGISTRY.get(provider)
+    if engine_cls is None:
+        raise ValueError(f"Unsupported LLM provider: {provider}")
+
+    return engine_cls(
+        system_instruction=system_instruction,
+        model=model,
+    )

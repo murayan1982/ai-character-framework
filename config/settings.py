@@ -12,30 +12,47 @@ XAI_API_KEY = os.getenv("XAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 
 # --- LLM Provider Selection ---
-# "google" or "xai"
-LLM_PROVIDER = "google"
+CHAT_PRIMARY_LLM = {
+    "provider": "google",
+    "model": "gemini-2.5-flash",
+}
+
+CHAT_FALLBACK_LLM = {
+    "provider": "xai",
+    "model": "grok-4-fast-non-reasoning",
+}
+
+CODE_PRIMARY_LLM = {
+    "provider": "xai",
+    "model": "grok-4-fast-non-reasoning",
+}
+
+CODE_FALLBACK_LLM = {
+    "provider": "google",
+    "model": "gemini-2.5-flash",
+}
+PRIMARY_LLM = {
+    "provider": "google",
+    "model": "gemini-2.5-flash",
+}
+
+FALLBACK_LLM = {
+    "provider": "xai",
+    "model": "grok-4-fast-non-reasoning",
+}
 
 # Define current index for each provider (Set based on models.py tables)
 CURRENT_SELECTIONS = {
     "google": 25,  # gemini-3.1-flash-lite-preview
     "xai": 5      # grok-4-fast-non-reasoning
 }
-# --- Dynamic Assignment (LLM Model) ---
-try:
-    target_index = CURRENT_SELECTIONS[LLM_PROVIDER]
-    ACTIVE_LLM_MODEL = MODEL_MASTER[LLM_PROVIDER][target_index]
-except (KeyError, IndexError) as e:
-    # Failsafe: Default to Gemini
-    print(f"[Config Error]: Invalid provider or index ({e}). Falling back to Gemini.")
-    ACTIVE_LLM_MODEL = MODEL_MASTER["google"][0]
-
 # --- Engine Switches ---
 STT_ENGINE = "text"
 TTS_ENGINE = "elevenlabs"
 
 # --- Interaction Mode ---
-INPUT_VOICE_ENABLED = True
-OUTPUT_VOICE_ENABLED = True
+INPUT_VOICE_ENABLED = False
+OUTPUT_VOICE_ENABLED = False
 
 # --- TTS & Voice Selection ---
 SELECT_VOICE_INDEX = 0
