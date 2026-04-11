@@ -5,6 +5,8 @@ from config.settings import XAI_API_KEY, ACTIVE_LLM_MODEL, TARGET_LANGUAGE
 
 class GrokEngine:
     def __init__(self, system_instruction: str):
+        if not XAI_API_KEY:
+            raise EnvironmentError("XAI_API_KEY is not defined.")
         # Initialize xAI client with OpenAI compatibility
         self.client = OpenAI(
             api_key=XAI_API_KEY,

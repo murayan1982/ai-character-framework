@@ -16,10 +16,9 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 LLM_PROVIDER = "google"
 
 # Define current index for each provider (Set based on models.py tables)
-# google table size: 34, xai table size: 6
 CURRENT_SELECTIONS = {
     "google": 25,  # gemini-3.1-flash-lite-preview
-    "xai": 5      # grok-4-1-fast-non-reasoning
+    "xai": 5      # grok-4-fast-non-reasoning
 }
 # --- Dynamic Assignment (LLM Model) ---
 try:
@@ -35,8 +34,8 @@ STT_ENGINE = "text"
 TTS_ENGINE = "elevenlabs"
 
 # --- Interaction Mode ---
-INPUT_VOICE_ENABLED = True
-OUTPUT_VOICE_ENABLED = True
+INPUT_VOICE_ENABLED = False
+OUTPUT_VOICE_ENABLED = False
 
 # --- TTS & Voice Selection ---
 SELECT_VOICE_INDEX = 0
@@ -57,7 +56,7 @@ else:
 TTS_MODEL_ID = MODEL_MASTER["tts_models"][SELECT_TTS_MODEL_INDEX]
 
 # --- STT Settings ---
-LANGUAGE_CODE = "en-US"
+LANGUAGE_CODE = "ja-JP"
 LANG_MAP = {
     "ja-JP": "Japanese",
     "en-US": "English",
@@ -78,4 +77,23 @@ SAFETY_SETTINGS = {
 }
 
 # --- VTube Studio Settings ---
+VTS_DEBUG = False
 VTS_TOKEN_PATH = os.path.join("config", "tokens", "vts_token.json")
+# Emotion alias mapping for VTS hotkeys
+VTS_EMOTION_ALIAS = {
+    "smile": "heart eyes",
+    "happy": "heart eyes",
+    "grin": "heart eyes",
+    "laugh": "heart eyes",
+    "joy": "heart eyes",
+    "love": "heart eyes",
+    "sad": "eyes cry",
+    "cry": "eyes cry",
+    "angry": "angry sign",
+    "mad": "angry sign",
+    "surprised": "shock sign",
+    "surprise": "shock sign",
+    "shock": "shock sign",
+    "neutral": "remove expressions",
+}
+DEFAULT_EMOTION = "remove expressions"
