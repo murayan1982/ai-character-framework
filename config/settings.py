@@ -34,8 +34,8 @@ STT_ENGINE = "text"
 TTS_ENGINE = "elevenlabs"
 
 # --- Interaction Mode ---
-INPUT_VOICE_ENABLED = False
-OUTPUT_VOICE_ENABLED = False
+INPUT_VOICE_ENABLED = True
+OUTPUT_VOICE_ENABLED = True
 
 # --- TTS & Voice Selection ---
 SELECT_VOICE_INDEX = 0
