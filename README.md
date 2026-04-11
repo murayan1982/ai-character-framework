@@ -9,12 +9,13 @@ This project is designed for developers who want to build, extend, and experimen
 
 ## ✨ Features
 
+* 🧩 Event hook system for extending behavior without modifying core code
+* ⚙️ Clear separation of concerns (runtime / session / pipeline / events)
 * 🔌 **LLM-agnostic design** (OpenAI / Grok / Gemini / others)
 * 🔊 **TTS integration** (e.g. ElevenLabs)
 * 🎭 **Live2D support** via VTube Studio (VTS)
 * 🧠 **Emotion mapping system** (text → expression / hotkey)
 * ⚙️ **Modular architecture** for easy extension
-* 🧩 Clear separation of concerns (LLM / TTS / VTS / Controller)
 
 ---
 
@@ -31,6 +32,7 @@ This project is designed for developers who want to build, extend, and experimen
 * Keep components loosely coupled
 * Make each module replaceable
 * Enable fast experimentation
+* Expose extension points via event hooks
 
 ---
 
@@ -38,35 +40,54 @@ This project is designed for developers who want to build, extend, and experimen
 
 ```
 User Input
-   ↓
-[Controller]
-   ↓
-[LLM Adapter] → (OpenAI / Grok / Gemini / etc.)
-   ↓
-[Response Processor]
-   ↓
- ├─→ [TTS Engine]
- └─→ [Emotion Mapper] → [VTS Client]
+↓
+[Session]
+↓
+[Pipeline]
+↓
+├─→ [LLM] → (OpenAI / Grok / Gemini / etc.)
+├─→ [TTS Engine]
+└─→ [Live2D / VTS]
+
+[Events] ← hooks can intercept at multiple stages
 ```
-
-Each component is designed to be replaceable.
-
 ---
 
 ## 📁 Project Structure
 
 ```
 project/
-├─ llm/            # LLM adapters (OpenAI, Grok, etc.)
-├─ tts/            # Text-to-Speech engines
-├─ vts/            # VTube Studio integration
-├─ emotion/        # Emotion mapping logic
-├─ controller/     # Core orchestration
-├─ config/         # Settings & env handling
-└─ main.py         # Entry point
+├─ core/
+│  ├─ runtime.py
+│  ├─ session.py
+│  ├─ pipeline.py      # Response processing pipeline
+│  ├─ events.py        # Event hook system
+│  └─ utils/
+│     └─ logging.py    # Logging utilities
+│
+├─ llm/                # LLM providers (OpenAI, Grok, Gemini, etc.)
+├─ tts/                # Text-to-Speech engines
+├─ stt/                # Speech-to-Text engines
+├─ live2d/             # VTube Studio integration
+├─ config/             # Settings & environment config
+├─ prompts/            # System prompts / character prompts
+│
+└─ main.py             # Entry point
 ```
-
 ---
+
+## 🔌 Extending with Hooks
+
+You can extend behavior without modifying core logic:
+
+```python
+from core.events import register_hook
+
+def on_user_input(text):
+    print("User said:", text)
+
+register_hook(runtime, "on_user_input", on_user_input)
+```
 
 ## 🧪 Minimal Example (LLM Only)
 
@@ -120,13 +141,6 @@ class BaseLLM:
 
 ---
 
-### Customize emotion mapping
-
-* Edit mapping logic in `emotion/`
-* Map keywords → VTS hotkeys
-
----
-
 ## ⚙️ Setup
 
 ```bash
@@ -176,3 +190,4 @@ Please refer to LICENSE.txt for details. Redistribution and resale are prohibite
 
 This is a **framework**, not a polished end-user application.
 It is intended to be used as a base for building custom AI character systems.
+
