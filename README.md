@@ -13,16 +13,6 @@ It provides a modular foundation combining:
 
 The goal is to let developers **focus on features**, not infrastructure.
 
----
-
-## Support / Download
-
-If you’d like to support the project or get updates:
-
-👉 https://murayan7.gumroad.com/l/qhxey
-
----
-
 ## Features (v1.3.0)
 
 * Multi-LLM support (Gemini / Grok)
@@ -103,7 +93,14 @@ pip install -r requirements.txt
 
 Create `.env` from `.env.example`:
 
-```env
+- Windows:
+  copy .env.example .env
+
+- Mac / Linux:
+  cp .env.example .env
+
+Then open `.env` and add your API keys:
+
 # Required
 GEMINI_API_KEY=your_api_key_here
 
@@ -220,16 +217,22 @@ Use cases:
 ## Minimal Example
 
 ```python
+## Minimal Example
+
+import asyncio
 from llm.factory import create_llm
 
-llm = create_llm(
-    provider="google",
-    system_instruction="You are a helpful AI",
-    model="gemini-2.5-flash"
-)
+async def main():
+    llm = create_llm(
+        provider="google",
+        system_instruction="You are a helpful AI",
+        model="gemini-2.5-flash"
+    )
 
-for chunk, emotions in llm.ask_stream("Hello"):
-    print(chunk, end="")
+    for chunk, emotions in llm.ask_stream("Hello"):
+        print(chunk, end="")
+
+asyncio.run(main())
 ```
 
 ---
@@ -264,3 +267,10 @@ Custom License
 ## Author
 
 Framework for building **AI-powered character interaction systems**.
+
+## 💡 Support
+
+If you find this project useful, consider supporting development:
+
+Gumroad: https://murayan7.gumroad.com/l/qhxey
+BOOTH: https://murayan.booth.pm/items/8182937

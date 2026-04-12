@@ -50,7 +50,7 @@ SELECT_VOICE_INDEX = 0
 SELECT_TTS_MODEL_INDEX = 2
 
 # Language selection
-LANGUAGE_CODE = "ja-JP"
+LANGUAGE_CODE = "en-US"
 
 
 # =========================================
