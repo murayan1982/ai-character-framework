@@ -1,12 +1,67 @@
 Copyright (c) 2026 murayan
 
-This software is provided for personal and commercial use.
+All rights reserved.
 
-Permission is granted to use, modify, and build upon this software.
+This software and associated documentation files (the "Software") are provided for personal and commercial use under the following conditions:
 
-You may include this software as part of a larger project or application.
+--------------------------------------------------
+PERMITTED USE
+--------------------------------------------------
 
-However, redistribution or resale of this software as a standalone product,
-whether in original or modified form, is strictly prohibited.
+You are allowed to:
 
-The author is not responsible for any damages or issues caused by the use of this software.
+- Use this Software for personal and commercial purposes
+- Build applications, services, or products using this Software
+- Sell or distribute applications that include this Software as part of a larger system
+- Use this Software for streaming, AI characters, SaaS, or automation tools
+
+--------------------------------------------------
+PROHIBITED USE
+--------------------------------------------------
+
+You are NOT allowed to:
+
+- Sell, resell, sublicense, or redistribute this Software itself
+- Distribute the source code (in whole or in large part) as a standalone product
+- Rebrand and sell the Software with only minor modifications
+- Publish this Software as a competing framework or template
+
+"Large part" includes cases where the core functionality, structure, or logic of the Software remains substantially unchanged.
+
+--------------------------------------------------
+REDISTRIBUTION REQUIREMENTS
+--------------------------------------------------
+
+If you distribute any product that includes this Software:
+
+- You MUST include this LICENSE file
+- You MUST provide proper attribution to the original author
+
+--------------------------------------------------
+DISCLAIMER
+--------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.
+
+--------------------------------------------------
+CLARIFICATION OF USAGE
+--------------------------------------------------
+
+The following is explicitly permitted:
+
+- Selling AI characters, applications, or services that use this Software as an internal engine
+
+The following is explicitly prohibited:
+
+- Selling developer tools, templates, or frameworks where the primary value is this Software itself
+- Redistributing this Software as a base project for other developers
+
+In other words:
+End-user products are allowed.
+Developer-facing redistribution is prohibited.
+
+This License shall be governed by the laws of Japan.
