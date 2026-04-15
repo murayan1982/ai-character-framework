@@ -86,7 +86,8 @@ Day 6
 
 feature flag を configベースに寄せる
 input voice / output voice / vts の切替を configで反映する
-終了条件: presetでfeatureのON/OFFが変わる
+TTS provider（none / local / elevenlabs）をpresetで制御する
+終了条件: presetでfeatureのON/OFFおよびTTS providerが切り替わる
 
 Day 7
 
@@ -104,7 +105,8 @@ Day 9
 
 presets/text_vts.json を作る
 presets/voice_vts.json を作る
-余裕があれば bilingual系 preset も1つ作る
+bilingual系 preset も1つ作る
+（余裕があれば TTS provider違いのpresetも検討）
 終了条件: 主要presetが揃う
 
 Day 10
