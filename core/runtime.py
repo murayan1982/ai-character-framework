@@ -5,6 +5,8 @@ from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
 from llm.builder import build_llm
+from plugins.manager import PluginManager
+from plugins.builtin import ConsoleLoggerPlugin
 
 LANGUAGE_NAMES = {
     "ja": "Japanese",
@@ -69,6 +71,7 @@ async def initialize_components(config) -> dict:
     vts = None
     stt = STTEngine(language_code=config.input_language_code) if use_stt else None
     tts = None
+    
     if use_tts:
         if config.tts_provider == "none":
             tts = None
@@ -76,6 +79,7 @@ async def initialize_components(config) -> dict:
             tts = VoiceEngine(language_code=config.output_language_code)
         else:
             raise ValueError(f"Unsupported tts_provider: {config.tts_provider}")
+
 
     if config.vts_enabled:
         try:
@@ -120,6 +124,12 @@ async def initialize_components(config) -> dict:
             "on_error": [],
         },
     })
+    
+    plugin_manager = PluginManager()
+    runtime["plugin_manager"] = plugin_manager
+
+    plugin_manager.register(ConsoleLoggerPlugin(), runtime)
+    plugin_manager.on_start(runtime)
 
     return runtime
 
