@@ -5,5 +5,7 @@
   "output_voice_enabled": false,
   "vts_enabled": false,
   "tts_provider": "none",
-  "character_name": "default"
+  "character_name": "default",
+  "emotion_enabled": false,
+  "vts_emotion_enabled": false
 }

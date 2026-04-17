@@ -18,6 +18,9 @@ class RuntimeConfig:
     vts_enabled: bool = False
     tts_provider: str = "none"
 
+    emotion_enabled: bool = False
+    vts_emotion_enabled: bool = False
+
     character_name: str = "default"
     character_profile: dict = field(default_factory=dict)
     system_prompt: str = ""
@@ -55,6 +58,8 @@ def load_runtime_config() -> RuntimeConfig:
     output_voice_enabled = preset_data.get("output_voice_enabled", False)
     vts_enabled = preset_data.get("vts_enabled", False)
     tts_provider = preset_data.get("tts_provider", "none")
+    emotion_enabled = bool(preset_data.get("emotion_enabled", False))
+    vts_emotion_enabled = bool(preset_data.get("vts_emotion_enabled", False))
 
     profile, system_prompt = load_character_data(character_name)
 
@@ -67,6 +72,9 @@ def load_runtime_config() -> RuntimeConfig:
         output_voice_enabled=output_voice_enabled,
         vts_enabled=vts_enabled,
         tts_provider=tts_provider,
+
+        emotion_enabled=emotion_enabled,
+        vts_emotion_enabled=vts_emotion_enabled,
 
         character_name=character_name,
         character_profile=profile,

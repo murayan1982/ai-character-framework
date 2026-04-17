@@ -94,6 +94,8 @@ async def initialize_components(config) -> dict:
     print(f"Output Voice: {config.output_voice_enabled}")
     print(f"VTS Enabled: {config.vts_enabled}")
     print(f"TTS Provider: {config.tts_provider}")
+    print(f"Emotion Enabled: {config.emotion_enabled}")
+    print(f"VTS Emotion Enabled: {config.vts_emotion_enabled}")
     print("======================")
     print(f"STT Lang:     {config.input_language_code}")
     print(f"TTS Lang:     {config.output_language_code}")
