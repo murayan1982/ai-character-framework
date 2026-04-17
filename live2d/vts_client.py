@@ -213,10 +213,15 @@ class VTSClient:
         except Exception:
             pass
         await self.connect()
-
+        
     async def close(self):
         self.is_connected = False
+
+        if self.vts is None:
+            return
+
         try:
             await self.vts.close()
+            self.vts = None
         except Exception as e:
             print(f"[VTS Error] Close failed: {e}")

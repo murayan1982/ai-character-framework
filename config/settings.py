@@ -33,7 +33,7 @@ VTS_DEBUG = DEBUG_VTS
 
 # Runtime feature toggles
 INPUT_VOICE_ENABLED = False
-OUTPUT_VOICE_ENABLED = True
+OUTPUT_VOICE_ENABLED = False
 ENABLE_VTS = True
 
 # Engine selection

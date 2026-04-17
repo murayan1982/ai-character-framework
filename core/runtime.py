@@ -32,9 +32,11 @@ def print_system_status(use_stt: bool, use_tts: bool, vts, llm) -> None:
     print(f"Live2D:      {live2d_mode}")
     print(f"LLM:         {llm.provider_name} / {llm.model_name}")
 
-async def initialize_components() -> dict:
+async def initialize_components(config) -> dict:
     SecurityManager.ensure_safe_environment()
 
+    runtime = {}
+    runtime["config"] = config
     use_stt = INPUT_VOICE_ENABLED
     use_tts = OUTPUT_VOICE_ENABLED
 
@@ -49,13 +51,22 @@ async def initialize_components() -> dict:
     if ENABLE_VTS:
         try:
             vts = VTSClient()
-            await vts.connect()
+            connected = await vts.connect()
+            if not connected:
+                vts = None
         except Exception as e:
             print(f"[VTS] Disabled due to error: {e}")
             vts = None
+    
+    print("=== Runtime Config ===")
+    print(f"Preset: {config.app_preset}")
+    print(f"Character: {config.character_name}")
+    print(f"Input Lang: {config.input_language_code}")
+    print(f"Output Lang: {config.output_language_code}")
+    print("======================")
     print_system_status(use_stt, use_tts, vts, llm)
 
-    return {
+    runtime.update({
         "use_stt": use_stt,
         "use_tts": use_tts,
         "log_file": log_file,
@@ -69,7 +80,9 @@ async def initialize_components() -> dict:
             "on_llm_complete": [],
             "on_error": [],
         },
-    }
+    })
+
+    return runtime
 
 async def shutdown_components(runtime: dict) -> None:
     vts = runtime.get("vts")
