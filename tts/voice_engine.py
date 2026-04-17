@@ -15,7 +15,7 @@ from config.calibration import (
 )
 
 class VoiceEngine:
-    def __init__(self):
+    def __init__(self, language_code: str = "ja"):
         self.client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
         self.voice_id = VOICE_ID
         self.temp_dir = Path("temp")
@@ -24,7 +24,7 @@ class VoiceEngine:
         self.is_speaking = False
         self.current_process = None
         self.text_buffer = ""
-
+        self.language_code = language_code
         self.worker_thread = threading.Thread(target=self._queue_worker, daemon=True)
         self.worker_thread.start()
 

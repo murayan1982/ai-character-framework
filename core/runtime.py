@@ -45,8 +45,8 @@ async def initialize_components(config) -> dict:
 
     llm = build_llm(system_instruction)
     vts = None
-    stt = STTEngine() if use_stt else None
-    tts = None
+    stt = STTEngine(language_code=config.input_language_code) if use_stt else None
+    tts = VoiceEngine(language_code=config.output_language_code)
     if use_tts:
         if config.tts_provider == "none":
             tts = None
@@ -75,6 +75,8 @@ async def initialize_components(config) -> dict:
     print(f"VTS Enabled: {config.vts_enabled}")
     print(f"TTS Provider: {config.tts_provider}")
     print("======================")
+    print(f"STT Lang:     {config.input_language_code}")
+    print(f"TTS Lang:     {config.output_language_code}")
     print_system_status(use_stt, use_tts, vts, llm)
 
     runtime.update({
