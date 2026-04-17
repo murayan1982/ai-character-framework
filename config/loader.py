@@ -1,18 +1,17 @@
 from __future__ import annotations
-
 import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from dotenv import load_dotenv
 
+SUPPORTED_LANGUAGE_CODES = {"ja", "en"}
 
 @dataclass
 class RuntimeConfig:
     app_preset: str = "default"
     input_language_code: str = "ja"
-    output_language_code: str = "ja"
+    output_language_code: str = "en"
 
     input_voice_enabled: bool = False
     output_voice_enabled: bool = False
@@ -40,8 +39,14 @@ def load_runtime_config() -> RuntimeConfig:
     preset_name = os.getenv("APP_PRESET", "default")
     preset_data = load_preset_file(preset_name)
 
-    input_language_code = preset_data.get("input_language_code", "ja")
-    output_language_code = preset_data.get("output_language_code", "ja")
+    input_language_code = normalize_language_code(
+        preset_data.get("input_language_code", "ja"),
+        default="ja",
+    )
+    output_language_code = normalize_language_code(
+        preset_data.get("output_language_code", "ja"),
+        default="en",
+    )
     character_name = preset_data.get("character", "default")
 
     input_voice_enabled = preset_data.get("input_voice_enabled", False)
@@ -93,6 +98,17 @@ def load_character_data(character_name: str) -> tuple[dict, str]:
         system_prompt = load_text_file(system_path)
 
     return profile, system_prompt
+
+def normalize_language_code(code: str, default: str = "en") -> str:
+    normalized = str(code).strip().lower()
+
+    if normalized not in SUPPORTED_LANGUAGE_CODES:
+        print(
+            f"[Lang Warning] Unsupported language code: {code} -> fallback to {default}"
+        )
+        return default
+
+    return normalized
 
 if __name__ == "__main__":
     config = load_runtime_config()

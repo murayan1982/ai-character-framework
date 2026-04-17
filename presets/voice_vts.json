@@ -1,0 +1,10 @@
+{
+  "app_preset": "voice_vts",
+  "input_language_code": "ja",
+  "output_language_code": "ja",
+  "input_voice_enabled": true,
+  "output_voice_enabled": true,
+  "vts_enabled": true,
+  "tts_provider": "local",
+  "character": "default"
+}

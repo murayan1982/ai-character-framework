@@ -1,10 +1,10 @@
 {
-  "app_preset": "text_chat",
+  "app_preset": "bilingual_ja_en",
   "input_language_code": "ja",
-  "output_language_code": "ja",
-
+  "output_language_code": "en",
   "input_voice_enabled": false,
   "output_voice_enabled": false,
   "vts_enabled": false,
-  "tts_provider": "none"
+  "tts_provider": "none",
+  "character": "default"
 }

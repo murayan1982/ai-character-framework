@@ -3,7 +3,7 @@ import re
 from typing import Generator, Tuple, List
 from llm.base import BaseLLM
 from config.calibration import MAX_TOKENS_NORMAL, LLM_TEMPERATURE
-from config.settings import XAI_API_KEY, TARGET_LANGUAGE
+from config.settings import XAI_API_KEY
 
 
 class GrokEngine(BaseLLM):
@@ -11,17 +11,12 @@ class GrokEngine(BaseLLM):
         if not XAI_API_KEY:
             raise EnvironmentError("XAI_API_KEY is not defined.")
 
-        localized_instruction = (
-            f"{system_instruction}\n\n[IMPORTANT]\n"
-            f"Please always respond in {TARGET_LANGUAGE}."
-        )
-
         self.client = OpenAI(
             api_key=XAI_API_KEY,
             base_url="https://api.x.ai/v1",
         )
         self.model_id = model
-        self.base_instruction = localized_instruction
+        self.base_instruction = system_instruction
         self.history = [
             {"role": "system", "content": self.base_instruction}
         ]

@@ -6,6 +6,11 @@ from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
 from llm.builder import build_llm
 
+LANGUAGE_NAMES = {
+    "ja": "Japanese",
+    "en": "English",
+}
+
 def create_log_file() -> Path:
     log_dir = Path("output")
     log_dir.mkdir(exist_ok=True)
@@ -38,12 +43,22 @@ async def initialize_components(config) -> dict:
     use_tts = config.output_voice_enabled
 
     base_system_prompt = config.system_prompt.strip()
-    language_instruction = (
-        f"You must answer in the language specified by output_language_code: "
-        f"{config.output_language_code}."
+    output_language_name = LANGUAGE_NAMES.get(
+        config.output_language_code, "English"
     )
+
+    language_instruction = (
+        f"You MUST write your entire response in {output_language_name}. "
+        f"All explanations, headings, bullet points, and sentences must be in "
+        f"{output_language_name}. "
+        f"You are NOT allowed to output any other language. "
+        f"If you generate content in another language, you must immediately rewrite it in "
+        f"{output_language_name}. "
+        f"Keep only code, commands, file paths, URLs, and proper nouns unchanged."
+    )
+
     if base_system_prompt:
-        system_instruction = f"{base_system_prompt}\n\n{language_instruction}"
+        system_instruction = f"{language_instruction}\n\n{base_system_prompt}"
     else:
         system_instruction = language_instruction
 

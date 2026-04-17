@@ -3,24 +3,18 @@ import re
 from typing import Generator, Tuple, List
 from llm.base import BaseLLM
 from config.calibration import MAX_TOKENS_NORMAL, LLM_TEMPERATURE
-from config.settings import GOOGLE_API_KEY, TARGET_LANGUAGE
-
+from config.settings import GOOGLE_API_KEY
 
 class GeminiEngine(BaseLLM):
     def __init__(self, system_instruction: str, model: str):
         if not GOOGLE_API_KEY:
             raise EnvironmentError("GOOGLE_API_KEY is not defined.")
 
-        localized_instruction = (
-            f"{system_instruction}\n\n[IMPORTANT]\n"
-            f"Please always respond in {TARGET_LANGUAGE}."
-        )
-
         self.client = genai.Client(api_key=GOOGLE_API_KEY)
         self.model_id = model
         self.turn_count = 0
         self.current_mood = "Normal"
-        self.base_instruction = localized_instruction
+        self.base_instruction = system_instruction
 
         self._start_new_session()
     
