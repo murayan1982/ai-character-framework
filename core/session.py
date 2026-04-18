@@ -42,11 +42,11 @@ class ChatSession:
                     use_tts=use_tts,
                 )
 
-                if use_tts and tts is not None:
-                    try:
-                        await asyncio.wait_for(wait_for_tts_playback(tts), timeout=15.0)
-                    except asyncio.TimeoutError:
-                        print("[TTS Warning] playback wait timeout", flush=True)
+                #if use_tts and tts is not None:
+                #    try:
+                #        await asyncio.wait_for(wait_for_tts_playback(tts), timeout=15.0)
+                #    except asyncio.TimeoutError:
+                #        print("[TTS Warning] playback wait timeout", flush=True)
 
                 append_log(log_file, start_ts, user_input, full_log_text)
 
