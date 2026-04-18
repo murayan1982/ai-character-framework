@@ -4,9 +4,9 @@ from contextlib import suppress
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from core.events import emit
+from core.emotion import parse_emotion_response
 
 ANSI_CLEANER = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
-
 
 async def ainput(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
@@ -70,6 +70,8 @@ async def process_ai_response(
     print("\n  AI: ", end="", flush=True)
 
     full_log_text = ""
+    pending_prefix = ""
+    emotion_parsed = False
 
     for clean_chunk, emotions in llm.ask_stream(user_input):
         if emotions:
@@ -77,16 +79,32 @@ async def process_ai_response(
             # v1.4: automatic VTS expression control is not supported.
             # v1.5 will handle emotion tags via plugin-based expression control.
 
-        if clean_chunk:
-            display_text = ANSI_CLEANER.sub("", clean_chunk)
-            display_text = re.sub(r"\[[a-zA-Z0-9_]+\]", "", display_text)
-            if display_text:
-                print(display_text, end="", flush=True)
-                full_log_text += display_text
-                await emit(runtime, "on_llm_chunk", display_text)
+        if not clean_chunk:
+            continue
 
-                if use_tts and tts is not None:
-                    tts.speak(display_text)
+        chunk_text = ANSI_CLEANER.sub("", clean_chunk)
+
+        if not emotion_parsed:
+            pending_prefix += chunk_text
+            parsed = parse_emotion_response(pending_prefix)
+
+            # まだタグだけで本文が来ていない可能性があるので、
+            # 本文が見えるまで少し待つ
+            if parsed.clean_text == "" and "[emotion:" in pending_prefix:
+                continue
+
+            display_text = parsed.clean_text
+            emotion_parsed = True
+        else:
+            display_text = chunk_text
+
+        if display_text:
+            print(display_text, end="", flush=True)
+            full_log_text += display_text
+            await emit(runtime, "on_llm_chunk", display_text)
+
+            if use_tts and tts is not None:
+                tts.speak(display_text)
 
     print()
     await emit(runtime, "on_llm_complete", full_log_text)

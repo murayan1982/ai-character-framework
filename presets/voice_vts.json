@@ -7,6 +7,6 @@
   "vts_enabled": true,
   "tts_provider": "local",
   "character_name": "default",
-  "emotion_enabled": false,
-  "vts_emotion_enabled": false
+  "emotion_enabled": true,
+  "vts_emotion_enabled": true
 }
