@@ -32,6 +32,8 @@ DEBUG_STT = DEBUG_MASTER
 VTS_DEBUG = DEBUG_VTS
 
 # Runtime feature toggles
+# Legacy global flags kept for backward compatibility.
+# Main runtime behavior is controlled by RuntimeConfig / presets.
 INPUT_VOICE_ENABLED = False
 OUTPUT_VOICE_ENABLED = False
 ENABLE_VTS = True
@@ -117,6 +119,8 @@ SAFETY_SETTINGS = {
     "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
 }
 
+# Legacy fallback aliases for old change_expression() path.
+# v1.5 main emotion flow uses character-level vts_hotkeys mapping.
 VTS_EMOTION_ALIAS = {
     "smile": "heart eyes",
     "happy": "heart eyes",

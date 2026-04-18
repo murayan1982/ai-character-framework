@@ -78,8 +78,8 @@ async def process_ai_response(
     for clean_chunk, emotions in llm.ask_stream(user_input):
         if emotions:
             full_log_text += "".join(f"[{emotion}]" for emotion in emotions)
-            # v1.4: automatic VTS expression control is not supported.
-            # v1.5 will handle emotion tags via plugin-based expression control.
+            # Streamed emotion tags are parsed from the text stream.
+            # In v1.5 Day8 MVP, VTS hotkeys are triggered directly from pipeline.
 
         if not clean_chunk:
             continue

@@ -230,15 +230,15 @@ class VTSClient:
             print(f"[VTS Error] Hotkey trigger failed ({hotkey_name}): {e}")
             return False
 
-    async def change_expression(self, emotion: str):
+    async def change_expression(self, emotion: str) -> bool:
+        # Legacy compatibility path.
+        # v1.5 main flow uses resolve_emotion_hotkey() + trigger_hotkey().
         if not self.is_connected:
-            return
+            return False
 
-        # Normalize emotion name
         normalized = emotion.strip().lower()
         original = normalized
 
-        # Apply alias with fallback
         normalized = VTS_EMOTION_ALIAS.get(normalized, DEFAULT_EMOTION)
 
         if original != normalized:
@@ -249,6 +249,8 @@ class VTSClient:
 
         if not ok:
             self._debug(f"[VTS] No hotkey for emotion: {emotion} -> {resolved}")
+
+        return ok
 
     async def reconnect(self):
         self.is_connected = False
