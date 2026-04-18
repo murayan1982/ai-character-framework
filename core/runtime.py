@@ -1,6 +1,7 @@
 import datetime
 from pathlib import Path
 from live2d.vts_client import VTSClient
+from plugins.builtin.emotion_vts import EmotionVTSPlugin
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
@@ -127,6 +128,7 @@ async def initialize_components(config) -> dict:
             "on_user_input": [],
             "on_llm_chunk": [],
             "on_llm_complete": [],
+            "on_emotion_detected": [],
             "on_error": [],
         },
     })
@@ -135,6 +137,7 @@ async def initialize_components(config) -> dict:
     runtime["plugin_manager"] = plugin_manager
 
     plugin_manager.register(ConsoleLoggerPlugin(), runtime)
+    plugin_manager.register(EmotionVTSPlugin(), runtime)
     plugin_manager.on_start(runtime)
 
     return runtime

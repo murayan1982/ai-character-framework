@@ -1,6 +1,7 @@
 import speech_recognition as sr
 import asyncio
 
+
 class STTEngine:
     def __init__(self, language_code: str = "ja"):
         self.recognizer = sr.Recognizer()
@@ -14,7 +15,7 @@ class STTEngine:
         with self.microphone as source:
             self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
 
-            print("\r[STT/Text Waiting...] ", end="", flush=True)
+            print("\r[STT Waiting...] ", end="", flush=True)
             try:
                 audio = await asyncio.to_thread(
                     self.recognizer.listen,
