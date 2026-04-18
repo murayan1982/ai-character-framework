@@ -1,5 +1,7 @@
 import datetime
 from pathlib import Path
+
+from pydantic import config
 from live2d.vts_client import VTSClient
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
@@ -12,6 +14,11 @@ LANGUAGE_NAMES = {
     "ja": "Japanese",
     "en": "English",
 }
+
+EMOTION_TAG_INSTRUCTION = """At the beginning of every assistant response, output exactly one emotion tag:
+[emotion:neutral], [emotion:happy], [emotion:sad], [emotion:angry], [emotion:surprised], or [emotion:confused].
+After the tag, write the normal response text.
+Do not output multiple emotion tags."""
 
 def create_log_file() -> Path:
     log_dir = Path("output")
@@ -53,10 +60,15 @@ async def initialize_components(config) -> dict:
         f"Keep only code, commands, file paths, URLs, and proper nouns unchanged."
     )
 
+    instruction_parts = [language_instruction]
+
+    if config.emotion_enabled:
+        instruction_parts.append(EMOTION_TAG_INSTRUCTION)
+
     if base_system_prompt:
-        system_instruction = f"{language_instruction}\n\n{base_system_prompt}"
-    else:
-        system_instruction = language_instruction
+        instruction_parts.append(base_system_prompt)
+
+    system_instruction = "\n\n".join(instruction_parts)
 
     llm = build_llm(system_instruction)
         
