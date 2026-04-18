@@ -1,4 +1,5 @@
 {
+  "app_preset": "text_chat",
   "input_language_code": "ja",
   "output_language_code": "ja",
   "input_voice_enabled": false,
