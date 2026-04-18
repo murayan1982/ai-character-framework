@@ -24,7 +24,7 @@ class RuntimeConfig:
     character_name: str = "default"
     character_profile: dict = field(default_factory=dict)
     system_prompt: str = ""
-
+    vts_hotkeys: dict = field(default_factory=dict)
 
 def load_preset_file(preset_name: str) -> dict:
     preset_path = Path("presets") / f"{preset_name}.json"
@@ -61,7 +61,7 @@ def load_runtime_config() -> RuntimeConfig:
     emotion_enabled = bool(preset_data.get("emotion_enabled", False))
     vts_emotion_enabled = bool(preset_data.get("vts_emotion_enabled", False))
 
-    profile, system_prompt = load_character_data(character_name)
+    profile, system_prompt, vts_hotkeys = load_character_data(character_name)
 
     config = RuntimeConfig(
         app_preset=preset_name,
@@ -79,6 +79,7 @@ def load_runtime_config() -> RuntimeConfig:
         character_name=character_name,
         character_profile=profile,
         system_prompt=system_prompt,
+        vts_hotkeys=vts_hotkeys,
     )
 
     return config
@@ -93,10 +94,23 @@ def load_text_file(path: Path) -> str:
         return f.read().strip()
 
 
-def load_character_data(character_name: str) -> tuple[dict, str]:
+def load_character_data(character_name: str) -> tuple[dict, str, dict]:
     character_dir = Path("characters") / character_name
     profile_path = character_dir / "profile.json"
     system_path = character_dir / "system.txt"
+    vts_hotkeys_path = character_dir / "vts_hotkeys.json"
+
+    vts_hotkeys = {}
+
+    if vts_hotkeys_path.exists():
+        try:
+            with open(vts_hotkeys_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    vts_hotkeys = data
+        except Exception as e:
+            print(f"[Config] Failed to load VTS hotkeys: {e}")
+            vts_hotkeys = {}
 
     profile = {}
     system_prompt = ""
@@ -107,7 +121,7 @@ def load_character_data(character_name: str) -> tuple[dict, str]:
     if system_path.exists():
         system_prompt = load_text_file(system_path)
 
-    return profile, system_prompt
+    return profile, system_prompt, vts_hotkeys
 
 def normalize_language_code(code: str, default: str = "en") -> str:
     normalized = str(code).strip().lower()
@@ -125,3 +139,4 @@ if __name__ == "__main__":
     print(f"[Config] Loaded preset: {config.app_preset}")
     print(f"[Config] Character: {config.character_name}")
     print(f"[Config] System prompt: {config.system_prompt}")
+    print(f"VTS Hotkeys: {config.vts_hotkeys}")

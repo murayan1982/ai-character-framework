@@ -12,6 +12,7 @@ async def ainput(prompt: str = "") -> str:
     return await asyncio.to_thread(input, prompt)
 
 async def get_user_input(use_stt: bool, stt: STTEngine | None) -> str:
+
     if not use_stt or stt is None:
         return (await ainput("\nUser: ")).strip()
 
