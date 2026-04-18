@@ -4,7 +4,7 @@ from contextlib import suppress
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from core.events import emit
-from core.emotion import parse_emotion_response
+from core.emotion import parse_emotion_response, resolve_emotion_hotkey
 
 ANSI_CLEANER = re.compile(r"\x1b\[[0-9;?]*[a-zA-Z]")
 
@@ -73,6 +73,7 @@ async def process_ai_response(
     full_log_text = ""
     pending_prefix = ""
     emotion_parsed = False
+    emotion_triggered = False
 
     for clean_chunk, emotions in llm.ask_stream(user_input):
         if emotions:
@@ -96,6 +97,21 @@ async def process_ai_response(
 
             display_text = parsed.clean_text
             emotion_parsed = True
+            if (
+                not emotion_triggered
+                and runtime.get("config") is not None
+                and runtime["config"].emotion_enabled
+                and runtime["config"].vts_emotion_enabled
+                and vts is not None
+            ):
+                hotkey_name = resolve_emotion_hotkey(
+                    parsed.emotion,
+                    runtime["config"].vts_hotkeys,
+                )
+                if hotkey_name:
+                    await vts.trigger_hotkey(hotkey_name)
+
+                emotion_triggered = True
         else:
             display_text = chunk_text
 
@@ -108,5 +124,9 @@ async def process_ai_response(
                 tts.speak(display_text)
 
     print()
+
+    if use_tts and tts is not None:
+        await wait_for_tts_playback(tts)
+
     await emit(runtime, "on_llm_complete", full_log_text)
     return full_log_text

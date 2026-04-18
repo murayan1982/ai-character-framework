@@ -148,16 +148,14 @@ TARGET_LANGUAGE = LANG_MAP.get(LANGUAGE_CODE, "English")
 VTS_TOKEN_PATH = os.path.join("config", "tokens", "vts_token.json")
 DEFAULT_EMOTION = "remove expressions"
 
-if OUTPUT_VOICE_ENABLED:
-    if not VOICE_MASTER:
-        raise EnvironmentError(
-            "VOICE_MASTER is not set. Please add your ElevenLabs Voice ID to .env."
-        )
-    if SELECT_VOICE_INDEX >= len(VOICE_MASTER):
-        raise IndexError("SELECT_VOICE_INDEX is out of range.")
-    VOICE_ID = VOICE_MASTER[SELECT_VOICE_INDEX]["id"]
-else:
-    VOICE_ID = None
+if not VOICE_MASTER:
+    raise EnvironmentError(
+        "VOICE_MASTER is not set. Please add your ElevenLabs Voice ID to .env."
+    )
+if SELECT_VOICE_INDEX >= len(VOICE_MASTER):
+    raise IndexError("SELECT_VOICE_INDEX is out of range.")
+
+VOICE_ID = VOICE_MASTER[SELECT_VOICE_INDEX]["id"]
 
 if SELECT_TTS_MODEL_INDEX >= len(TTS_MODEL_MASTER):
     raise IndexError("SELECT_TTS_MODEL_INDEX is out of range.")
