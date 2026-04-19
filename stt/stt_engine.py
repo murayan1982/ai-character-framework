@@ -24,8 +24,6 @@ class STTEngine:
                     phrase_time_limit=8,
                 )
 
-                print("\r[STT] Recognizing...          ", end="", flush=True)
-
                 text = await asyncio.wait_for(
                     asyncio.to_thread(
                         self.recognizer.recognize_google,
