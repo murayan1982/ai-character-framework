@@ -227,7 +227,15 @@ class VTSClient:
             return True
 
         except Exception as e:
-            print(f"[VTS Error] Hotkey trigger failed ({hotkey_name}): {e}")
+            error_text = str(e)
+
+            # VTS closed / websocket going away
+            if "1001" in error_text or "going away" in error_text.lower():
+                self.is_connected = False
+                self._debug(f"[VTS] Hotkey trigger skipped: disconnected ({hotkey_name})")
+                return False
+
+            self._debug(f"[VTS] Hotkey trigger failed ({hotkey_name}): {e}")
             return False
 
     async def change_expression(self, emotion: str) -> bool:
