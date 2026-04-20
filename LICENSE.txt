@@ -10,7 +10,7 @@ However, redistribution or resale of the framework itself, or any lightly modifi
 repackaged, or substantially similar version of it, is not allowed.
 
 This includes distributing it as a standalone product, framework, template,
-starter kit, boilerplate, or similar offering.
+starter kit, boilerplate, or similar offering where the primary value is the framework itself.
 
 This software is provided "as is", without warranty of any kind, express or implied,
 including but not limited to the warranties of merchantability, fitness for a particular

@@ -481,7 +481,10 @@ Framework for building **AI-powered character interaction systems**.
 
 ## 💡 Support
 
-If you find this project useful, consider supporting development:
+If you find this project useful, consider supporting development.
 
-Gumroad: https://murayan7.gumroad.com/l/qhxey  
+Optional ready-to-run packaged versions for quick testing:
+
+Gumroad: https://murayan7.gumroad.com/l/qhxey
+
 BOOTH: https://murayan.booth.pm/items/8182937
