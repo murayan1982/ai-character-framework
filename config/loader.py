@@ -1,14 +1,29 @@
 from __future__ import annotations
+
 import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from dotenv import load_dotenv
+
 
 SUPPORTED_LANGUAGE_CODES = {"ja", "en"}
 
+
 @dataclass
 class RuntimeConfig:
+    """
+    Runtime source of truth for application behavior.
+
+    Values are assembled at startup from:
+    - preset data for runtime mode selection
+    - character data for character-specific differences
+
+    After initialization, runtime behavior should read from RuntimeConfig
+    rather than older global config paths.
+    """
+
     app_preset: str = "default"
     input_language_code: str = "ja"
     output_language_code: str = "en"
@@ -26,7 +41,12 @@ class RuntimeConfig:
     system_prompt: str = ""
     vts_hotkeys: dict = field(default_factory=dict)
 
+
 def load_preset_file(preset_name: str) -> dict:
+    """
+    Load preset JSON for runtime mode selection.
+    """
+
     preset_path = Path("presets") / f"{preset_name}.json"
 
     if not preset_path.exists():
@@ -35,54 +55,6 @@ def load_preset_file(preset_name: str) -> dict:
     with preset_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-
-def load_runtime_config() -> RuntimeConfig:
-    load_dotenv()
-
-    preset_name = os.getenv("APP_PRESET", "default")
-    preset_data = load_preset_file(preset_name)
-
-    input_language_code = normalize_language_code(
-        preset_data.get("input_language_code", "ja"),
-        default="ja",
-    )
-    output_language_code = normalize_language_code(
-        preset_data.get("output_language_code", "ja"),
-        default="en",
-    )
-    character_name = preset_data.get(
-        "character_name",
-        preset_data.get("character", "default"),
-    )
-    input_voice_enabled = preset_data.get("input_voice_enabled", False)
-    output_voice_enabled = preset_data.get("output_voice_enabled", False)
-    vts_enabled = preset_data.get("vts_enabled", False)
-    tts_provider = preset_data.get("tts_provider", "none")
-    emotion_enabled = bool(preset_data.get("emotion_enabled", False))
-    vts_emotion_enabled = bool(preset_data.get("vts_emotion_enabled", False))
-
-    profile, system_prompt, vts_hotkeys = load_character_data(character_name)
-
-    config = RuntimeConfig(
-        app_preset=preset_name,
-        input_language_code=input_language_code,
-        output_language_code=output_language_code,
-
-        input_voice_enabled=input_voice_enabled,
-        output_voice_enabled=output_voice_enabled,
-        vts_enabled=vts_enabled,
-        tts_provider=tts_provider,
-
-        emotion_enabled=emotion_enabled,
-        vts_emotion_enabled=vts_emotion_enabled,
-
-        character_name=character_name,
-        character_profile=profile,
-        system_prompt=system_prompt,
-        vts_hotkeys=vts_hotkeys,
-    )
-
-    return config
 
 def load_json_file(path: Path) -> dict:
     with open(path, "r", encoding="utf-8") as f:
@@ -95,25 +67,25 @@ def load_text_file(path: Path) -> str:
 
 
 def load_character_data(character_name: str) -> tuple[dict, str, dict]:
+    """
+    Load character-specific differences.
+
+    Character data is responsible for:
+    - profile
+    - system prompt
+    - VTS hotkey mapping
+
+    Character data is not responsible for general runtime mode selection.
+    """
+
     character_dir = Path("characters") / character_name
     profile_path = character_dir / "profile.json"
     system_path = character_dir / "system.txt"
     vts_hotkeys_path = character_dir / "vts_hotkeys.json"
 
-    vts_hotkeys = {}
-
-    if vts_hotkeys_path.exists():
-        try:
-            with open(vts_hotkeys_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    vts_hotkeys = data
-        except Exception as e:
-            print(f"[Config] Failed to load VTS hotkeys: {e}")
-            vts_hotkeys = {}
-
     profile = {}
     system_prompt = ""
+    vts_hotkeys = {}
 
     if profile_path.exists():
         profile = load_json_file(profile_path)
@@ -121,9 +93,23 @@ def load_character_data(character_name: str) -> tuple[dict, str, dict]:
     if system_path.exists():
         system_prompt = load_text_file(system_path)
 
+    if vts_hotkeys_path.exists():
+        try:
+            data = load_json_file(vts_hotkeys_path)
+            if isinstance(data, dict):
+                vts_hotkeys = data
+        except Exception as e:
+            print(f"[Config] Failed to load VTS hotkeys: {e}")
+            vts_hotkeys = {}
+
     return profile, system_prompt, vts_hotkeys
 
+
 def normalize_language_code(code: str, default: str = "en") -> str:
+    """
+    Normalize language code to the runtime-supported short form.
+    """
+
     normalized = str(code).strip().lower()
 
     if normalized not in SUPPORTED_LANGUAGE_CODES:
@@ -133,6 +119,69 @@ def normalize_language_code(code: str, default: str = "en") -> str:
         return default
 
     return normalized
+
+
+def load_runtime_config() -> RuntimeConfig:
+    """
+    Assemble RuntimeConfig from preset data and character data.
+
+    Loading order:
+    1. Read APP_PRESET from environment
+    2. Load preset JSON
+    3. Normalize preset-facing runtime values
+    4. Load character-specific data
+    5. Assemble RuntimeConfig as the runtime source of truth
+    """
+
+    # APP_PRESET is selected through environment setup.
+    load_dotenv()
+
+    # 1) Select startup preset.
+    preset_name = os.getenv("APP_PRESET", "default")
+    preset_data = load_preset_file(preset_name)
+
+    # 2) Read runtime-facing values from preset data.
+    input_language_code = normalize_language_code(
+        preset_data.get("input_language_code", "ja"),
+        default="ja",
+    )
+    output_language_code = normalize_language_code(
+        preset_data.get("output_language_code", "ja"),
+        default="en",
+    )
+
+    character_name = preset_data.get(
+        "character_name",
+        preset_data.get("character", "default"),
+    )
+
+    input_voice_enabled = preset_data.get("input_voice_enabled", False)
+    output_voice_enabled = preset_data.get("output_voice_enabled", False)
+    vts_enabled = preset_data.get("vts_enabled", False)
+    tts_provider = preset_data.get("tts_provider", "none")
+    emotion_enabled = bool(preset_data.get("emotion_enabled", False))
+    vts_emotion_enabled = bool(preset_data.get("vts_emotion_enabled", False))
+
+    # 3) Load character-specific data.
+    profile, system_prompt, vts_hotkeys = load_character_data(character_name)
+
+    # 4) Assemble RuntimeConfig as the runtime source of truth.
+    return RuntimeConfig(
+        app_preset=preset_name,
+        input_language_code=input_language_code,
+        output_language_code=output_language_code,
+        input_voice_enabled=input_voice_enabled,
+        output_voice_enabled=output_voice_enabled,
+        vts_enabled=vts_enabled,
+        tts_provider=tts_provider,
+        emotion_enabled=emotion_enabled,
+        vts_emotion_enabled=vts_emotion_enabled,
+        character_name=character_name,
+        character_profile=profile,
+        system_prompt=system_prompt,
+        vts_hotkeys=vts_hotkeys,
+    )
+
 
 if __name__ == "__main__":
     config = load_runtime_config()
