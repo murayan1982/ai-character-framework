@@ -1,33 +1,22 @@
 import os
-from dotenv import load_dotenv
 from .models import MODEL_MASTER
+from .secrets import GOOGLE_API_KEY, XAI_API_KEY, ELEVENLABS_API_KEY
+from .defaults import (
+    DEBUG_MASTER,
+    DEBUG,
+    DEBUG_ROUTER,
+    DEBUG_FALLBACK,
+    DEBUG_VTS,
+    DEBUG_TTS,
+    DEBUG_STT,
+    SELECT_VOICE_INDEX,
+    SELECT_TTS_MODEL_INDEX,
+)
 from registry.tts import TTS_MODEL_MASTER
-
-load_dotenv()
-
-# =========================================
-# Environment / API Keys
-# =========================================
-
-GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
-XAI_API_KEY = os.getenv("XAI_API_KEY")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-
 
 # =========================================
 # Runtime Flags
 # =========================================
-
-# Master debug switch
-DEBUG_MASTER = True
-
-# Component debug flags
-DEBUG = DEBUG_MASTER
-DEBUG_ROUTER = DEBUG_MASTER
-DEBUG_FALLBACK = DEBUG_MASTER
-DEBUG_VTS = DEBUG_MASTER
-DEBUG_TTS = DEBUG_MASTER
-DEBUG_STT = DEBUG_MASTER
 
 # Backward compatibility
 VTS_DEBUG = DEBUG_VTS
@@ -47,10 +36,6 @@ TTS_ENGINE = "elevenlabs"
 # =========================================
 # User-Selectable Configuration
 # =========================================
-
-# Voice / TTS selection
-SELECT_VOICE_INDEX = 0
-SELECT_TTS_MODEL_INDEX = 2
 
 # Language selection
 LANGUAGE_CODE = "ja-JP"
