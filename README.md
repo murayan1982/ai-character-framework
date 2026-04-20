@@ -454,17 +454,20 @@ This keeps the default development loop lightweight while still allowing full be
 
 ## License
 
-Custom License
-
-- Personal / commercial use: allowed
+- Personal use: allowed
+- Commercial use: allowed
 - Modification: allowed
-- Redistribution: restricted
+- Use in your own applications and services: allowed
+- Redistribution or resale of the framework itself: not allowed
+- Redistribution or resale of lightly modified or repackaged versions of the framework: not allowed
+
+See LICENSE.txt for details.
 
 ---
 
 ## Notes
 
-- `.env` must match `.env.example`
+- .env must match .env.example
 - Voice IDs are required only when TTS is enabled
 - VTS requires VTube Studio running locally
 - If a VTS hotkey is not configured, expression control is skipped safely

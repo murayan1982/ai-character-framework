@@ -1,12 +1,21 @@
 Copyright (c) 2026 murayan
 
-This software is provided for personal and commercial use.
+Permission is granted to any person to use, modify, and build upon this software
+for personal or commercial purposes.
 
-Permission is granted to use, modify, and build upon this software.
+You may include this software, with or without modification, as a component of a
+larger application, product, or service, whether distributed for free or for a fee.
 
-You may include this software as part of a larger project or application.
+However, redistribution or resale of the framework itself, or any lightly modified,
+repackaged, or substantially similar version of it, is not allowed.
 
-However, redistribution or resale of this software as a standalone product,
-whether in original or modified form, is strictly prohibited.
+This includes distributing it as a standalone product, framework, template,
+starter kit, boilerplate, or similar offering.
 
-The author is not responsible for any damages or issues caused by the use of this software.
+This software is provided "as is", without warranty of any kind, express or implied,
+including but not limited to the warranties of merchantability, fitness for a particular
+purpose, and noninfringement.
+
+In no event shall the author be liable for any claim, damages, or other liability,
+whether in an action of contract, tort, or otherwise, arising from, out of, or in
+connection with the software or the use or other dealings in the software.
