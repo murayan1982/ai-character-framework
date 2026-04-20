@@ -18,7 +18,7 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 # =========================================
 
 # Master debug switch
-DEBUG_MASTER = False
+DEBUG_MASTER = True
 
 # Component debug flags
 DEBUG = DEBUG_MASTER

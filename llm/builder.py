@@ -1,8 +1,7 @@
 from llm.factory import create_llm
 from llm.fallback_llm import FallbackLLM
 from llm.router_llm import RouterLLM
-from config.settings import LLM_CATALOG, LLM_ROUTES
-
+from registry.llm import LLM_CATALOG, LLM_ROUTES
 
 def _resolve_llm_config(llm_name: str) -> dict:
     if llm_name not in LLM_CATALOG:

@@ -1,0 +1,1 @@
+"""Registry modules for static provider/model definitions."""
