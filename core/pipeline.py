@@ -18,6 +18,7 @@ async def get_user_input(use_stt: bool, stt: STTEngine | None) -> str:
     result = await stt.listen()
     return str(result).strip() if result else ""
 
+
 async def wait_for_tts_playback(tts_engine: VoiceEngine, timeout: float = 15.0) -> None:
     try:
         tts_engine.flush()
@@ -54,6 +55,7 @@ async def process_ai_response(
         stream_state = StreamingState()
         emotion_triggered = False
         first_visible_chunk_received = False
+        first_speech_sent = False
 
         for clean_chunk, emotions in llm.ask_stream(user_input):
 
@@ -93,6 +95,8 @@ async def process_ai_response(
                 await emit(runtime, "on_llm_chunk", display_text)
 
             if speech_text and use_tts and tts is not None:
+                if not first_speech_sent:
+                    first_speech_sent = True
                 tts.speak(speech_text)
 
         if not first_visible_chunk_received:
@@ -101,6 +105,8 @@ async def process_ai_response(
         print()
 
         if use_tts and tts is not None:
+            if first_speech_sent and tts.is_speaking_active:
+                print("[TTS Playing...]")
             await wait_for_tts_playback(tts)
 
         await emit(runtime, "on_llm_complete", full_log_text)
