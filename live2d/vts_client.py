@@ -79,7 +79,7 @@ class VTSClient:
                 authenticated = await self._try_authenticate_with_current_token()
 
             if not authenticated:
-                print("Authentication failed. Continuing without Live2D control.")
+                print("[VTS Warning] Authentication failed. Continuing without Live2D control.")
                 self.is_connected = False
                 return False
 
@@ -107,7 +107,7 @@ class VTSClient:
             return self._extract_authenticated(response)
 
         except Exception as e:
-            print(f"[VTS] Auth request failed: {e}")
+            print(f"[VTS Warning] Authentication request failed. Continuing without Live2D control. ({e})")
             return False
 
     async def _request_new_token(self) -> bool:
