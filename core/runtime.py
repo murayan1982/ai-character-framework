@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+
 from live2d.vts_client import VTSClient
 from plugins.builtin.emotion_vts import EmotionVTSPlugin
 from stt.stt_engine import STTEngine
@@ -8,6 +9,7 @@ from utils.security import SecurityManager
 from llm.builder import build_llm
 from plugins.manager import PluginManager
 from plugins.builtin import ConsoleLoggerPlugin
+
 
 LANGUAGE_NAMES = {
     "ja": "Japanese",
@@ -19,11 +21,13 @@ EMOTION_TAG_INSTRUCTION = """At the beginning of every assistant response, outpu
 After the tag, write the normal response text.
 Do not output multiple emotion tags."""
 
+
 def create_log_file() -> Path:
     log_dir = Path("output")
     log_dir.mkdir(exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
     return log_dir / f"log_{timestamp}.txt"
+
 
 def print_system_status(use_stt: bool, use_tts: bool, vts, llm) -> None:
     input_mode = "Voice (STT)" if use_stt else "Keyboard (Text)"
@@ -35,6 +39,7 @@ def print_system_status(use_stt: bool, use_tts: bool, vts, llm) -> None:
     print(f"Output Mode: {output_mode}")
     print(f"Live2D:      {live2d_mode}")
     print(f"LLM:         {llm.provider_name} / {llm.model_name}")
+
 
 async def initialize_components(config) -> dict:
     SecurityManager.ensure_safe_environment()
@@ -70,13 +75,12 @@ async def initialize_components(config) -> dict:
     system_instruction = "\n\n".join(instruction_parts)
 
     llm = build_llm(system_instruction)
-        
     log_file = create_log_file()
 
     vts = None
     stt = STTEngine(language_code=config.input_language_code) if use_stt else None
     tts = None
-    
+
     if use_tts:
         if config.tts_provider == "none":
             tts = None
@@ -84,7 +88,6 @@ async def initialize_components(config) -> dict:
             tts = VoiceEngine(language_code=config.output_language_code)
         else:
             raise ValueError(f"Unsupported tts_provider: {config.tts_provider}")
-
 
     if config.vts_enabled:
         try:
@@ -95,7 +98,7 @@ async def initialize_components(config) -> dict:
         except Exception as e:
             print(f"[VTS] Disabled due to error: {e}")
             vts = None
-    
+
     print("=== Runtime Config ===")
     print(f"Preset: {config.app_preset}")
     print(f"Character: {config.character_name}")
@@ -136,13 +139,20 @@ async def initialize_components(config) -> dict:
     plugin_manager = PluginManager()
     runtime["plugin_manager"] = plugin_manager
 
-    plugin_manager.register(ConsoleLoggerPlugin(), runtime)
-    plugin_manager.register(EmotionVTSPlugin(), runtime)
+    plugin_manager.register(ConsoleLoggerPlugin())
+    plugin_manager.register(EmotionVTSPlugin())
+
+    plugin_manager.setup_all(runtime)
     plugin_manager.on_start(runtime)
 
     return runtime
 
+
 async def shutdown_components(runtime: dict) -> None:
+    plugin_manager = runtime.get("plugin_manager")
+    if plugin_manager is not None:
+        plugin_manager.on_stop(runtime)
+
     vts = runtime.get("vts")
     if vts is not None:
         await vts.close()
