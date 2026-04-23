@@ -17,8 +17,6 @@ async def main():
         session = ChatSession(runtime)
         await session.run()
 
-    except KeyboardInterrupt:
-        print("\nSystem shutting down...")
     except Exception as e:
         print(f"\n[Fatal Error] {e}")
     finally:
@@ -30,4 +28,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nShutdown complete.")

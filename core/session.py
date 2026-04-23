@@ -47,7 +47,7 @@ class ChatSession:
                 append_log(log_file, start_ts, user_input, full_log_text)
 
             except KeyboardInterrupt:
-                print("\nSystem shutting down...")
+                #print("\nSystem shutting down...")
                 break
 
             except Exception as e:

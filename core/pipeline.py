@@ -32,10 +32,10 @@ async def wait_for_tts_playback(tts_engine: VoiceEngine, timeout: float = 15.0) 
     except asyncio.TimeoutError:
         print("[TTS Warning] playback wait timed out. Continuing session.")
     except asyncio.CancelledError:
-        print("[TTS Info] playback wait cancelled.")
         raise
     except Exception as e:
         print(f"[TTS Warning] playback wait failed. Continuing session. ({e})")
+
 
 async def process_ai_response(
     *,
