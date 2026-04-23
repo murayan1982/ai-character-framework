@@ -1,8 +1,6 @@
 import datetime
 from pathlib import Path
-
 from live2d.vts_client import VTSClient
-from plugins.builtin.emotion_vts import EmotionVTSPlugin
 from stt.stt_engine import STTEngine
 from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
