@@ -8,7 +8,11 @@ from tts.voice_engine import VoiceEngine
 from utils.security import SecurityManager
 from llm.builder import build_llm
 from plugins.manager import PluginManager
-from plugins.builtin import ConsoleLoggerPlugin
+from plugins.builtin import (
+    ConsoleLoggerPlugin,
+    EmotionVTSPlugin,
+    ResponseLengthLoggerPlugin,
+)
 from core.events import create_hook_registry
 
 LANGUAGE_NAMES = {
@@ -135,6 +139,7 @@ async def initialize_components(config) -> dict:
 
     plugin_manager.register(ConsoleLoggerPlugin())
     plugin_manager.register(EmotionVTSPlugin())
+    plugin_manager.register(ResponseLengthLoggerPlugin())
 
     plugin_manager.setup_all(runtime)
     plugin_manager.on_start(runtime)
