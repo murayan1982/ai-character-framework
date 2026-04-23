@@ -23,14 +23,13 @@ class EmotionVTSPlugin(BasePlugin):
 
     def setup(self, runtime: dict[str, Any]) -> None:
         """
-        Register the plugin's event hook during runtime setup.
+        Register the plugin hook during setup().
+
+        Hook registration belongs in setup() so the plugin is fully wired
+        before the runtime session starts.
         """
         self.runtime = runtime
-
-        # Event hooks are registered through runtime["hooks"] rather than
-        # through the PluginManager lifecycle itself.
-        hooks = runtime.setdefault("hooks", {})
-        hooks.setdefault("on_emotion_detected", []).append(self.on_emotion_detected)
+        self.add_hook(runtime, "on_emotion_detected", self.on_emotion_detected)
 
     async def on_emotion_detected(self, emotion: str) -> None:
         """
