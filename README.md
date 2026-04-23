@@ -91,6 +91,9 @@ plugins/
   builtin/
     console_logger.py
     emotion_vts.py
+    response_length_logger.py
+  samples/
+    simple_greeting.py
 
 config/
   loader.py
@@ -437,6 +440,7 @@ Current built-in plugins include:
 
 - `ConsoleLoggerPlugin`
 - `EmotionVTSPlugin`
+- `ResponseLengthLoggerPlugin`
 
 Typical responsibilities:
 
@@ -459,6 +463,10 @@ It shows the recommended basic pattern:
 - inherit from `BasePlugin`
 - register hooks in `setup()`
 - react to runtime events with a small handler
+
+For plugin lifecycle, hook/event usage, and sample authoring guidance, see:
+
+- `docs/plugin_guide.md`
 
 ### Example registration
 
