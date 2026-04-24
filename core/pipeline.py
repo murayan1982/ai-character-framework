@@ -23,9 +23,9 @@ async def get_user_input(
     can stay independent from the input provider.
     """
     if not use_stt or stt is None:
-        return (await ainput("\nUser: ")).strip()
+        return (await ainput("\n[Waiting] User: ")).strip()
 
-    print("[STT Waiting...]")
+    print("[Listening] Waiting for voice input...")
     result = await stt.listen()
     voice_text = str(result).strip() if result else ""
     if voice_text:
@@ -33,7 +33,7 @@ async def get_user_input(
 
     if allow_text_fallback_during_stt:
         fallback = await ainput(
-            "User (Text fallback / Enter=retry / 'exit'=quit): "
+            "[Waiting] Text fallback (Enter=retry / 'exit'=quit): "
         )
         return fallback.strip()
 
@@ -79,7 +79,7 @@ async def process_ai_response(
     try:
         answer_prefix = "  AI: "
 
-        print()
+        print("[Thinking] Generating response...")
 
         full_log_text = ""
         stream_state = StreamingState()
@@ -143,7 +143,7 @@ async def process_ai_response(
 
         if use_tts and tts is not None:
             if first_speech_sent and tts.is_speaking_active:
-                print("[TTS Playing...]")
+                print("[Speaking] Playing TTS output...")
             await wait_for_tts_playback(tts)
 
         await emit(runtime, "on_llm_complete", full_log_text)

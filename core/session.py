@@ -48,7 +48,7 @@ class ChatSession:
                 await emit(self.runtime, "on_user_input", user_input)
 
                 if user_input.lower() in {"exit", "quit"}:
-                    print("System shutting down...")
+                    print("[Exiting] System shutting down...")
                     break
 
                 start_ts = datetime.datetime.now().strftime("%H:%M:%S")
@@ -66,6 +66,7 @@ class ChatSession:
                 append_log(log_file, start_ts, user_input, full_log_text)
 
             except KeyboardInterrupt:
+                print("\n[Exiting] Keyboard interrupt received.")
                 break
 
             except Exception as e:
