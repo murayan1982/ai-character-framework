@@ -1,12 +1,12 @@
 {
-  "app_preset": "text_vts",
+  "app_preset":"text_vts",
   "input_language_code": "ja",
   "output_language_code": "ja",
   "input_voice_enabled": false,
-  "output_voice_enabled": true,
+  "output_voice_enabled": false,
   "vts_enabled": true,
-  "tts_provider": "local",
-  "character_name": "default",
+  "tts_provider": "none",
   "emotion_enabled": true,
-  "vts_emotion_enabled": true
+  "vts_emotion_enabled": true,
+  "character_name": "default"
 }
