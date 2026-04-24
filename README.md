@@ -1,8 +1,12 @@
 # AI Character Conversation Framework
 
+A developer-oriented framework for building real-time AI character experiences with text, voice, and Live2D support.
+
+---
+
 ## What is this?
 
-This is a **developer-oriented framework** for building AI character interaction systems.
+This project is an open-source framework for building AI character interaction systems.
 
 It provides a modular foundation combining:
 
@@ -12,7 +16,95 @@ It provides a modular foundation combining:
 - Emotion-aware response handling
 - Character-level expression mapping
 
-The goal is to let developers **focus on features**, not infrastructure.
+The goal is to let developers focus on features, not infrastructure.
+
+---
+
+## First Run
+
+For the first run, start with:
+
+```env
+APP_PRESET=text_chat
+```
+
+`text_chat` is the safest starting point because it has the fewest dependencies and is the easiest way to confirm that the framework is working correctly.
+
+Recommended order:
+
+1. `text_chat` — confirm the basic text conversation flow
+2. `text_vts` — confirm Live2D / VTS integration without voice
+3. `voice_vts` — try the full voice + Live2D experience
+
+---
+
+## Presets
+
+### `text_chat`
+
+Safe default preset for first run.
+
+- Keyboard input
+- Text output
+- No Live2D
+- No voice input/output
+
+Use this preset to confirm that the base framework is working.
+
+---
+
+### `text_vts`
+
+Preset for checking Live2D / VTS behavior without voice features.
+
+- Keyboard input
+- Text output
+- Live2D enabled
+- No voice input/output
+
+Use this preset when you want to test character expression control before enabling voice.
+
+---
+
+### `voice_vts`
+
+Full voice + Live2D preset.
+
+- Voice input (STT)
+- Voice output (TTS)
+- Live2D enabled
+
+This preset provides the richest experience, but it also has the most runtime dependencies.
+After confirming that `text_chat` or `text_vts` works correctly, move on to `voice_vts`.
+
+---
+
+### `bilingual_ja_en`
+
+Example preset for bilingual-style testing.
+
+- Japanese input
+- English output
+- No Live2D
+- No voice input/output
+
+Use this preset when you want to test language separation, such as Japanese input with English-only responses.
+
+---
+
+## Voice Mode Notes
+
+`voice_vts` is intended as an upper-level preset after basic confirmation.
+
+In `voice_vts`:
+
+- STT is used for voice input
+- TTS is used for voice output
+- if voice input is not detected, text fallback can be used
+- type `exit` or `quit` in text fallback to end the session normally
+- use `Ctrl+C` for forced termination
+
+This keeps voice mode easier to exit and more practical during testing.
 
 ---
 
@@ -63,6 +155,17 @@ User input
 -> resolve_emotion_hotkey()
 -> VTS trigger_hotkey()
 ```
+
+---
+
+## Extensibility
+
+This framework includes lightweight extension points for runtime customization.
+
+- **Hooks** are event-style extension points used inside the runtime flow
+- **Plugins** are lifecycle-oriented extensions used for setup, startup, shutdown, and integration behavior
+
+This keeps the core runtime small while making it easier to add logging, integrations, or custom runtime behavior.
 
 ---
 
@@ -125,20 +228,74 @@ main.py
 
 ---
 
+## Character Customization
+
+Character-related files define who the character is.
+Preset and runtime settings define how the application runs.
+
+---
+
+### Character files
+
+- `profile.json`
+  - Basic character information such as name and description
+- `system.txt`
+  - The main system prompt that defines how the character speaks and behaves
+- `vts_hotkeys.json`
+  - Emotion / Live2D hotkey mappings used for VTS expression control
+
+---
+
+### Editing guide
+
+If you want to change the character's identity:
+- edit `characters/<name>/profile.json`
+
+If you want to change the character's tone, style, or behavior:
+- edit `characters/<name>/system.txt`
+
+If you want to change facial-expression or emotion mappings:
+- edit `characters/<name>/vts_hotkeys.json`
+
+If you want to change input/output mode or runtime behavior:
+- edit `presets/*.json`
+
+---
+
+### Preset vs Character
+
+A simple rule:
+
+- Character = who the assistant is
+- Preset / Runtime = how the system runs
+
+Examples:
+
+- Change speaking style -> character (`system.txt`)
+- Change displayed name / description -> character (`profile.json`)
+- Change emotion-to-VTS mapping -> character (`vts_hotkeys.json`)
+- Change text/voice mode -> preset (`presets/*.json`)
+
+---
+
 ## Setup
 
 ### 1. Clone
 
 ```bash
-git clone https://github.com/murayan1982/AI-bot-Prj.git
-cd AI-bot-Prj
+git clone https://github.com/murayan1982/ai-character-framework.git
+cd ai-character-framework
 ```
+
+---
 
 ### 2. Install
 
 ```bash
 pip install -r requirements.txt
 ```
+
+---
 
 ### 3. Environment Variables
 
@@ -177,16 +334,6 @@ Optional voice configuration:
 VOICE_MASTER=[{"id":"your_voice_id_here","name":"MyVoice"}]
 ```
 
-## First Run Recommendation
-
-For the first run, start with the safest setup:
-
-1. Set `APP_PRESET=text_chat`
-2. Add the required API key to `.env`
-3. Run `python main.py`
-4. Confirm the basic text conversation flow works
-5. Then move to `text_vts` or `voice_vts` if needed
-
 ---
 
 ## Runtime Configuration
@@ -205,7 +352,9 @@ APP_PRESET=text_chat
 
 The framework loads the selected preset and builds a `RuntimeConfig` object at startup.
 
-### RuntimeConfig controls things like:
+---
+
+### RuntimeConfig controls things like
 
 - input language
 - output language
@@ -217,6 +366,8 @@ The framework loads the selected preset and builds a `RuntimeConfig` object at s
 - selected character
 - selected character hotkey mapping
 
+---
+
 ### Configuration Flow
 
 Runtime behavior is configured in the following order:
@@ -226,6 +377,8 @@ Runtime behavior is configured in the following order:
 3. `characters/*` provides character-specific differences
 4. `config/loader.py` assembles `RuntimeConfig`
 5. Runtime behavior should read from `RuntimeConfig` as the source of truth
+
+---
 
 ### What to edit for common changes
 
@@ -254,337 +407,30 @@ Runtime behavior is configured in the following order:
 - Review older compatibility paths:
   - `config/legacy.py`
 
+---
+
 ### Recommended development starting point
 
 Use `text_chat` as the safe default preset for regular development.
 
-Recommended example:
-
-```env
-APP_PRESET=text_chat
-```
-
-Move to `text_vts` or `voice_vts` only when you want to verify TTS / VTS behavior.
-
 ---
 
-## Presets
+## Repository Naming
 
-### text_chat
+Repository name:
 
-Safe default preset for regular development.
+`ai-character-framework`
 
-- keyboard input
-- text output only
-- VTS disabled
-- emotion disabled
+Project / README title:
 
-### text_vts
+`AI Character Conversation Framework`
 
-Keyboard input + TTS + VTube Studio expression control.
-
-- keyboard input
-- voice output
-- VTS enabled
-- emotion enabled
-
-### voice_vts
-
-Voice input + TTS + VTube Studio expression control.
-
-- STT input
-- voice output
-- VTS enabled
-- emotion enabled
-
-### bilingual_ja_en
-
-Japanese input with English output.
-
-- keyboard input
-- text output only
-- VTS disabled
-- emotion disabled
-- output language forced to English
-
----
-
-## Emotion / VTS Expression Control
-
-When emotion is enabled, the LLM outputs one emotion tag at the beginning of the response.
-
-Example:
-
-```text
-[emotion:happy]
-Hello! I'm glad to see you.
-```
-
-The framework parses this into:
-
-- emotion key: `happy`
-- visible / spoken text: `Hello! I'm glad to see you.`
-
-The emotion tag is removed from:
-
-- console display
-- TTS text
-
-If VTS emotion control is enabled, the framework resolves the emotion key to a character-specific VTube Studio hotkey name and triggers it safely.
-
-### Standard emotion keys
-
-```text
-neutral
-happy
-sad
-angry
-surprised
-confused
-```
-
-Unknown or invalid emotion values fall back to `neutral`.
-
----
-
-## Character Hotkey Mapping
-
-The framework does **not** hardcode VTube Studio hotkey names.
-
-Instead, each character provides its own mapping file:
-
-```text
-characters/default/vts_hotkeys.json
-```
-
-Example:
-
-```json
-{
-  "neutral": "Remove Expressions",
-  "happy": "Heart Eyes",
-  "sad": "Eyes Cry",
-  "angry": "Angry Sign",
-  "surprised": "Shock Sign",
-  "confused": null
-}
-```
-
-Rules:
-
-- the framework handles abstract emotion keys only
-- the actual VTS hotkey name is defined per character
-- `null` means "do nothing"
-- if a hotkey is missing or VTS is unavailable, the conversation continues
-
----
-
-## LLM Routing & Fallback
-
-The framework automatically selects models by route.
-
-Typical routing:
-
-- chat -> fast conversational model
-- code -> reasoning-capable model
-
-If a request fails:
-
-- fallback LLM is automatically used
-
-Current configuration is defined in:
-
-- `LLM_CATALOG`
-- `LLM_ROUTES`
-- `registry/llm.py`
-
----
-
-## Voice Configuration
-
-Voice IDs are loaded from `.env`:
-
-```env
-VOICE_MASTER=[{"id":"voice_id","name":"MyVoice"}]
-```
-
-Selection is currently done through developer-side defaults in `config/defaults.py`, for example:
-
-```python
-SELECT_VOICE_INDEX = 0
-SELECT_TTS_MODEL_INDEX = 2
-```
-
-TTS is optional.
-
-For regular development, `text_chat` is the safest default.  
-Use `text_vts` or `voice_vts` when you want to verify TTS / VTS behavior.
-
----
-
-## Live2D (VTube Studio)
-
-- Optional feature
-- Token is generated automatically on first run
-- Emotion control is handled through character-level hotkey mapping
-- VTS hotkeys are triggered safely through the VTS client
-- If VTube Studio is not running, the conversation continues
-
----
-
-## Plugins
-
-The framework includes a minimal plugin system.
-
-Current built-in plugins include:
-
-- `ConsoleLoggerPlugin`
-- `EmotionVTSPlugin`
-- `ResponseLengthLoggerPlugin`
-
-Typical responsibilities:
-
-- logging runtime activity
-- reacting to parsed emotion events
-- triggering VTS hotkeys from character mappings
-
----
-
-## Sample Plugin
-
-A minimal sample plugin is available here:
-
-- `plugins/samples/simple_greeting.py`
-
-This sample is intended for plugin authors who want the smallest possible starting point.
-
-It shows the recommended basic pattern:
-
-- inherit from `BasePlugin`
-- register hooks in `setup()`
-- react to runtime events with a small handler
-
-For plugin lifecycle, hook/event usage, and sample authoring guidance, see:
-
-- `docs/plugin_guide.md`
-
-### Example registration
-
-    from plugins.samples import SimpleGreetingPlugin
-
-    plugin_manager.register(SimpleGreetingPlugin())
-
-After registration, run the normal plugin lifecycle flow:
-
-    plugin_manager.setup_all(runtime)
-    plugin_manager.on_start(runtime)
-
-### Notes
-
-- sample plugins are provided as authoring examples
-- builtin plugins are part of the default framework setup
-- sample plugins are not enabled by default
-- hook registration should be done in `setup()`
-
----
-
-## Hooks (Extension Points)
-
-Current runtime hooks include:
-
-```python
-on_user_input(text)
-on_llm_chunk(chunk)
-on_llm_complete(response)
-on_emotion_detected(emotion)
-on_error(error)
-```
-
-Use cases:
-
-- logging
-- streaming UI
-- external integrations
-- character behavior extensions
-
----
-
-## Minimal Example
-
-```python
-import asyncio
-from llm.factory import create_llm
-
-async def main():
-    llm = create_llm(
-        provider="google",
-        system_instruction="You are a helpful AI assistant.",
-        model="gemini-2.5-flash"
-    )
-
-    for chunk, emotions in llm.ask_stream("Hello"):
-        print(chunk, end="")
-
-asyncio.run(main())
-```
-
----
-
-## Recommended Development Flow
-
-For regular development:
-
-1. Start with `text_chat`
-2. Verify emotion / VTS behavior with `text_vts`
-3. Verify full STT / TTS / VTS flow with `voice_vts`
-
-This keeps the default development loop lightweight while still allowing full behavior checks when needed.
-
----
-
-## Roadmap
-
-- Runtime mode presets
-- Plugin-based extension flow
-- More provider cleanup / config responsibility separation
-- Local LLM support
-- GUI launcher
+This keeps the repository name short and practical while making the full project purpose clearer in the documentation.
 
 ---
 
 ## License
 
-- Personal use: allowed
-- Commercial use: allowed
-- Modification: allowed
-- Use in your own applications and services: allowed
-- Redistribution or resale of the framework itself: not allowed
-- Redistribution or resale of lightly modified or repackaged versions of the framework: not allowed
+Please see `LICENSE.txt` for the full license terms.
 
-See LICENSE.txt for details.
-
----
-
-## Notes
-
-- .env must match .env.example
-- Voice IDs are required only when TTS is enabled
-- VTS requires VTube Studio running locally
-- If a VTS hotkey is not configured, expression control is skipped safely
-- In the current implementation, long TTS playback may occasionally trigger a wait timeout warning even when playback still works in practice.
-
----
-
-## Author
-
-Framework for building **AI-powered character interaction systems**.
-
-## 💡 Support
-
-If you find this project useful, consider supporting development.
-
-Optional ready-to-run packaged versions for quick testing:
-
-Gumroad: https://murayan7.gumroad.com/l/qhxey
-
-BOOTH: https://murayan.booth.pm/items/8182937
+This project is intended to be shared and used as a framework, but redistribution, reuse, or resale of the framework itself should follow the license terms carefully.
