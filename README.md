@@ -20,6 +20,45 @@ The goal is to let developers focus on features, not infrastructure.
 
 ---
 
+## Minimum Conversation UX
+
+v2.0 focuses on making the current AI character conversation flow understandable and usable across text, Live2D, and voice presets.
+
+The minimum supported conversation flow is:
+
+```text
+User input
+-> LLM response
+-> text display
+-> optional TTS output
+-> optional emotion parsing
+-> optional VTS expression trigger
+```
+
+This means the framework is expected to provide a clear path from user input to character response, including text display, voice output, and Live2D expression control when those features are enabled.
+
+The goal of v2.0 is not to provide a fully optimized real-time voice runtime yet.
+The goal is to provide a clear, stable foundation for AI character conversation that can be extended in later versions.
+
+---
+
+## Conversation States
+
+The framework uses simple user-facing conversation states to make the runtime behavior easier to understand.
+
+```text
+waiting   -> ready for text input or fallback input
+listening -> waiting for voice input
+thinking  -> generating an LLM response
+speaking  -> playing TTS output
+exiting   -> shutting down the session
+```
+
+In v2.0, these states are mainly treated as runtime feedback for developers and users.
+A full internal conversation state machine is intentionally left for a future version.
+
+---
+
 ## First Run
 
 For the first run, start with:
@@ -105,6 +144,12 @@ In `voice_vts`:
 - use `Ctrl+C` for forced termination
 
 This keeps voice mode easier to exit and more practical during testing.
+
+`voice_vts` should be treated as the minimum full-stack conversation preset in v2.0.
+It is useful for confirming voice input, LLM response, TTS output, emotion parsing, and Live2D expression control together.
+
+It is not intended to represent the final low-latency voice architecture.
+More advanced audio pipeline cleanup, provider abstraction, latency work, and interruption behavior are tracked as future runtime topics.
 
 ---
 
@@ -518,6 +563,32 @@ Use `text_chat` as the safe default preset for regular development.
 
 ---
 
+## v2.0 Scope and Future Work
+
+v2.0 is the milestone for minimum AI character conversation UX.
+
+In scope for v2.0:
+
+- text / Live2D / voice preset experience review
+- user input -> LLM response -> display / TTS / emotion / VTS flow review
+- basic runtime feedback such as waiting, listening, thinking, speaking, and exiting
+- preset purpose clarification
+- character prompt / emotion / VTS expression consistency
+- README and documentation alignment
+
+Intentionally out of scope for v2.0:
+
+- full STT / TTS provider abstraction
+- full latency optimization
+- interruption / barge-in
+- multi-character conversation
+- large audio pipeline redesign
+- Web UI or settings screen
+
+These topics are better handled after the minimum conversation experience is stable and easy to explain.
+
+---
+
 ## Repository Naming
 
 Repository name:
@@ -544,4 +615,4 @@ This project is intended to be shared and used as a framework, but redistributio
 
 After v2.0, advanced conversation runtime topics are tracked in:
 
-- `roadmap_feature_v3.0.md`
+- `docs/roadmap_feature_v3.0.md`
