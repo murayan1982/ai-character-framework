@@ -142,7 +142,6 @@ async def initialize_components(config) -> dict:
     plugin_manager.setup_all(runtime)
     plugin_manager.on_start(runtime)
 
-
     return runtime
 
 
