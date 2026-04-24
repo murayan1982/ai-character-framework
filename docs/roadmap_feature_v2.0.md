@@ -144,19 +144,38 @@ character 周りの構造と編集導線がより分かりやすく、
 
 ---
 
-[v2.0] Minimum Conversation UX & Audio Pipeline Foundation
+[v2.0] Minimum AI Character Conversation UX
 
-- 音声入出力フェーズの責務を整理する
-- STT / LLM / TTS の接続を見直しやすい構造へ寄せる
-- 最低限の会話デザイン方針を導入する
-- 音声会話の自然な待機 / 応答 / 発話フローの足場を整える
-- 将来の latency 改善や provider abstraction に繋がる構造を作る
-- 将来の multi-character / interruption / backchannel へ繋がる状態整理の入口を作る
-- Quick Start / docs を v2.0 方針に合わせて更新する
+- text / Live2D / voice presets を前提に、最低限の会話体験を確認する
+- user input → LLM response → display / TTS / emotion / VTS の流れを整理する
+- 会話状態の見え方を確認する
+  - waiting
+  - listening
+  - thinking
+  - speaking
+  - exiting
+- `text_chat` / `text_vts` / `voice_vts` の体験差分を整理する
+- character prompt / emotion / VTS expression のつながりを確認する
+- 音声会話の自然な待機 / 応答 / 発話フローについて、最低限の方針を README / docs に反映する
+- v2.0 時点で対応する範囲と、v2.0 以降に残す課題を明確にする
+- Quick Start / README / docs を v2.0 方針に合わせて更新する
+
+[Out of Scope for v2.0]
+
+The following topics are intentionally left outside the v2.0 scope.
+Some of them are tracked in `roadmap_feature_v3.0.md`.
+
+- STT / TTS provider abstraction の本格実装
+- latency 改善の本格対応
+- interrupt / barge-in の本格実装
+- multi-character conversation の本格実装
+- audio pipeline の大規模再設計
+- Web UI / 設定画面
 
 Goal:
-「AIキャラクター会話の最低限のUX」と
-今後の音声基盤改善を進めるための土台が揃った状態にする
+text / Live2D / voice を通した AIキャラクター会話体験として、
+最低限の待機・応答・発話・表情連携の流れが説明でき、
+v2.0 以降の音声基盤改善や会話UX拡張へ無理なく進める状態にする
 
 ---
 
@@ -179,9 +198,24 @@ Goal:
 
 [Future Ideas (Optional)]
 
-- 自動LLM fallback
-- キャッシュ機構
-- 非同期パイプライン最適化
-- Web UI / 設定画面
-- クラウド設定保存
-- マルチセッション対応
+These are broader future ideas that are not part of the v2.0 scope
+and are not yet assigned to a specific milestone.
+
+- Settings / config cache for faster startup or runtime switching
+- Advanced LLM fallback / routing
+- Cloud-based preset / character settings
+- Multi-session runtime support
+
+[Cache Note]
+
+Caching should be considered carefully for conversation UX and framework responsibility.
+
+Settings / config caching may help improve startup or runtime responsiveness
+without directly affecting conversation variety.
+
+TTS caching is intentionally not treated as a core framework feature for now.
+It may create high maintenance cost around provider differences, cache keys,
+storage management, licensing concerns, and repetitive conversation patterns.
+
+If TTS caching is explored in the future, it should likely be handled as an
+optional plugin or provider-specific extension rather than core runtime behavior.

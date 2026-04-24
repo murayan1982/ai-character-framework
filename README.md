@@ -537,3 +537,11 @@ This keeps the repository name short and practical while making the full project
 Please see `LICENSE.txt` for the full license terms.
 
 This project is intended to be shared and used as a framework, but redistribution, reuse, or resale of the framework itself should follow the license terms carefully.
+
+---
+
+[Next Roadmap]
+
+After v2.0, advanced conversation runtime topics are tracked in:
+
+- `roadmap_feature_v3.0.md`
