@@ -311,6 +311,7 @@ def _load_example_module(filename: str, module_name: str):
     _assert(spec is not None and spec.loader is not None, f"Could not load {filename}")
 
     module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -324,6 +325,11 @@ def check_sdk_examples_importable() -> None:
         ("app_session_info.py", "app_session_info_sdk_smoke", "run_session_info_demo"),
         ("app_state_events.py", "app_state_events_sdk_smoke", "run_state_events_demo"),
         ("app_interrupt_text_chat.py", "app_interrupt_text_chat_sdk_smoke", "run_interrupt_demo"),
+        (
+            "app_voice_output_integration.py",
+            "app_voice_output_integration_sdk_smoke",
+            "run_voice_output_integration_demo",
+        ),
     ]
 
     for filename, module_name, expected_attr in examples:

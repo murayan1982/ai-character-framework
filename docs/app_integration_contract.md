@@ -12,7 +12,13 @@ Application code should import from `framework`:
 from framework import FacadeError, create_text_chat_session
 ```
 
-Avoid importing directly from internal packages such as `core`, `runtime`, `llm`, `tts`, `stt`, or `live2d` for app-facing text chat integrations.
+For voice output integrations, application code should also import only the public FW boundary:
+
+```python
+from framework import VoiceOutputRequest, create_voice_output_session
+```
+
+Avoid importing directly from internal packages such as `core`, `runtime`, `llm`, `tts`, `stt`, or `live2d` for app-facing integrations.
 
 ## Session creation
 
@@ -259,14 +265,72 @@ External apps should not depend on:
 - internal route/fallback provider details
 - provider implementation classes
 - runtime session loop internals
-- STT/TTS/VTS internals through the text facade
+- STT/TTS/VTS internals through app-facing facades
+- provider voice IDs, API keys, model IDs, or provider-specific TTS parameters
 - internal plugin hooks as the main app integration API
 
 Those details may change across framework versions.
 
+## Public voice output boundary
+
+v5.0.0 adds a separate provider-neutral voice output boundary for host apps such as Daily Rhythm Companion. Apps request voice output through FW public types and do not own provider-specific implementation details.
+
+```python
+from framework import VoiceOutputRequest, create_voice_output_session
+
+session = create_voice_output_session(
+    default_voice_profile_id="gentle_mina_default",
+)
+
+result = session.create_output(
+    VoiceOutputRequest(
+        text="今日は少し早めに休むとよさそうです。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="daily_advice",
+        language_code="ja",
+    )
+)
+```
+
+The app-facing request should contain only FW-level voice output intent:
+
+- `text`
+- `voice_profile_id`
+- `requested_audio_format`
+- `utterance_purpose`
+- `language_code`
+
+FW owns and hides:
+
+- provider selection
+- provider voice IDs
+- API keys
+- model IDs
+- provider-specific request parameters
+- provider SDK calls
+- local playback and temporary audio implementation details
+
+Without explicit real TTS configuration, the public result is expected to be safe unavailable:
+
+```python
+result.request_state == "unavailable"
+result.audio_ready is False
+```
+
+This unavailable state is useful for app integration and smoke tests, but it is not real TTS evidence. Real DRC Web evidence still requires Web UI playback confirmation, screenshot/private evidence handling, marker-only evidence JSON, and acceptance validator success.
+
+Run the DRC-style app example with no provider credentials:
+
+```powershell
+python examples/app_voice_output_integration.py
+```
+
+The example demonstrates that the app passes `VoiceOutputRequest` and keeps provider voice IDs, API keys, model IDs, and provider-specific options FW-side.
+
 ## Text facade scope
 
-The current public facade is text-only.
+`create_text_chat_session()` remains text-only. Voice output is available through the separate `create_voice_output_session()` boundary, not through the text chat session.
 
 Supported:
 
@@ -283,14 +347,13 @@ Supported:
 Not supported through this facade yet:
 
 - voice input
-- TTS output
 - Live2D / VTube Studio control
 - full interactive runtime loop
 - provider-level hard cancellation of active LLM requests
 - TTS queue cancellation or realtime voice barge-in
 - full voice session facade
 
-Use `main.py` or the preset run scripts for full runtime behavior.
+Use `main.py` or the preset run scripts for full runtime behavior beyond the public text and voice-output boundaries.
 
 ## Planned or evaluated session operations
 

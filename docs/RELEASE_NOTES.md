@@ -1,3 +1,24 @@
+# v5.0.0 - Public Voice Output / TTS Boundary Foundation
+
+## Development notes
+
+This version adds a public, provider-neutral voice output boundary for app integrations while keeping provider-specific TTS details inside FW.
+
+Current v5 additions include:
+
+- `create_voice_output_session()`
+- `VoiceOutputSession` / `VoiceOutputSessionInfo`
+- `VoiceOutputRequest` / `VoiceOutputResult`
+- lazy internal provider adapter behavior
+- DRC-style app voice output integration example:
+  - `examples/app_voice_output_integration.py`
+
+Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities.
+
+Mock-safe public checks should pass without provider credentials, and unavailable provider status must not be counted as real TTS evidence.
+
+---
+
 # v4.0.0 - App Integration SDK Foundation
 
 ## Summary

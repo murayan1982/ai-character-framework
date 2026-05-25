@@ -317,6 +317,7 @@ def _load_example_module(filename: str, module_name: str):
     _assert(spec is not None and spec.loader is not None, "Could not load example spec")
 
     module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -469,6 +470,47 @@ def check_interrupt_example_import() -> None:
     print("[OK] interrupt example is importable")
 
 
+def check_voice_output_example_import() -> None:
+    # The voice output app example should be importable and runnable in
+    # unavailable mode without provider credentials or provider SDK imports.
+    module = _load_example_module(
+        "app_voice_output_integration.py",
+        "app_voice_output_integration_smoke",
+    )
+
+    _assert(
+        hasattr(module, "DailyRhythmCompanionVoiceOutputBridge"),
+        "voice output example should expose the DRC-style app bridge",
+    )
+    _assert(
+        hasattr(module, "build_sample_daily_advice_output"),
+        "voice output example should expose request builder helper",
+    )
+    _assert(
+        hasattr(module, "run_voice_output_integration_demo"),
+        "voice output example should expose run_voice_output_integration_demo",
+    )
+
+    result = module.run_voice_output_integration_demo(
+        text="今日は少し早めに休むとよさそうです。",
+        real_tts_enabled=False,
+        project_root=PROJECT_ROOT,
+    )
+    _assert(result.request_state == "unavailable", "voice output example should be mock-safe")
+    _assert(not result.audio_ready, "voice output example should not create audio by default")
+    _assert(result.audio_format == "mp3", "voice output example should request mp3")
+    _assert(
+        result.public_metadata.get("voice_profile_id") == "gentle_mina_default",
+        "voice output example should use a framework-level voice profile id",
+    )
+    _assert(
+        result.public_metadata.get("provider_details_exposed") == "false",
+        "voice output example should keep provider details hidden",
+    )
+
+    _assert_no_forbidden_runtime_imports("voice output app example import")
+    print("[OK] voice output app integration example is importable and mock-safe")
+
 def check_live_text_turn(
     prompt: str,
     *,
@@ -525,6 +567,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     check_session_info_example_import()
     check_state_events_example_import()
     check_interrupt_example_import()
+    check_voice_output_example_import()
     if args.ask:
         check_live_text_turn(
             args.ask,

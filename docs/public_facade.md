@@ -4,7 +4,7 @@ The public facade is the stable entry point for using AI Character Framework as 
 
 It is designed for application code that wants to call the framework directly without launching `main.py` or the full interactive runtime loop.
 
-Current public API:
+Current text chat API:
 
 ```python
 from framework import create_text_chat_session
@@ -20,6 +20,26 @@ response = session.ask("こんにちは。短く返して。")
 print(response)
 ```
 
+Current voice output boundary:
+
+```python
+from framework import VoiceOutputRequest, create_voice_output_session
+
+voice_session = create_voice_output_session()
+result = voice_session.create_output(
+    VoiceOutputRequest(
+        text="今日は少し早めに休むとよさそうです。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="daily_advice",
+        language_code="ja",
+    )
+)
+
+print(result.request_state)
+print(result.audio_ready)
+```
+
 ## Scope
 
 `create_text_chat_session()` is intentionally text-only.
@@ -32,7 +52,9 @@ It does not launch:
 - TTS
 - VTube Studio / Live2D control
 
-Use `main.py` or the preset run scripts for full runtime features such as voice input, voice output, and VTS integration.
+Use `main.py` or the preset run scripts for full runtime features such as voice input and VTS integration.
+
+v5.0.0 adds a separate public voice output boundary through `create_voice_output_session()`. That boundary lets host apps request TTS output without importing `tts.voice_engine` or passing provider-specific secrets. It is not the full realtime voice runtime loop.
 
 ## Public API
 
@@ -82,6 +104,49 @@ Supported public provider names include:
 `gemini` and `grok` are public aliases. Internally, provider definitions are still owned by `llm.factory` and `registry/llm.py`.
 
 If `provider` is passed without `model`, the facade resolves the default model from `registry/llm.py`.
+
+
+### `create_voice_output_session()`
+
+Creates a provider-neutral `VoiceOutputSession` for app-facing TTS requests without starting the full runtime loop.
+
+```python
+from framework import VoiceOutputRequest, create_voice_output_session
+
+session = create_voice_output_session(
+    default_voice_profile_id="gentle_mina_default",
+)
+
+request = VoiceOutputRequest(
+    text="今日は少し早めに休むとよさそうです。",
+    voice_profile_id="gentle_mina_default",
+    requested_audio_format="mp3",
+    utterance_purpose="daily_advice",
+    language_code="ja",
+)
+
+result = session.create_output(request)
+```
+
+Host apps should pass only framework-level voice output intent:
+
+- `text`
+- `voice_profile_id`
+- `requested_audio_format`
+- `utterance_purpose`
+- `language_code`
+
+FW owns and hides provider selection, provider voice IDs, API keys, model IDs, provider SDK calls, temporary audio files, and provider-specific parameters.
+
+Without real provider configuration, `create_output()` returns a safe public result such as `request_state="unavailable"` with `audio_ready=False`. This is expected mock-safe behavior and should not be treated as accepted real TTS evidence.
+
+For a DRC-style host app example, run:
+
+```powershell
+python examples/app_voice_output_integration.py
+```
+
+Use `--real-tts` only for an explicit configured real run. Even then, the app example does not accept provider voice IDs, API keys, model IDs, or provider-specific settings; those stay FW-side.
 
 
 ### `TextChatSession.info`
@@ -499,6 +564,12 @@ Interrupt boundary example:
 python examples/app_interrupt_text_chat.py --provider openai --model gpt-4o-mini
 ```
 
+Voice output app integration example:
+
+```powershell
+python examples/app_voice_output_integration.py
+```
+
 
 ## Future notes
 
@@ -516,9 +587,9 @@ variable names, and proper nouns unchanged when necessary.
 
 The policy should be enabled only when audio/TTS output is active.
 
-## v4.0.0 public API inventory
+## Public API inventory
 
-As of v4.0.0 development, the stable public import boundary is:
+As of v5.0.0 development, the stable public import boundary includes the v4 text APIs plus the provider-neutral voice output boundary:
 
 ```python
 from framework import (
@@ -527,7 +598,12 @@ from framework import (
     FacadeProviderError,
     TextChatSession,
     TextChatSessionInfo,
+    VoiceOutputRequest,
+    VoiceOutputResult,
+    VoiceOutputSession,
+    VoiceOutputSessionInfo,
     create_text_chat_session,
+    create_voice_output_session,
 )
 ```
 
@@ -552,4 +628,6 @@ session.close()
 
 External apps should not import internal runtime modules such as `core`, provider implementations, STT/TTS clients, VTS clients, plugin manager internals, or runtime loop internals.
 
-Importing `framework` should remain lightweight and should not load runtime, audio, or VTS modules.
+For voice output integrations, external apps should not import `tts.voice_engine`, should not own provider voice IDs or API keys, and should not treat local playback as Web evidence.
+
+Importing `framework` should remain lightweight and should not load runtime, provider SDK, legacy audio playback, or VTS modules.
