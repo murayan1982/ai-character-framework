@@ -25,8 +25,22 @@ FORBIDDEN_IMPORTS_AFTER_FRAMEWORK_IMPORT = [
     "core.pipeline",
     "stt.stt_engine",
     "tts.voice_engine",
+    "elevenlabs",
     "live2d.vts_client",
 ]
+
+PROVIDER_DETAIL_FIELD_NAMES = {
+    "api_key",
+    "endpoint",
+    "model",
+    "model_id",
+    "provider",
+    "provider_name",
+    "provider_voice_id",
+    "secret",
+    "token",
+    "voice_id",
+}
 
 
 def _assert(condition: bool, message: str) -> None:
@@ -56,7 +70,12 @@ def check_public_sdk_imports() -> None:
         TextChatSessionEvent,
         TextChatSessionInfo,
         TextChatStateChange,
+        VoiceOutputRequest,
+        VoiceOutputResult,
+        VoiceOutputSession,
+        VoiceOutputSessionInfo,
         create_text_chat_session,
+        create_voice_output_session,
     )
 
     _assert(issubclass(FacadeConfigError, FacadeError), "config error should be public facade error")
@@ -65,7 +84,12 @@ def check_public_sdk_imports() -> None:
     _assert(TextChatSessionInfo is not None, "TextChatSessionInfo should be importable")
     _assert(TextChatSessionEvent is not None, "TextChatSessionEvent should be importable")
     _assert(TextChatStateChange is not None, "TextChatStateChange should be importable")
+    _assert(VoiceOutputRequest is not None, "VoiceOutputRequest should be importable")
+    _assert(VoiceOutputResult is not None, "VoiceOutputResult should be importable")
+    _assert(VoiceOutputSession is not None, "VoiceOutputSession should be importable")
+    _assert(VoiceOutputSessionInfo is not None, "VoiceOutputSessionInfo should be importable")
     _assert(create_text_chat_session is not None, "create_text_chat_session should be importable")
+    _assert(create_voice_output_session is not None, "create_voice_output_session should be importable")
 
     _assert_no_forbidden_runtime_imports("public SDK import")
     print("[OK] app SDK public imports are available")
@@ -128,6 +152,86 @@ def check_session_methods() -> None:
     print("[OK] app SDK session methods are available")
 
 
+def check_voice_output_boundary_contract() -> None:
+    from dataclasses import fields, is_dataclass
+
+    from framework import (
+        VoiceOutputRequest,
+        VoiceOutputResult,
+        VoiceOutputSessionInfo,
+        create_voice_output_session,
+    )
+
+    session = create_voice_output_session(
+        project_root=PROJECT_ROOT,
+        default_voice_profile_id="gentle_mina_default",
+    )
+
+    _assert(hasattr(session, "info"), "voice output session should expose info()")
+    _assert(
+        hasattr(session, "create_output"),
+        "voice output session should expose create_output()",
+    )
+
+    info = session.info()
+    _assert(
+        isinstance(info, VoiceOutputSessionInfo),
+        "voice output info should use public SDK type",
+    )
+    _assert(is_dataclass(info), "voice output info should be a dataclass model")
+    _assert(info.session_type == "voice_output", "voice output info should expose session type")
+    _assert(info.supports_voice_output, "voice output info should expose voice output support")
+    _assert(not info.real_tts_enabled, "mock-safe SDK info should not report real TTS enabled")
+    _assert(not info.provider_configured, "mock-safe SDK info should not report provider configured")
+    _assert(
+        not info.provider_details_exposed,
+        "voice output info should not expose provider details",
+    )
+    _assert(
+        info.default_voice_profile_id == "gentle_mina_default",
+        "voice output info should expose framework-level voice profile only",
+    )
+
+    info_field_names = {field.name for field in fields(info)}
+    leaked_field_names = sorted(info_field_names & PROVIDER_DETAIL_FIELD_NAMES)
+    _assert(
+        not leaked_field_names,
+        f"voice output info should not expose provider detail fields: {leaked_field_names}",
+    )
+
+    request = VoiceOutputRequest(
+        text="今日は少し早めに休むとよさそうです。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="daily_advice",
+        language_code="ja",
+    )
+    result = session.create_output(request)
+    _assert(
+        isinstance(result, VoiceOutputResult),
+        "voice output should return the public SDK result type",
+    )
+    _assert(result.request_state == "unavailable", "mock-safe voice output should be unavailable")
+    _assert(not result.audio_ready, "mock-safe voice output should not produce audio")
+    _assert(result.audio_format == "mp3", "voice output should preserve requested audio format")
+    _assert(result.audio_url is None, "mock-safe voice output should not expose audio URL")
+    _assert(
+        result.audio_artifact_ref is None,
+        "mock-safe voice output should not expose audio artifacts",
+    )
+    _assert(
+        result.public_metadata.get("voice_profile_id") == "gentle_mina_default",
+        "voice output result should retain framework-level voice profile metadata",
+    )
+    _assert(
+        result.public_metadata.get("provider_details_exposed") == "false",
+        "voice output result should explicitly keep provider details hidden",
+    )
+
+    _assert_no_forbidden_runtime_imports("voice output SDK boundary")
+    print("[OK] app SDK voice output boundary is mock-safe")
+
+
 def _load_example_module(filename: str, module_name: str):
     import importlib.util
 
@@ -167,6 +271,7 @@ def main() -> None:
     check_session_info_contract()
     check_event_models()
     check_session_methods()
+    check_voice_output_boundary_contract()
     check_sdk_examples_importable()
 
 
