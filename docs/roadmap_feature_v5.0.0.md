@@ -1,452 +1,426 @@
-# Roadmap: v5.0.0 - Realtime Voice Runtime Foundation
+# Roadmap: v5.0.0 - Public Voice Output / TTS Boundary Foundation
 
-v5.0.0 focuses on realtime voice interaction behavior.
+v5.0.0 focuses on making AI-Character-Framework safe to use as an embedded conversation and voice-output engine from external applications.
 
-The main goal is to make the framework feel closer to a live AI character conversation by improving interruption, cancellation boundaries, TTS control, and voice-oriented runtime flow.
+The immediate driver is feedback from Daily Rhythm Companion (DRC): DRC v2.0.0 real TTS Web audio evidence should not call FW internal `tts.voice_engine` directly, should not own provider-specific TTS implementation, and should not depend on ElevenLabs, local `ffplay`, or temporary audio playback internals.
 
-This roadmap assumes v4.0.0 has already strengthened the app-facing SDK boundary.
-
-## Positioning
-
-v3.0.0 introduced the advanced runtime foundation:
-
-- conversation state tracking
-- state change events
-- interruption request boundary
-- TTS stop boundary
-- voice output policy
-
-v4.0.0 strengthens app-facing SDK integration:
-
-- public session APIs
-- app-safe metadata
-- app examples
-- app-facing state/event direction
-
-v5.0.0 builds on both by implementing deeper realtime voice behavior behind stable control boundaries.
+v4.0.0 remains frozen as the TextChat public facade release. v5.0.0 adds a public voice output / TTS boundary before deeper realtime interruption work.
 
 ## Theme
 
 ```text
-Realtime Voice Runtime Foundation
+Public Voice Output / TTS Boundary Foundation
 ```
 
 Alternative release label:
 
 ```text
-Interruptible Voice Runtime
+App-Safe Voice Output Runtime
 ```
 
 In practical terms:
 
 ```text
-Make voice/TTS sessions interruptible, observable, and easier to control from apps and runtime code.
+Let host apps request voice output through a provider-neutral FW public API while FW owns provider selection, secrets, voice IDs, model IDs, and audio generation details.
 ```
+
+## Background: DRC feedback
+
+During DRC v2.0.0 real TTS Web audio evidence work, the lack of a public voice output boundary became a blocker.
+
+Confirmed v4.0.0 status:
+
+- `framework.__all__` exposes TextChat public facade APIs only.
+- `create_text_chat_session()` is public.
+- `TextChatSessionInfo.supports_voice_output` is `False`.
+- `import framework` intentionally does not import `tts.voice_engine`.
+- Existing public facade smoke checks treat `tts.voice_engine` as a forbidden import.
+- FW has internal TTS code in `tts/voice_engine.py` and `registry/tts.py`, but it is runtime/internal oriented.
+
+Current internal TTS characteristics:
+
+- ElevenLabs-oriented implementation.
+- Depends on `ELEVENLABS_API_KEY`, `VOICE_ID`, and `TTS_MODEL_ID`.
+- Uses local `ffplay` playback.
+- Creates temporary MP3 files and removes them after playback.
+- Does not expose a public Web-app-friendly result such as `audio_url`, audio bytes, or an artifact reference.
+
+Therefore, DRC must not call `tts.voice_engine.py` directly. Doing so would couple DRC to FW internals, ElevenLabs-specific settings, and local playback behavior.
+
+## v4.0.0 handling
+
+v4.0.0 remains complete and frozen as the TextChat public facade release.
+
+```text
+v4.0.0: maintain as TextChat public facade release
+v4.0.0: bugfix only
+voice output / TTS public boundary: v5.0.0 scope
+```
+
+Do not force TTS public APIs into v4.0.0. Do not break TextChat facade import safety or responsibility separation.
 
 ## Primary goals
 
-- Improve interruption behavior during response generation and voice playback.
-- Make TTS playback easier to stop, flush, and recover from.
-- Clarify runtime state transitions for voice sessions.
-- Prepare voice sessions for future always-on microphone barge-in.
-- Keep app-facing control aligned with the SDK boundary introduced in v4.0.0.
-- Improve manual testing flow for `voice_vts` and `text_vts` presets.
+- Add a public voice output session boundary that external apps can use safely.
+- Keep host apps provider-neutral.
+- Hide provider names, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and temporary file management behind FW.
+- Preserve lightweight `import framework` behavior.
+- Ensure API keys and provider SDKs are required only during explicit real TTS execution.
+- Return Web-app-friendly voice output results where practical.
+- Prepare the boundary for future OpenAI TTS or other provider adapters.
+- Keep DRC real TTS evidence blocked until the public boundary exists and is used.
 
 ## Non-goals
 
-v5.0.0 should still avoid becoming too broad.
+v5.0.0 should avoid becoming too broad.
 
 Out of scope unless explicitly promoted:
 
-- full production always-on microphone system
+- full always-on microphone barge-in
 - wake word detection
-- complex VAD tuning
+- VAD tuning
 - mobile app integration
 - GUI overlay
 - advanced memory system
 - SSML editor
 - pronunciation dictionary UI
-- guaranteed provider-level hard cancellation for every LLM/TTS provider
+- requiring provider-level hard cancellation for every TTS provider
+- exposing ElevenLabs/OpenAI-specific configuration to host apps as the public contract
 
-Some provider-level cancellation can be implemented where practical, but the framework should expose a best-effort and predictable behavior rather than overpromising.
+## Public API direction
 
-## Realtime voice scope
-
-v5.0.0 should focus on the core runtime experience:
-
-```text
-user input -> LLM response -> streamed text -> TTS queue/playback -> Live2D expression
-```
-
-The key improvement is interruption:
-
-```text
-while responding or speaking:
-    app/runtime requests interrupt
-    framework stops or short-circuits what it safely can
-    state transitions to interrupted/recovering/idle
-    next user input can continue cleanly
-```
-
-## Interruption design direction
-
-The public/app-facing action should remain simple:
+Candidate public API:
 
 ```python
-session.interrupt()
+create_voice_output_session(...)
+VoiceOutputSession
+VoiceOutputSessionInfo
+VoiceOutputRequest
+VoiceOutputResult
 ```
 
-Internal runtime behavior may involve several layers:
-
-- mark interruption requested
-- stop streaming response loop when possible
-- stop or flush TTS playback
-- avoid sending more text to TTS after interruption
-- optionally reset VTS expression to neutral
-- emit state/event notifications
-- return to a safe idle/listening state
-
-The internal implementation should avoid mixing these meanings:
-
-- cancel current LLM generation
-- stop active TTS playback
-- clear queued TTS segments
-- stop accepting current input
-- reset whole conversation
-- close the session
-
-Those should remain separate responsibilities even if `interrupt()` coordinates several of them.
-
-## Runtime state direction
-
-Existing v3.0.0 states:
-
-- `idle`
-- `listening`
-- `thinking`
-- `responding`
-- `speaking`
-- `interrupted`
-- `exiting`
-- `error`
-
-v5.0.0 should validate whether these are enough.
-
-Possible additions only if necessary:
-
-- `cancelling`
-- `recovering`
-
-Avoid adding states unless they make implementation or debugging clearer.
-
-Expected voice/TTS flow:
-
-```text
-idle -> listening -> thinking -> responding -> speaking -> idle
-```
-
-Expected interruption flow:
-
-```text
-responding -> interrupted -> idle
-```
-
-or:
-
-```text
-speaking -> interrupted -> idle
-```
-
-If cleanup takes meaningful time:
-
-```text
-speaking -> interrupted -> recovering -> idle
-```
-
-## TTS runtime direction
-
-v5.0.0 should make TTS control more explicit.
-
-Candidate internal TTS responsibilities:
-
-- enqueue text chunks
-- play queued speech
-- stop active playback when possible
-- flush queued text/audio
-- clear pending text buffer
-- report whether TTS is currently speaking
-
-Potential methods:
+Expected host-app request shape:
 
 ```python
-tts.speak(text)
-tts.stop()
-tts.flush()
-tts.is_speaking()
+VoiceOutputRequest(
+    text="今日は少し早めに休むとよさそうです。",
+    voice_profile_id="gentle_mina_default",
+    requested_audio_format="mp3",
+    utterance_purpose="daily_advice",
+    language_code="ja",
+)
 ```
 
-The exact public/internal boundary should be decided during implementation.
+Host apps, including DRC, should provide only framework-level voice output intent:
 
-Important:
+- `text`
+- `voice_profile_id`
+- `requested_audio_format`
+- `utterance_purpose`
+- `language_code`
 
-- App code should not directly control provider-specific TTS internals.
-- The session/runtime should own TTS coordination.
-- Provider-specific stop behavior can be best-effort.
+FW should own and hide:
 
-## LLM streaming cancellation direction
+- provider selection
+- provider voice ID
+- API key lookup
+- model ID
+- provider-specific request parameters
+- ElevenLabs/OpenAI/etc. SDK calls
+- temporary audio file management
+- local playback implementation details
 
-v5.0.0 should improve the streaming response loop so interruption requests are checked while chunks are being produced.
-
-Expected behavior:
-
-- if interruption is requested, stop yielding further chunks when possible
-- avoid sending additional chunks to TTS after interruption
-- return a controlled result rather than crashing
-- emit an interruption-related event/state transition
-
-Provider-specific hard cancellation may vary.
-
-The minimum acceptable behavior is cooperative cancellation at the framework loop boundary.
-
-## Voice input direction
-
-v5.0.0 may improve the voice input flow, but full always-on barge-in is not required unless promoted into scope.
-
-Recommended v5.0.0 scope:
-
-- keep existing voice input preset behavior working
-- make speaking/responding interruption manually testable
-- prepare interfaces for future microphone-triggered interruption
-
-Future v5.x or v6.0.0 scope:
-
-- microphone listening while speaking
-- VAD-based interruption
-- wake word support
-- background input monitor
-
-## VTS / Live2D direction
-
-VTS should remain optional.
-
-During interruption, the framework may optionally:
-
-- stop applying new expression changes
-- reset expression to neutral
-- emit a VTS-related debug message
-
-Avoid making successful VTS connection a requirement for v5.0.0 runtime interruption tests.
-
-## App SDK connection
-
-v5.0.0 should use v4.0.0 app-facing boundaries where possible.
-
-Example desired control shape:
+Possible result shape:
 
 ```python
-session = create_character_session(preset="voice_vts")
-
-session.on_state_change(handle_state_change)
-session.start()
-session.interrupt()
-session.close()
+VoiceOutputResult(
+    request_state="unavailable | skipped | generated | failed",
+    audio_ready=False,
+    audio_format=None,
+    audio_url=None,
+    audio_artifact_id=None,
+    public_message="Voice output provider is not configured.",
+)
 ```
 
-If a full voice session facade is still not ready, v5.0.0 can keep this as a design target and implement runtime-level behavior first.
+The exact result fields may change during implementation, but the public result must remain provider-safe.
 
-The important rule:
+## Import boundary requirements
+
+`import framework` must stay lightweight.
+
+Required behavior:
+
+- `import framework` must not import ElevenLabs SDKs.
+- `import framework` must not import `tts.voice_engine`.
+- `import framework` must not run TTS provider API key validation.
+- Public facade smoke tests must pass without TTS API keys.
+- Real provider implementation must be lazy-imported only during explicit voice output execution.
+- Provider misconfiguration should produce safe unavailable / failed results, not import-time crashes.
+
+Existing import-safety behavior from `smoke_public_facade.py` should be preserved and extended for the voice output boundary.
+
+## Mock-safe behavior
+
+Without any real provider credentials:
+
+- public voice output API can be imported
+- `create_voice_output_session()` can return a session object
+- `VoiceOutputSessionInfo` can be inspected
+- voice output can report `unavailable` or `skipped` safely
+- no provider SDK is imported
+- no API key validation runs at import time
+- smoke tests can verify the public API and lazy boundary
+
+## Real-run behavior
+
+When explicitly enabled and configured:
+
+- real TTS generation can run through the FW boundary
+- provider API keys are read from FW configuration/environment
+- host apps do not know provider voice IDs or provider-specific parameters
+- output can be returned in a Web-app-friendly form where practical
+- local playback remains an internal/manual runtime option, not the only public result path
+
+## DRC completion dependency
+
+DRC v2.0.0 real TTS Web audio evidence remains blocked until FW v5.0.0 provides a public voice output boundary.
+
+Current DRC status remains:
 
 ```text
-Do not expose internal runtime details just to make interruption controllable.
+real_tts_web_audio_output: NOT_ACCEPTED
+DRC v2.0.0: NOT_RELEASED
+DRC-side change target: none until FW public boundary exists
 ```
+
+DRC must not:
+
+- import `tts.voice_engine` directly
+- own ElevenLabs/OpenAI provider code
+- own provider voice IDs
+- treat local `ffplay` playback as Web evidence
+- mark real TTS evidence as accepted before public boundary validation
+
+After FW v5 boundary is available, DRC can resume and target status such as:
+
+```text
+engine: framework
+adapter_mode: framework
+real_tts_enabled: true
+framework_root: pass
+framework_voice_output_boundary: pass
+framework_voice_output_public_boundary: pass
+capability.status: available
+```
+
+DRC evidence completion still requires Web UI execution, actual playback confirmation, screenshot/private evidence handling, marker-only evidence JSON, and acceptance validator success.
+
+## TTS provider boundary direction
+
+The current TTS implementation is ElevenLabs-oriented. v5.0.0 should avoid hardening ElevenLabs assumptions into public app-facing contracts.
+
+Recommended internal direction:
+
+- define provider-neutral voice output request/result types
+- map `voice_profile_id` to provider-specific settings inside FW
+- keep provider adapters lazy and internal
+- start with the existing ElevenLabs implementation behind an adapter
+- allow future OpenAI TTS or other adapters without changing DRC integration
+- keep `stop`, `flush`, and `is_speaking` behavior behind runtime/provider boundaries
+
+Possible future internal shapes:
+
+```python
+class TTSProvider:
+    def synthesize(self, request: VoiceOutputRequest) -> VoiceOutputResult:
+        ...
+
+class VoiceOutputSession:
+    def speak(self, request: VoiceOutputRequest) -> VoiceOutputResult:
+        ...
+```
+
+v5.0.0 does not need to finalize every provider abstraction, but it should not expose provider-specific details through the public API.
+
+## Relationship to realtime interruption work
+
+The earlier v5.0.0 roadmap focused on realtime voice interruption, cancellation, TTS stop/flush, and state transitions.
+
+That work remains important, but it should build on top of the public voice output boundary instead of coupling directly to the current ElevenLabs/`ffplay` implementation.
+
+Recommended order:
+
+1. public voice output / TTS boundary
+2. import-safe public session contract
+3. provider-neutral request/result types
+4. lazy provider adapter
+5. docs and app integration example
+6. then deeper interruption, TTS stop/flush, and realtime runtime behavior
 
 ## Documentation targets
 
 Update or add:
 
 - `roadmap_feature_v5.0.0.md`
-- `advanced_runtime.md`
-- `voice_output_policy.md`
-- `public_facade.md` or app SDK docs if voice APIs become public
+- `public_facade.md` or app SDK docs
+- voice output / TTS boundary docs
+- `voice_output_policy.md` if present
+- `advanced_runtime.md` once interruption work resumes
 - `RELEASE_NOTES.md`
 
 Docs should clearly distinguish:
 
-- supported interruption behavior
-- best-effort provider-specific behavior
-- future full barge-in work
+- public provider-neutral FW contract
+- internal provider-specific implementation
+- mock-safe behavior
+- real-run behavior
+- DRC evidence dependency
+- future realtime barge-in work
 
 ## Example targets
 
 Possible examples:
 
-- `examples/runtime_interrupt_demo.py`
-- `examples/voice_tts_interrupt_demo.py`
-- `examples/app_interrupt_session.py`
+- `examples/app_voice_output_integration.py`
+- `examples/public_voice_output.py`
+- `examples/voice_output_unavailable.py`
 
-Manual preset checks:
+Example goals:
 
-```powershell
-python main.py
-scripts/run_text_vts.bat
-scripts/run_voice_vts.bat
-```
-
-The exact example set depends on whether v5.0.0 exposes a public voice session API or keeps the work inside the runtime loop.
+- external app creates voice output session
+- app passes `VoiceOutputRequest`
+- provider details stay hidden
+- provider unavailable returns safe result
+- import remains lightweight
 
 ## Testing targets
 
 Tests should cover:
 
-- interruption request state transition
-- clearing interruption flag
-- TTS stop/flush boundary
-- streaming loop cooperative cancellation
-- state flow after interruption
-- no crash when interrupting while idle
-- no crash when TTS provider has nothing to stop
-- no crash when VTS is unavailable
-- examples importability
-- release package checks
+- `framework.__all__` exposes public voice output API
+- `import framework` does not import provider SDKs
+- `import framework` does not import `tts.voice_engine`
+- voice output session can be created without API keys
+- session info hides provider details
+- provider unavailable returns a safe public result
+- real provider implementation is lazy-loaded only during explicit execution
+- examples import without provider credentials
+- release package checks pass
 
-Existing v3.0.0 tests are a useful base:
-
-- `scripts/test_interruption_state.py`
-- `scripts/test_session_interrupt_command.py`
-- `scripts/test_tts_stop_boundary.py`
-- `scripts/test_runtime_state_flow.py`
-
-v5.0.0 may add:
+Existing smoke scripts to extend:
 
 ```powershell
-python scripts/test_streaming_interrupt_boundary.py
-python scripts/test_tts_interrupt_flow.py
-python scripts/test_voice_runtime_state_flow.py
+python scripts/smoke_public_facade.py
+python scripts/smoke_app_sdk.py
+python scripts/check_release_package.py
 ```
 
-## Suggested Day plan
+Potential new scripts:
 
-### Day 1 - Roadmap and scope lock
+```powershell
+python scripts/smoke_voice_output_public_boundary.py
+python scripts/smoke_voice_output_unavailable.py
+python scripts/smoke_voice_output_import_safety.py
+```
 
-- Add v5.0.0 roadmap.
-- Define v5.0.0 as Realtime Voice Runtime Foundation.
-- Clarify what is and is not full barge-in.
+## Suggested small-commit plan
 
-Acceptance:
+### Commit 1 - Roadmap and scope lock
 
-- Roadmap clearly separates v5.0.0 from future always-on microphone work.
-
-### Day 2 - Runtime interruption inventory
-
-- Review existing interruption helpers.
-- Review `/interrupt` command behavior.
-- Review state transitions.
-- Identify where response generation and TTS playback can be interrupted.
+```text
+docs: add v5.0.0 voice output boundary roadmap
+```
 
 Acceptance:
 
-- Current interruption boundaries are documented before implementation.
+- v5.0.0 theme is documented as Public Voice Output / TTS Boundary Foundation.
+- DRC feedback is captured.
+- v4.0.0 is explicitly frozen as TextChat public facade.
+- import boundary, mock-safe, and real-run requirements are documented.
 
-### Day 3 - Interruption controller design
+### Commit 2 - Public voice output session contract
 
-- Design a runtime-level interruption coordinator if needed.
-- Keep public `interrupt()` simple.
-- Keep internal cancellation responsibilities separated.
+```text
+feat: add public voice output session contract
+```
 
-Acceptance:
+Candidate changes:
 
-- Interruption behavior has one clear owner.
-
-### Day 4 - Streaming response cancellation
-
-- Add cooperative cancellation checks to streaming response flow.
-- Ensure interrupted streaming does not keep sending text to TTS.
-
-Acceptance:
-
-- Streaming can stop cleanly when interruption is requested.
-
-### Day 5 - TTS stop and flush behavior
-
-- Strengthen TTS stop boundary.
-- Separate stop active playback from flush queued speech if useful.
-- Keep behavior safe when no TTS provider is active.
+- add `framework/audio/__init__.py`
+- add `framework/audio/voice_output.py`
+- update `framework/__init__.py`
+- update facade/public API aggregation if needed
 
 Acceptance:
 
-- Interrupting speech does not crash and does not continue queued playback unexpectedly.
+- `create_voice_output_session` is public.
+- `VoiceOutputSession`, `VoiceOutputSessionInfo`, `VoiceOutputRequest`, and `VoiceOutputResult` are public types.
+- API keys are not required for import/session info.
+- real synthesis does not need to work yet.
 
-### Day 6 - State transition hardening
+### Commit 3 - Public facade smoke coverage
 
-- Validate state transitions for responding/speaking interruption.
-- Add tests for idle/listening/thinking/responding/speaking interruption behavior.
-
-Acceptance:
-
-- Runtime returns to a safe state after interruption.
-
-### Day 7 - Manual runtime demos
-
-- Add or update manual interruption demo.
-- Test text_vts and voice_vts behavior as far as possible.
-- Keep VTS connection failure non-fatal.
+```text
+test: extend public facade smoke for voice output boundary
+```
 
 Acceptance:
 
-- Developer can manually verify interruption behavior without complex setup.
+- public API expected list includes voice output boundary.
+- import safety still forbids `tts.voice_engine` and provider SDK imports during `import framework`.
+- unavailable provider behavior is safe and public-safe.
 
-### Day 8 - Docs update
+### Commit 4 - Lazy TTS provider adapter
 
-- Update advanced runtime docs.
-- Document supported vs best-effort interruption behavior.
-- Document remaining limitations.
-
-Acceptance:
-
-- Docs do not overpromise full concurrent barge-in.
-
-### Day 9 - Smoke tests and release checks
-
-- Add/adjust tests for interruption, TTS stop, streaming cancellation, and state flow.
-- Run compile and release package checks.
+```text
+feat: add lazy TTS provider adapter
+```
 
 Acceptance:
 
-- Automated checks pass.
+- provider SDK/import is lazy.
+- ElevenLabs implementation remains internal.
+- provider settings are FW-owned.
+- Web-app-friendly result path is introduced or designed.
 
-### Day 10 - Final release cleanup
+### Commit 5 - App integration docs/example
 
-- Update release notes.
-- Run full checks.
-- Prepare v5.0.0 tag and release.
+```text
+docs: add app voice output integration example
+```
 
 Acceptance:
 
-- v5.0.0 can be described as the realtime voice runtime foundation.
+- DRC-style host app usage is documented.
+- `voice_profile_id`, `text`, and `requested_audio_format` are shown.
+- provider secrets and voice IDs stay FW-side.
 
 ## Release acceptance checklist
 
 v5.0.0 is ready when:
 
-- Runtime interruption has a clear owner and documented behavior.
-- Response streaming can cooperatively stop on interruption.
-- TTS playback/queue can be stopped or flushed safely where supported.
-- State transitions after interruption are predictable.
-- Voice/TTS interruption limitations are clearly documented.
-- VTS remains optional and non-fatal.
-- Manual runtime checks are available.
-- Automated tests cover the core interruption boundaries.
-- Release package checks pass.
+- public voice output boundary exists
+- host apps can request voice output without provider-specific details
+- `import framework` remains lightweight and provider-safe
+- API keys are not required for mock-safe public smoke tests
+- provider unavailable state is safe and inspectable
+- real provider execution is explicit opt-in
+- existing TextChat public facade behavior is not broken
+- DRC can integrate through FW public voice output boundary instead of FW internals
+- docs clearly explain supported behavior and limitations
+- release package checks pass
 
 ## Follow-up versions
 
 ### v5.1.x candidates
 
-- Better provider-specific cancellation.
-- More robust TTS queue management.
-- Voice session facade if not completed in v5.0.0.
-- Additional app-facing voice examples.
-- More detailed event telemetry.
+- OpenAI TTS provider adapter
+- richer voice profile registry
+- better audio artifact management
+- provider-specific format negotiation
+- realtime TTS stop/flush hardening
+- interruption coordinator over voice output sessions
 
 ### Future major version candidates
 
