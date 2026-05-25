@@ -328,6 +328,14 @@ python examples/app_voice_output_integration.py
 
 The example demonstrates that the app passes `VoiceOutputRequest` and keeps provider voice IDs, API keys, model IDs, and provider-specific options FW-side.
 
+Before any configured real TTS run, use the FW opt-in checklist:
+
+```powershell
+python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+```
+
+See `voice_output_real_tts_opt_in_checklist.md` for the real TTS opt-in layers and evidence rules. Passing that FW checklist means the boundary is ready for a configured real run; it does not mark DRC `real_tts_web_audio_output` as accepted.
+
 ## Text facade scope
 
 `create_text_chat_session()` remains text-only. Voice output is available through the separate `create_voice_output_session()` boundary, not through the text chat session.

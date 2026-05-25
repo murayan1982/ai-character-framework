@@ -12,6 +12,9 @@ Current v5 additions include:
 - lazy internal provider adapter behavior
 - DRC-style app voice output integration example:
   - `examples/app_voice_output_integration.py`
+- real TTS opt-in boundary checklist and mock-safe smoke check:
+  - `voice_output_real_tts_opt_in_checklist.md`
+  - `scripts/smoke_voice_output_real_tts_opt_in_boundary.py`
 
 Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities.
 

@@ -396,6 +396,19 @@ Acceptance:
 - `voice_profile_id`, `text`, and `requested_audio_format` are shown.
 - provider secrets and voice IDs stay FW-side.
 
+### Commit 6 - Real TTS opt-in boundary checklist
+
+```text
+docs/test: add real TTS opt-in boundary checklist
+```
+
+Acceptance:
+
+- real TTS enablement is documented as explicit FW-owned opt-in only.
+- provider selection, API keys, provider voice IDs, model IDs, and provider-specific parameters remain FW-side.
+- a mock-safe smoke check validates default, missing-provider, unsupported-provider, and missing-settings behavior without provider SDK execution.
+- unavailable public results are documented as readiness checks, not DRC real Web audio evidence.
+
 ## Release acceptance checklist
 
 v5.0.0 is ready when:

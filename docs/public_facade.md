@@ -148,6 +148,14 @@ python examples/app_voice_output_integration.py
 
 Use `--real-tts` only for an explicit configured real run. Even then, the app example does not accept provider voice IDs, API keys, model IDs, or provider-specific settings; those stay FW-side.
 
+Before a configured real run, verify the opt-in boundary:
+
+```powershell
+python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+```
+
+The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. See `voice_output_real_tts_opt_in_checklist.md` for the full checklist.
+
 
 ### `TextChatSession.info`
 
@@ -568,6 +576,12 @@ Voice output app integration example:
 
 ```powershell
 python examples/app_voice_output_integration.py
+```
+
+Voice output real TTS opt-in boundary smoke:
+
+```powershell
+python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
 ```
 
 

@@ -22,7 +22,9 @@ REQUIRED_FILES = [
     "docs/app_integration_contract.md",
     "docs/roadmap_feature_v4.0.0.md",
     "docs/roadmap_feature_v5.0.0.md",
+    "docs/voice_output_real_tts_opt_in_checklist.md",
     "scripts/smoke_app_sdk.py",
+    "scripts/smoke_voice_output_real_tts_opt_in_boundary.py",
 ]
 
 REQUIRED_DIRS = [
@@ -69,6 +71,8 @@ PUBLIC_DOCS = [
     "docs/app_integration_contract.md",
     "docs/RELEASE_NOTES.md",
     "docs/roadmap_feature_v4.0.0.md",
+    "docs/roadmap_feature_v5.0.0.md",
+    "docs/voice_output_real_tts_opt_in_checklist.md",
 ]
 
 
