@@ -69,6 +69,7 @@ REQUIRED_DOCS = [
     "docs/voice_output_real_provider_execution_guard.md",
     "docs/voice_output_v500_release_readiness_checklist.md",
     "docs/host_app_voice_output_integration_handoff.md",
+    "docs/voice_output_v500_package_readiness.md",
 ]
 
 REQUIRED_SCRIPTS = [
@@ -79,6 +80,7 @@ REQUIRED_SCRIPTS = [
     "scripts/smoke_voice_output_real_provider_execution_guard.py",
     "scripts/smoke_voice_output_v500_release_readiness.py",
     "scripts/smoke_voice_output_host_app_handoff.py",
+    "scripts/smoke_voice_output_v500_package_readiness.py",
     "scripts/check_release_package.py",
 ]
 
@@ -178,10 +180,13 @@ def check_release_readiness_documented() -> None:
         "provider_execution_guard_disabled",
         "python scripts/smoke_voice_output_host_app_handoff.py",
         "python scripts/smoke_voice_output_v500_release_readiness.py",
+        "python scripts/smoke_voice_output_v500_package_readiness.py",
         "python scripts/check_release_package.py",
         "DRC real_tts_web_audio_output: NOT_ACCEPTED",
         "DRC v2.0.0: NOT_RELEASED",
         "unavailable` and `skipped` are readiness states, not playable audio evidence",
+        "voice_output_v500_package_readiness.md",
+        "package-readiness smoke",
     ]
 
     for phrase in required_phrases:
@@ -198,6 +203,7 @@ def check_release_package_includes_readiness_items() -> None:
         "docs/voice_output_v500_release_readiness_checklist.md",
         "scripts/smoke_voice_output_v500_release_readiness.py",
         "scripts/smoke_voice_output_host_app_handoff.py",
+        "scripts/smoke_voice_output_v500_package_readiness.py",
     ]
     for entry in required_entries:
         _assert(entry in text, f"release package check is missing required entry: {entry}")

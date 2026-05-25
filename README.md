@@ -795,7 +795,25 @@ Detailed documentation is split by responsibility:
   - App Integration SDK Foundation roadmap
 
 - `docs/roadmap_feature_v5.0.0.md`
-  - Realtime Voice Runtime roadmap
+  - Public Voice Output / TTS Boundary Foundation roadmap
+
+- `docs/voice_output_real_tts_opt_in_checklist.md`
+  - Real TTS opt-in boundary and mock-safe provider behavior
+
+- `docs/voice_output_artifact_result_contract.md`
+  - App-safe voice output handoff result contract
+
+- `docs/voice_output_real_provider_execution_guard.md`
+  - Guard required before FW can call a real TTS provider
+
+- `docs/voice_output_v500_release_readiness_checklist.md`
+  - v5.0.0 mock-safe release readiness criteria
+
+- `docs/host_app_voice_output_integration_handoff.md`
+  - General host app voice output integration handoff
+
+- `docs/voice_output_v500_package_readiness.md`
+  - v5.0.0 package readiness and final verification command set
 
 The README is intended to stay as the project entry point. Current release details should live in `docs/RELEASE_NOTES.md` instead of being accumulated here.
 
@@ -820,13 +838,15 @@ v4.0.0 focuses on App Integration SDK Foundation:
 - app-facing event callbacks
 - SDK examples and documentation
 
-v5.0.0 focuses on Realtime Voice Runtime:
+v5.0.0 focuses on Public Voice Output / TTS Boundary Foundation:
 
-- realtime voice experience improvements
-- stronger TTS interruption behavior
-- LLM streaming cancellation design
-- `voice_vts` realtime interaction improvements
-- always-on microphone / barge-in style behavior
+- mock-safe public voice output boundary for host apps
+- provider-neutral `VoiceOutputRequest` / `VoiceOutputResult` contract
+- lazy provider adapter and explicit real provider execution guard
+- app-safe audio handoff semantics for `audio_url` / `audio_artifact_ref`
+- host app integration guidance before deeper realtime voice runtime work
+
+v5.0.0 is not the full realtime voice runtime release. Realtime interruption, stronger TTS stop/flush behavior, and always-on microphone / barge-in work remain follow-up runtime topics.
 
 ---
 

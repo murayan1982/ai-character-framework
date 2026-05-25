@@ -115,10 +115,25 @@ cache files are not included
 
 ## Recommended verification
 
+For the current v5.0.0 mock-safe package verification, run:
+
 ```powershell
 python -m compileall -q .
 python scripts/smoke_public_facade.py
 python scripts/smoke_app_sdk.py
+python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+python scripts/smoke_voice_output_artifact_result_contract.py
+python scripts/smoke_voice_output_real_provider_execution_guard.py
+python scripts/smoke_voice_output_host_app_handoff.py
+python scripts/smoke_voice_output_v500_release_readiness.py
+python scripts/smoke_voice_output_v500_package_readiness.py
+python scripts/check_release_package.py
+python examples/app_voice_output_integration.py
+```
+
+Legacy text-chat examples may also be run as optional smoke checks:
+
+```powershell
 python examples/app_error_handling.py
 python examples/public_text_chat.py
 python examples/minimal_app_text_chat.py

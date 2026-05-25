@@ -329,6 +329,7 @@ python scripts/smoke_voice_output_unavailable.py
 python scripts/smoke_voice_output_import_safety.py
 python scripts/smoke_voice_output_artifact_result_contract.py
 python scripts/smoke_voice_output_v500_release_readiness.py
+python scripts/smoke_voice_output_v500_package_readiness.py
 ```
 
 ## Suggested small-commit plan
@@ -474,6 +475,21 @@ Acceptance:
 - real provider execution remains guarded by `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`.
 - mock-safe smoke verifies the host app handoff without provider credentials or provider SDK import.
 
+### Commit 11 - v5.0.0 release notes and package readiness
+
+```text
+docs/release: finalize v5.0.0 voice output package readiness
+```
+
+Acceptance:
+
+- v5.0.0 release notes describe this as a mock-safe public boundary release.
+- README v5.0.0 scope points to Public Voice Output / TTS Boundary Foundation, not the full realtime runtime release.
+- package readiness is documented in `voice_output_v500_package_readiness.md`.
+- the standard local verification command set includes `scripts/smoke_voice_output_v500_package_readiness.py`.
+- release package checks include the package-readiness doc and smoke script.
+- DRC remains unchanged and `real_tts_web_audio_output` remains `NOT_ACCEPTED`.
+
 ## Release acceptance checklist
 
 v5.0.0 is ready when:
@@ -489,7 +505,8 @@ v5.0.0 is ready when:
 - docs clearly explain supported behavior, limitations, and the host app voice output integration handoff
 - `scripts/smoke_voice_output_host_app_handoff.py` passes
 - `scripts/smoke_voice_output_v500_release_readiness.py` passes
-- release package checks include the v5.0.0 readiness checklist and smoke script
+- `scripts/smoke_voice_output_v500_package_readiness.py` passes
+- release package checks include the v5.0.0 readiness checklist, package-readiness doc, and smoke scripts
 - mock-safe release readiness, explicit real-run readiness, and DRC Web evidence readiness remain separate
 - release package checks pass
 

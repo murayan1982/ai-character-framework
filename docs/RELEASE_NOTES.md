@@ -1,36 +1,148 @@
 # v5.0.0 - Public Voice Output / TTS Boundary Foundation
 
-## Development notes
+## Release scope
 
-This version adds a public, provider-neutral voice output boundary for app integrations while keeping provider-specific TTS details inside FW.
+v5.0.0 adds a public, provider-neutral voice output boundary for app integrations while keeping provider-specific TTS details inside FW.
 
-Current v5 additions include:
+This is a **mock-safe public boundary release**. It is not a DRC real Web audio evidence release, not a real provider execution proof, and not the full realtime voice runtime release.
 
-- `create_voice_output_session()`
-- `VoiceOutputSession` / `VoiceOutputSessionInfo`
-- `VoiceOutputRequest` / `VoiceOutputResult`
+The release lets host apps request voice output through FW public APIs while FW owns provider selection, secrets, voice IDs, model IDs, provider-specific request parameters, provider SDK calls, and audio artifact handling.
+
+## Added
+
+Current v5.0.0 additions include:
+
+- public voice output APIs:
+  - `create_voice_output_session()`
+  - `VoiceOutputSession`
+  - `VoiceOutputSessionInfo`
+  - `VoiceOutputRequest`
+  - `VoiceOutputResult`
 - lazy internal provider adapter behavior
-- DRC-style app voice output integration example:
+- app-safe `VoiceOutputResult` handoff helpers:
+  - `audio_handoff_kind`
+  - `has_audio_handoff`
+  - `is_generated`
+- DRC-style host app integration example:
   - `examples/app_voice_output_integration.py`
-- real TTS opt-in boundary checklist and mock-safe smoke check:
+- real TTS opt-in boundary docs and smoke check:
   - `voice_output_real_tts_opt_in_checklist.md`
   - `scripts/smoke_voice_output_real_tts_opt_in_boundary.py`
-- voice output artifact result contract and mock-safe smoke check:
+- voice output artifact result contract docs and smoke check:
   - `voice_output_artifact_result_contract.md`
   - `scripts/smoke_voice_output_artifact_result_contract.py`
-- real provider execution guard and mock-safe smoke check:
+- real provider execution guard docs and smoke check:
   - `voice_output_real_provider_execution_guard.md`
   - `scripts/smoke_voice_output_real_provider_execution_guard.py`
-- v5.0.0 voice output release readiness checklist and mock-safe smoke check:
+- v5.0.0 release readiness checklist and smoke check:
   - `voice_output_v500_release_readiness_checklist.md`
   - `scripts/smoke_voice_output_v500_release_readiness.py`
-- host app voice output integration handoff plan and mock-safe smoke check:
+- host app voice output integration handoff docs and smoke check:
   - `host_app_voice_output_integration_handoff.md`
   - `scripts/smoke_voice_output_host_app_handoff.py`
+- package readiness docs and smoke check:
+  - `voice_output_v500_package_readiness.md`
+  - `scripts/smoke_voice_output_v500_package_readiness.py`
 
-Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Voice output results use the public `audio_ready`, `audio_format`, `audio_url`, and `audio_artifact_ref` handoff contract. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities. The app-facing integration handoff is documented in `host_app_voice_output_integration_handoff.md`.
+## Public host app contract
 
-Mock-safe public checks should pass without provider credentials. Unavailable or execution-guarded skipped provider status must not be counted as real TTS evidence. A configured provider cannot import provider SDKs, call provider APIs, or write audio artifacts unless `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is set for an explicit real run. v5.0.0 release readiness is documented as a mock-safe public boundary release, while real provider runs and DRC Web evidence remain separate follow-up workflows.
+Host apps should import voice output only from `framework` and pass only provider-neutral request fields:
+
+```text
+text
+voice_profile_id
+requested_audio_format
+utterance_purpose
+language_code
+```
+
+FW owns and hides:
+
+```text
+provider selection
+provider voice ID
+API key
+model ID
+provider-specific request parameters
+provider SDK calls
+temporary audio file management
+legacy local playback behavior
+```
+
+Apps should branch playback only from the public result contract. A playable result must be `request_state="generated"`, `audio_ready=True`, include an `audio_format`, and expose exactly one app-facing handoff through `audio_url` or `audio_artifact_ref`.
+
+The following states are non-playable and must not be counted as real audio evidence:
+
+```text
+unavailable
+skipped
+rejected
+failed
+```
+
+## Real provider execution boundary
+
+Mock-safe public checks pass without provider credentials. A configured provider cannot import provider SDKs, call provider APIs, or write audio artifacts unless the explicit execution guard is opened:
+
+```powershell
+$env:FRAMEWORK_VOICE_OUTPUT_REAL_TTS = "1"
+$env:FRAMEWORK_VOICE_OUTPUT_PROVIDER = "elevenlabs"
+$env:FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION = "1"
+```
+
+Provider credentials, provider voice IDs, model IDs, and provider-specific options remain FW-owned settings. They must not be passed through host app public request objects.
+
+## Package readiness
+
+v5.0.0 package readiness is documented in `voice_output_v500_package_readiness.md` and checked by:
+
+```powershell
+python scripts/smoke_voice_output_v500_package_readiness.py
+```
+
+The release package should include the public voice output docs, the host app handoff docs, the release-readiness and package-readiness checks, and the DRC-style app voice output integration example.
+
+## DRC status
+
+This FW release does not complete DRC real TTS Web audio evidence. DRC remains unchanged at this checkpoint:
+
+```text
+DRC real_tts_web_audio_output: NOT_ACCEPTED
+DRC v2.0.0: NOT_RELEASED
+```
+
+DRC integration can resume after the FW v5.0.0 public boundary release, but DRC still needs Web UI playback evidence, screenshot/private evidence handling, marker-only evidence JSON, and acceptance validator success before real TTS Web audio output can be accepted.
+
+## Verification
+
+Run the standard mock-safe checks before tagging the release:
+
+```powershell
+python -m compileall -q .
+python scripts/smoke_public_facade.py
+python scripts/smoke_app_sdk.py
+python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+python scripts/smoke_voice_output_artifact_result_contract.py
+python scripts/smoke_voice_output_real_provider_execution_guard.py
+python scripts/smoke_voice_output_host_app_handoff.py
+python scripts/smoke_voice_output_v500_release_readiness.py
+python scripts/smoke_voice_output_v500_package_readiness.py
+python scripts/check_release_package.py
+python examples/app_voice_output_integration.py
+```
+
+Expected mock-safe example state remains non-playable:
+
+```text
+real_tts_enabled=False
+provider_configured=False
+provider_details_exposed=False
+request_state=unavailable
+audio_ready=False
+audio_handoff_kind=none
+has_audio_handoff=False
+is_generated=False
+```
 
 ---
 

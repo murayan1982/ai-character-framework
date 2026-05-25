@@ -17,6 +17,7 @@ v5.0.0 may be released when FW provides all of the following:
 - a documented real TTS opt-in boundary
 - a documented real provider execution guard
 - a documented host app voice output integration handoff
+- a documented package-readiness checkpoint in `voice_output_v500_package_readiness.md`
 - mock-safe smoke checks that pass without provider credentials
 - release package checks that include the v5 voice output docs, host app handoff docs, and smoke scripts
 
@@ -76,6 +77,7 @@ python scripts/smoke_voice_output_artifact_result_contract.py
 python scripts/smoke_voice_output_real_provider_execution_guard.py
 python scripts/smoke_voice_output_host_app_handoff.py
 python scripts/smoke_voice_output_v500_release_readiness.py
+python scripts/smoke_voice_output_v500_package_readiness.py
 python scripts/check_release_package.py
 python examples/app_voice_output_integration.py
 ```
@@ -160,6 +162,7 @@ Do not cut v5.0.0 if any of these are true:
 - a configured provider can call a real SDK without `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`
 - guarded or unavailable output exposes playable audio handoffs
 - release package checks omit v5 voice output docs or smoke scripts
+- the package-readiness smoke is missing from the release-blocking command set
 - DRC evidence is marked accepted based only on FW mock-safe readiness
 
 ## Acceptance for this checkpoint
@@ -168,6 +171,7 @@ This checkpoint is complete when:
 
 - this checklist is included in release package checks
 - `scripts/smoke_voice_output_v500_release_readiness.py` passes
+- `scripts/smoke_voice_output_v500_package_readiness.py` passes
 - the standard v5.0.0 local verification command set passes
 - docs clearly distinguish mock-safe release readiness, real-run readiness, and DRC evidence readiness
 - DRC remains unchanged and `real_tts_web_audio_output` remains `NOT_ACCEPTED`
