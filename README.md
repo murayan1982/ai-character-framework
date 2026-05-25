@@ -295,6 +295,45 @@ For more details, see:
 
 ---
 
+## Public voice output boundary
+
+v5.0.0 adds a public, provider-neutral voice output boundary for host-app integration.
+
+External apps can request voice output through the framework without depending on internal TTS modules or provider-specific settings.
+
+```python
+from framework import VoiceOutputRequest, create_voice_output_session
+
+session = create_voice_output_session()
+result = session.speak(
+    VoiceOutputRequest(
+        text="今日は少し早めに休むとよさそうです。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="daily_advice",
+        language_code="ja",
+    )
+)
+```
+
+Host apps should provide only provider-neutral intent:
+
+```text
+text
+voice_profile_id
+requested_audio_format
+utterance_purpose
+language_code
+```
+
+Provider selection, provider voice IDs, API keys, model IDs, provider-specific request parameters, SDK calls, and audio artifact handling remain framework responsibilities.
+
+`VoiceOutputResult` is app-safe. Host apps should treat only `request_state=generated` with `audio_ready=True` and exactly one handoff (`audio_url` or `audio_artifact_ref`) as playable. `unavailable`, `skipped`, `rejected`, and `failed` are non-playable states.
+
+Real provider execution is explicit opt-in and remains guarded by `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`.
+
+---
+
 ## App integration examples
 
 The `examples/` directory includes small, copy-friendly examples for external application integration.
