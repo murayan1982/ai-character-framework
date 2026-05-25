@@ -33,7 +33,14 @@ EXPECTED_PUBLIC_API = [
     "TextChatSessionEvent",
     "TextChatSessionInfo",
     "TextChatStateChange",
+    "VoiceOutputRequest",
+    "VoiceOutputResult",
+    "VoiceOutputSession",
+    "VoiceOutputSessionInfo",
+    "VoiceSynthesisRequest",
+    "VoiceSynthesisResult",
     "create_text_chat_session",
+    "create_voice_output_session",
 ]
 
 FORBIDDEN_IMPORTS_AFTER_FRAMEWORK_IMPORT = [
@@ -216,6 +223,85 @@ def check_session_info_model() -> None:
     _assert(not direct_info.supports_live2d, "direct info should not expose Live2D support")
 
     print("[OK] TextChatSessionInfo exposes stable public session metadata")
+
+
+def check_voice_output_public_contract() -> None:
+    # The voice output boundary should be public and mock-safe without loading
+    # provider-specific TTS implementations or requiring API keys.
+    from framework import (
+        VoiceOutputRequest,
+        VoiceOutputResult,
+        VoiceOutputSession,
+        VoiceOutputSessionInfo,
+        VoiceSynthesisRequest,
+        VoiceSynthesisResult,
+        create_voice_output_session,
+    )
+
+    _assert(
+        hasattr(VoiceOutputSession, "info"),
+        "voice output session should expose info()",
+    )
+    _assert(
+        hasattr(VoiceOutputSession, "create_output"),
+        "voice output session should expose create_output()",
+    )
+
+    session = create_voice_output_session()
+    info = session.info()
+    _assert(
+        isinstance(info, VoiceOutputSessionInfo),
+        "voice output info should use public type",
+    )
+    _assert(info.session_type == "voice_output", "voice output info should expose session type")
+    _assert(
+        info.provider_details_exposed is False,
+        "voice output info should not expose provider details",
+    )
+
+    request = VoiceOutputRequest(
+        text="こんにちは。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="demo",
+        language_code="ja",
+    )
+    result = session.create_output(request)
+    _assert(
+        isinstance(result, VoiceOutputResult),
+        "voice output result should use public type",
+    )
+    _assert(result.request_state == "unavailable", "mock-safe TTS should be unavailable")
+    _assert(not result.audio_ready, "mock-safe TTS should not report audio ready")
+    _assert(result.audio_format == "mp3", "voice output result should preserve requested format")
+    _assert(result.audio_url is None, "mock-safe TTS should not expose an audio URL")
+    _assert(result.audio_artifact_ref is None, "mock-safe TTS should not expose an audio artifact")
+
+    synthesis_request = VoiceSynthesisRequest(
+        text=request.text,
+        voice_profile_id=request.voice_profile_id,
+        requested_audio_format=request.requested_audio_format,
+        utterance_purpose=request.utterance_purpose,
+        language_code=request.language_code,
+    )
+    synthesis_result = VoiceSynthesisResult(
+        request_state=result.request_state,
+        audio_ready=result.audio_ready,
+        audio_format=result.audio_format,
+        audio_url=result.audio_url,
+        audio_artifact_ref=result.audio_artifact_ref,
+    )
+    _assert(
+        synthesis_request.text == request.text,
+        "voice synthesis request should expose text",
+    )
+    _assert(
+        synthesis_result.request_state == result.request_state,
+        "voice synthesis result should expose request state",
+    )
+
+    _assert_no_forbidden_runtime_imports("voice output public contract")
+    print("[OK] voice output public contract is mock-safe")
 
 
 def _load_example_module(filename: str, module_name: str):
@@ -427,6 +513,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     check_text_only_config_boundary()
     check_provider_model_resolution()
     check_session_info_model()
+    check_voice_output_public_contract()
     check_minimal_app_example_import()
     check_error_handling_example_import()
     check_streaming_example_import()

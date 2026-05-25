@@ -8,7 +8,14 @@ from framework.facade import (
     TextChatSessionEvent,
     TextChatSessionInfo,
     TextChatStateChange,
+    VoiceOutputRequest,
+    VoiceOutputResult,
+    VoiceOutputSession,
+    VoiceOutputSessionInfo,
+    VoiceSynthesisRequest,
+    VoiceSynthesisResult,
     create_text_chat_session,
+    create_voice_output_session,
 )
 
 __all__ = [
@@ -19,5 +26,12 @@ __all__ = [
     "TextChatSessionEvent",
     "TextChatSessionInfo",
     "TextChatStateChange",
+    "VoiceOutputRequest",
+    "VoiceOutputResult",
+    "VoiceOutputSession",
+    "VoiceOutputSessionInfo",
+    "VoiceSynthesisRequest",
+    "VoiceSynthesisResult",
     "create_text_chat_session",
+    "create_voice_output_session",
 ]

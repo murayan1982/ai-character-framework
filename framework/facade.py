@@ -10,6 +10,15 @@ from config.prompt_builder import build_final_system_instruction
 if TYPE_CHECKING:
     from config.loader import RuntimeConfig
 
+from framework.audio import (
+    VoiceOutputRequest,
+    VoiceOutputResult,
+    VoiceOutputSession,
+    VoiceOutputSessionInfo,
+    VoiceSynthesisRequest,
+    VoiceSynthesisResult,
+    create_voice_output_session,
+)
 
 DEFAULT_TEXT_CHAT_PRESET = "text_chat"
 
