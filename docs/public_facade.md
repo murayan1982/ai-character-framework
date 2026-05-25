@@ -156,6 +156,19 @@ python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
 
 The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. See `voice_output_real_tts_opt_in_checklist.md` for the full checklist.
 
+Voice output results use an app-facing artifact handoff contract:
+
+- `audio_ready=False` means the host app must not try to play audio.
+- `audio_url` is reserved for FW-hosted or FW-signed Web audio URLs.
+- `audio_artifact_ref` is an opaque FW-owned artifact reference.
+- generated audio should expose exactly one of `audio_url` or `audio_artifact_ref`.
+
+The helper properties `audio_handoff_kind`, `has_audio_handoff`, and `is_generated` let app code inspect the handoff without parsing provider details. See `voice_output_artifact_result_contract.md` and run:
+
+```powershell
+python scripts/smoke_voice_output_artifact_result_contract.py
+```
+
 
 ### `TextChatSession.info`
 

@@ -181,6 +181,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"audio_format: {result.audio_format}")
     print(f"audio_url: {result.audio_url}")
     print(f"audio_artifact_ref: {result.audio_artifact_ref}")
+    print(f"audio_handoff_kind: {result.audio_handoff_kind}")
+    print(f"has_audio_handoff: {result.has_audio_handoff}")
+    print(f"is_generated: {result.is_generated}")
     print(f"message: {result.message}")
     print(f"public_metadata: {dict(result.public_metadata)}")
     return 0

@@ -266,6 +266,7 @@ Update or add:
 - `public_facade.md` or app SDK docs
 - voice output / TTS boundary docs
 - `voice_output_policy.md` if present
+- `voice_output_artifact_result_contract.md`
 - `advanced_runtime.md` once interruption work resumes
 - `RELEASE_NOTES.md`
 
@@ -322,6 +323,7 @@ Potential new scripts:
 python scripts/smoke_voice_output_public_boundary.py
 python scripts/smoke_voice_output_unavailable.py
 python scripts/smoke_voice_output_import_safety.py
+python scripts/smoke_voice_output_artifact_result_contract.py
 ```
 
 ## Suggested small-commit plan
@@ -395,6 +397,33 @@ Acceptance:
 - DRC-style host app usage is documented.
 - `voice_profile_id`, `text`, and `requested_audio_format` are shown.
 - provider secrets and voice IDs stay FW-side.
+
+### Commit 6 - Real TTS opt-in boundary checklist
+
+```text
+docs/test: add real TTS opt-in boundary checklist
+```
+
+Acceptance:
+
+- real TTS remains default-off.
+- provider selection and secrets remain FW-owned.
+- unsupported or underconfigured providers return safe `unavailable` results.
+- DRC real TTS evidence remains blocked and not accepted.
+
+### Commit 7 - Voice output artifact result contract
+
+```text
+feat/test: define voice output artifact result contract
+```
+
+Acceptance:
+
+- `VoiceOutputResult` documents and exposes an app-safe handoff contract.
+- `audio_ready`, `audio_format`, `audio_url`, and `audio_artifact_ref` semantics are documented.
+- unavailable/rejected/failed results do not expose playable handoffs.
+- generated results have exactly one public handoff: URL or FW-owned artifact reference.
+- mock-safe smoke verifies the result contract without provider credentials.
 
 ### Commit 6 - Real TTS opt-in boundary checklist
 

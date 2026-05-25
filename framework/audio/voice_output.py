@@ -35,8 +35,15 @@ class VoiceOutputResult:
 
     The public result never exposes provider voice IDs, API keys, model IDs, or
     provider-specific request settings. Real provider execution, when explicitly
-    enabled, returns a framework-owned audio artifact reference instead of local
-    playback side effects.
+    enabled, returns a Web-app-friendly handoff through either ``audio_url`` or
+    ``audio_artifact_ref`` instead of local playback side effects.
+
+    Contract summary:
+
+    - ``audio_ready=False`` means host apps must not try to play audio.
+    - ``audio_ready=True`` is valid only for generated output with one handoff.
+    - ``audio_url`` is for app-consumable URLs when FW hosts or signs audio.
+    - ``audio_artifact_ref`` is an opaque FW-owned artifact reference.
     """
 
     request_state: str
@@ -46,6 +53,38 @@ class VoiceOutputResult:
     audio_artifact_ref: str | None = None
     message: str = ""
     public_metadata: Mapping[str, str] = field(default_factory=dict)
+
+    @property
+    def has_audio_handoff(self) -> bool:
+        """Return whether the result includes one app-consumable audio handoff."""
+
+        return self.audio_handoff_kind in {"audio_url", "audio_artifact_ref"}
+
+    @property
+    def audio_handoff_kind(self) -> str:
+        """Classify the public audio handoff without exposing provider details.
+
+        Possible values are ``none``, ``audio_url``, ``audio_artifact_ref``, and
+        ``multiple``. Host apps should treat ``multiple`` as invalid for current
+        v5.0.0 Web handoff usage.
+        """
+
+        has_url = bool(self.audio_url)
+        has_artifact_ref = bool(self.audio_artifact_ref)
+
+        if has_url and has_artifact_ref:
+            return "multiple"
+        if has_url:
+            return "audio_url"
+        if has_artifact_ref:
+            return "audio_artifact_ref"
+        return "none"
+
+    @property
+    def is_generated(self) -> bool:
+        """Return whether the result represents generated, playable audio."""
+
+        return self.request_state == "generated" and self.audio_ready
 
 
 @dataclass(frozen=True)

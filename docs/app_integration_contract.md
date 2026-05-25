@@ -399,3 +399,38 @@ This should be treated as output-quality guidance, not character personality.
 The policy should avoid unnecessary symbols, dense Markdown, tables, and excessive abbreviations while preserving code, commands, file paths, URLs, environment variable names, and proper nouns when necessary.
 
 This should be enabled only when audio/TTS output is active.
+
+## Voice output artifact result contract
+
+Apps should treat `VoiceOutputResult` as the only public handoff shape for app-facing TTS.
+
+Important fields:
+
+- `request_state`: public lifecycle state such as `unavailable`, `rejected`, `generated`, or `failed`
+- `audio_ready`: whether app playback may proceed
+- `audio_format`: normalized format such as `mp3`
+- `audio_url`: FW-provided Web audio URL when available
+- `audio_artifact_ref`: opaque FW-owned artifact reference when URL hosting is not available
+- `public_metadata`: app-safe metadata only
+
+Apps must not infer provider identity from artifact paths or metadata. They should branch like this:
+
+```python
+if not result.audio_ready:
+    show_unavailable(result.message)
+elif result.audio_url:
+    play_url(result.audio_url)
+elif result.audio_artifact_ref:
+    request_fw_artifact_playback(result.audio_artifact_ref)
+else:
+    report_contract_error()
+```
+
+The v5.0.0 result contract is documented in `voice_output_artifact_result_contract.md` and checked by:
+
+```powershell
+python scripts/smoke_voice_output_artifact_result_contract.py
+```
+
+This still does not complete DRC real TTS evidence. DRC must keep `real_tts_web_audio_output` as `NOT_ACCEPTED` until its Web UI playback evidence workflow validates.
+

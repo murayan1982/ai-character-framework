@@ -15,8 +15,11 @@ Current v5 additions include:
 - real TTS opt-in boundary checklist and mock-safe smoke check:
   - `voice_output_real_tts_opt_in_checklist.md`
   - `scripts/smoke_voice_output_real_tts_opt_in_boundary.py`
+- voice output artifact result contract and mock-safe smoke check:
+  - `voice_output_artifact_result_contract.md`
+  - `scripts/smoke_voice_output_artifact_result_contract.py`
 
-Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities.
+Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Voice output results use the public `audio_ready`, `audio_format`, `audio_url`, and `audio_artifact_ref` handoff contract. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities.
 
 Mock-safe public checks should pass without provider credentials, and unavailable provider status must not be counted as real TTS evidence.
 
