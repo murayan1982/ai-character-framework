@@ -25,10 +25,12 @@ REQUIRED_FILES = [
     "docs/voice_output_real_tts_opt_in_checklist.md",
     "docs/voice_output_artifact_result_contract.md",
     "docs/voice_output_real_provider_execution_guard.md",
+    "docs/voice_output_v500_release_readiness_checklist.md",
     "scripts/smoke_app_sdk.py",
     "scripts/smoke_voice_output_real_tts_opt_in_boundary.py",
     "scripts/smoke_voice_output_artifact_result_contract.py",
     "scripts/smoke_voice_output_real_provider_execution_guard.py",
+    "scripts/smoke_voice_output_v500_release_readiness.py",
 ]
 
 REQUIRED_DIRS = [
@@ -79,6 +81,7 @@ PUBLIC_DOCS = [
     "docs/voice_output_real_tts_opt_in_checklist.md",
     "docs/voice_output_artifact_result_contract.md",
     "docs/voice_output_real_provider_execution_guard.md",
+    "docs/voice_output_v500_release_readiness_checklist.md",
 ]
 
 

@@ -153,9 +153,10 @@ Before a configured real run, verify the opt-in and execution guard boundaries:
 ```powershell
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
 python scripts/smoke_voice_output_real_provider_execution_guard.py
+python scripts/smoke_voice_output_v500_release_readiness.py
 ```
 
-The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. The execution guard check confirms that a configured provider still cannot import provider SDKs, call provider APIs, or write artifacts unless `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is set for an explicit real run. See `voice_output_real_tts_opt_in_checklist.md` and `voice_output_real_provider_execution_guard.md` for the full checklists.
+The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. The execution guard check confirms that a configured provider still cannot import provider SDKs, call provider APIs, or write artifacts unless `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is set for an explicit real run. The release readiness check confirms that v5.0.0 is a mock-safe public boundary release and does not complete DRC real Web audio evidence. See `voice_output_real_tts_opt_in_checklist.md`, `voice_output_real_provider_execution_guard.md`, and `voice_output_v500_release_readiness_checklist.md` for the full checklists.
 
 Voice output results use an app-facing artifact handoff contract:
 

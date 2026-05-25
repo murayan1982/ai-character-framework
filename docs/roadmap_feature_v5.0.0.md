@@ -267,6 +267,7 @@ Update or add:
 - voice output / TTS boundary docs
 - `voice_output_policy.md` if present
 - `voice_output_artifact_result_contract.md`
+- `voice_output_v500_release_readiness_checklist.md`
 - `advanced_runtime.md` once interruption work resumes
 - `RELEASE_NOTES.md`
 
@@ -308,6 +309,8 @@ Tests should cover:
 - real provider implementation is lazy-loaded only during explicit execution
 - examples import without provider credentials
 - release package checks pass
+- `scripts/smoke_voice_output_v500_release_readiness.py` passes
+- mock-safe release readiness, explicit real-run readiness, and DRC Web evidence readiness remain separate
 
 Existing smoke scripts to extend:
 
@@ -324,6 +327,7 @@ python scripts/smoke_voice_output_public_boundary.py
 python scripts/smoke_voice_output_unavailable.py
 python scripts/smoke_voice_output_import_safety.py
 python scripts/smoke_voice_output_artifact_result_contract.py
+python scripts/smoke_voice_output_v500_release_readiness.py
 ```
 
 ## Suggested small-commit plan
@@ -439,18 +443,19 @@ Acceptance:
 - opening the guard with missing FW settings returns safe `unavailable` before provider SDK import.
 - mock-safe smoke verifies the guard without provider credentials.
 
-### Commit 6 - Real TTS opt-in boundary checklist
+### Commit 9 - v5.0.0 voice output release readiness checklist
 
 ```text
-docs/test: add real TTS opt-in boundary checklist
+docs/test: add v5.0.0 voice output release readiness checklist
 ```
 
 Acceptance:
 
-- real TTS enablement is documented as explicit FW-owned opt-in only.
-- provider selection, API keys, provider voice IDs, model IDs, and provider-specific parameters remain FW-side.
-- a mock-safe smoke check validates default, missing-provider, unsupported-provider, and missing-settings behavior without provider SDK execution.
-- unavailable public results are documented as readiness checks, not DRC real Web audio evidence.
+- v5.0.0 release readiness is documented as a mock-safe public boundary release.
+- release readiness clearly separates mock-safe checks, explicit real-run guard conditions, and DRC evidence acceptance.
+- the standard local verification command set includes `scripts/smoke_voice_output_v500_release_readiness.py`.
+- release package checks include the readiness checklist and smoke script.
+- DRC remains unchanged and `real_tts_web_audio_output` remains `NOT_ACCEPTED`.
 
 ## Release acceptance checklist
 
@@ -465,6 +470,9 @@ v5.0.0 is ready when:
 - existing TextChat public facade behavior is not broken
 - DRC can integrate through FW public voice output boundary instead of FW internals
 - docs clearly explain supported behavior and limitations
+- `scripts/smoke_voice_output_v500_release_readiness.py` passes
+- release package checks include the v5.0.0 readiness checklist and smoke script
+- mock-safe release readiness, explicit real-run readiness, and DRC Web evidence readiness remain separate
 - release package checks pass
 
 ## Follow-up versions

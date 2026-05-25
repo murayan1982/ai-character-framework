@@ -448,3 +448,23 @@ python scripts/smoke_voice_output_real_provider_execution_guard.py
 
 This still does not complete DRC real TTS evidence. DRC must keep `real_tts_web_audio_output` as `NOT_ACCEPTED` until its Web UI playback evidence workflow validates.
 
+## v5.0.0 voice output release readiness
+
+v5.0.0 release readiness is defined as a mock-safe public voice output boundary release. The release can be ready while real provider execution and DRC Web audio evidence remain separate follow-up workflows.
+
+Application integrations should keep the following boundary in place:
+
+- app code imports from `framework` only
+- app code passes provider-neutral `VoiceOutputRequest` fields only
+- FW owns provider selection, API keys, provider voice IDs, model IDs, provider SDK calls, and artifact handling
+- `unavailable` and `skipped` results are readiness states, not playable audio evidence
+- DRC `real_tts_web_audio_output` remains `NOT_ACCEPTED` until DRC validates Web UI playback evidence through the FW public boundary
+
+Run the release readiness smoke before cutting v5.0.0:
+
+```powershell
+python scripts/smoke_voice_output_v500_release_readiness.py
+```
+
+See `voice_output_v500_release_readiness_checklist.md` for the full release readiness checklist.
+

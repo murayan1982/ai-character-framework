@@ -99,6 +99,7 @@ python scripts/smoke_app_sdk.py
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
 python scripts/smoke_voice_output_artifact_result_contract.py
 python scripts/smoke_voice_output_real_provider_execution_guard.py
+python scripts/smoke_voice_output_v500_release_readiness.py
 python scripts/check_release_package.py
 python examples/app_voice_output_integration.py
 ```
