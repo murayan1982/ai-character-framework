@@ -51,13 +51,27 @@ Real TTS requires an explicit FW-owned opt-in. No single layer is enough by itse
    ```
 
 4. FW owns provider credentials and provider-specific registry settings through its private configuration or environment.
-5. FW writes an audio artifact only through the public session result path.
+5. FW operator policy explicitly opens the real provider execution guard:
 
-If any required layer is missing, the public result must stay safe and app-readable, usually:
+   ```powershell
+   $env:FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION = "1"
+   ```
+
+6. FW writes an audio artifact only through the public session result path.
+
+If real TTS intent or provider configuration is missing, the public result must stay safe and app-readable, usually:
 
 ```text
 request_state: unavailable
 audio_ready: False
+```
+
+If a supported provider is configured but the execution guard is still closed, the public result must also stay non-playable:
+
+```text
+request_state: skipped
+audio_ready: False
+reason: provider_execution_guard_disabled
 ```
 
 ## Mock-safe checks
@@ -69,6 +83,7 @@ python -m compileall -q .
 python scripts/smoke_public_facade.py
 python scripts/smoke_app_sdk.py
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+python scripts/smoke_voice_output_real_provider_execution_guard.py
 python scripts/check_release_package.py
 python examples/app_voice_output_integration.py
 ```
@@ -78,7 +93,8 @@ The dedicated opt-in smoke confirms:
 - default voice output does not enable real TTS
 - `FRAMEWORK_VOICE_OUTPUT_REAL_TTS=1` without a provider remains unavailable
 - unsupported provider names remain unavailable
-- a configured provider with missing FW settings returns unavailable before provider SDK execution
+- a configured provider remains skipped while the real provider execution guard is closed
+- opening the execution guard with missing FW settings returns unavailable before provider SDK execution
 - provider details are not exposed through public dataclasses, metadata, or app examples
 - `tts.voice_engine`, provider SDKs, runtime, and VTS modules are not imported during mock-safe checks
 
@@ -89,10 +105,11 @@ A real run may be attempted only after the mock-safe checks pass.
 Use the public example or a host app wrapper, not FW internals:
 
 ```powershell
+$env:FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION = "1"
 python examples/app_voice_output_integration.py --real-tts --artifact-dir .\temp\voice_output
 ```
 
-For a real run, configure provider secrets and voice registry values as FW-owned settings. Do not pass them from app code.
+For a real run, configure provider secrets and voice registry values as FW-owned settings, then open the FW execution guard only for that run. Do not pass provider settings from app code.
 
 A successful FW real run may return:
 
@@ -134,5 +151,6 @@ This FW checkpoint is complete when:
 - provider details stay FW-owned and hidden from public contracts
 - mock-safe checks pass with no provider credentials
 - real TTS intent is explicit opt-in only
+- real provider execution requires `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`
 - unavailable results are treated as readiness checks, not real evidence
 - DRC is still blocked from marking real TTS Web audio evidence accepted

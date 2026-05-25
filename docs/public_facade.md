@@ -138,7 +138,7 @@ Host apps should pass only framework-level voice output intent:
 
 FW owns and hides provider selection, provider voice IDs, API keys, model IDs, provider SDK calls, temporary audio files, and provider-specific parameters.
 
-Without real provider configuration, `create_output()` returns a safe public result such as `request_state="unavailable"` with `audio_ready=False`. This is expected mock-safe behavior and should not be treated as accepted real TTS evidence.
+Without real provider configuration, `create_output()` returns a safe public result such as `request_state="unavailable"` with `audio_ready=False`. When a supported provider is configured but the real provider execution guard is closed, it returns `request_state="skipped"` with no audio handoff. These are expected mock-safe behaviors and should not be treated as accepted real TTS evidence.
 
 For a DRC-style host app example, run:
 
@@ -148,13 +148,14 @@ python examples/app_voice_output_integration.py
 
 Use `--real-tts` only for an explicit configured real run. Even then, the app example does not accept provider voice IDs, API keys, model IDs, or provider-specific settings; those stay FW-side.
 
-Before a configured real run, verify the opt-in boundary:
+Before a configured real run, verify the opt-in and execution guard boundaries:
 
 ```powershell
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+python scripts/smoke_voice_output_real_provider_execution_guard.py
 ```
 
-The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. See `voice_output_real_tts_opt_in_checklist.md` for the full checklist.
+The opt-in boundary check confirms that real TTS is explicit, provider selection is FW-owned, provider details remain hidden, and unavailable mock-safe output is not treated as real evidence. The execution guard check confirms that a configured provider still cannot import provider SDKs, call provider APIs, or write artifacts unless `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is set for an explicit real run. See `voice_output_real_tts_opt_in_checklist.md` and `voice_output_real_provider_execution_guard.md` for the full checklists.
 
 Voice output results use an app-facing artifact handoff contract:
 
@@ -595,6 +596,12 @@ Voice output real TTS opt-in boundary smoke:
 
 ```powershell
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+```
+
+Voice output real provider execution guard smoke:
+
+```powershell
+python scripts/smoke_voice_output_real_provider_execution_guard.py
 ```
 
 

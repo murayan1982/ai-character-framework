@@ -56,6 +56,7 @@ OPT_IN_ENV_KEYS = {
     "FRAMEWORK_VOICE_OUTPUT_REAL_TTS",
     "FRAMEWORK_VOICE_OUTPUT_PROVIDER",
     "FRAMEWORK_VOICE_OUTPUT_ARTIFACT_DIR",
+    "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION",
     "ELEVENLABS_API_KEY",
     "VOICE_MASTER",
     "SELECT_VOICE_INDEX",
@@ -215,7 +216,7 @@ def check_rejected_result_has_no_audio_handoff() -> None:
     print("[OK] voice output rejected result has no audio handoff")
 
 
-def check_configured_provider_missing_settings_has_no_audio_handoff() -> None:
+def check_configured_provider_guarded_result_has_no_audio_handoff() -> None:
     from framework import create_voice_output_session
 
     with temporary_env(
@@ -238,11 +239,11 @@ def check_configured_provider_missing_settings_has_no_audio_handoff() -> None:
         _assert(not info.supports_audio_url, "current configured provider should not advertise URL support")
 
         result = session.create_output(_build_request())
-        _assert(result.request_state == "unavailable", "missing settings should be unavailable")
-        _assert_not_playable(result, "configured provider missing settings output")
-        _assert_no_forbidden_imports("configured provider missing settings artifact contract")
+        _assert(result.request_state == "skipped", "configured provider should be skipped while execution guard is closed")
+        _assert_not_playable(result, "configured provider guarded output")
+        _assert_no_forbidden_imports("configured provider guarded artifact contract")
 
-    print("[OK] voice output missing-provider-settings result has no audio handoff")
+    print("[OK] voice output guarded provider result has no audio handoff")
 
 
 def check_generated_public_handoff_contract() -> None:
@@ -324,7 +325,7 @@ def main() -> None:
     check_result_public_shape()
     check_default_unavailable_has_no_audio_handoff()
     check_rejected_result_has_no_audio_handoff()
-    check_configured_provider_missing_settings_has_no_audio_handoff()
+    check_configured_provider_guarded_result_has_no_audio_handoff()
     check_generated_public_handoff_contract()
     check_contract_documented()
     print("[OK] voice output artifact result contract is mock-safe")

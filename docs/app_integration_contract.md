@@ -318,7 +318,14 @@ result.request_state == "unavailable"
 result.audio_ready is False
 ```
 
-This unavailable state is useful for app integration and smoke tests, but it is not real TTS evidence. Real DRC Web evidence still requires Web UI playback confirmation, screenshot/private evidence handling, marker-only evidence JSON, and acceptance validator success.
+When a supported provider is configured but the FW execution guard is closed, the public result is expected to be safe skipped:
+
+```python
+result.request_state == "skipped"
+result.audio_ready is False
+```
+
+These unavailable/skipped states are useful for app integration and smoke tests, but they are not real TTS evidence. Real DRC Web evidence still requires Web UI playback confirmation, screenshot/private evidence handling, marker-only evidence JSON, and acceptance validator success.
 
 Run the DRC-style app example with no provider credentials:
 
@@ -328,13 +335,14 @@ python examples/app_voice_output_integration.py
 
 The example demonstrates that the app passes `VoiceOutputRequest` and keeps provider voice IDs, API keys, model IDs, and provider-specific options FW-side.
 
-Before any configured real TTS run, use the FW opt-in checklist:
+Before any configured real TTS run, use the FW opt-in and execution guard checks:
 
 ```powershell
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
+python scripts/smoke_voice_output_real_provider_execution_guard.py
 ```
 
-See `voice_output_real_tts_opt_in_checklist.md` for the real TTS opt-in layers and evidence rules. Passing that FW checklist means the boundary is ready for a configured real run; it does not mark DRC `real_tts_web_audio_output` as accepted.
+See `voice_output_real_tts_opt_in_checklist.md` for the real TTS opt-in layers and evidence rules. See `voice_output_real_provider_execution_guard.md` for the final `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` guard. Passing these FW checks means the boundary is ready for a deliberate configured real run; it does not mark DRC `real_tts_web_audio_output` as accepted.
 
 ## Text facade scope
 
@@ -406,7 +414,7 @@ Apps should treat `VoiceOutputResult` as the only public handoff shape for app-f
 
 Important fields:
 
-- `request_state`: public lifecycle state such as `unavailable`, `rejected`, `generated`, or `failed`
+- `request_state`: public lifecycle state such as `unavailable`, `skipped`, `rejected`, `generated`, or `failed`
 - `audio_ready`: whether app playback may proceed
 - `audio_format`: normalized format such as `mp3`
 - `audio_url`: FW-provided Web audio URL when available
@@ -430,6 +438,12 @@ The v5.0.0 result contract is documented in `voice_output_artifact_result_contra
 
 ```powershell
 python scripts/smoke_voice_output_artifact_result_contract.py
+```
+
+The configured-provider execution guard is documented in `voice_output_real_provider_execution_guard.md` and checked by:
+
+```powershell
+python scripts/smoke_voice_output_real_provider_execution_guard.py
 ```
 
 This still does not complete DRC real TTS evidence. DRC must keep `real_tts_web_audio_output` as `NOT_ACCEPTED` until its Web UI playback evidence workflow validates.

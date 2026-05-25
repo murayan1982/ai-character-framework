@@ -27,6 +27,7 @@ _SUPPORTED_PROVIDER_VALUES = {"elevenlabs"}
 _REAL_TTS_ENV = "FRAMEWORK_VOICE_OUTPUT_REAL_TTS"
 _PROVIDER_ENV = "FRAMEWORK_VOICE_OUTPUT_PROVIDER"
 _ARTIFACT_DIR_ENV = "FRAMEWORK_VOICE_OUTPUT_ARTIFACT_DIR"
+_PROVIDER_EXECUTION_ENV = "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION"
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,7 @@ class VoiceOutputProviderStatus:
 
     real_tts_enabled: bool
     provider_configured: bool
+    provider_execution_allowed: bool
     supports_audio_artifact_ref: bool
     supports_audio_url: bool
     status: str
@@ -56,11 +58,13 @@ def resolve_provider_status(
 
     enabled = _resolve_real_tts_enabled(real_tts_enabled)
     provider_key = _resolve_provider_key()
+    provider_execution_allowed = _resolve_provider_execution_allowed()
 
     if not enabled:
         return VoiceOutputProviderStatus(
             real_tts_enabled=False,
             provider_configured=False,
+            provider_execution_allowed=False,
             supports_audio_artifact_ref=False,
             supports_audio_url=False,
             status="contract_ready",
@@ -74,6 +78,7 @@ def resolve_provider_status(
         return VoiceOutputProviderStatus(
             real_tts_enabled=True,
             provider_configured=False,
+            provider_execution_allowed=provider_execution_allowed,
             supports_audio_artifact_ref=False,
             supports_audio_url=False,
             status="unavailable",
@@ -87,6 +92,7 @@ def resolve_provider_status(
         return VoiceOutputProviderStatus(
             real_tts_enabled=True,
             provider_configured=False,
+            provider_execution_allowed=provider_execution_allowed,
             supports_audio_artifact_ref=False,
             supports_audio_url=False,
             status="unavailable",
@@ -96,15 +102,31 @@ def resolve_provider_status(
             ),
         )
 
+    if not provider_execution_allowed:
+        return VoiceOutputProviderStatus(
+            real_tts_enabled=True,
+            provider_configured=True,
+            provider_execution_allowed=False,
+            supports_audio_artifact_ref=True,
+            supports_audio_url=False,
+            status="execution_guarded",
+            status_reason=(
+                "A FW-owned voice output provider is configured, but real "
+                "provider execution is disabled by the FW execution guard."
+            ),
+        )
+
     return VoiceOutputProviderStatus(
         real_tts_enabled=True,
         provider_configured=True,
+        provider_execution_allowed=True,
         supports_audio_artifact_ref=True,
         supports_audio_url=False,
         status="provider_configured",
         status_reason=(
-            "A FW-owned voice output provider is configured. Provider details "
-            "remain hidden from the public app contract."
+            "A FW-owned voice output provider is configured and real provider "
+            "execution was explicitly allowed. Provider details remain hidden "
+            "from the public app contract."
         ),
     )
 
@@ -182,6 +204,25 @@ class ElevenLabsVoiceOutputAdapter:
                     "reason": "unsupported_audio_format",
                     "voice_profile_id": request.voice_profile_id,
                     "provider_details_exposed": "false",
+                },
+            )
+
+        if not _resolve_provider_execution_allowed():
+            return VoiceOutputResult(
+                request_state="skipped",
+                audio_ready=False,
+                audio_format=audio_format,
+                message=(
+                    "Real provider execution is disabled by the FW execution guard. "
+                    "Set FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1 only for "
+                    "an explicit configured real TTS run."
+                ),
+                public_metadata={
+                    "boundary": "voice_output",
+                    "reason": "provider_execution_guard_disabled",
+                    "voice_profile_id": request.voice_profile_id,
+                    "provider_details_exposed": "false",
+                    "provider_status": "execution_guarded",
                 },
             )
 
@@ -312,6 +353,10 @@ def _resolve_real_tts_enabled(value: bool | None) -> bool:
 
 def _resolve_provider_key() -> str:
     return os.getenv(_PROVIDER_ENV, "").strip().lower()
+
+
+def _resolve_provider_execution_allowed() -> bool:
+    return os.getenv(_PROVIDER_EXECUTION_ENV, "").strip().lower() in _TRUE_VALUES
 
 
 def _normalize_audio_format(value: str | None) -> str:

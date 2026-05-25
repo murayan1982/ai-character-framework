@@ -262,6 +262,7 @@ def check_voice_output_lazy_provider_adapter() -> None:
         {
             "FRAMEWORK_VOICE_OUTPUT_REAL_TTS": "1",
             "FRAMEWORK_VOICE_OUTPUT_PROVIDER": "elevenlabs",
+            "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION": None,
             "ELEVENLABS_API_KEY": "",
             "VOICE_MASTER": "[]",
         }
@@ -290,17 +291,17 @@ def check_voice_output_lazy_provider_adapter() -> None:
             )
         )
         _assert(
-            result.request_state == "unavailable",
-            "missing provider settings should produce safe unavailable result",
+            result.request_state == "skipped",
+            "configured provider should stay guarded until execution is explicitly allowed",
         )
-        _assert(not result.audio_ready, "unconfigured real TTS should not produce audio")
+        _assert(not result.audio_ready, "guarded real TTS should not produce audio")
         _assert(
             result.public_metadata.get("provider_details_exposed") == "false",
             "lazy provider result should keep provider details hidden",
         )
-        _assert_no_forbidden_runtime_imports("lazy provider unavailable result")
+        _assert_no_forbidden_runtime_imports("lazy provider guarded result")
 
-    print("[OK] app SDK voice output lazy provider adapter is mock-safe")
+    print("[OK] app SDK voice output lazy provider execution guard is mock-safe")
 
 
 def _load_example_module(filename: str, module_name: str):

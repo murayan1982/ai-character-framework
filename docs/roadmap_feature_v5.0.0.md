@@ -425,6 +425,20 @@ Acceptance:
 - generated results have exactly one public handoff: URL or FW-owned artifact reference.
 - mock-safe smoke verifies the result contract without provider credentials.
 
+### Commit 8 - Real provider execution boundary guard
+
+```text
+docs/test: add real provider execution boundary guard
+```
+
+Acceptance:
+
+- configured providers are guarded by default.
+- `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is required before real provider SDK import, provider API calls, or artifact writes can proceed.
+- configured-but-guarded output returns `request_state="skipped"` and no audio handoff.
+- opening the guard with missing FW settings returns safe `unavailable` before provider SDK import.
+- mock-safe smoke verifies the guard without provider credentials.
+
 ### Commit 6 - Real TTS opt-in boundary checklist
 
 ```text
@@ -447,7 +461,7 @@ v5.0.0 is ready when:
 - `import framework` remains lightweight and provider-safe
 - API keys are not required for mock-safe public smoke tests
 - provider unavailable state is safe and inspectable
-- real provider execution is explicit opt-in
+- real provider execution is explicit opt-in and requires `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`
 - existing TextChat public facade behavior is not broken
 - DRC can integrate through FW public voice output boundary instead of FW internals
 - docs clearly explain supported behavior and limitations

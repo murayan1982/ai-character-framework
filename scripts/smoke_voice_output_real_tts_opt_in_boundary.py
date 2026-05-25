@@ -55,6 +55,7 @@ OPT_IN_ENV_KEYS = {
     "FRAMEWORK_VOICE_OUTPUT_REAL_TTS",
     "FRAMEWORK_VOICE_OUTPUT_PROVIDER",
     "FRAMEWORK_VOICE_OUTPUT_ARTIFACT_DIR",
+    "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION",
     "ELEVENLABS_API_KEY",
     "VOICE_MASTER",
     "SELECT_VOICE_INDEX",
@@ -247,15 +248,19 @@ def check_supported_provider_missing_settings_does_not_execute_provider_sdk() ->
 
         result = session.create_output(_build_request())
         _assert(
-            result.request_state == "unavailable",
-            "missing FW provider settings should return unavailable",
+            result.request_state == "skipped",
+            "configured provider should be skipped until execution guard is enabled",
         )
-        _assert(not result.audio_ready, "missing FW provider settings should not create audio")
-        _assert(result.audio_artifact_ref is None, "unavailable output should not expose artifact ref")
-        _assert_metadata_hides_provider_details(result.public_metadata, "missing settings output")
-        _assert_no_forbidden_imports("configured provider missing settings")
+        _assert(not result.audio_ready, "guarded provider should not create audio")
+        _assert(result.audio_artifact_ref is None, "guarded output should not expose artifact ref")
+        _assert(
+            result.public_metadata.get("reason") == "provider_execution_guard_disabled",
+            "guarded output should explain that provider execution is disabled",
+        )
+        _assert_metadata_hides_provider_details(result.public_metadata, "guarded provider output")
+        _assert_no_forbidden_imports("configured provider execution guarded")
 
-    print("[OK] voice output configured provider with missing settings is mock-safe")
+    print("[OK] voice output configured provider execution guard is mock-safe")
 
 
 def check_public_contract_hides_provider_details() -> None:

@@ -27,7 +27,7 @@ The result must stay provider-neutral. It must not expose provider voice IDs, AP
 Current public states:
 
 - `unavailable`: the FW boundary is available, but real TTS is disabled, provider settings are missing, the provider is unsupported, or the provider SDK is unavailable.
-- `skipped`: the caller or FW policy intentionally did not create audio.
+- `skipped`: the caller or FW policy intentionally did not create audio, such as when the real provider execution guard is closed.
 - `rejected`: the request is invalid for the public boundary, such as empty text or an unsupported output format.
 - `generated`: FW generated audio and returned exactly one public handoff.
 - `failed`: explicit generation was attempted but failed inside the FW provider boundary.
@@ -51,7 +51,7 @@ The result helper properties are:
 
 ## Invariants
 
-Mock-safe and unavailable outputs must satisfy:
+Mock-safe, unavailable, and execution-guarded skipped outputs must satisfy:
 
 ```text
 request_state != generated
@@ -121,4 +121,4 @@ Run:
 python scripts/smoke_voice_output_artifact_result_contract.py
 ```
 
-This smoke check verifies that public result fields and helper properties follow the artifact handoff contract without provider credentials or real TTS execution.
+This smoke check verifies that public result fields and helper properties follow the artifact handoff contract without provider credentials or real TTS execution. The separate `smoke_voice_output_real_provider_execution_guard.py` check verifies that configured providers still return a non-playable skipped result unless the FW execution guard is explicitly opened.
