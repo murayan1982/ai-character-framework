@@ -605,6 +605,14 @@ Voice output real provider execution guard smoke:
 python scripts/smoke_voice_output_real_provider_execution_guard.py
 ```
 
+Host app voice output integration handoff smoke:
+
+```powershell
+python scripts/smoke_voice_output_host_app_handoff.py
+```
+
+See `host_app_voice_output_integration_handoff.md` for the general app-facing voice output handoff policy.
+
 
 ## Future notes
 
@@ -663,6 +671,6 @@ session.close()
 
 External apps should not import internal runtime modules such as `core`, provider implementations, STT/TTS clients, VTS clients, plugin manager internals, or runtime loop internals.
 
-For voice output integrations, external apps should not import `tts.voice_engine`, should not own provider voice IDs or API keys, and should not treat local playback as Web evidence.
+For voice output integrations, external apps should not import `tts.voice_engine`, should not own provider voice IDs or API keys, and should not treat local playback as Web evidence. The host app handoff policy is documented in `host_app_voice_output_integration_handoff.md`.
 
 Importing `framework` should remain lightweight and should not load runtime, provider SDK, legacy audio playback, or VTS modules.

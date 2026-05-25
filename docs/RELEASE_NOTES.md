@@ -24,8 +24,11 @@ Current v5 additions include:
 - v5.0.0 voice output release readiness checklist and mock-safe smoke check:
   - `voice_output_v500_release_readiness_checklist.md`
   - `scripts/smoke_voice_output_v500_release_readiness.py`
+- host app voice output integration handoff plan and mock-safe smoke check:
+  - `host_app_voice_output_integration_handoff.md`
+  - `scripts/smoke_voice_output_host_app_handoff.py`
 
-Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Voice output results use the public `audio_ready`, `audio_format`, `audio_url`, and `audio_artifact_ref` handoff contract. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities.
+Host apps should pass `text`, `voice_profile_id`, `requested_audio_format`, `utterance_purpose`, and `language_code` only. Voice output results use the public `audio_ready`, `audio_format`, `audio_url`, and `audio_artifact_ref` handoff contract. Provider selection, provider voice IDs, API keys, model IDs, provider-specific parameters, SDK calls, and audio artifact handling remain FW responsibilities. The app-facing integration handoff is documented in `host_app_voice_output_integration_handoff.md`.
 
 Mock-safe public checks should pass without provider credentials. Unavailable or execution-guarded skipped provider status must not be counted as real TTS evidence. A configured provider cannot import provider SDKs, call provider APIs, or write audio artifacts unless `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1` is set for an explicit real run. v5.0.0 release readiness is documented as a mock-safe public boundary release, while real provider runs and DRC Web evidence remain separate follow-up workflows.
 

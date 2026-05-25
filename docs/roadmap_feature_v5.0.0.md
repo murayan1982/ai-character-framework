@@ -309,6 +309,7 @@ Tests should cover:
 - real provider implementation is lazy-loaded only during explicit execution
 - examples import without provider credentials
 - release package checks pass
+- `scripts/smoke_voice_output_host_app_handoff.py` passes
 - `scripts/smoke_voice_output_v500_release_readiness.py` passes
 - mock-safe release readiness, explicit real-run readiness, and DRC Web evidence readiness remain separate
 
@@ -457,6 +458,22 @@ Acceptance:
 - release package checks include the readiness checklist and smoke script.
 - DRC remains unchanged and `real_tts_web_audio_output` remains `NOT_ACCEPTED`.
 
+### Commit 10 - Host app voice output integration handoff plan
+
+```text
+docs/test: add host app voice output integration handoff plan
+```
+
+Acceptance:
+
+- general host app voice output usage is documented separately from DRC-specific evidence acceptance.
+- DRC is documented as the first concrete reference integration target, not as the only supported app.
+- host apps are told to import only from `framework` and pass only provider-neutral `VoiceOutputRequest` fields.
+- `VoiceOutputResult` playback branching is documented through `audio_ready`, `audio_url`, and `audio_artifact_ref`.
+- `unavailable`, `skipped`, `rejected`, and `failed` are documented as non-playable states.
+- real provider execution remains guarded by `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`.
+- mock-safe smoke verifies the host app handoff without provider credentials or provider SDK import.
+
 ## Release acceptance checklist
 
 v5.0.0 is ready when:
@@ -469,7 +486,8 @@ v5.0.0 is ready when:
 - real provider execution is explicit opt-in and requires `FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION=1`
 - existing TextChat public facade behavior is not broken
 - DRC can integrate through FW public voice output boundary instead of FW internals
-- docs clearly explain supported behavior and limitations
+- docs clearly explain supported behavior, limitations, and the host app voice output integration handoff
+- `scripts/smoke_voice_output_host_app_handoff.py` passes
 - `scripts/smoke_voice_output_v500_release_readiness.py` passes
 - release package checks include the v5.0.0 readiness checklist and smoke script
 - mock-safe release readiness, explicit real-run readiness, and DRC Web evidence readiness remain separate

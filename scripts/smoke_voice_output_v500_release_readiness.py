@@ -68,6 +68,7 @@ REQUIRED_DOCS = [
     "docs/voice_output_artifact_result_contract.md",
     "docs/voice_output_real_provider_execution_guard.md",
     "docs/voice_output_v500_release_readiness_checklist.md",
+    "docs/host_app_voice_output_integration_handoff.md",
 ]
 
 REQUIRED_SCRIPTS = [
@@ -77,6 +78,7 @@ REQUIRED_SCRIPTS = [
     "scripts/smoke_voice_output_artifact_result_contract.py",
     "scripts/smoke_voice_output_real_provider_execution_guard.py",
     "scripts/smoke_voice_output_v500_release_readiness.py",
+    "scripts/smoke_voice_output_host_app_handoff.py",
     "scripts/check_release_package.py",
 ]
 
@@ -174,6 +176,7 @@ def check_release_readiness_documented() -> None:
         "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION",
         "request_state: skipped",
         "provider_execution_guard_disabled",
+        "python scripts/smoke_voice_output_host_app_handoff.py",
         "python scripts/smoke_voice_output_v500_release_readiness.py",
         "python scripts/check_release_package.py",
         "DRC real_tts_web_audio_output: NOT_ACCEPTED",
@@ -194,6 +197,7 @@ def check_release_package_includes_readiness_items() -> None:
     required_entries = [
         "docs/voice_output_v500_release_readiness_checklist.md",
         "scripts/smoke_voice_output_v500_release_readiness.py",
+        "scripts/smoke_voice_output_host_app_handoff.py",
     ]
     for entry in required_entries:
         _assert(entry in text, f"release package check is missing required entry: {entry}")

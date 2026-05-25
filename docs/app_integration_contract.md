@@ -448,6 +448,25 @@ python scripts/smoke_voice_output_real_provider_execution_guard.py
 
 This still does not complete DRC real TTS evidence. DRC must keep `real_tts_web_audio_output` as `NOT_ACCEPTED` until its Web UI playback evidence workflow validates.
 
+## Host app voice output integration handoff
+
+General host apps should use the same v5.0.0 handoff policy as the DRC reference integration target. The policy is documented in `host_app_voice_output_integration_handoff.md` and checked by:
+
+```powershell
+python scripts/smoke_voice_output_host_app_handoff.py
+```
+
+The handoff keeps app code provider-neutral:
+
+- import voice output only from `framework`
+- pass only `VoiceOutputRequest` app intent fields
+- treat `voice_profile_id` as a FW-level profile, not a provider voice ID
+- branch on `VoiceOutputResult.audio_ready`, `audio_url`, and `audio_artifact_ref` only
+- treat `unavailable`, `skipped`, `rejected`, and `failed` as non-playable states
+- count only a generated result with exactly one handoff as app-playable output
+
+This is a host app integration contract, not DRC evidence acceptance. DRC still needs its separate Web UI playback evidence workflow after integrating through the FW public boundary.
+
 ## v5.0.0 voice output release readiness
 
 v5.0.0 release readiness is defined as a mock-safe public voice output boundary release. The release can be ready while real provider execution and DRC Web audio evidence remain separate follow-up workflows.
@@ -463,6 +482,7 @@ Application integrations should keep the following boundary in place:
 Run the release readiness smoke before cutting v5.0.0:
 
 ```powershell
+python scripts/smoke_voice_output_host_app_handoff.py
 python scripts/smoke_voice_output_v500_release_readiness.py
 ```
 

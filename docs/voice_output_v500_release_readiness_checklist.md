@@ -16,8 +16,9 @@ v5.0.0 may be released when FW provides all of the following:
 - a documented artifact handoff contract
 - a documented real TTS opt-in boundary
 - a documented real provider execution guard
+- a documented host app voice output integration handoff
 - mock-safe smoke checks that pass without provider credentials
-- release package checks that include the v5 voice output docs and smoke scripts
+- release package checks that include the v5 voice output docs, host app handoff docs, and smoke scripts
 
 The release must preserve the v4.0.0 TextChat public facade behavior.
 
@@ -73,6 +74,7 @@ python scripts/smoke_app_sdk.py
 python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
 python scripts/smoke_voice_output_artifact_result_contract.py
 python scripts/smoke_voice_output_real_provider_execution_guard.py
+python scripts/smoke_voice_output_host_app_handoff.py
 python scripts/smoke_voice_output_v500_release_readiness.py
 python scripts/check_release_package.py
 python examples/app_voice_output_integration.py
