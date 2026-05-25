@@ -49,6 +49,7 @@ FORBIDDEN_IMPORTS_AFTER_FRAMEWORK_IMPORT = [
     "core.pipeline",
     "stt.stt_engine",
     "tts.voice_engine",
+    "elevenlabs",
     "live2d.vts_client",
 ]
 
@@ -254,6 +255,9 @@ def check_voice_output_public_contract() -> None:
         "voice output info should use public type",
     )
     _assert(info.session_type == "voice_output", "voice output info should expose session type")
+    _assert(info.boundary_version == "v5.lazy_provider_adapter", "voice output info should expose v5 lazy boundary")
+    _assert(not info.real_tts_enabled, "default voice output session should be mock-safe")
+    _assert(not info.provider_configured, "default voice output session should not configure a provider")
     _assert(
         info.provider_details_exposed is False,
         "voice output info should not expose provider details",

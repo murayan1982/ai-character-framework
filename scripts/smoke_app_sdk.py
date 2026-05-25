@@ -11,6 +11,7 @@ Run:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -152,6 +153,27 @@ def check_session_methods() -> None:
     print("[OK] app SDK session methods are available")
 
 
+class _temporary_env:
+    def __init__(self, updates: dict[str, str | None]) -> None:
+        self._updates = updates
+        self._originals: dict[str, str | None] = {}
+
+    def __enter__(self) -> None:
+        for key, value in self._updates.items():
+            self._originals[key] = os.environ.get(key)
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        for key, value in self._originals.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
 def check_voice_output_boundary_contract() -> None:
     from dataclasses import fields, is_dataclass
 
@@ -180,6 +202,7 @@ def check_voice_output_boundary_contract() -> None:
     )
     _assert(is_dataclass(info), "voice output info should be a dataclass model")
     _assert(info.session_type == "voice_output", "voice output info should expose session type")
+    _assert(info.boundary_version == "v5.lazy_provider_adapter", "voice output info should expose lazy adapter boundary")
     _assert(info.supports_voice_output, "voice output info should expose voice output support")
     _assert(not info.real_tts_enabled, "mock-safe SDK info should not report real TTS enabled")
     _assert(not info.provider_configured, "mock-safe SDK info should not report provider configured")
@@ -232,6 +255,54 @@ def check_voice_output_boundary_contract() -> None:
     print("[OK] app SDK voice output boundary is mock-safe")
 
 
+def check_voice_output_lazy_provider_adapter() -> None:
+    from framework import VoiceOutputRequest, create_voice_output_session
+
+    with _temporary_env(
+        {
+            "FRAMEWORK_VOICE_OUTPUT_REAL_TTS": "1",
+            "FRAMEWORK_VOICE_OUTPUT_PROVIDER": "elevenlabs",
+            "ELEVENLABS_API_KEY": "",
+            "VOICE_MASTER": "[]",
+        }
+    ):
+        session = create_voice_output_session(
+            project_root=PROJECT_ROOT,
+            default_voice_profile_id="gentle_mina_default",
+        )
+        info = session.info()
+        _assert(info.real_tts_enabled, "env opt-in should enable real TTS intent")
+        _assert(info.provider_configured, "FW-owned provider should be considered configured")
+        _assert(info.supports_audio_artifact_ref, "configured lazy provider should support artifacts")
+        _assert(
+            not info.provider_details_exposed,
+            "lazy provider info should keep provider details hidden",
+        )
+        _assert_no_forbidden_runtime_imports("lazy provider info")
+
+        result = session.create_output(
+            VoiceOutputRequest(
+                text="今日は少し早めに休むとよさそうです。",
+                voice_profile_id="gentle_mina_default",
+                requested_audio_format="mp3",
+                utterance_purpose="daily_advice",
+                language_code="ja",
+            )
+        )
+        _assert(
+            result.request_state == "unavailable",
+            "missing provider settings should produce safe unavailable result",
+        )
+        _assert(not result.audio_ready, "unconfigured real TTS should not produce audio")
+        _assert(
+            result.public_metadata.get("provider_details_exposed") == "false",
+            "lazy provider result should keep provider details hidden",
+        )
+        _assert_no_forbidden_runtime_imports("lazy provider unavailable result")
+
+    print("[OK] app SDK voice output lazy provider adapter is mock-safe")
+
+
 def _load_example_module(filename: str, module_name: str):
     import importlib.util
 
@@ -272,6 +343,7 @@ def main() -> None:
     check_event_models()
     check_session_methods()
     check_voice_output_boundary_contract()
+    check_voice_output_lazy_provider_adapter()
     check_sdk_examples_importable()
 
 
