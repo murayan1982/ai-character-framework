@@ -1,1 +1,1 @@
-feat/test: add capability snapshot public API
+feat/test: add FW-owned provider config resolution

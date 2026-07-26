@@ -1,13 +1,19 @@
-# FW v5.1.0 Commit 8 capability snapshot bundle
+# FW v5.1.0 Commit 9 bundle
 
-Apply from repository root:
+Proposed commit:
 
-```powershell
-python apply_v510_commit8_capability_snapshot.py
-del apply_v510_commit8_capability_snapshot.py
+```text
+feat/test: add FW-owned provider config resolution
 ```
 
-Then verify:
+Apply:
+
+```powershell
+python apply_v510_commit9_provider_config_ownership.py
+del apply_v510_commit9_provider_config_ownership.py
+```
+
+Verify:
 
 ```powershell
 python -m compileall -q .
@@ -18,12 +24,15 @@ python scripts/smoke_v510_result_error_contract.py
 python scripts/smoke_v510_text_chat_result_public_type.py
 python scripts/smoke_v510_text_chat_result_runtime_method.py
 python scripts/smoke_v510_capability_snapshot.py
+python scripts/smoke_v510_provider_config_ownership.py
 python scripts/check_release_package.py
 ```
 
-Suggested commit:
+Commit:
 
 ```bash
-git add framework/capabilities.py framework/__init__.py docs/v510_capability_snapshot_contract.md scripts/smoke_v510_capability_snapshot.py scripts/smoke_v510_public_contract_inventory.py
-git commit -m "feat/test: add capability snapshot public API"
+git add framework/provider_config.py docs/v510_provider_config_ownership.md scripts/smoke_v510_provider_config_ownership.py
+git commit -m "feat/test: add FW-owned provider config resolution"
 ```
+
+This commit is mock-safe. It does not run real providers and does not change DRC.
