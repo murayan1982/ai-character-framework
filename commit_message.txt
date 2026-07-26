@@ -1,1 +1,1 @@
-feat/test: add opaque voice artifact contract
+docs/test: add public contract conformance gate for v5.1.0

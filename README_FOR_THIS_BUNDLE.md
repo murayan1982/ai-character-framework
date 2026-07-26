@@ -1,10 +1,10 @@
-# FW v5.1.0 Commit 11 opaque voice artifact contract
+# FW v5.1.0 Commit 12 bundle
 
-Run from the FW repository root:
+Apply from the AI-Character-Framework repository root:
 
 ```powershell
-python apply_v510_commit11_opaque_voice_artifact.py
-del apply_v510_commit11_opaque_voice_artifact.py
+python apply_v510_commit12_public_contract_conformance_gate.py
+del apply_v510_commit12_public_contract_conformance_gate.py
 ```
 
 Then verify:
@@ -21,11 +21,12 @@ python scripts/smoke_v510_capability_snapshot.py
 python scripts/smoke_v510_provider_config_ownership.py
 python scripts/smoke_v510_session_lifecycle.py
 python scripts/smoke_v510_opaque_voice_artifact_contract.py
+python scripts/smoke_v510_public_contract_conformance_gate.py
 python scripts/check_release_package.py
 ```
 
-Commit message:
+Suggested commit message:
 
 ```text
-feat/test: add opaque voice artifact contract
+docs/test: add public contract conformance gate for v5.1.0
 ```
