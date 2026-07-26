@@ -1,0 +1,70 @@
+# v5.2.0 DRC-Driven Runtime Contract Checklist
+
+This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
+
+## Phase 0 - Planning and inventory
+
+- [x] Record DRC-driven priority order
+- [x] Define DRC integration non-negotiables
+- [ ] Inventory existing STT / voice input internals
+- [ ] Inventory existing realtime / event / state internals
+- [ ] Inventory existing TTS interruption / queue behavior
+- [ ] Inventory existing Live2D / VTS plugin and hotkey internals
+- [ ] Decide final next release version label
+
+## Phase 1 - Public voice-input / STT session
+
+- [ ] Design public voice-input types
+- [ ] Export voice-input symbols from `framework.__all__`
+- [ ] Add provider-neutral result / error contract
+- [ ] Add mock-safe public session lifecycle
+- [ ] Add guarded real STT execution boundary
+- [ ] Add examples
+- [ ] Add docs
+- [ ] Add smoke tests
+
+## Phase 2 - Unified realtime lifecycle / event contract
+
+- [ ] Define public realtime state model
+- [ ] Define public event types and payload rules
+- [ ] Define turn lifecycle
+- [ ] Add provider-neutral failure / interruption events
+- [ ] Add app-facing callback / event stream contract
+- [ ] Add docs and examples
+- [ ] Add conformance smoke
+
+## Phase 3 - Hard cancel / TTS queue / flush / barge-in
+
+- [ ] Define public interrupt request/result
+- [ ] Define TTS queue state and flush semantics
+- [ ] Define barge-in policy
+- [ ] Add repeated interrupt / flush / close smoke
+- [ ] Document unsupported-provider behavior
+- [ ] Keep provider hard-cancel claims conservative
+
+## Phase 4 - Public motion / Live2D / VTS adapter
+
+- [ ] Define public motion request/result
+- [ ] Define public motion session lifecycle
+- [ ] Add VTS unavailable / unmapped behavior
+- [ ] Add secret-safe VTS token boundary
+- [ ] Add docs and examples
+- [ ] Add mock-safe smoke
+
+## Phase 5 - Release readiness
+
+- [ ] Public contract inventory updated
+- [ ] Public conformance gate updated
+- [ ] Package import readiness updated
+- [ ] Fixed release package builder updated
+- [ ] Fixed release package verification updated
+- [ ] Final release tag readiness added
+- [ ] Release notes added
+- [ ] New FW version tagged/released
+
+## Phase 6 - Return to DRC
+
+- [ ] DRC consumes only new FW public APIs
+- [ ] DRC RT-1 re-evaluated
+- [ ] No DRC provider-internal STT/TTS/VTS workaround
+- [ ] No DRC sys.path/CWD/import-cache workaround

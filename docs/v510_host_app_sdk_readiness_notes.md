@@ -121,3 +121,19 @@ v5.1.0 release.
 The note records the public host-app integration surface, validation evidence,
 known transition baseline, non-goals, and local release artifact policy without
 moving or rewriting the already-pushed `v5.1.0` tag.
+
+## v5.2.0 planning start - DRC-driven runtime contracts
+
+After the v5.1.0 release, the next framework cycle starts from DRC RT-1 needs.
+
+Priority order:
+
+1. Public voice-input / STT session
+2. Unified realtime lifecycle / event contract
+3. Hard cancel / TTS queue / flush / barge-in
+4. Public motion / Live2D / VTS adapter
+5. Release a new FW version
+6. Return to DRC and re-evaluate RT-1
+
+This is documented in `docs/roadmap_feature_v5.2.0.md` and tracked by
+`docs/v520_drc_runtime_contract_checklist.md`.

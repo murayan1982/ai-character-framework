@@ -993,3 +993,13 @@ release, including public contract inventory, typed Text Chat results, Voice
 Output `speak()`, capability snapshots, FW-owned provider config, session
 lifecycle, opaque voice artifacts, package import readiness, fixed release
 package verification, and release artifact policy.
+
+### v5.2.0 planning roadmap
+
+The next framework development cycle is tracked in
+[`docs/roadmap_feature_v5.2.0.md`](docs/roadmap_feature_v5.2.0.md).
+
+This roadmap is driven by DRC RT-1 requirements and prioritizes public
+voice-input / STT session contracts, unified realtime lifecycle/events, hard
+cancel / TTS queue / flush / barge-in behavior, and public motion / Live2D /
+VTube Studio adapter boundaries before returning to DRC.
