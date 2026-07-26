@@ -29,6 +29,82 @@ class VoiceOutputRequest:
     language_code: str | None = None
 
 
+
+
+@dataclass(frozen=True)
+class VoiceArtifactRef:
+    """Opaque public reference to a FW-owned voice artifact.
+
+    Host apps may store or resolve this reference through FW-approved artifact
+    handling, but must not treat it as a local filesystem path or provider
+    object. The identifier is deliberately opaque and provider-neutral.
+    """
+
+    artifact_id: str
+    artifact_kind: str = "audio"
+    audio_format: str | None = None
+    content_type: str | None = None
+    expires_at: str | None = None
+    public_metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        artifact_id = self.artifact_id
+        if not isinstance(artifact_id, str) or not artifact_id.strip():
+            raise ValueError("VoiceArtifactRef.artifact_id must be a non-empty opaque string")
+        if _looks_like_private_path(artifact_id):
+            raise ValueError("VoiceArtifactRef.artifact_id must not expose a local/private path")
+        if self.artifact_kind != "audio":
+            raise ValueError("VoiceArtifactRef.artifact_kind must be 'audio'")
+
+    @classmethod
+    def from_id(
+        cls,
+        artifact_id: str,
+        *,
+        audio_format: str | None = None,
+        content_type: str | None = None,
+        expires_at: str | None = None,
+        public_metadata: Mapping[str, str] | None = None,
+    ) -> "VoiceArtifactRef":
+        """Create an opaque voice artifact reference from a FW-owned ID."""
+
+        return cls(
+            artifact_id=artifact_id,
+            audio_format=audio_format,
+            content_type=content_type,
+            expires_at=expires_at,
+            public_metadata=dict(public_metadata or {}),
+        )
+
+    def to_public_dict(self) -> dict[str, object]:
+        """Return a provider-neutral, secret-free public representation."""
+
+        return {
+            "artifact_id": self.artifact_id,
+            "artifact_kind": self.artifact_kind,
+            "audio_format": self.audio_format,
+            "content_type": self.content_type,
+            "expires_at": self.expires_at,
+            "public_metadata": dict(self.public_metadata),
+        }
+
+    def __str__(self) -> str:
+        """Return the opaque artifact identifier, never a filesystem path."""
+
+        return self.artifact_id
+
+
+def _looks_like_private_path(value: str) -> bool:
+    normalized = value.strip()
+    if "\\" in normalized or "/" in normalized:
+        return True
+    if len(normalized) >= 2 and normalized[1] == ":":
+        return True
+    lowered = normalized.lower()
+    private_tokens = ("api_key", "secret", "token", "elevenlabs", "openai")
+    return any(token in lowered for token in private_tokens)
+
+
 @dataclass(frozen=True)
 class VoiceOutputResult:
     """Provider-neutral voice output result.
@@ -50,7 +126,7 @@ class VoiceOutputResult:
     audio_ready: bool = False
     audio_format: str | None = None
     audio_url: str | None = None
-    audio_artifact_ref: str | None = None
+    audio_artifact_ref: VoiceArtifactRef | str | None = None
     message: str = ""
     public_metadata: Mapping[str, str] = field(default_factory=dict)
 

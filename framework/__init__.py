@@ -17,6 +17,7 @@ from framework.facade import (
     create_text_chat_session,
     create_voice_output_session,
 )
+from framework.audio.voice_output import VoiceArtifactRef
 from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
@@ -29,6 +30,7 @@ __all__ = [
     "TextChatSessionInfo",
     "TextChatStateChange",
     "VoiceOutputRequest",
+    "VoiceArtifactRef",
     "VoiceOutputResult",
     "VoiceOutputSession",
     "VoiceOutputSessionInfo",

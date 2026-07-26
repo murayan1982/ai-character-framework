@@ -27,6 +27,7 @@ REQUIRED_PUBLIC_SYMBOLS = (
     "VoiceOutputSession",
     "VoiceOutputSessionInfo",
     "VoiceOutputRequest",
+        "VoiceArtifactRef",
     "VoiceOutputResult",
 )
 
