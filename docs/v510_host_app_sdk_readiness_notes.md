@@ -405,3 +405,12 @@ Added `scripts/build_v520_release_package.py` and
 The builder creates the fixed v5.2.0 source release package after the release
 readiness gate passes, using deterministic zip settings, an embedded release
 manifest, and a SHA-256 sidecar.
+
+## v5.2.0 fixed release package verification checkpoint
+
+Added `scripts/verify_v520_release_package.py` and
+`scripts/smoke_v520_fixed_release_package_verification.py`.
+
+The verifier checks the v5.2.0 fixed release package SHA-256 sidecar,
+deterministic zip structure, embedded manifest, release-safe exclusions,
+manifest hashes, and required public runtime contract files.

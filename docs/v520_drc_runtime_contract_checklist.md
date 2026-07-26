@@ -355,3 +355,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Require clean working tree by default
 - [x] Add dry-run builder smoke
 - [ ] Add fixed release package verification for v5.2.0
+
+## Commit 26 - Fixed release package verification for v5.2.0
+
+- [x] Add fixed release package verifier script
+- [x] Verify SHA-256 sidecar
+- [x] Verify deterministic zip structure
+- [x] Verify embedded release manifest
+- [x] Verify release-safe exclusions
+- [x] Verify manifest byte counts and file hashes
+- [x] Verify required public runtime contract files are packaged
+- [x] Add temporary build/verify workflow smoke
+- [ ] Add final release tag readiness for v5.2.0

@@ -1341,3 +1341,17 @@ default, creates a deterministic zip, embeds `RELEASE_MANIFEST_v5.2.0.json`, and
 writes a SHA-256 sidecar.
 
 See [`docs/v520_fixed_release_package_builder.md`](docs/v520_fixed_release_package_builder.md).
+
+### v5.2.0 fixed release package verification
+
+A fixed release package verifier is available for v5.2.0:
+
+```powershell
+python scripts/verify_v520_release_package.py
+```
+
+It verifies the package SHA-256 sidecar, deterministic zip structure, embedded
+`RELEASE_MANIFEST_v5.2.0.json`, release-safe exclusions, manifest file hashes,
+and required public runtime contract files.
+
+See [`docs/v520_fixed_release_package_verification.md`](docs/v520_fixed_release_package_verification.md).
