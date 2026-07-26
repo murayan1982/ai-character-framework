@@ -208,3 +208,15 @@ Added `scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`.
 The gate verifies the public voice-input / STT contract so far: exports,
 provider-safe import, factory signature, request/result helpers, capability
 preflight, session lifecycle/events, and public-only host-app examples.
+
+## v5.2.0 realtime lifecycle / event inventory checkpoint
+
+Started priority 2 of the DRC-driven v5.2.0 work: unified realtime lifecycle /
+event contract.
+
+Added `docs/v520_realtime_lifecycle_event_inventory.md` and
+`scripts/smoke_v520_realtime_lifecycle_event_inventory.py`.
+
+This checkpoint records candidate public realtime symbols, lifecycle states,
+event types, event payload safety rules, turn model direction, and relationship
+to existing public Text Chat / Voice Input / Voice Output contracts.

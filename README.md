@@ -1096,3 +1096,14 @@ A mock-safe conformance gate now verifies the public voice-input / STT boundary:
 - public-only host-app examples
 
 See [`docs/v520_voice_input_public_contract_conformance_gate.md`](docs/v520_voice_input_public_contract_conformance_gate.md).
+
+### v5.2.0 realtime lifecycle / event inventory
+
+Priority 2 of the DRC-driven v5.2.0 work is the unified realtime lifecycle /
+event contract.
+
+Inventory notes are recorded in
+[`docs/v520_realtime_lifecycle_event_inventory.md`](docs/v520_realtime_lifecycle_event_inventory.md).
+
+The goal is to give DRC one stable public event surface across voice input, text
+chat, voice output, future motion, interruption, failure, and cleanup states.

@@ -148,3 +148,14 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add session lifecycle/result/event checks
 - [x] Add public-only host-app example checks
 - [ ] Start unified realtime lifecycle / event contract inventory
+
+## Commit 9 - Realtime lifecycle / event inventory
+
+- [x] Start priority 2: unified realtime lifecycle / event contract
+- [x] Record candidate public realtime symbols
+- [x] Record candidate lifecycle states
+- [x] Record candidate realtime event types
+- [x] Record public event payload safety rules
+- [x] Record public turn model direction
+- [x] Record relationship to existing Text / Voice Input / Voice Output contracts
+- [ ] Add public realtime lifecycle event type skeleton
