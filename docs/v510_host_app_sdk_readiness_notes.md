@@ -66,3 +66,11 @@ capability snapshot behavior, session lifecycle, and opaque voice artifact refs.
 It must not import provider SDKs, call providers, require credentials, or create
 real audio artifacts.
 
+## Commit 13 - Package import readiness
+
+Added `docs/v510_package_import_readiness.md` and
+`scripts/smoke_v510_package_import_readiness.py` as a mock-safe pre-release gate.
+The smoke verifies that `framework` can be copied into a package-like directory
+and imported from outside the repository root without provider SDK eager imports,
+provider execution, checkout-layout assumptions, CWD mutation, or real audio
+artifact creation.
