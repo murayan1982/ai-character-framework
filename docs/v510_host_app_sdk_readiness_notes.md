@@ -423,3 +423,14 @@ The gate verifies the v5.2.0 source-tree release readiness gate, fixed package
 builder smoke, fixed package verification smoke, package tooling, git state, tag
 availability, and optional final fixed package verification before creating the
 `v5.2.0` tag.
+
+## v5.2.0 generated release artifact ignore checkpoint
+
+Added git ignore rules for generated release artifacts:
+
+- `release/*.zip`
+- `release/*.sha256.txt`
+
+This keeps the final fixed release package and SHA-256 sidecar out of source
+commits while allowing final tag readiness to require a clean source tree after
+package generation.

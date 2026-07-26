@@ -80,3 +80,24 @@ This checkpoint does not create the release package, tag, push, or publish a
 GitHub release.
 
 It only adds the final tag-readiness gate.
+
+## Generated release artifacts
+
+The final release package and SHA-256 sidecar are generated artifacts and should
+not be committed to source control.
+
+The repository ignores:
+
+```text
+release/*.zip
+release/*.sha256.txt
+```
+
+This lets the final release flow build and verify:
+
+```text
+release/ai-character-framework_v5.2.0.zip
+release/ai-character-framework_v5.2.0.sha256.txt
+```
+
+while keeping `git status` clean for source-tree tag readiness.

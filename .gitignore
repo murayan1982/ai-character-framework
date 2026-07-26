@@ -42,3 +42,7 @@ log_*.txt
 temp/
 voice_output_*.mp3
 v_*.mp3
+
+# Generated release artifacts
+release/*.zip
+release/*.sha256.txt

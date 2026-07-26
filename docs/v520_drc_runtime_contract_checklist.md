@@ -381,3 +381,13 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [ ] Build final fixed release package from clean committed tree
 - [ ] Verify final fixed release package
 - [ ] Create and push `v5.2.0` tag
+
+## Commit 28 - Ignore generated v5.2.0 release artifacts
+
+- [x] Ignore generated release zip artifacts
+- [x] Ignore generated release SHA-256 sidecar artifacts
+- [x] Keep final release package files out of source commits
+- [ ] Rebuild final fixed v5.2.0 release package from clean tree
+- [ ] Verify final fixed v5.2.0 release package
+- [ ] Run final tag readiness with `--require-package`
+- [ ] Create and push `v5.2.0` tag
