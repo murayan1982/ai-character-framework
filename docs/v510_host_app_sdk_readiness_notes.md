@@ -200,3 +200,11 @@ Added mock-safe public voice-input examples for host apps:
 - missing-credentials handling
 
 The examples use only public `framework` imports and do not execute real STT.
+
+## v5.2.0 voice-input conformance gate checkpoint
+
+Added `scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`.
+
+The gate verifies the public voice-input / STT contract so far: exports,
+provider-safe import, factory signature, request/result helpers, capability
+preflight, session lifecycle/events, and public-only host-app examples.

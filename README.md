@@ -1082,3 +1082,17 @@ They demonstrate capability preflight, public session text fallback, and typed
 missing-credential handling without importing FW internals or STT provider SDKs.
 
 See [`docs/v520_voice_input_host_app_examples.md`](docs/v520_voice_input_host_app_examples.md).
+
+### v5.2.0 voice-input public contract conformance gate
+
+A mock-safe conformance gate now verifies the public voice-input / STT boundary:
+
+- public exports
+- provider-safe `import framework`
+- keyword-only `create_voice_input_session(...)`
+- typed request/result helpers
+- capability preflight
+- session lifecycle and events
+- public-only host-app examples
+
+See [`docs/v520_voice_input_public_contract_conformance_gate.md`](docs/v520_voice_input_public_contract_conformance_gate.md).

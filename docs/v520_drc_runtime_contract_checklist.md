@@ -136,3 +136,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify examples use public `framework` imports only
 - [x] Verify examples do not execute real STT
 - [ ] Add public voice-input contract conformance gate
+
+## Commit 8 - Voice-input public contract conformance gate
+
+- [x] Add public voice-input conformance gate doc
+- [x] Add public export conformance checks
+- [x] Add provider-safe import conformance checks
+- [x] Add `create_voice_input_session(...)` signature checks
+- [x] Add request/result helper checks
+- [x] Add capability preflight checks
+- [x] Add session lifecycle/result/event checks
+- [x] Add public-only host-app example checks
+- [ ] Start unified realtime lifecycle / event contract inventory
