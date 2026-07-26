@@ -945,3 +945,14 @@ Please see `LICENSE.txt` for the full license terms.
 This project may be used as a component in larger applications, including commercial products and services, as long as the use follows the license terms.
 
 Redistribution, repackaging, or resale of the framework itself as a standalone product, starter kit, template, boilerplate, or similar package is restricted by the license.
+
+### v5.1.0 release readiness gate
+
+Before creating v5.1.0 release artifacts, run:
+
+```bash
+python scripts/smoke_v510_release_readiness_gate.py
+```
+
+The gate is mock-safe. It does not call real provider APIs, generate real voice
+artifacts, or create release tags/archives.

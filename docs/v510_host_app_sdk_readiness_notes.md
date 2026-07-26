@@ -74,3 +74,12 @@ The smoke verifies that `framework` can be copied into a package-like directory
 and imported from outside the repository root without provider SDK eager imports,
 provider execution, checkout-layout assumptions, CWD mutation, or real audio
 artifact creation.
+
+## Commit 14 - release readiness gate
+
+v5.1.0 adds a release-readiness gate that runs the current mock-safe public
+contract, provider-config, lifecycle, opaque artifact, conformance, package
+import readiness, and release package static checks from one command.
+
+This does not create release artifacts, tags, or downstream DRC validation. It is
+a pre-release decision gate for the source tree.
