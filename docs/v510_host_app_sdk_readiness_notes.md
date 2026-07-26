@@ -45,3 +45,10 @@ All readiness checks should pass without:
 
 Real-provider execution can have separate opt-in checks, but those are not the
 basis for public SDK boundary readiness.
+
+## Session lifecycle / close contract checkpoint
+
+Public text chat and voice output sessions now expose idempotent `close()`,
+`dispose()`, context manager support, and `is_closed`. Host applications can
+call these boundaries during session eviction without inspecting FW internals.
+

@@ -154,6 +154,35 @@ class TextChatSession:
         return "".join(self.ask_stream(text))
 
 
+
+    @property
+    def is_closed(self) -> bool:
+        """Whether this public text chat session has been closed."""
+
+        return bool(getattr(self, "_fw_public_closed", False))
+
+    def close(self) -> None:
+        """Close the public text chat session.
+
+        The public close boundary is intentionally idempotent. It marks the
+        session as closed without exposing provider clients or private runtime
+        resources to host applications. Provider-specific cleanup hooks can be
+        wired behind this method in later checkpoints.
+        """
+
+        self._fw_public_closed = True
+
+    def dispose(self) -> None:
+        """Compatibility alias for ``close()``."""
+
+        self.close()
+
+    def __enter__(self) -> "TextChatSession":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> bool:
+        self.close()
+        return False
     def ask_result(self, message: str) -> "TextChatResult":
         """Return a provider-neutral typed result for a text chat request.
 
@@ -164,6 +193,14 @@ class TextChatSession:
         """
 
         from .text_chat_result import TextChatResult
+
+        if getattr(self, "_fw_public_closed", False):
+            return TextChatResult.failed(
+                public_error_code="session_closed",
+                safe_message="Text chat session is closed.",
+                retryable=False,
+                public_metadata={"boundary": "text_chat"},
+            )
 
         try:
             response = self.ask(message)

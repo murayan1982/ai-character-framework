@@ -144,7 +144,38 @@ class VoiceOutputSession:
             status_reason=provider_status.status_reason,
         )
 
+
+    @property
+    def is_closed(self) -> bool:
+        """Whether this public voice output session has been closed."""
+
+        return bool(getattr(self, "_fw_public_closed", False))
+
+    def close(self) -> None:
+        """Close the public voice output session.
+
+        The close boundary is idempotent and provider-neutral. It must not call
+        provider SDKs during mock-safe operation. Future real-provider cleanup
+        hooks can be wired behind this public method.
+        """
+
+        self._fw_public_closed = True
+
+    def dispose(self) -> None:
+        """Compatibility alias for ``close()``."""
+
+        self.close()
+
+    def __enter__(self) -> "VoiceOutputSession":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> bool:
+        self.close()
+        return False
     def speak(self, request: VoiceOutputRequest) -> VoiceOutputResult:
+        if getattr(self, "_fw_public_closed", False):
+            return _voice_output_closed_result(request)
+
 
         """Create voice output using the stable host-app method name.
 
@@ -159,6 +190,13 @@ class VoiceOutputSession:
 
 
     def create_output(self, request: VoiceOutputRequest | str) -> VoiceOutputResult:
+
+
+        if getattr(self, "_fw_public_closed", False):
+
+
+            return _voice_output_closed_result(request)
+
         """Create a voice output artifact when a provider is available.
 
         The default behavior remains mock-safe unavailable. When real TTS is
@@ -201,6 +239,70 @@ class VoiceOutputSession:
         """
 
         return None
+    # v5.1.0 public session lifecycle override block
+    @staticmethod
+    def _v510_request_audio_format(request: object) -> str | None:
+        value = getattr(request, "requested_audio_format", None)
+        if isinstance(value, str) and value.strip():
+            return value
+        return None
+
+    @staticmethod
+    def _v510_closed_voice_result(request: object) -> "VoiceOutputResult":
+        return VoiceOutputResult(
+            request_state="failed",
+            audio_ready=False,
+            audio_format=VoiceOutputSession._v510_request_audio_format(request),
+            audio_url=None,
+            audio_artifact_ref=None,
+            message="Voice output session is closed.",
+            public_metadata={
+                "boundary": "voice_output",
+                "public_error_code": "session_closed",
+            },
+        )
+
+    @property
+    def is_closed(self) -> bool:
+        """Whether this public voice output session has been closed."""
+
+        return bool(getattr(self, "_fw_public_closed", False))
+
+    def close(self) -> None:
+        """Close the public voice output session.
+
+        The close boundary is idempotent and provider-neutral.
+        """
+
+        self._fw_public_closed = True
+
+    def dispose(self) -> None:
+        """Compatibility alias for close()."""
+
+        self.close()
+
+    def __enter__(self) -> "VoiceOutputSession":
+        return self
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> bool:
+        self.close()
+        return False
+
+    _v510_original_create_output = create_output
+
+    def create_output(self, request: "VoiceOutputRequest | str") -> "VoiceOutputResult":
+        if getattr(self, "_fw_public_closed", False):
+            return self._v510_closed_voice_result(request)
+        return self._v510_original_create_output(request)
+
+    _v510_original_speak = speak
+
+    def speak(self, request: "VoiceOutputRequest") -> "VoiceOutputResult":
+        if getattr(self, "_fw_public_closed", False):
+            return self._v510_closed_voice_result(request)
+        return self._v510_original_speak(request)
+
+    # end v5.1.0 public session lifecycle override block
 
 
 # Alias kept small and readable for app code that thinks in terms of synthesis.
@@ -258,3 +360,36 @@ __all__ = [
     "VoiceSynthesisResult",
     "create_voice_output_session",
 ]
+
+def _voice_output_request_audio_format(request: object) -> str | None:
+    value = getattr(request, "requested_audio_format", None)
+    if isinstance(value, str) and value.strip():
+        return value
+    return None
+
+
+def _voice_output_closed_result(request: object) -> VoiceOutputResult:
+    """Return a provider-neutral result for a closed voice output session."""
+
+    kwargs = {
+        "request_state": "failed",
+        "audio_ready": False,
+        "audio_format": _voice_output_request_audio_format(request),
+        "audio_url": None,
+        "audio_artifact_ref": None,
+        "message": "Voice output session is closed.",
+        "public_metadata": {
+            "boundary": "voice_output",
+            "public_error_code": "session_closed",
+        },
+    }
+    try:
+        return VoiceOutputResult(**kwargs)
+    except TypeError as first_error:
+        fallback_kwargs = dict(kwargs)
+        fallback_kwargs["public_message"] = fallback_kwargs.pop("message")
+        try:
+            return VoiceOutputResult(**fallback_kwargs)
+        except TypeError:
+            raise first_error
+

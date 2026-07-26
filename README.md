@@ -344,6 +344,27 @@ Real provider execution is explicit opt-in and remains guarded by `FRAMEWORK_VOI
 
 ---
 
+
+
+### Public session lifecycle
+
+Public sessions expose an idempotent cleanup boundary:
+
+```python
+with create_text_chat_session() as session:
+    result = session.ask_result("こんにちは。短く返して")
+
+session = create_voice_output_session()
+try:
+    result = session.speak(request)
+finally:
+    session.close()
+```
+
+Host applications can call `close()` or `dispose()` when evicting sessions. The
+cleanup boundary is provider-neutral and does not require host apps to inspect FW
+internals.
+
 ## App integration examples
 
 The `examples/` directory includes small, copy-friendly examples for external application integration.
