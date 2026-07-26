@@ -147,3 +147,15 @@ This checkpoint records the public voice-input / STT session direction before
 implementation, including candidate public symbols, provider-neutral result
 shape, guarded real execution, lifecycle expectations, event expectations, and
 DRC non-dependency rules.
+
+## v5.2.0 public voice-input type checkpoint
+
+Added the first public voice-input / STT contract types:
+
+- `VoiceInputOutcome`
+- `VoiceInputErrorCode`
+- `VoiceInputRequest`
+- `VoiceInputResult`
+
+This checkpoint is provider-neutral and mock-safe. It does not add real STT
+execution yet.

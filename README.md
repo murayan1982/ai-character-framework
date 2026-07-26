@@ -1015,3 +1015,15 @@ Inventory notes are recorded in
 The goal is to prevent DRC and other host apps from depending on FW internal STT
 modules, provider-specific clients, raw audio paths, token files, or temporary
 checkout-layout workarounds.
+
+### v5.2.0 public voice-input types
+
+v5.2.0 begins the public voice-input / STT boundary with provider-neutral public
+types:
+
+- `VoiceInputOutcome`
+- `VoiceInputErrorCode`
+- `VoiceInputRequest`
+- `VoiceInputResult`
+
+See [`docs/v520_voice_input_public_types.md`](docs/v520_voice_input_public_types.md).

@@ -77,3 +77,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Record lifecycle and event requirements
 - [x] Record DRC non-dependency rules for STT internals
 - [ ] Add public voice-input request/result type skeleton
+
+## Commit 3 - Public voice-input request/result types
+
+- [x] Add `framework.voice_input`
+- [x] Add `VoiceInputOutcome`
+- [x] Add `VoiceInputErrorCode`
+- [x] Add `VoiceInputRequest`
+- [x] Add `VoiceInputResult`
+- [x] Export public voice-input types from `framework`
+- [x] Add provider-neutral / secret-safe public type smoke
+- [ ] Add public `VoiceInputSession` skeleton
+- [ ] Add `create_voice_input_session(...)`

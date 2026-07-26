@@ -43,3 +43,15 @@ __all__ = [
     "FrameworkCapabilities",
     "get_capabilities",
 ]
+
+from .voice_input import VoiceInputErrorCode, VoiceInputOutcome, VoiceInputRequest, VoiceInputResult
+
+# v5.2.0 public voice-input / STT contract exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['VoiceInputErrorCode', 'VoiceInputOutcome', 'VoiceInputRequest', 'VoiceInputResult']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name
