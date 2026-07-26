@@ -293,3 +293,18 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add provider-neutral / secret-safe public type smoke
 - [ ] Add public `MotionSession` skeleton
 - [ ] Add `create_motion_session(...)`
+
+## Commit 21 - Public motion session skeleton
+
+- [x] Add `MotionSessionInfo`
+- [x] Add `MotionSession`
+- [x] Add `create_motion_session(...)`
+- [x] Export public motion session symbols from `framework`
+- [x] Add mock-safe `preflight()`
+- [x] Add mock-safe `apply_motion(...)`
+- [x] Add provider-neutral motion events
+- [x] Add lifecycle: `close()`, `dispose()`, `is_closed`
+- [x] Add context manager support
+- [x] Add closed-session result behavior
+- [x] Add honest real-adapter not-implemented / provider-guard behavior
+- [ ] Add public motion host-app examples

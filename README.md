@@ -1268,3 +1268,18 @@ provider-neutral public types:
 - `MotionResult`
 
 See [`docs/v520_motion_adapter_types.md`](docs/v520_motion_adapter_types.md).
+
+### v5.2.0 public motion session skeleton
+
+v5.2.0 now includes a mock-safe public motion session skeleton:
+
+- `create_motion_session(...)`
+- `MotionSession`
+- `MotionSessionInfo`
+
+The session exposes `preflight()`, `apply_motion(...)`, `on_event(...)`,
+`emit_created()`, `close()`, `dispose()`, `is_closed`, `state`, `info`,
+`capability`, and context manager support without connecting to real Live2D or
+VTube Studio by default.
+
+See [`docs/v520_motion_session_skeleton.md`](docs/v520_motion_session_skeleton.md).

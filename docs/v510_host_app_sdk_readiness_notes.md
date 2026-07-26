@@ -355,3 +355,15 @@ Added the first public motion / Live2D / VTube Studio adapter contract types:
 
 This checkpoint is provider-neutral and mock-safe. It does not add real Live2D,
 VTS WebSocket, model runtime, or motion session behavior yet.
+
+## v5.2.0 public motion session skeleton checkpoint
+
+Added the first public motion session boundary:
+
+- `create_motion_session(...)`
+- `MotionSession`
+- `MotionSessionInfo`
+
+The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
+does not connect to real Live2D, VTS WebSocket, token files, model paths, or
+provider SDKs.

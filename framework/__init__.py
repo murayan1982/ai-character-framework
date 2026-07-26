@@ -127,3 +127,15 @@ for _name in ['MotionAdapterStatus', 'MotionCapability', 'MotionErrorCode', 'Mot
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .motion_session import MotionSession, MotionSessionInfo, create_motion_session
+
+# v5.2.0 public motion session exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['MotionSession', 'MotionSessionInfo', 'create_motion_session']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name
