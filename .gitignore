@@ -28,3 +28,20 @@ README_commit*_apply.md
 # Logs/temp
 *.log
 tmp/
+
+# Local token/config secrets
+config/tokens/
+*_token.json
+
+# Runtime output logs
+output/
+log_*.txt
+
+# Local launch helpers
+install.bat
+run.bat
+
+# Runtime/generated audio
+temp/
+voice_output_*.mp3
+v_*.mp3
