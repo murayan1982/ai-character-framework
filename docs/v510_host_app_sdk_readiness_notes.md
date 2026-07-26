@@ -52,3 +52,17 @@ Public text chat and voice output sessions now expose idempotent `close()`,
 `dispose()`, context manager support, and `is_closed`. Host applications can
 call these boundaries during session eviction without inspecting FW internals.
 
+## Public contract conformance gate
+
+v5.1.0 includes a mock-safe conformance gate:
+
+```powershell
+python scripts/smoke_v510_public_contract_conformance_gate.py
+```
+
+The gate checks the public SDK surface across docs, examples, `framework.__all__`,
+factory signatures, typed text result behavior, voice output method naming,
+capability snapshot behavior, session lifecycle, and opaque voice artifact refs.
+It must not import provider SDKs, call providers, require credentials, or create
+real audio artifacts.
+
