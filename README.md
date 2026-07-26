@@ -1135,3 +1135,16 @@ The session exposes `on_event(...)`, `emit_created()`, `run_turn(...)`,
 without executing real STT / LLM / TTS / motion providers by default.
 
 See [`docs/v520_realtime_session_skeleton.md`](docs/v520_realtime_session_skeleton.md).
+
+### v5.2.0 realtime host-app examples
+
+Mock-safe public realtime examples are available:
+
+- `examples/app_realtime_session_event_flow.py`
+- `examples/app_realtime_event_payload_mapping.py`
+- `examples/app_realtime_closed_session_behavior.py`
+
+They demonstrate public event callbacks, event payload mapping, and
+closed-session behavior without importing FW internals or realtime provider SDKs.
+
+See [`docs/v520_realtime_host_app_examples.md`](docs/v520_realtime_host_app_examples.md).

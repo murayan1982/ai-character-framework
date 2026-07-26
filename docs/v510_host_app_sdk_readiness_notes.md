@@ -245,3 +245,14 @@ Added the first public realtime session boundary:
 
 The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
 does not execute real STT / LLM / TTS / motion providers yet.
+
+## v5.2.0 realtime host-app examples checkpoint
+
+Added mock-safe public realtime examples for host apps:
+
+- session event flow
+- event payload mapping
+- closed-session behavior
+
+The examples use only public `framework` imports and do not execute real
+STT / LLM / TTS / motion providers.

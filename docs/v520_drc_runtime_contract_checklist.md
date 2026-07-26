@@ -186,3 +186,13 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add context manager support
 - [x] Add closed-session result behavior
 - [ ] Add public realtime host-app examples
+
+## Commit 12 - Realtime host-app examples
+
+- [x] Add realtime session event-flow example
+- [x] Add realtime event payload mapping example
+- [x] Add realtime closed-session behavior example
+- [x] Add example smoke
+- [x] Verify examples use public `framework` imports only
+- [x] Verify examples do not execute real STT / LLM / TTS / motion providers
+- [ ] Add public realtime contract conformance gate
