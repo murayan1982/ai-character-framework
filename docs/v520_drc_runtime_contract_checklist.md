@@ -331,3 +331,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add real-adapter guard / not-implemented checks
 - [x] Add public-only host-app example checks
 - [ ] Add v5.2.0 release readiness gate
+
+## Commit 24 - v5.2.0 release readiness gate
+
+- [x] Add v5.2.0 source-tree release readiness gate doc
+- [x] Require voice-input conformance gate
+- [x] Require realtime conformance gate
+- [x] Require interrupt/output-control conformance gate
+- [x] Require motion conformance gate
+- [x] Require baseline release package check
+- [x] Verify public runtime symbols are exported from `framework`
+- [x] Verify default runtime flags remain honest / mock-safe
+- [ ] Add fixed release package builder for v5.2.0

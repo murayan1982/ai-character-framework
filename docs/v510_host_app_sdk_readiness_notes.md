@@ -388,3 +388,11 @@ The gate verifies the public motion / Live2D / VTS adapter contract so far:
 exports, provider-safe import, motion adapter types, `create_motion_session(...)`,
 `MotionSession` lifecycle / preflight / events / results, real-adapter guard /
 not-implemented behavior, and public-only host-app examples.
+
+## v5.2.0 release readiness gate checkpoint
+
+Added `scripts/smoke_v520_release_readiness_gate.py`.
+
+The gate verifies the source tree is ready for fixed v5.2.0 release packaging by
+requiring the voice-input, realtime, interrupt/output-control, and motion public
+contract conformance gates plus the baseline release package check.

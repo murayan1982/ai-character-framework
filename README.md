@@ -1313,3 +1313,17 @@ adapter boundary:
 - public-only host-app examples
 
 See [`docs/v520_motion_public_contract_conformance_gate.md`](docs/v520_motion_public_contract_conformance_gate.md).
+
+### v5.2.0 release readiness gate
+
+A source-tree release readiness gate now verifies the DRC-driven v5.2.0 public
+runtime contracts before fixed release packaging begins.
+
+The gate covers:
+
+- public voice-input / STT session
+- unified realtime lifecycle / event contract
+- hard cancel / TTS queue / flush / barge-in public control
+- public motion / Live2D / VTS adapter
+
+See [`docs/v520_release_readiness_gate.md`](docs/v520_release_readiness_gate.md).
