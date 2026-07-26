@@ -1,1 +1,1 @@
-docs/test: add public factory signature contract for v5.1.0
+docs/test: add result and error contract for v5.1.0
