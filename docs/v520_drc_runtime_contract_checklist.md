@@ -159,3 +159,17 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Record public turn model direction
 - [x] Record relationship to existing Text / Voice Input / Voice Output contracts
 - [ ] Add public realtime lifecycle event type skeleton
+
+## Commit 10 - Public realtime lifecycle event types
+
+- [x] Add `framework.realtime`
+- [x] Add `RealtimeState`
+- [x] Add `RealtimeEventType`
+- [x] Add `RealtimeErrorCode`
+- [x] Add `RealtimeEvent`
+- [x] Add `RealtimeTurn`
+- [x] Add `RealtimeTurnResult`
+- [x] Export public realtime lifecycle/event types from `framework`
+- [x] Add provider-neutral / secret-safe public type smoke
+- [ ] Add public `RealtimeSession` skeleton
+- [ ] Add `create_realtime_session(...)`

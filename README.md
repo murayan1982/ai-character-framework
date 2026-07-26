@@ -1107,3 +1107,17 @@ Inventory notes are recorded in
 
 The goal is to give DRC one stable public event surface across voice input, text
 chat, voice output, future motion, interruption, failure, and cleanup states.
+
+### v5.2.0 public realtime lifecycle event types
+
+v5.2.0 now begins the unified realtime lifecycle / event contract with
+provider-neutral public types:
+
+- `RealtimeState`
+- `RealtimeEventType`
+- `RealtimeErrorCode`
+- `RealtimeEvent`
+- `RealtimeTurn`
+- `RealtimeTurnResult`
+
+See [`docs/v520_realtime_lifecycle_event_types.md`](docs/v520_realtime_lifecycle_event_types.md).

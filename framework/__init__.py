@@ -79,3 +79,15 @@ for _name in ['VoiceInputCapabilities', 'VoiceInputProviderConfig', 'VoiceInputP
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .realtime import RealtimeErrorCode, RealtimeEvent, RealtimeEventType, RealtimeState, RealtimeTurn, RealtimeTurnResult
+
+# v5.2.0 public realtime lifecycle/event exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['RealtimeErrorCode', 'RealtimeEvent', 'RealtimeEventType', 'RealtimeState', 'RealtimeTurn', 'RealtimeTurnResult']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name

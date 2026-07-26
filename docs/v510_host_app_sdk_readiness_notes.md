@@ -220,3 +220,17 @@ Added `docs/v520_realtime_lifecycle_event_inventory.md` and
 This checkpoint records candidate public realtime symbols, lifecycle states,
 event types, event payload safety rules, turn model direction, and relationship
 to existing public Text Chat / Voice Input / Voice Output contracts.
+
+## v5.2.0 public realtime lifecycle event type checkpoint
+
+Added the first public realtime lifecycle / event contract types:
+
+- `RealtimeState`
+- `RealtimeEventType`
+- `RealtimeErrorCode`
+- `RealtimeEvent`
+- `RealtimeTurn`
+- `RealtimeTurnResult`
+
+This checkpoint is provider-neutral and mock-safe. It does not add realtime
+session orchestration yet.
