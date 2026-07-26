@@ -1,1 +1,1 @@
-docs/test: add package import readiness smoke for v5.1.0
+docs/test: add fixed release package builder for v5.1.0
