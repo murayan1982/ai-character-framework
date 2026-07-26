@@ -1355,3 +1355,17 @@ It verifies the package SHA-256 sidecar, deterministic zip structure, embedded
 and required public runtime contract files.
 
 See [`docs/v520_fixed_release_package_verification.md`](docs/v520_fixed_release_package_verification.md).
+
+### v5.2.0 final release tag readiness
+
+A final tag-readiness gate is available for v5.2.0:
+
+```powershell
+python scripts/smoke_v520_final_release_tag_readiness.py --require-package
+```
+
+It verifies the release readiness gate, fixed package builder smoke, fixed package
+verification smoke, package tooling, git state, tag availability, and optionally
+the final fixed package before creating `v5.2.0`.
+
+See [`docs/v520_final_release_tag_readiness.md`](docs/v520_final_release_tag_readiness.md).

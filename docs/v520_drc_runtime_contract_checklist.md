@@ -367,3 +367,17 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify required public runtime contract files are packaged
 - [x] Add temporary build/verify workflow smoke
 - [ ] Add final release tag readiness for v5.2.0
+
+## Commit 27 - Final release tag readiness for v5.2.0
+
+- [x] Add final release tag readiness gate
+- [x] Require source-tree release readiness gate
+- [x] Require fixed release package builder smoke
+- [x] Require fixed release package verification smoke
+- [x] Verify package builder and verifier exist
+- [x] Verify git HEAD resolves
+- [x] Verify tag availability by default
+- [x] Add optional final package verification with `--require-package`
+- [ ] Build final fixed release package from clean committed tree
+- [ ] Verify final fixed release package
+- [ ] Create and push `v5.2.0` tag

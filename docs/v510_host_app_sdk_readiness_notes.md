@@ -414,3 +414,12 @@ Added `scripts/verify_v520_release_package.py` and
 The verifier checks the v5.2.0 fixed release package SHA-256 sidecar,
 deterministic zip structure, embedded manifest, release-safe exclusions,
 manifest hashes, and required public runtime contract files.
+
+## v5.2.0 final release tag readiness checkpoint
+
+Added `scripts/smoke_v520_final_release_tag_readiness.py`.
+
+The gate verifies the v5.2.0 source-tree release readiness gate, fixed package
+builder smoke, fixed package verification smoke, package tooling, git state, tag
+availability, and optional final fixed package verification before creating the
+`v5.2.0` tag.
