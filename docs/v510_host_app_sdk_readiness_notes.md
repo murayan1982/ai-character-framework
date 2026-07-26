@@ -112,3 +112,12 @@ This checkpoint runs the existing release readiness gate, fixed release
 package verification, and release package check; verifies the generated
 fixed release ZIP and manifest; checks local-secret hygiene; and optionally
 enforces a clean Git working tree before creating the `v5.1.0` tag.
+
+## Post-release note cleanup
+
+Added `docs/release_notes_v5.1.0.md` as the post-release note for the tagged
+v5.1.0 release.
+
+The note records the public host-app integration surface, validation evidence,
+known transition baseline, non-goals, and local release artifact policy without
+moving or rewriting the already-pushed `v5.1.0` tag.

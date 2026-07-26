@@ -982,3 +982,14 @@ python scripts/smoke_v510_final_release_tag_readiness.py --require-clean-tree --
 
 The generated `release/ai-character-framework_v5.1.0.zip` and manifest are
 local release artifacts/evidence and are not intended to be committed.
+
+### v5.1.0 release notes
+
+The v5.1.0 release notes are available in
+[`docs/release_notes_v5.1.0.md`](docs/release_notes_v5.1.0.md).
+
+They summarize the Installable SDK / Stable Host App Integration Boundary
+release, including public contract inventory, typed Text Chat results, Voice
+Output `speak()`, capability snapshots, FW-owned provider config, session
+lifecycle, opaque voice artifacts, package import readiness, fixed release
+package verification, and release artifact policy.
