@@ -255,3 +255,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify examples use public `framework` imports only
 - [x] Verify examples do not execute real cancel / flush / playback stop / provider cancel / barge-in detection
 - [ ] Add interrupt / output-control public contract conformance gate
+
+## Commit 18 - Interrupt / output-control public contract conformance gate
+
+- [x] Add public interrupt/output-control conformance gate doc
+- [x] Add public export conformance checks
+- [x] Add provider-safe import conformance checks
+- [x] Add interrupt / output flush / barge-in type checks
+- [x] Add `RealtimeSession` output-control method checks
+- [x] Add honest capability flag checks
+- [x] Add public realtime event checks
+- [x] Add public-only host-app example checks
+- [ ] Start public motion / Live2D / VTS adapter inventory

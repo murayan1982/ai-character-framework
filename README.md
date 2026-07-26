@@ -1223,3 +1223,18 @@ They demonstrate typed interrupt results, empty-queue output flush results, and
 barge-in policy decisions without importing FW internals or provider SDKs.
 
 See [`docs/v520_interrupt_output_control_host_app_examples.md`](docs/v520_interrupt_output_control_host_app_examples.md).
+
+### v5.2.0 interrupt / output-control public contract conformance gate
+
+A mock-safe conformance gate now verifies the public hard cancel / TTS queue /
+flush / barge-in boundary:
+
+- public exports
+- provider-safe `import framework`
+- interrupt / output flush / barge-in public types
+- `RealtimeSession` output-control methods
+- honest capability flags
+- public realtime events
+- public-only host-app examples
+
+See [`docs/v520_interrupt_output_control_public_contract_conformance_gate.md`](docs/v520_interrupt_output_control_public_contract_conformance_gate.md).

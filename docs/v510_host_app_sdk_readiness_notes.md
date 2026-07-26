@@ -317,3 +317,12 @@ Added mock-safe public examples for:
 
 The examples use only public `framework` imports and do not execute real hard
 cancel, TTS queue flush, playback stop, provider cancel, or barge-in detection.
+
+## v5.2.0 interrupt / output-control conformance gate checkpoint
+
+Added `scripts/smoke_v520_interrupt_output_control_public_contract_conformance_gate.py`.
+
+The gate verifies the public hard cancel / TTS queue / flush / barge-in contract
+so far: exports, provider-safe import, public interrupt / output flush /
+barge-in types, `RealtimeSession` output-control methods, honest capability
+flags, public events, and public-only host-app examples.
