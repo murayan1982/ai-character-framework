@@ -379,3 +379,12 @@ Added mock-safe public examples for:
 
 The examples use only public `framework` imports and do not execute real Live2D,
 VTS WebSocket, token access, model loading, or provider SDK behavior.
+
+## v5.2.0 motion conformance gate checkpoint
+
+Added `scripts/smoke_v520_motion_public_contract_conformance_gate.py`.
+
+The gate verifies the public motion / Live2D / VTS adapter contract so far:
+exports, provider-safe import, motion adapter types, `create_motion_session(...)`,
+`MotionSession` lifecycle / preflight / events / results, real-adapter guard /
+not-implemented behavior, and public-only host-app examples.

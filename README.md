@@ -1298,3 +1298,18 @@ behavior, and real-adapter guard handling without importing FW internals or
 provider SDKs.
 
 See [`docs/v520_motion_host_app_examples.md`](docs/v520_motion_host_app_examples.md).
+
+### v5.2.0 motion public contract conformance gate
+
+A mock-safe conformance gate now verifies the public motion / Live2D / VTS
+adapter boundary:
+
+- public exports
+- provider-safe `import framework`
+- motion adapter types
+- `create_motion_session(...)`
+- `MotionSession` lifecycle, preflight, events, and results
+- honest real-adapter guard / not-implemented behavior
+- public-only host-app examples
+
+See [`docs/v520_motion_public_contract_conformance_gate.md`](docs/v520_motion_public_contract_conformance_gate.md).

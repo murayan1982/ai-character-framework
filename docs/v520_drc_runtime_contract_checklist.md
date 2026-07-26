@@ -319,3 +319,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify examples use public `framework` imports only
 - [x] Verify examples do not execute real Live2D / VTS / token / model runtime behavior
 - [ ] Add motion public contract conformance gate
+
+## Commit 23 - Motion public contract conformance gate
+
+- [x] Add public motion conformance gate doc
+- [x] Add public export conformance checks
+- [x] Add provider-safe import conformance checks
+- [x] Add motion type checks
+- [x] Add `create_motion_session(...)` signature checks
+- [x] Add `MotionSession` lifecycle / event / result checks
+- [x] Add real-adapter guard / not-implemented checks
+- [x] Add public-only host-app example checks
+- [ ] Add v5.2.0 release readiness gate
