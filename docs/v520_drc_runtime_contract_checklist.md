@@ -308,3 +308,14 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add closed-session result behavior
 - [x] Add honest real-adapter not-implemented / provider-guard behavior
 - [ ] Add public motion host-app examples
+
+## Commit 22 - Motion host-app examples
+
+- [x] Add mock motion expression / speaking-state example
+- [x] Add motion adapter preflight example
+- [x] Add motion closed-session behavior example
+- [x] Add motion real-adapter guard example
+- [x] Add motion host-app example smoke
+- [x] Verify examples use public `framework` imports only
+- [x] Verify examples do not execute real Live2D / VTS / token / model runtime behavior
+- [ ] Add motion public contract conformance gate

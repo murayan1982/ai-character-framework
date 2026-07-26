@@ -367,3 +367,15 @@ Added the first public motion session boundary:
 The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
 does not connect to real Live2D, VTS WebSocket, token files, model paths, or
 provider SDKs.
+
+## v5.2.0 motion host-app examples checkpoint
+
+Added mock-safe public examples for:
+
+- motion expression and speaking-state flow
+- adapter preflight
+- closed-session behavior
+- real-adapter provider-execution guard behavior
+
+The examples use only public `framework` imports and do not execute real Live2D,
+VTS WebSocket, token access, model loading, or provider SDK behavior.

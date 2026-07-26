@@ -1283,3 +1283,18 @@ The session exposes `preflight()`, `apply_motion(...)`, `on_event(...)`,
 VTube Studio by default.
 
 See [`docs/v520_motion_session_skeleton.md`](docs/v520_motion_session_skeleton.md).
+
+### v5.2.0 motion host-app examples
+
+Mock-safe public motion examples are available:
+
+- `examples/app_motion_session_expression_flow.py`
+- `examples/app_motion_adapter_preflight.py`
+- `examples/app_motion_closed_session_behavior.py`
+- `examples/app_motion_real_adapter_guard.py`
+
+They demonstrate public motion session usage, adapter preflight, closed-session
+behavior, and real-adapter guard handling without importing FW internals or
+provider SDKs.
+
+See [`docs/v520_motion_host_app_examples.md`](docs/v520_motion_host_app_examples.md).
