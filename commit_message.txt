@@ -1,1 +1,1 @@
-feat/test: add TextChatResult runtime method
+feat/test: add capability snapshot public API
