@@ -1121,3 +1121,17 @@ provider-neutral public types:
 - `RealtimeTurnResult`
 
 See [`docs/v520_realtime_lifecycle_event_types.md`](docs/v520_realtime_lifecycle_event_types.md).
+
+### v5.2.0 public realtime session skeleton
+
+v5.2.0 now includes a mock-safe public realtime session skeleton:
+
+- `create_realtime_session(...)`
+- `RealtimeSession`
+- `RealtimeSessionInfo`
+
+The session exposes `on_event(...)`, `emit_created()`, `run_turn(...)`,
+`close()`, `dispose()`, `is_closed`, `state`, `info`, and context manager support
+without executing real STT / LLM / TTS / motion providers by default.
+
+See [`docs/v520_realtime_session_skeleton.md`](docs/v520_realtime_session_skeleton.md).

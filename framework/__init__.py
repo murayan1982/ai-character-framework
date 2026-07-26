@@ -91,3 +91,15 @@ for _name in ['RealtimeErrorCode', 'RealtimeEvent', 'RealtimeEventType', 'Realti
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .realtime_session import RealtimeSession, RealtimeSessionInfo, create_realtime_session
+
+# v5.2.0 public realtime session exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['RealtimeSession', 'RealtimeSessionInfo', 'create_realtime_session']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name

@@ -234,3 +234,14 @@ Added the first public realtime lifecycle / event contract types:
 
 This checkpoint is provider-neutral and mock-safe. It does not add realtime
 session orchestration yet.
+
+## v5.2.0 public realtime session skeleton checkpoint
+
+Added the first public realtime session boundary:
+
+- `create_realtime_session(...)`
+- `RealtimeSession`
+- `RealtimeSessionInfo`
+
+The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
+does not execute real STT / LLM / TTS / motion providers yet.

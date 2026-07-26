@@ -173,3 +173,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add provider-neutral / secret-safe public type smoke
 - [ ] Add public `RealtimeSession` skeleton
 - [ ] Add `create_realtime_session(...)`
+
+## Commit 11 - Public realtime session skeleton
+
+- [x] Add `RealtimeSessionInfo`
+- [x] Add `RealtimeSession`
+- [x] Add `create_realtime_session(...)`
+- [x] Export public realtime session symbols from `framework`
+- [x] Add mock-safe `run_turn(...)`
+- [x] Add deterministic provider-neutral event emission
+- [x] Add lifecycle: `close()`, `dispose()`, `is_closed`
+- [x] Add context manager support
+- [x] Add closed-session result behavior
+- [ ] Add public realtime host-app examples
