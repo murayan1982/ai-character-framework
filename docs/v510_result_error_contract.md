@@ -174,7 +174,8 @@ Public result and error surfaces must not expose:
 - Shared outcome vocabulary is documented.
 - Provider-neutral public error code vocabulary is documented.
 - Voice Output result compatibility is checked mock-safely.
-- Text Chat typed result absence is recorded as a v5.1.0 follow-up until implemented.
+- TextChatResult public type is now available as a v5.1.0 implementation checkpoint.
+- A runtime text chat method that returns TextChatResult remains a follow-up.
 - Host apps should not parse exception text for public control flow.
 - Public results must not expose provider-specific/private details.
 ```
@@ -182,10 +183,18 @@ Public result and error surfaces must not expose:
 ## Follow-up implementation steps
 
 ```text
-1. Add public TextChatResult type.
-2. Add provider-neutral public error code model or Literal vocabulary.
-3. Add a non-breaking text chat method that returns TextChatResult.
-4. Preserve existing text-return behavior during migration if needed.
-5. Add retryable/non-retryable classification at the FW boundary.
-6. Promote this checkpoint from WARN inventory to strict conformance gate.
+1. Add a non-breaking text chat method that returns TextChatResult.
+2. Preserve existing text-return behavior during migration if needed.
+3. Add retryable/non-retryable classification at the FW boundary.
+4. Promote this checkpoint from WARN inventory to strict conformance gate.
 ```
+
+## v5.1.0 TextChatResult checkpoint
+
+`TextChatResult` is now part of the public `framework` surface. This makes the
+provider-neutral result shape importable and testable before changing existing
+text chat runtime return behavior.
+
+The next implementation step is a non-breaking text chat operation that returns
+`TextChatResult`, so host apps can stop normalizing raw strings, ad-hoc response
+attributes, and exception text.

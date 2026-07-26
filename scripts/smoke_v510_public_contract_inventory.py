@@ -19,6 +19,7 @@ from typing import Iterator
 REQUIRED_PUBLIC_SYMBOLS = (
     "create_text_chat_session",
     "TextChatSessionInfo",
+    "TextChatResult",
     "create_voice_output_session",
     "VoiceOutputSession",
     "VoiceOutputSessionInfo",

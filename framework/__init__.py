@@ -17,6 +17,7 @@ from framework.facade import (
     create_text_chat_session,
     create_voice_output_session,
 )
+from .text_chat_result import TextChatResult
 
 __all__ = [
     "FacadeConfigError",
@@ -34,4 +35,5 @@ __all__ = [
     "VoiceSynthesisResult",
     "create_text_chat_session",
     "create_voice_output_session",
+    "TextChatResult",
 ]
