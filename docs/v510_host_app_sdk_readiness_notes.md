@@ -83,3 +83,13 @@ import readiness, and release package static checks from one command.
 
 This does not create release artifacts, tags, or downstream DRC validation. It is
 a pre-release decision gate for the source tree.
+
+## v5.1.0 Fixed Release Package Builder
+
+A fixed package builder is available at
+`scripts/build_v510_fixed_release_package.py`. It creates
+`release/ai-character-framework_v5.1.0.zip`, writes a local manifest, verifies
+the archive layout, extracts the archive, and runs the v5.1.0 release readiness
+gate inside the extracted tree. The builder is mock-safe and does not create a
+git tag.
+
