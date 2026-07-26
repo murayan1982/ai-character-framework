@@ -137,3 +137,13 @@ Priority order:
 
 This is documented in `docs/roadmap_feature_v5.2.0.md` and tracked by
 `docs/v520_drc_runtime_contract_checklist.md`.
+
+## v5.2.0 voice-input inventory checkpoint
+
+Added `docs/v520_voice_input_stt_inventory.md` and
+`scripts/smoke_v520_voice_input_inventory.py`.
+
+This checkpoint records the public voice-input / STT session direction before
+implementation, including candidate public symbols, provider-neutral result
+shape, guarded real execution, lifecycle expectations, event expectations, and
+DRC non-dependency rules.

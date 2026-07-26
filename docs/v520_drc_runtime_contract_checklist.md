@@ -68,3 +68,12 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [ ] DRC RT-1 re-evaluated
 - [ ] No DRC provider-internal STT/TTS/VTS workaround
 - [ ] No DRC sys.path/CWD/import-cache workaround
+
+## Commit 2 - Voice-input / STT inventory
+
+- [x] Record public voice-input / STT boundary direction
+- [x] Record candidate voice-input public symbols
+- [x] Record provider-neutral result / request expectations
+- [x] Record lifecycle and event requirements
+- [x] Record DRC non-dependency rules for STT internals
+- [ ] Add public voice-input request/result type skeleton

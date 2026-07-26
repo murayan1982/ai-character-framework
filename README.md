@@ -1003,3 +1003,15 @@ This roadmap is driven by DRC RT-1 requirements and prioritizes public
 voice-input / STT session contracts, unified realtime lifecycle/events, hard
 cancel / TTS queue / flush / barge-in behavior, and public motion / Live2D /
 VTube Studio adapter boundaries before returning to DRC.
+
+### v5.2.0 voice-input / STT inventory
+
+The first v5.2.0 implementation track is the public voice-input / STT session
+boundary.
+
+Inventory notes are recorded in
+[`docs/v520_voice_input_stt_inventory.md`](docs/v520_voice_input_stt_inventory.md).
+
+The goal is to prevent DRC and other host apps from depending on FW internal STT
+modules, provider-specific clients, raw audio paths, token files, or temporary
+checkout-layout workarounds.
