@@ -1,30 +1,30 @@
-# --- Secret Information ---
-.env
-
-# --- Temporary Files & Logs ---
-temp/
-output/log_*.txt
-
-# --- Python Cache ---
+﻿# Python caches
 __pycache__/
 *.py[cod]
-*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# --- Local Environment ---
+# Local environments
 .venv/
-env/
 venv/
-ENV/
-output/
 
-# --- OS Generated Files ---
-.DS_Store
-Thumbs.db
+# Local secrets
+.env
 
-# VTube Studio Tokens
-config/tokens/
-**/tokens/*.json
+# Build/release local outputs
+.release_build/
+release/*.zip
+release/*_manifest.json
+build/
+dist/
 
-# product-only files
-/install.bat
-/run.bat
+# Patch/helper leftovers
+apply_*.py
+commit_message.txt
+README_FOR_THIS_BUNDLE.md
+README_commit*_apply.md
+
+# Logs/temp
+*.log
+tmp/
