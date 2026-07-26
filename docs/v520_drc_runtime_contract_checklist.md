@@ -207,3 +207,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add session lifecycle/result/event checks
 - [x] Add public-only host-app example checks
 - [ ] Start hard cancel / TTS queue / flush / barge-in inventory
+
+## Commit 14 - Hard cancel / TTS queue / flush / barge-in inventory
+
+- [x] Start priority 3: hard cancel / TTS queue / flush / barge-in
+- [x] Record candidate public interruption symbols
+- [x] Record candidate session methods
+- [x] Record interrupt scopes and reasons
+- [x] Record TTS queue / flush requirements
+- [x] Record barge-in policy requirements
+- [x] Record honest capability requirements
+- [x] Record relationship to existing public contracts
+- [ ] Add public interrupt / output control type skeleton

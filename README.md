@@ -1162,3 +1162,15 @@ boundary:
 - public-only host-app examples
 
 See [`docs/v520_realtime_public_contract_conformance_gate.md`](docs/v520_realtime_public_contract_conformance_gate.md).
+
+### v5.2.0 hard cancel / TTS queue / flush / barge-in inventory
+
+Priority 3 of the DRC-driven v5.2.0 work is the public interruption and output
+control contract.
+
+Inventory notes are recorded in
+[`docs/v520_cancel_tts_queue_barge_in_inventory.md`](docs/v520_cancel_tts_queue_barge_in_inventory.md).
+
+The goal is to give DRC provider-neutral public controls for current-turn
+interruption, LLM/TTS cancellation where supported, TTS queue flush, output stop
+handoff, and barge-in policy handling without depending on FW internals.

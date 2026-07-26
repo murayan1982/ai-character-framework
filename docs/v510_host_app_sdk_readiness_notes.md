@@ -264,3 +264,15 @@ Added `scripts/smoke_v520_realtime_public_contract_conformance_gate.py`.
 The gate verifies the public realtime lifecycle / event contract so far:
 exports, provider-safe import, factory signature, lifecycle/event/turn types,
 session lifecycle/events, and public-only host-app examples.
+
+## v5.2.0 hard cancel / TTS queue / flush / barge-in inventory checkpoint
+
+Started priority 3 of the DRC-driven v5.2.0 work: public interruption and output
+control.
+
+Added `docs/v520_cancel_tts_queue_barge_in_inventory.md` and
+`scripts/smoke_v520_cancel_tts_queue_barge_in_inventory.py`.
+
+This checkpoint records candidate public symbols, session methods, interrupt
+scopes, TTS queue / flush behavior, barge-in policy behavior, honest capability
+requirements, and relationship to existing public runtime contracts.
