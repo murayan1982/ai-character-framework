@@ -103,3 +103,15 @@ for _name in ['RealtimeSession', 'RealtimeSessionInfo', 'create_realtime_session
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .output_control import BargeInDecision, BargeInPolicy, BargeInPolicyMode, InterruptOutcome, InterruptReason, InterruptRequest, InterruptResult, InterruptScope, OutputFlushOutcome, OutputFlushRequest, OutputFlushResult, TTSQueueState
+
+# v5.2.0 public interrupt/output-control exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['BargeInDecision', 'BargeInPolicy', 'BargeInPolicyMode', 'InterruptOutcome', 'InterruptReason', 'InterruptRequest', 'InterruptResult', 'InterruptScope', 'OutputFlushOutcome', 'OutputFlushRequest', 'OutputFlushResult', 'TTSQueueState']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name

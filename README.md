@@ -1174,3 +1174,23 @@ Inventory notes are recorded in
 The goal is to give DRC provider-neutral public controls for current-turn
 interruption, LLM/TTS cancellation where supported, TTS queue flush, output stop
 handoff, and barge-in policy handling without depending on FW internals.
+
+### v5.2.0 public interrupt / output control types
+
+v5.2.0 now begins the hard cancel / TTS queue / flush / barge-in boundary with
+provider-neutral public types:
+
+- `InterruptScope`
+- `InterruptReason`
+- `InterruptOutcome`
+- `InterruptRequest`
+- `InterruptResult`
+- `TTSQueueState`
+- `OutputFlushOutcome`
+- `OutputFlushRequest`
+- `OutputFlushResult`
+- `BargeInPolicyMode`
+- `BargeInPolicy`
+- `BargeInDecision`
+
+See [`docs/v520_interrupt_output_control_types.md`](docs/v520_interrupt_output_control_types.md).

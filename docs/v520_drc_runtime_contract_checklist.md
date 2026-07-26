@@ -219,3 +219,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Record honest capability requirements
 - [x] Record relationship to existing public contracts
 - [ ] Add public interrupt / output control type skeleton
+
+## Commit 15 - Public interrupt / output control types
+
+- [x] Add `framework.output_control`
+- [x] Add interrupt scope / reason / outcome enums
+- [x] Add `InterruptRequest`
+- [x] Add `InterruptResult`
+- [x] Add `TTSQueueState`
+- [x] Add output flush request/result types
+- [x] Add barge-in policy / decision types
+- [x] Export public interrupt/output-control types from `framework`
+- [x] Add provider-neutral / secret-safe public type smoke
+- [ ] Wire interrupt / output-control types into `RealtimeSession`

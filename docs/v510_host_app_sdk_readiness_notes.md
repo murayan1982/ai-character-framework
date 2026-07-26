@@ -276,3 +276,24 @@ Added `docs/v520_cancel_tts_queue_barge_in_inventory.md` and
 This checkpoint records candidate public symbols, session methods, interrupt
 scopes, TTS queue / flush behavior, barge-in policy behavior, honest capability
 requirements, and relationship to existing public runtime contracts.
+
+## v5.2.0 public interrupt / output control type checkpoint
+
+Added the first public hard-cancel / TTS queue / flush / barge-in contract
+types:
+
+- `InterruptScope`
+- `InterruptReason`
+- `InterruptOutcome`
+- `InterruptRequest`
+- `InterruptResult`
+- `TTSQueueState`
+- `OutputFlushOutcome`
+- `OutputFlushRequest`
+- `OutputFlushResult`
+- `BargeInPolicyMode`
+- `BargeInPolicy`
+- `BargeInDecision`
+
+This checkpoint is provider-neutral and mock-safe. It does not add real
+cancellation, queue flush, playback stop, or barge-in detection yet.
