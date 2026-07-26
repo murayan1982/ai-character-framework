@@ -1,1 +1,1 @@
-feat/test: add public session lifecycle contract
+feat/test: add opaque voice artifact contract
