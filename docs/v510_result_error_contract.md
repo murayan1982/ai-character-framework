@@ -175,7 +175,7 @@ Public result and error surfaces must not expose:
 - Provider-neutral public error code vocabulary is documented.
 - Voice Output result compatibility is checked mock-safely.
 - TextChatResult public type is now available as a v5.1.0 implementation checkpoint.
-- A runtime text chat method that returns TextChatResult remains a follow-up.
+- `TextChatSession.ask_result()` is now available as a non-breaking typed-result companion to `ask()`.
 - Host apps should not parse exception text for public control flow.
 - Public results must not expose provider-specific/private details.
 ```
@@ -195,6 +195,13 @@ Public result and error surfaces must not expose:
 provider-neutral result shape importable and testable before changing existing
 text chat runtime return behavior.
 
-The next implementation step is a non-breaking text chat operation that returns
-`TextChatResult`, so host apps can stop normalizing raw strings, ad-hoc response
-attributes, and exception text.
+`TextChatSession.ask_result()` now returns `TextChatResult`, so host apps can
+start moving away from raw string normalization, ad-hoc response attributes, and
+exception text parsing.
+
+## v5.1.0 TextChatResult runtime method checkpoint
+
+`TextChatSession.ask_result()` is now the non-breaking typed-result companion to
+`ask()`. Existing string-oriented `ask()` behavior remains available for v4/v5
+compatibility, while host apps can opt into provider-neutral outcome/error
+handling.

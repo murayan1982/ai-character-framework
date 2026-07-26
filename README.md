@@ -206,6 +206,16 @@ session = create_text_chat_session(
 print(session.ask("こんにちは。短く返して"))
 ```
 
+For typed app-boundary handling, use `ask_result()`:
+
+```python
+result = session.ask_result("こんにちは。短く返して")
+if result.is_completed:
+    print(result.text)
+else:
+    print(result.public_error_code, result.safe_message)
+```
+
 You can also select a provider and model directly:
 
 ```python

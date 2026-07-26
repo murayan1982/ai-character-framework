@@ -153,6 +153,41 @@ class TextChatSession:
         """Send one text turn and return the full assistant response."""
         return "".join(self.ask_stream(text))
 
+
+    def ask_result(self, message: str) -> "TextChatResult":
+        """Return a provider-neutral typed result for a text chat request.
+
+        This method is the non-breaking typed-result companion to ``ask()``.
+        Existing ``ask()`` behavior is preserved for v4/v5 compatibility, while
+        host apps can use ``ask_result()`` to avoid parsing raw exception strings
+        or ad-hoc response shapes.
+        """
+
+        from .text_chat_result import TextChatResult
+
+        try:
+            response = self.ask(message)
+        except Exception as exc:  # noqa: BLE001 - public boundary converts to safe result
+            return TextChatResult.failed(
+                public_error_code=_text_chat_exception_to_public_error_code(exc),
+                safe_message=_text_chat_exception_to_safe_message(exc),
+                retryable=_text_chat_exception_is_retryable(exc),
+                public_metadata={"boundary": "text_chat"},
+            )
+
+        text = _text_chat_response_to_text(response)
+        if text is None:
+            return TextChatResult.failed(
+                public_error_code="empty_response",
+                safe_message="Text chat returned no response text.",
+                retryable=True,
+                public_metadata={"boundary": "text_chat"},
+            )
+
+        return TextChatResult.completed(
+            text,
+            public_metadata={"boundary": "text_chat"},
+        )
     def ask_stream(self, text: str) -> Generator[str, None, None]:
         """Send one text turn and yield assistant response chunks."""
         self._interrupt_requested = False
@@ -499,3 +534,80 @@ def create_text_chat_session(
         info=info,
     )
     return TextChatSession(llm, info)
+
+def _text_chat_response_to_text(response: object) -> str | None:
+    """Convert known public-ish text response shapes into plain text."""
+
+    if response is None:
+        return None
+    if isinstance(response, str):
+        text = response.strip()
+        return text or None
+
+    for attr_name in ("text", "message", "content"):
+        value = getattr(response, attr_name, None)
+        if isinstance(value, str):
+            text = value.strip()
+            if text:
+                return text
+
+    text = str(response).strip()
+    if not text or text == "None":
+        return None
+    return text
+
+
+def _text_chat_exception_to_public_error_code(exc: Exception) -> str:
+    """Map private/provider exceptions to provider-neutral public codes."""
+
+    combined = f"{exc.__class__.__name__} {exc}".lower()
+    if "closed" in combined:
+        return "session_closed"
+    if "interrupt" in combined or "cancel" in combined:
+        return "request_cancelled"
+    if "timeout" in combined or "timed out" in combined:
+        return "timeout"
+    if "rate" in combined or "quota" in combined:
+        return "rate_limited"
+    if "auth" in combined or "api key" in combined or "apikey" in combined or "credential" in combined:
+        return "authentication_required"
+    if "config" in combined or "preset" in combined or "character" in combined or "missing" in combined:
+        return "configuration_missing"
+    if "unsupported" in combined:
+        return "unsupported_capability"
+    if "provider" in combined or "llm" in combined or "model" in combined:
+        return "provider_request_failed"
+    return "unknown_error"
+
+
+def _text_chat_exception_is_retryable(exc: Exception) -> bool:
+    """Return whether the provider-neutral error is likely retryable."""
+
+    return _text_chat_exception_to_public_error_code(exc) in {
+        "provider_unavailable",
+        "provider_request_failed",
+        "rate_limited",
+        "timeout",
+        "request_cancelled",
+        "unknown_error",
+    }
+
+
+def _text_chat_exception_to_safe_message(exc: Exception) -> str:
+    """Return a safe public message without raw provider details."""
+
+    code = _text_chat_exception_to_public_error_code(exc)
+    messages = {
+        "configuration_missing": "Text chat configuration is missing or invalid.",
+        "authentication_required": "Text chat provider authentication is required.",
+        "rate_limited": "Text chat provider rate limit was reached.",
+        "request_cancelled": "Text chat request was cancelled or interrupted.",
+        "timeout": "Text chat request timed out.",
+        "unsupported_capability": "Text chat capability is not supported by this session.",
+        "session_closed": "Text chat session is closed.",
+        "provider_request_failed": "Text chat provider request failed.",
+        "provider_unavailable": "Text chat provider is unavailable.",
+        "unknown_error": "Text chat request failed.",
+    }
+    return messages.get(code, "Text chat request failed.")
+

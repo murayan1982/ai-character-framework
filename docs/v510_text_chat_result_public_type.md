@@ -103,3 +103,10 @@ existing text chat runtime return behavior yet.
 Follow-up work should add a non-breaking text chat method that returns
 `TextChatResult`, while preserving existing string-return behavior during the
 migration window.
+
+## Follow-up checkpoint: `TextChatSession.ask_result()`
+
+A later v5.1.0 checkpoint adds `TextChatSession.ask_result()` as the
+non-breaking runtime method that returns this public type. The original `ask()`
+method remains available for compatibility.
+

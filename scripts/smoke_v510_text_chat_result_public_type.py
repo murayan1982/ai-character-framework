@@ -1,4 +1,4 @@
-"""Mock-safe TextChatResult public type smoke for FW v5.1.0."""
+﻿"""Mock-safe TextChatResult public type smoke for FW v5.1.0."""
 
 from __future__ import annotations
 
@@ -106,7 +106,7 @@ def _assert_public_type(framework: object) -> None:
     _require(not missing, f"TextChatResult missing annotations: {missing}")
     _ok("TextChatResult public shape is exported")
 
-    completed = result_type.completed("今日は少し早めに休むとよさそうです。")
+    completed = result_type.completed("take an early rest today")
     _require(completed.outcome == "completed", "completed result should use outcome=completed")
     _require(completed.text, "completed result should contain text")
     _require(completed.public_error_code is None, "completed result should not expose error code")
@@ -144,7 +144,7 @@ def main() -> None:
     _assert_doc(root)
     _assert_result_error_doc_updated(root)
     _assert_public_type(framework)
-    _info("TextChatResult runtime-returning text chat method remains a follow-up")
+    _info("TextChatResult runtime-returning text chat method is covered by smoke_v510_text_chat_result_runtime_method.py")
     _ok("v5.1.0 TextChatResult public type is mock-safe")
 
 
