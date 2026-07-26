@@ -343,3 +343,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify public runtime symbols are exported from `framework`
 - [x] Verify default runtime flags remain honest / mock-safe
 - [ ] Add fixed release package builder for v5.2.0
+
+## Commit 25 - Fixed release package builder for v5.2.0
+
+- [x] Add fixed release package builder script
+- [x] Add deterministic zip behavior
+- [x] Add embedded release manifest
+- [x] Add SHA-256 sidecar output
+- [x] Exclude caches, virtualenvs, release output, patch scripts, `.env*`, credentials, and operator evidence
+- [x] Require source-tree release readiness gate by default
+- [x] Require clean working tree by default
+- [x] Add dry-run builder smoke
+- [ ] Add fixed release package verification for v5.2.0

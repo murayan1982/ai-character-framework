@@ -1327,3 +1327,17 @@ The gate covers:
 - public motion / Live2D / VTS adapter
 
 See [`docs/v520_release_readiness_gate.md`](docs/v520_release_readiness_gate.md).
+
+### v5.2.0 fixed release package builder
+
+A fixed release package builder is available for v5.2.0:
+
+```powershell
+python scripts/build_v520_release_package.py
+```
+
+It runs the v5.2.0 release readiness gate, requires a clean working tree by
+default, creates a deterministic zip, embeds `RELEASE_MANIFEST_v5.2.0.json`, and
+writes a SHA-256 sidecar.
+
+See [`docs/v520_fixed_release_package_builder.md`](docs/v520_fixed_release_package_builder.md).

@@ -396,3 +396,12 @@ Added `scripts/smoke_v520_release_readiness_gate.py`.
 The gate verifies the source tree is ready for fixed v5.2.0 release packaging by
 requiring the voice-input, realtime, interrupt/output-control, and motion public
 contract conformance gates plus the baseline release package check.
+
+## v5.2.0 fixed release package builder checkpoint
+
+Added `scripts/build_v520_release_package.py` and
+`scripts/smoke_v520_fixed_release_package_builder.py`.
+
+The builder creates the fixed v5.2.0 source release package after the release
+readiness gate passes, using deterministic zip settings, an embedded release
+manifest, and a SHA-256 sidecar.
