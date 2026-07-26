@@ -256,3 +256,11 @@ Added mock-safe public realtime examples for host apps:
 
 The examples use only public `framework` imports and do not execute real
 STT / LLM / TTS / motion providers.
+
+## v5.2.0 realtime conformance gate checkpoint
+
+Added `scripts/smoke_v520_realtime_public_contract_conformance_gate.py`.
+
+The gate verifies the public realtime lifecycle / event contract so far:
+exports, provider-safe import, factory signature, lifecycle/event/turn types,
+session lifecycle/events, and public-only host-app examples.

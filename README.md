@@ -1148,3 +1148,17 @@ They demonstrate public event callbacks, event payload mapping, and
 closed-session behavior without importing FW internals or realtime provider SDKs.
 
 See [`docs/v520_realtime_host_app_examples.md`](docs/v520_realtime_host_app_examples.md).
+
+### v5.2.0 realtime public contract conformance gate
+
+A mock-safe conformance gate now verifies the public realtime lifecycle / event
+boundary:
+
+- public exports
+- provider-safe `import framework`
+- keyword-only `create_realtime_session(...)`
+- lifecycle/event/turn types
+- session lifecycle and deterministic events
+- public-only host-app examples
+
+See [`docs/v520_realtime_public_contract_conformance_gate.md`](docs/v520_realtime_public_contract_conformance_gate.md).

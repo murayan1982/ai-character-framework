@@ -196,3 +196,14 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Verify examples use public `framework` imports only
 - [x] Verify examples do not execute real STT / LLM / TTS / motion providers
 - [ ] Add public realtime contract conformance gate
+
+## Commit 13 - Realtime public contract conformance gate
+
+- [x] Add public realtime conformance gate doc
+- [x] Add public export conformance checks
+- [x] Add provider-safe import conformance checks
+- [x] Add `create_realtime_session(...)` signature checks
+- [x] Add lifecycle/event/turn type checks
+- [x] Add session lifecycle/result/event checks
+- [x] Add public-only host-app example checks
+- [ ] Start hard cancel / TTS queue / flush / barge-in inventory
