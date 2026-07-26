@@ -1,28 +1,12 @@
-# FW v5.1.0 Commit 3 - Voice Output speak contract
+# FW v5.1.0 Commit 4 - Public factory signature contract
 
-Purpose: resolve the known v5.1.0 public contract inventory warning where README used `session.speak(...)` but the current `VoiceOutputSession` only exposed `create_output(...)`.
+Purpose: add a v5.1.0 P0/FW-F2 checkpoint for stable public factory signatures.
 
-## Apply
-
-Copy `apply_v510_commit3_voice_output_speak_contract.py` to the repository root, then run:
-
-```powershell
-python apply_v510_commit3_voice_output_speak_contract.py
-```
-
-After the helper modifies the working tree, delete the helper before commit:
-
-```powershell
-del apply_v510_commit3_voice_output_speak_contract.py
-```
-
-## Expected modified/added files
+## Files
 
 ```text
-framework/audio/voice_output.py
-examples/app_voice_output_integration.py
-docs/v510_voice_output_method_contract.md
-scripts/smoke_v510_voice_output_method_contract.py
+docs/v510_public_factory_signature_contract.md
+scripts/smoke_v510_factory_signature_contract.py
 ```
 
 ## Verification
@@ -31,25 +15,29 @@ scripts/smoke_v510_voice_output_method_contract.py
 python -m compileall -q .
 python scripts/smoke_v510_public_contract_inventory.py
 python scripts/smoke_v510_voice_output_method_contract.py
+python scripts/smoke_v510_factory_signature_contract.py
 python scripts/check_release_package.py
-python examples/app_voice_output_integration.py
 ```
 
-Expected: no README `speak` mismatch WARN should remain in the public contract inventory smoke. The new method contract smoke should end with:
+Expected behavior:
 
 ```text
-[OK] voice output method contract is aligned for v5.1.0
+[OK] v5.1.0 public factory signature contract is mock-safe
 ```
+
+A warning for `create_text_chat_session` not being keyword-only yet is expected
+at this checkpoint. The warning records the current transition baseline; later
+FW-F2 work can convert that to a stricter conformance requirement if desired.
 
 ## Commit message
 
 ```text
-feat/test: align voice output speak method contract
+docs/test: add public factory signature contract for v5.1.0
 ```
 
 ## Notes
 
-- `speak(request)` becomes the preferred public host-app method.
-- `create_output(request)` remains available as a v5.0 compatibility method.
-- Real provider execution remains disabled/guarded.
-- No DRC-side changes are included.
+- No runtime behavior is changed.
+- No DRC files are changed.
+- No provider execution is performed.
+- The smoke is mock-safe.
