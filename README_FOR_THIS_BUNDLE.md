@@ -1,17 +1,12 @@
-# FW v5.1.0 Commit 6 fix
+# v5.1.0 Commit 7 fix
 
-This is a small fix for the Commit 6 TextChatResult public type smoke.
+This bundle fixes a syntax error in `scripts/smoke_v510_text_chat_result_runtime_method.py` caused by an unescaped Windows path marker string.
 
-The implementation and docs are OK, but the smoke expected the phrase
-`does not change the existing text chat runtime return behavior yet` as one
-physical line. The generated doc wrapped the sentence across lines, so the check
-failed even though the content exists.
-
-Apply:
+Apply from repository root:
 
 ```powershell
-python apply_v510_commit6_text_chat_result_public_type_fix.py
-del apply_v510_commit6_text_chat_result_public_type_fix.py
+python apply_v510_commit7_text_chat_result_runtime_method_fix.py
+del apply_v510_commit7_text_chat_result_runtime_method_fix.py
 ```
 
 Then rerun:
@@ -23,5 +18,6 @@ python scripts/smoke_v510_voice_output_method_contract.py
 python scripts/smoke_v510_factory_signature_contract.py
 python scripts/smoke_v510_result_error_contract.py
 python scripts/smoke_v510_text_chat_result_public_type.py
+python scripts/smoke_v510_text_chat_result_runtime_method.py
 python scripts/check_release_package.py
 ```

@@ -1,1 +1,1 @@
-feat/test: add TextChatResult public type
+feat/test: add TextChatResult runtime method
