@@ -90,3 +90,11 @@ else:
 This checkpoint does not remove or change `ask()`. Future conformance gates can
 require host-app examples to prefer `ask_result()` when typed error handling is
 needed.
+
+## Mock-safe runtime smoke
+
+The v5.1.0 runtime smoke for `ask_result()` must not construct a
+provider-backed text chat session. It validates the public method using fake
+session objects so the check does not require `.env`, `GOOGLE_API_KEY`, or any
+real provider execution.
+

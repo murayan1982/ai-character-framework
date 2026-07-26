@@ -89,3 +89,9 @@ the repository root and host app CWD out of `PYTHONPATH`.
 Local virtual environment directories are excluded from the temporary
 source-distribution-like tree.
 
+## Local secret hygiene
+
+Release/package readiness excludes local token and secret artifacts, including
+`config/tokens/`, `*_token.json`, `.env`, generated audio files, and runtime
+output directories.
+

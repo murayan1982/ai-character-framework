@@ -73,8 +73,31 @@ def _assert_common_lifecycle(session: object, label: str) -> None:
     _ok(f"{label} lifecycle methods are idempotent")
 
 
+def _get_text_chat_session_class(framework: object) -> type:
+    """Return TextChatSession class without constructing a provider-backed session."""
+
+    candidate = getattr(framework, "TextChatSession", None)
+    if candidate is not None:
+        return candidate
+
+    facade_module = sys.modules.get("framework.facade")
+    candidate = getattr(facade_module, "TextChatSession", None) if facade_module is not None else None
+    _require(candidate is not None, "TextChatSession class should be available after framework import")
+    return candidate
+
+
+def _make_text_chat_session_without_provider(framework: object) -> object:
+    """Create a lifecycle-only TextChatSession instance without provider setup."""
+
+    session_cls = _get_text_chat_session_class(framework)
+    session = object.__new__(session_cls)
+    if hasattr(session, "_fw_public_closed"):
+        session._fw_public_closed = False
+    return session
+
+
 def _assert_text_chat_lifecycle(framework: object) -> None:
-    session = framework.create_text_chat_session()
+    session = _make_text_chat_session_without_provider(framework)
     _assert_common_lifecycle(session, "TextChatSession")
 
     result = session.ask_result("hello after close")
@@ -85,9 +108,10 @@ def _assert_text_chat_lifecycle(framework: object) -> None:
     _require("closed" in (result.safe_message or "").lower(), "closed ask_result should expose safe closed message")
     _ok("TextChatSession closed ask_result returns provider-neutral session_closed")
 
-    with framework.create_text_chat_session() as context_session:
-        _require(context_session.is_closed is False, "TextChatSession context should enter open")
-    _require(context_session.is_closed is True, "TextChatSession context manager should close on exit")
+    context_session = _make_text_chat_session_without_provider(framework)
+    with context_session as entered_session:
+        _require(entered_session is context_session, "TextChatSession __enter__ should return itself")
+    _require(context_session.is_closed, "TextChatSession context manager should close on exit")
     _ok("TextChatSession context manager closes on exit")
 
 

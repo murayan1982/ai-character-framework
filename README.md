@@ -956,3 +956,17 @@ python scripts/smoke_v510_release_readiness_gate.py
 
 The gate is mock-safe. It does not call real provider APIs, generate real voice
 artifacts, or create release tags/archives.
+
+## v5.1.0 fixed release package verification
+
+Before using the generated v5.1.0 release package as host app handoff evidence,
+run:
+
+```powershell
+python scripts/smoke_v510_fixed_release_package_verification.py
+```
+
+This builds the local fixed release package, verifies the manifest and zip
+hygiene, extracts the package outside the repository root, and imports the
+public framework API from a host-app-like working directory. The check is
+mock-safe and does not publish a release or create a tag.

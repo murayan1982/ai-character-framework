@@ -37,9 +37,6 @@ config/tokens/
 output/
 log_*.txt
 
-# Local launch helpers
-install.bat
-run.bat
 
 # Runtime/generated audio
 temp/

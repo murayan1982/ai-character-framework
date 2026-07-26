@@ -85,3 +85,10 @@ The public session lifecycle contract requires the following:
 - close() must not import provider SDKs
 - close() must not call provider APIs in mock-safe checks
 
+## Mock-safe lifecycle smoke
+
+The v5.1.0 lifecycle smoke must not construct a provider-backed text chat
+session. It validates lifecycle behavior using a lifecycle-only TextChatSession
+instance so release package verification does not require `.env`,
+`GOOGLE_API_KEY`, or real provider execution.
+

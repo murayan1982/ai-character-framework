@@ -225,6 +225,15 @@ def _copy_sdk_source_tree(root: Path, package_root: Path) -> None:
                     ".pytest_cache",
                     ".mypy_cache",
                     ".ruff_cache",
+                    "tokens",
+                    "*_token.json",
+                    ".env",
+                    ".env.local",
+                    ".env.secret",
+                    ".env.private",
+                    "*.mp3",
+                    "*.wav",
+                    "*.m4a",
                 ),
             )
             copied.append(child.name)
@@ -237,6 +246,7 @@ def _copy_sdk_source_tree(root: Path, package_root: Path) -> None:
     _require((package_root / "framework").exists(), "framework package was not copied")
     _require((package_root / "llm").exists(), "llm package was not copied for source-distribution-like import")
     _require((package_root / "config").exists(), "config package was not copied for source-distribution-like import")
+    _require(not (package_root / "config" / "tokens").exists(), "config/tokens should not be copied into package readiness tree")
     _require(not (package_root / "venv").exists(), "local venv directory should not be copied")
     _require(not (package_root / ".venv").exists(), "local .venv directory should not be copied")
     print("[INFO] copied source packages for package-like import: " + ", ".join(copied))

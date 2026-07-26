@@ -91,9 +91,27 @@ def _assert_doc(root: Path) -> None:
     _ok("TextChatResult runtime method doc is documented")
 
 
+def _get_text_chat_session_class(framework: object) -> type:
+    """Return TextChatSession class without constructing a provider-backed session.
+
+    This smoke is intentionally mock-safe and must not require provider
+    credentials from `.env` or the host environment.
+    """
+
+    candidate = getattr(framework, "TextChatSession", None)
+    if candidate is not None and callable(getattr(candidate, "ask_result", None)):
+        return candidate
+
+    facade_module = sys.modules.get("framework.facade")
+    candidate = getattr(facade_module, "TextChatSession", None) if facade_module is not None else None
+    _require(candidate is not None, "TextChatSession class should be available after framework import")
+    _require(callable(getattr(candidate, "ask_result", None)), "TextChatSession does not expose ask_result")
+    return candidate
+
+
 def _assert_public_method(framework: object) -> None:
-    session = framework.create_text_chat_session()
-    ask_result = getattr(type(session), "ask_result", None)
+    session_cls = _get_text_chat_session_class(framework)
+    ask_result = getattr(session_cls, "ask_result", None)
     _require(callable(ask_result), "TextChatSession does not expose ask_result")
 
     sig = inspect.signature(ask_result)

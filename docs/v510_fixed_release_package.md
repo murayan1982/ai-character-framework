@@ -48,3 +48,16 @@ python scripts/build_v510_fixed_release_package.py
 
 Passing the builder means the current source tree and extracted release ZIP both
 pass the v5.1.0 release readiness gate. It does not mean a tag has been created.
+
+## Local secret hygiene
+
+Release/package readiness excludes local token and secret artifacts, including
+`config/tokens/`, `*_token.json`, `.env`, generated audio files, and runtime
+output directories.
+
+## Environment template hygiene
+
+`.env` and private environment files are excluded from fixed release packages.
+`.env.example` remains included because it is a public configuration template
+and is required by release package checks.
+

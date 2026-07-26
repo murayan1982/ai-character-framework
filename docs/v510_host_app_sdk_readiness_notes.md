@@ -93,3 +93,12 @@ the archive layout, extracts the archive, and runs the v5.1.0 release readiness
 gate inside the extracted tree. The builder is mock-safe and does not create a
 git tag.
 
+## Commit 16 - fixed release package verification
+
+Added `docs/v510_fixed_release_package_verification.md` and
+`scripts/smoke_v510_fixed_release_package_verification.py`.
+
+This gate builds the local v5.1.0 fixed release package, validates the manifest,
+checks release zip hygiene, extracts the package outside the repository root, and
+runs a mock-safe public API exercise from a host-app-like CWD. Generated release
+artifacts remain local evidence unless intentionally tracked.

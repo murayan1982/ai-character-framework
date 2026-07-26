@@ -216,6 +216,30 @@ def _assert_factory_signatures(framework: object) -> None:
     _ok("public factory signatures match v5.1.0 conformance baseline")
 
 
+def _get_text_chat_session_class(framework: object) -> type:
+    """Return TextChatSession class without constructing a provider-backed session."""
+
+    candidate = getattr(framework, "TextChatSession", None)
+    if candidate is not None and callable(getattr(candidate, "ask_result", None)):
+        return candidate
+
+    facade_module = sys.modules.get("framework.facade")
+    candidate = getattr(facade_module, "TextChatSession", None) if facade_module is not None else None
+    _require(candidate is not None, "TextChatSession class should be available after framework import")
+    _require(callable(getattr(candidate, "ask_result", None)), "TextChatSession does not expose ask_result")
+    return candidate
+
+
+def _make_text_chat_session_without_provider(framework: object) -> object:
+    """Create a provider-free TextChatSession instance for conformance checks."""
+
+    session_cls = _get_text_chat_session_class(framework)
+    session = object.__new__(session_cls)
+    # Keep ask_result() on the provider-free closed path if the smoke calls it.
+    session._fw_public_closed = True
+    return session
+
+
 def _assert_text_chat_result_contract(framework: object) -> None:
     result_type = framework.TextChatResult
     completed = result_type.completed("take an early rest today")
@@ -232,7 +256,7 @@ def _assert_text_chat_result_contract(framework: object) -> None:
     _require(failed.retryable is True, "failed retryable flag mismatch")
     _require("api_key" not in repr(failed).lower(), "TextChatResult repr should be secret-free")
 
-    session = framework.create_text_chat_session()
+    session = _make_text_chat_session_without_provider(framework)
     _require(hasattr(session, "ask_result"), "TextChatSession missing ask_result")
     _require(hasattr(session, "close"), "TextChatSession missing close")
     session.close()

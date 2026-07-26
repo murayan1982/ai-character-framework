@@ -89,7 +89,12 @@ def _run(command: list[str], *, cwd: Path) -> None:
 
 
 def _is_excluded_dir(path: Path) -> bool:
-    return any(part in EXCLUDED_DIR_NAMES for part in path.parts)
+    parts = tuple(path.parts)
+    if len(parts) >= 2 and parts[0] == "config" and parts[1] == "tokens":
+        return True
+    if "tokens" in parts and "config" in parts:
+        return True
+    return any(part in EXCLUDED_DIR_NAMES for part in parts)
 
 
 def _should_copy_file(path: Path) -> bool:
@@ -97,6 +102,15 @@ def _should_copy_file(path: Path) -> bool:
         return False
     if path.name in EXCLUDED_FILE_NAMES:
         return False
+
+    lower_name = path.name.lower()
+    if lower_name == ".env" or (lower_name.startswith(".env.") and lower_name != ".env.example"):
+        return False
+    if lower_name.endswith("_token.json"):
+        return False
+    if path.suffix.lower() in {".mp3", ".wav", ".m4a"}:
+        return False
+
     if path.name.startswith("apply_") and path.suffix == ".py":
         return False
     if path.suffix in {".pyc", ".pyo"}:
@@ -172,6 +186,9 @@ def _verify_archive_layout(archive_path: Path) -> dict[str, object]:
         "/venv/",
         "/__pycache__/",
         "/release/",
+        "/config/tokens/",
+        "/output/",
+        "/temp/",
     ]
     forbidden = [
         name
@@ -179,6 +196,10 @@ def _verify_archive_layout(archive_path: Path) -> dict[str, object]:
         if any(fragment in name for fragment in forbidden_fragments)
         or name.endswith(".pyc")
         or Path(name).name.startswith("apply_")
+        or Path(name).name.lower().endswith("_token.json")
+        or Path(name).name.lower() == ".env"
+        or (Path(name).name.lower().startswith(".env.") and Path(name).name.lower() != ".env.example")
+        or Path(name).suffix.lower() in {".mp3", ".wav", ".m4a"}
     ]
     _require(not forbidden, "forbidden archive entries present: " + ", ".join(forbidden[:12]))
 
