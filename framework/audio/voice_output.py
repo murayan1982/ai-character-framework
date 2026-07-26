@@ -144,6 +144,20 @@ class VoiceOutputSession:
             status_reason=provider_status.status_reason,
         )
 
+    def speak(self, request: VoiceOutputRequest) -> VoiceOutputResult:
+
+        """Create voice output using the stable host-app method name.
+
+
+        ``speak`` is the preferred v5.1+ public method for host apps.
+
+        ``create_output`` remains available as a v5.0 compatibility method.
+
+        """
+
+        return self.create_output(request)
+
+
     def create_output(self, request: VoiceOutputRequest | str) -> VoiceOutputResult:
         """Create a voice output artifact when a provider is available.
 

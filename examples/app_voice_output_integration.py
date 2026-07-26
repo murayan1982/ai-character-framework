@@ -92,7 +92,7 @@ class DailyRhythmCompanionVoiceOutputBridge:
         voice_output: DailyAdviceVoiceOutput,
     ) -> VoiceOutputResult:
         """Ask FW to create audio, or return safe unavailable when unconfigured."""
-        return self._session.create_output(self.build_request(voice_output))
+        return self._session.speak(self.build_request(voice_output))
 
 
 def build_drc_voice_output_bridge(
