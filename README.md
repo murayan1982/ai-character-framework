@@ -1057,3 +1057,15 @@ or not-yet-implemented real STT status without importing provider SDKs or
 executing real providers.
 
 See [`docs/v520_voice_input_capability_preflight.md`](docs/v520_voice_input_capability_preflight.md).
+
+### v5.2.0 voice-input session preflight wiring
+
+`VoiceInputSession` now uses the public capability preflight internally.
+
+A session exposes:
+
+- `session.capabilities`
+- `session.info.provider_status`
+- status-specific `listen_result(...)` unavailable results
+
+See [`docs/v520_voice_input_session_preflight_wiring.md`](docs/v520_voice_input_session_preflight_wiring.md).

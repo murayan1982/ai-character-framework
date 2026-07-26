@@ -11,7 +11,18 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
-from .voice_input import VoiceInputRequest, VoiceInputResult, _public_mapping
+from .voice_input import (
+    VoiceInputErrorCode,
+    VoiceInputOutcome,
+    VoiceInputRequest,
+    VoiceInputResult,
+    _public_mapping,
+)
+from .voice_input_capability import (
+    VoiceInputCapabilities,
+    VoiceInputProviderStatus,
+    get_voice_input_capabilities,
+)
 
 
 VoiceInputCallback = Callable[[Mapping[str, Any]], None]
@@ -26,13 +37,22 @@ class VoiceInputSessionInfo:
     provider: str | None = None
     language: str | None = None
     real_stt_enabled: bool = False
+    provider_status: VoiceInputProviderStatus | str = VoiceInputProviderStatus.DISABLED
     supports_listen_result: bool = True
     supports_text_fallback: bool = True
     supports_events: bool = True
     supports_close: bool = True
+    supports_real_stt: bool = False
+    safe_message: str = "Real voice input is disabled."
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        status = (
+            self.provider_status
+            if isinstance(self.provider_status, VoiceInputProviderStatus)
+            else VoiceInputProviderStatus(str(self.provider_status))
+        )
+        object.__setattr__(self, "provider_status", status)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -50,24 +70,46 @@ class VoiceInputSession:
         provider: str | None = None,
         language: str | None = None,
         real_stt_enabled: bool | None = None,
+        allow_provider_execution: bool | None = None,
+        credential_env: Mapping[str, str] | None = None,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
         self._provider = provider
         self._language = language
         self._real_stt_enabled = bool(real_stt_enabled)
+        self._allow_provider_execution = allow_provider_execution
+        self._credential_env = credential_env
         self._closed = False
         self._callbacks: list[VoiceInputCallback] = []
-        self._info = VoiceInputSessionInfo(
+        self._capabilities = get_voice_input_capabilities(
             provider=provider,
+            real_stt_enabled=real_stt_enabled,
+            allow_provider_execution=allow_provider_execution,
+            credential_env=credential_env,
+            public_metadata=public_metadata,
+        )
+        self._info = VoiceInputSessionInfo(
+            provider=self._capabilities.provider or provider,
             language=language,
-            real_stt_enabled=self._real_stt_enabled,
-            public_metadata=public_metadata or {},
+            real_stt_enabled=bool(real_stt_enabled),
+            provider_status=self._capabilities.provider_status,
+            supports_real_stt=self._capabilities.supports_real_stt,
+            safe_message=self._capabilities.safe_message,
+            public_metadata={
+                "boundary": "voice_input",
+                "provider_status": self._capabilities.provider_status.value,
+                **dict(public_metadata or {}),
+            },
         )
 
     @property
     def info(self) -> VoiceInputSessionInfo:
         return self._info
+
+    @property
+    def capabilities(self) -> VoiceInputCapabilities:
+        return self._capabilities
 
     @property
     def is_closed(self) -> bool:
@@ -91,12 +133,42 @@ class VoiceInputSession:
         for callback in list(self._callbacks):
             callback(event)
 
+    def _unavailable_from_capability(self) -> VoiceInputResult:
+        status = self._capabilities.provider_status
+        reason = self._capabilities.public_metadata.get("reason", status.value)
+
+        error_code = VoiceInputErrorCode.UNAVAILABLE
+        if status is VoiceInputProviderStatus.MISSING_CREDENTIALS:
+            error_code = VoiceInputErrorCode.MISSING_CREDENTIALS
+        elif status is VoiceInputProviderStatus.UNSUPPORTED_PROVIDER:
+            error_code = VoiceInputErrorCode.INVALID_REQUEST
+
+        self._emit(
+            "voice_input.unavailable",
+            provider_status=status.value,
+            reason=reason,
+            provider=self._capabilities.provider,
+        )
+
+        return VoiceInputResult(
+            outcome=VoiceInputOutcome.UNAVAILABLE,
+            public_error_code=error_code,
+            safe_message=self._capabilities.safe_message,
+            retryable=self._capabilities.retryable,
+            public_metadata={
+                "boundary": "voice_input",
+                "provider_status": status.value,
+                "reason": reason,
+                "supports_real_stt": self._capabilities.supports_real_stt,
+            },
+        )
+
     def listen_result(self, request: VoiceInputRequest | None = None) -> VoiceInputResult:
         """Return a provider-neutral voice-input result.
 
-        Real STT is intentionally not executed in this skeleton. Until a real
-        guarded provider boundary is implemented, an open session reports
-        `unavailable` safely.
+        Real STT is intentionally not executed in this skeleton. The session
+        now uses voice-input capability preflight to return status-specific
+        public results.
         """
 
         if self._closed:
@@ -107,29 +179,7 @@ class VoiceInputSession:
             request = VoiceInputRequest(language=self._language)
 
         self._emit("voice_input.started", language=request.language or self._language)
-
-        if self._real_stt_enabled:
-            self._emit("voice_input.unavailable", reason="real_stt_not_implemented")
-            return VoiceInputResult.unavailable(
-                safe_message="Real voice input is not implemented in this public skeleton.",
-                retryable=False,
-                public_metadata={
-                    "boundary": "voice_input",
-                    "real_stt_enabled": True,
-                    "reason": "real_stt_not_implemented",
-                },
-            )
-
-        self._emit("voice_input.unavailable", reason="real_stt_disabled")
-        return VoiceInputResult.unavailable(
-            safe_message="Voice input is unavailable because real STT execution is disabled.",
-            retryable=False,
-            public_metadata={
-                "boundary": "voice_input",
-                "real_stt_enabled": False,
-                "reason": "real_stt_disabled",
-            },
-        )
+        return self._unavailable_from_capability()
 
     def text_fallback_result(
         self,
@@ -177,6 +227,8 @@ def create_voice_input_session(
     provider: str | None = None,
     language: str | None = None,
     real_stt_enabled: bool | None = None,
+    allow_provider_execution: bool | None = None,
+    credential_env: Mapping[str, str] | None = None,
     public_metadata: Mapping[str, Any] | None = None,
 ) -> VoiceInputSession:
     """Create a mock-safe public voice-input session.
@@ -190,5 +242,7 @@ def create_voice_input_session(
         provider=provider,
         language=language,
         real_stt_enabled=real_stt_enabled,
+        allow_provider_execution=allow_provider_execution,
+        credential_env=credential_env,
         public_metadata=public_metadata,
     )

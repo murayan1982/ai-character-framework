@@ -114,3 +114,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Keep real STT support as not implemented rather than overclaiming readiness
 - [x] Add credential-value-safe smoke
 - [ ] Wire capability preflight into `VoiceInputSessionInfo` and `listen_result(...)`
+
+## Commit 6 - Voice-input session preflight wiring
+
+- [x] Wire `get_voice_input_capabilities(...)` into `VoiceInputSession`
+- [x] Add `session.capabilities`
+- [x] Add `VoiceInputSessionInfo.provider_status`
+- [x] Add `VoiceInputSessionInfo.supports_real_stt`
+- [x] Return missing-credentials typed result from `listen_result(...)`
+- [x] Return provider-execution-guard typed result from `listen_result(...)`
+- [x] Return unsupported-provider typed result from `listen_result(...)`
+- [x] Preserve closed-session result precedence
+- [ ] Add public voice-input host-app examples

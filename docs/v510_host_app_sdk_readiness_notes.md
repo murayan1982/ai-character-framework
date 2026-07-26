@@ -182,3 +182,11 @@ Added public voice-input / STT capability preflight symbols:
 - `get_voice_input_capabilities(...)`
 
 The preflight is mock-safe, credential-value-safe, and does not execute real STT.
+
+## v5.2.0 voice-input session preflight wiring checkpoint
+
+Wired public voice-input capability preflight into `VoiceInputSession`.
+
+`listen_result(...)` now returns status-specific provider-neutral unavailable
+results for disabled, missing-credentials, provider-execution-guarded,
+unsupported-provider, and real-STT-not-implemented states.

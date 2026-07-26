@@ -121,10 +121,18 @@ def _assert_session_contract(framework) -> None:
 
 
 def _assert_real_stt_guarded_path(framework) -> None:
-    session = framework.create_voice_input_session(real_stt_enabled=True)
+    session = framework.create_voice_input_session(
+        provider="openai",
+        real_stt_enabled=True,
+        allow_provider_execution=True,
+        credential_env={"OPENAI_API_KEY": "should-not-leak"},
+    )
     result = session.listen_result()
     _require(result.outcome == framework.VoiceInputOutcome.UNAVAILABLE, "guarded real STT skeleton should be unavailable")
     _require(result.public_metadata["reason"] == "real_stt_not_implemented", "guarded real STT skeleton reason mismatch")
+    _require(result.public_metadata["provider_status"] == "real_stt_not_implemented", "guarded real STT provider_status mismatch")
+    _require("should-not-leak" not in repr(session.info), "session info should not leak credential values")
+    _require("should-not-leak" not in repr(result), "result should not leak credential values")
     _ok("VoiceInputSession real STT placeholder remains provider-neutral")
 
 
