@@ -297,3 +297,12 @@ types:
 
 This checkpoint is provider-neutral and mock-safe. It does not add real
 cancellation, queue flush, playback stop, or barge-in detection yet.
+
+## v5.2.0 realtime interrupt / output-control wiring checkpoint
+
+Wired public interrupt / output-control types into `RealtimeSession`.
+
+The public session now exposes mock-safe interrupt, cancel-current-turn,
+output-flush, queue-state, and barge-in policy/decision methods. These return
+typed provider-neutral results and do not execute real hard cancel, TTS queue
+flush, playback stop, provider cancel, or barge-in detection.

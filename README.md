@@ -1194,3 +1194,19 @@ provider-neutral public types:
 - `BargeInDecision`
 
 See [`docs/v520_interrupt_output_control_types.md`](docs/v520_interrupt_output_control_types.md).
+
+### v5.2.0 realtime interrupt / output-control wiring
+
+`RealtimeSession` now exposes mock-safe public output-control methods:
+
+- `get_tts_queue_state()`
+- `interrupt(...)`
+- `cancel_current_turn(...)`
+- `flush_output(...)`
+- `set_barge_in_policy(...)`
+- `decide_barge_in(...)`
+
+The methods return typed provider-neutral results and do not overclaim real hard
+cancel, real queue flush, playback stop, or provider cancellation support.
+
+See [`docs/v520_realtime_interrupt_output_control_wiring.md`](docs/v520_realtime_interrupt_output_control_wiring.md).

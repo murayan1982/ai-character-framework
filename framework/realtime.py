@@ -74,6 +74,16 @@ class RealtimeEventType(str, Enum):
     TURN_INTERRUPTED = "realtime.turn.interrupted"
     TURN_FAILED = "realtime.turn.failed"
     SESSION_CLOSED = "realtime.session.closed"
+    INTERRUPT_REQUESTED = "realtime.interrupt.requested"
+    INTERRUPT_ACCEPTED = "realtime.interrupt.accepted"
+    INTERRUPT_COMPLETED = "realtime.interrupt.completed"
+    INTERRUPT_UNSUPPORTED = "realtime.interrupt.unsupported"
+    OUTPUT_FLUSH_REQUESTED = "realtime.output.flush.requested"
+    OUTPUT_FLUSH_COMPLETED = "realtime.output.flush.completed"
+    OUTPUT_FLUSH_UNSUPPORTED = "realtime.output.flush.unsupported"
+    BARGE_IN_DETECTED = "realtime.barge_in.detected"
+    BARGE_IN_ACCEPTED = "realtime.barge_in.accepted"
+    BARGE_IN_REJECTED = "realtime.barge_in.rejected"
 
 
 class RealtimeErrorCode(str, Enum):

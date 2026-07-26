@@ -232,3 +232,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Export public interrupt/output-control types from `framework`
 - [x] Add provider-neutral / secret-safe public type smoke
 - [ ] Wire interrupt / output-control types into `RealtimeSession`
+
+## Commit 16 - Realtime interrupt / output-control wiring
+
+- [x] Add realtime interrupt / output-control event types
+- [x] Add `RealtimeSession.get_tts_queue_state()`
+- [x] Add `RealtimeSession.interrupt(...)`
+- [x] Add `RealtimeSession.cancel_current_turn(...)`
+- [x] Add `RealtimeSession.flush_output(...)`
+- [x] Add `RealtimeSession.set_barge_in_policy(...)`
+- [x] Add `RealtimeSession.decide_barge_in(...)`
+- [x] Add typed closed-session interrupt / flush behavior
+- [x] Keep hard cancel / real queue flush support honest and false
+- [ ] Add interrupt / output-control host-app examples

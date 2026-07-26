@@ -235,7 +235,11 @@ def _assert_session_contract(framework) -> None:
     _require(session.info.public_metadata["secret"] == "<redacted>", "session.info metadata should be redacted")
     _require(not session.is_closed, "new RealtimeSession should be open")
     _require(not session.info.real_runtime_enabled, "session should not enable real runtime by default")
-    _require(not session.info.supports_interrupt, "hard interrupt should not be claimed yet")
+    _require(session.info.supports_interrupt, "session should expose public interrupt control")
+    _require(session.info.supports_output_flush, "session should expose public output flush control")
+    _require(session.info.supports_barge_in_policy, "session should expose public barge-in policy control")
+    _require(not session.info.hard_cancel_supported, "real hard cancel should not be claimed yet")
+    _require(not session.info.tts_queue_flush_supported, "real TTS queue flush should not be claimed yet")
     _require(not session.info.supports_motion, "motion should not be claimed yet")
 
     created = session.emit_created()
@@ -325,6 +329,7 @@ def _assert_readme(root: Path) -> None:
         "v520_realtime_session_skeleton.md",
         "v520_realtime_host_app_examples.md",
         "v520_realtime_public_contract_conformance_gate.md",
+        "v520_realtime_interrupt_output_control_wiring.md",
     ]
     for link in required_links:
         _require(link in text, f"README missing v5.2.0 realtime link: {link}")
