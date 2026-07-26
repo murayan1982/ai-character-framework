@@ -1210,3 +1210,16 @@ The methods return typed provider-neutral results and do not overclaim real hard
 cancel, real queue flush, playback stop, or provider cancellation support.
 
 See [`docs/v520_realtime_interrupt_output_control_wiring.md`](docs/v520_realtime_interrupt_output_control_wiring.md).
+
+### v5.2.0 interrupt / output-control host-app examples
+
+Mock-safe public interrupt / output-control examples are available:
+
+- `examples/app_realtime_interrupt_handling.py`
+- `examples/app_realtime_output_flush_handling.py`
+- `examples/app_realtime_barge_in_policy.py`
+
+They demonstrate typed interrupt results, empty-queue output flush results, and
+barge-in policy decisions without importing FW internals or provider SDKs.
+
+See [`docs/v520_interrupt_output_control_host_app_examples.md`](docs/v520_interrupt_output_control_host_app_examples.md).

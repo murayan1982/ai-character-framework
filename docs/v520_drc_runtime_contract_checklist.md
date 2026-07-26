@@ -245,3 +245,13 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add typed closed-session interrupt / flush behavior
 - [x] Keep hard cancel / real queue flush support honest and false
 - [ ] Add interrupt / output-control host-app examples
+
+## Commit 17 - Interrupt / output-control host-app examples
+
+- [x] Add realtime interrupt handling example
+- [x] Add realtime output flush handling example
+- [x] Add realtime barge-in policy example
+- [x] Add example smoke
+- [x] Verify examples use public `framework` imports only
+- [x] Verify examples do not execute real cancel / flush / playback stop / provider cancel / barge-in detection
+- [ ] Add interrupt / output-control public contract conformance gate

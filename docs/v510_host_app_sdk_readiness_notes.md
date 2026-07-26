@@ -306,3 +306,14 @@ The public session now exposes mock-safe interrupt, cancel-current-turn,
 output-flush, queue-state, and barge-in policy/decision methods. These return
 typed provider-neutral results and do not execute real hard cancel, TTS queue
 flush, playback stop, provider cancel, or barge-in detection.
+
+## v5.2.0 interrupt / output-control host-app examples checkpoint
+
+Added mock-safe public examples for:
+
+- interrupt handling
+- output flush handling
+- barge-in policy/decision handling
+
+The examples use only public `framework` imports and do not execute real hard
+cancel, TTS queue flush, playback stop, provider cancel, or barge-in detection.
