@@ -159,3 +159,14 @@ Added the first public voice-input / STT contract types:
 
 This checkpoint is provider-neutral and mock-safe. It does not add real STT
 execution yet.
+
+## v5.2.0 public voice-input session skeleton checkpoint
+
+Added the first public voice-input session boundary:
+
+- `create_voice_input_session(...)`
+- `VoiceInputSession`
+- `VoiceInputSessionInfo`
+
+The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
+does not execute real STT providers yet.

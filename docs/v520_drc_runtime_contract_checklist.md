@@ -89,3 +89,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add provider-neutral / secret-safe public type smoke
 - [ ] Add public `VoiceInputSession` skeleton
 - [ ] Add `create_voice_input_session(...)`
+
+## Commit 4 - Public voice-input session skeleton
+
+- [x] Add `VoiceInputSessionInfo`
+- [x] Add `VoiceInputSession`
+- [x] Add `create_voice_input_session(...)`
+- [x] Export public voice-input session symbols from `framework`
+- [x] Add mock-safe `listen_result(...)`
+- [x] Add `text_fallback_result(...)`
+- [x] Add lifecycle: `close()`, `dispose()`, `is_closed`
+- [x] Add context manager support
+- [x] Add provider-neutral app-facing event callback skeleton
+- [ ] Add voice-input provider config / capability preflight

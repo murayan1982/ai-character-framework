@@ -55,3 +55,15 @@ for _name in ['VoiceInputErrorCode', 'VoiceInputOutcome', 'VoiceInputRequest', '
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .voice_input_session import VoiceInputSession, VoiceInputSessionInfo, create_voice_input_session
+
+# v5.2.0 public voice-input session exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['VoiceInputSession', 'VoiceInputSessionInfo', 'create_voice_input_session']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name
