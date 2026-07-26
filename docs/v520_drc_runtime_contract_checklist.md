@@ -126,3 +126,13 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Return unsupported-provider typed result from `listen_result(...)`
 - [x] Preserve closed-session result precedence
 - [ ] Add public voice-input host-app examples
+
+## Commit 7 - Voice-input host-app examples
+
+- [x] Add capability preflight example
+- [x] Add public session text fallback example
+- [x] Add missing-credentials example
+- [x] Add example smoke
+- [x] Verify examples use public `framework` imports only
+- [x] Verify examples do not execute real STT
+- [ ] Add public voice-input contract conformance gate

@@ -1069,3 +1069,16 @@ A session exposes:
 - status-specific `listen_result(...)` unavailable results
 
 See [`docs/v520_voice_input_session_preflight_wiring.md`](docs/v520_voice_input_session_preflight_wiring.md).
+
+### v5.2.0 voice-input host-app examples
+
+Mock-safe public voice-input examples are available:
+
+- `examples/app_voice_input_capability_preflight.py`
+- `examples/app_voice_input_session_text_fallback.py`
+- `examples/app_voice_input_missing_credentials.py`
+
+They demonstrate capability preflight, public session text fallback, and typed
+missing-credential handling without importing FW internals or STT provider SDKs.
+
+See [`docs/v520_voice_input_host_app_examples.md`](docs/v520_voice_input_host_app_examples.md).

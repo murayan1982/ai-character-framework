@@ -190,3 +190,13 @@ Wired public voice-input capability preflight into `VoiceInputSession`.
 `listen_result(...)` now returns status-specific provider-neutral unavailable
 results for disabled, missing-credentials, provider-execution-guarded,
 unsupported-provider, and real-STT-not-implemented states.
+
+## v5.2.0 voice-input host-app examples checkpoint
+
+Added mock-safe public voice-input examples for host apps:
+
+- capability preflight
+- session text fallback
+- missing-credentials handling
+
+The examples use only public `framework` imports and do not execute real STT.
