@@ -170,3 +170,15 @@ Added the first public voice-input session boundary:
 
 The skeleton is mock-safe, provider-neutral, lifecycle-aware, event-capable, and
 does not execute real STT providers yet.
+
+## v5.2.0 voice-input capability preflight checkpoint
+
+Added public voice-input / STT capability preflight symbols:
+
+- `VoiceInputProviderStatus`
+- `VoiceInputProviderConfig`
+- `VoiceInputCapabilities`
+- `resolve_voice_input_provider_config(...)`
+- `get_voice_input_capabilities(...)`
+
+The preflight is mock-safe, credential-value-safe, and does not execute real STT.

@@ -1041,3 +1041,19 @@ The session exposes `listen_result(...)`, `text_fallback_result(...)`,
 support without executing real STT providers by default.
 
 See [`docs/v520_voice_input_session_skeleton.md`](docs/v520_voice_input_session_skeleton.md).
+
+### v5.2.0 voice-input capability preflight
+
+v5.2.0 now includes a public voice-input / STT capability preflight:
+
+- `VoiceInputProviderStatus`
+- `VoiceInputProviderConfig`
+- `VoiceInputCapabilities`
+- `resolve_voice_input_provider_config(...)`
+- `get_voice_input_capabilities(...)`
+
+The preflight reports disabled, missing credential, guard-blocked, unsupported,
+or not-yet-implemented real STT status without importing provider SDKs or
+executing real providers.
+
+See [`docs/v520_voice_input_capability_preflight.md`](docs/v520_voice_input_capability_preflight.md).

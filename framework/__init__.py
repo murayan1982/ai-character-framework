@@ -67,3 +67,15 @@ for _name in ['VoiceInputSession', 'VoiceInputSessionInfo', 'create_voice_input_
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .voice_input_capability import VoiceInputCapabilities, VoiceInputProviderConfig, VoiceInputProviderStatus, get_voice_input_capabilities, resolve_voice_input_provider_config
+
+# v5.2.0 public voice-input capability preflight exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['VoiceInputCapabilities', 'VoiceInputProviderConfig', 'VoiceInputProviderStatus', 'get_voice_input_capabilities', 'resolve_voice_input_provider_config']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name

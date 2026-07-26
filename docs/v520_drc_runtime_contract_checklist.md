@@ -102,3 +102,15 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add context manager support
 - [x] Add provider-neutral app-facing event callback skeleton
 - [ ] Add voice-input provider config / capability preflight
+
+## Commit 5 - Voice-input capability preflight
+
+- [x] Add `VoiceInputProviderStatus`
+- [x] Add `VoiceInputProviderConfig`
+- [x] Add `VoiceInputCapabilities`
+- [x] Add `resolve_voice_input_provider_config(...)`
+- [x] Add `get_voice_input_capabilities(...)`
+- [x] Add missing-credentials / guard-blocked / unsupported-provider preflight
+- [x] Keep real STT support as not implemented rather than overclaiming readiness
+- [x] Add credential-value-safe smoke
+- [ ] Wire capability preflight into `VoiceInputSessionInfo` and `listen_result(...)`
