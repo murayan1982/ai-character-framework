@@ -267,3 +267,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Add public realtime event checks
 - [x] Add public-only host-app example checks
 - [ ] Start public motion / Live2D / VTS adapter inventory
+
+## Phase 4 - Public motion / Live2D / VTS adapter
+
+## Commit 19 - Motion / Live2D / VTS adapter inventory
+
+- [x] Start priority 4: public motion / Live2D / VTS adapter
+- [x] Record candidate public motion symbols
+- [x] Record candidate motion states and event types
+- [x] Record candidate motion request/result types
+- [x] Record adapter preflight requirements
+- [x] Record safety rules for VTS tokens, model paths, and provider payloads
+- [x] Record relationship to realtime / interrupt / voice output contracts
+- [ ] Add public motion adapter type skeleton

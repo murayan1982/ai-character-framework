@@ -1238,3 +1238,16 @@ flush / barge-in boundary:
 - public-only host-app examples
 
 See [`docs/v520_interrupt_output_control_public_contract_conformance_gate.md`](docs/v520_interrupt_output_control_public_contract_conformance_gate.md).
+
+### v5.2.0 motion / Live2D / VTS adapter inventory
+
+Priority 4 of the DRC-driven v5.2.0 work is the public motion / Live2D /
+VTube Studio adapter contract.
+
+Inventory notes are recorded in
+[`docs/v520_motion_live2d_vts_adapter_inventory.md`](docs/v520_motion_live2d_vts_adapter_inventory.md).
+
+The goal is to give DRC provider-neutral public motion controls for expression,
+emotion, speaking state, gesture, look direction, stop/reset behavior, and
+adapter preflight without depending on FW internals, VTS WebSocket state, token
+files, or private model paths.

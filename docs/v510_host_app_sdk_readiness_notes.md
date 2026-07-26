@@ -326,3 +326,15 @@ The gate verifies the public hard cancel / TTS queue / flush / barge-in contract
 so far: exports, provider-safe import, public interrupt / output flush /
 barge-in types, `RealtimeSession` output-control methods, honest capability
 flags, public events, and public-only host-app examples.
+
+## v5.2.0 motion / Live2D / VTS adapter inventory checkpoint
+
+Started priority 4 of the DRC-driven v5.2.0 work: public motion / Live2D /
+VTube Studio adapter.
+
+Added `docs/v520_motion_live2d_vts_adapter_inventory.md` and
+`scripts/smoke_v520_motion_live2d_vts_adapter_inventory.py`.
+
+This checkpoint records candidate public symbols, motion states, event types,
+request/result shapes, adapter preflight requirements, safety rules, and
+relationship to existing realtime / interrupt / voice output contracts.
