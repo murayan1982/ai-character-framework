@@ -1,1 +1,1 @@
-feat/test: add FW-owned provider config resolution
+feat/test: add public session lifecycle contract
