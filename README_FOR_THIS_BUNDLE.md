@@ -1,15 +1,20 @@
-# FW v5.1.0 Commit 5 - Result / error contract checkpoint
+# FW v5.1.0 Commit 6 fix
 
-Purpose: add a v5.1.0 P0/FW-F3 checkpoint for typed public results and provider-neutral public error codes.
+This is a small fix for the Commit 6 TextChatResult public type smoke.
 
-## Files
+The implementation and docs are OK, but the smoke expected the phrase
+`does not change the existing text chat runtime return behavior yet` as one
+physical line. The generated doc wrapped the sentence across lines, so the check
+failed even though the content exists.
 
-```text
-docs/v510_result_error_contract.md
-scripts/smoke_v510_result_error_contract.py
+Apply:
+
+```powershell
+python apply_v510_commit6_text_chat_result_public_type_fix.py
+del apply_v510_commit6_text_chat_result_public_type_fix.py
 ```
 
-## Verification
+Then rerun:
 
 ```powershell
 python -m compileall -q .
@@ -17,28 +22,6 @@ python scripts/smoke_v510_public_contract_inventory.py
 python scripts/smoke_v510_voice_output_method_contract.py
 python scripts/smoke_v510_factory_signature_contract.py
 python scripts/smoke_v510_result_error_contract.py
+python scripts/smoke_v510_text_chat_result_public_type.py
 python scripts/check_release_package.py
 ```
-
-Expected behavior:
-
-```text
-[OK] v5.1.0 result/error contract checkpoint is mock-safe
-```
-
-A warning that `TextChatResult` is not public yet is expected at this checkpoint.
-This commit records FW-F3 vocabulary and checks the existing Voice Output result
-contract before changing text chat runtime behavior.
-
-## Commit message
-
-```text
-docs/test: add result and error contract for v5.1.0
-```
-
-## Notes
-
-- No text chat runtime behavior is changed.
-- No DRC files are changed.
-- No provider execution is performed.
-- The smoke is mock-safe.
