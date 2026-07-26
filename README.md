@@ -970,3 +970,15 @@ This builds the local fixed release package, verifies the manifest and zip
 hygiene, extracts the package outside the repository root, and imports the
 public framework API from a host-app-like working directory. The check is
 mock-safe and does not publish a release or create a tag.
+
+### v5.1.0 final release tag readiness
+
+Before creating the `v5.1.0` tag, run the final mock-safe release tag
+readiness gate:
+
+```powershell
+python scripts/smoke_v510_final_release_tag_readiness.py --require-clean-tree --expected-tag v5.1.0
+```
+
+The generated `release/ai-character-framework_v5.1.0.zip` and manifest are
+local release artifacts/evidence and are not intended to be committed.

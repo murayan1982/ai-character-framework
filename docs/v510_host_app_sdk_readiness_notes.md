@@ -102,3 +102,13 @@ This gate builds the local v5.1.0 fixed release package, validates the manifest,
 checks release zip hygiene, extracts the package outside the repository root, and
 runs a mock-safe public API exercise from a host-app-like CWD. Generated release
 artifacts remain local evidence unless intentionally tracked.
+
+## Commit 17 - final release tag readiness
+
+Added a final v5.1.0 pre-tag readiness checkpoint:
+`scripts/smoke_v510_final_release_tag_readiness.py`.
+
+This checkpoint runs the existing release readiness gate, fixed release
+package verification, and release package check; verifies the generated
+fixed release ZIP and manifest; checks local-secret hygiene; and optionally
+enforces a clean Git working tree before creating the `v5.1.0` tag.
