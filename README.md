@@ -1251,3 +1251,20 @@ The goal is to give DRC provider-neutral public motion controls for expression,
 emotion, speaking state, gesture, look direction, stop/reset behavior, and
 adapter preflight without depending on FW internals, VTS WebSocket state, token
 files, or private model paths.
+
+### v5.2.0 public motion adapter types
+
+v5.2.0 now begins the public motion / Live2D / VTube Studio adapter boundary with
+provider-neutral public types:
+
+- `MotionAdapterStatus`
+- `MotionState`
+- `MotionEventType`
+- `MotionErrorCode`
+- `MotionIntent`
+- `MotionOutcome`
+- `MotionCapability`
+- `MotionRequest`
+- `MotionResult`
+
+See [`docs/v520_motion_adapter_types.md`](docs/v520_motion_adapter_types.md).

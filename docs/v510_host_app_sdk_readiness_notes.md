@@ -338,3 +338,20 @@ Added `docs/v520_motion_live2d_vts_adapter_inventory.md` and
 This checkpoint records candidate public symbols, motion states, event types,
 request/result shapes, adapter preflight requirements, safety rules, and
 relationship to existing realtime / interrupt / voice output contracts.
+
+## v5.2.0 public motion adapter type checkpoint
+
+Added the first public motion / Live2D / VTube Studio adapter contract types:
+
+- `MotionAdapterStatus`
+- `MotionState`
+- `MotionEventType`
+- `MotionErrorCode`
+- `MotionIntent`
+- `MotionOutcome`
+- `MotionCapability`
+- `MotionRequest`
+- `MotionResult`
+
+This checkpoint is provider-neutral and mock-safe. It does not add real Live2D,
+VTS WebSocket, model runtime, or motion session behavior yet.

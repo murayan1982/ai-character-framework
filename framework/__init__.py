@@ -115,3 +115,15 @@ for _name in ['BargeInDecision', 'BargeInPolicy', 'BargeInPolicyMode', 'Interrup
     if _name not in __all__:
         __all__.append(_name)
 del _name
+
+from .motion import MotionAdapterStatus, MotionCapability, MotionErrorCode, MotionEventType, MotionIntent, MotionOutcome, MotionRequest, MotionResult, MotionState
+
+# v5.2.0 public motion adapter exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in ['MotionAdapterStatus', 'MotionCapability', 'MotionErrorCode', 'MotionEventType', 'MotionIntent', 'MotionOutcome', 'MotionRequest', 'MotionResult', 'MotionState']:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name

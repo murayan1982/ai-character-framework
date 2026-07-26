@@ -280,3 +280,16 @@ This checklist tracks the next FW development cycle driven by DRC RT-1 needs.
 - [x] Record safety rules for VTS tokens, model paths, and provider payloads
 - [x] Record relationship to realtime / interrupt / voice output contracts
 - [ ] Add public motion adapter type skeleton
+
+## Commit 20 - Public motion adapter types
+
+- [x] Add `framework.motion`
+- [x] Add motion adapter status / state / event / error enums
+- [x] Add motion intent / outcome enums
+- [x] Add `MotionCapability`
+- [x] Add `MotionRequest`
+- [x] Add `MotionResult`
+- [x] Export public motion adapter types from `framework`
+- [x] Add provider-neutral / secret-safe public type smoke
+- [ ] Add public `MotionSession` skeleton
+- [ ] Add `create_motion_session(...)`
