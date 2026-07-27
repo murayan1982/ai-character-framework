@@ -268,3 +268,40 @@ The guarded adapter returns typed guard outcomes without importing provider SDKs
 reading API keys, reading audio, or executing a real provider.
 
 STT-1f is now ready to start in the next small commit.
+
+## STT-1f DRC public handoff inventory note
+
+After STT-1f implementation, the DRC-facing public handoff verification is
+present.
+
+The inventory now expects:
+
+```text
+v530_drc_public_handoff_verification_present: True
+```
+
+This verification is mock-safe. It does not change DRC, read private files, read
+audio, access microphones, call real providers, read API keys, create a release
+package, or create a tag.
+
+## STT-1f acceptance sync note
+
+STT-1f is accepted.
+
+The DRC public handoff verification is now present:
+
+```text
+v530_drc_public_handoff_verification_present: True
+v530_provider_execution_executed: False
+v530_microphone_accessed: False
+v530_audio_handled: False
+v530_drc_rt3_status: blocked-pending-real-provider-execution
+v530_stt1f_status: accepted
+v530_release_readiness_authorization: ready-for-release-readiness
+```
+
+This confirms the public handoff shape only. It does not mean DRC RT-3 real STT
+acceptance is complete because real provider execution remains unimplemented and
+unexecuted.
+
+v5.3.0 release readiness is now ready to start in the next small commit.

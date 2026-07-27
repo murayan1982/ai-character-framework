@@ -1472,3 +1472,25 @@ STT-1e added a guarded real-provider adapter boundary. It reports typed guard
 outcomes for provider execution not allowed, missing credentials, and real STT
 not implemented. It did not import provider SDKs, read API keys, read audio,
 access microphones, execute real providers, or change DRC.
+
+## v5.3.0 STT-1f DRC public handoff verification
+
+STT-1f verifies the DRC-facing public handoff shape:
+
+```text
+DRC host app capture -> opaque/private audio source -> FW public VoiceInputSession -> lazy adapter -> typed VoiceInputResult
+```
+
+See [`docs/v530_drc_public_handoff_verification.md`](docs/v530_drc_public_handoff_verification.md) and
+[`examples/voice_input_drc_public_handoff.py`](examples/voice_input_drc_public_handoff.py).
+
+### v5.3.0 STT-1f acceptance status
+
+```text
+STT-1f: ACCEPTED
+v5.3.0 release readiness: READY pending next small commit
+```
+
+STT-1f verified the DRC-facing public handoff shape using only public framework
+imports. It did not change DRC, read audio, access microphones, execute real
+providers, read API keys, create a release package, or create a tag.
