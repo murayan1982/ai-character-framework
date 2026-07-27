@@ -1369,3 +1369,20 @@ verification smoke, package tooling, git state, tag availability, and optionally
 the final fixed package before creating `v5.2.0`.
 
 See [`docs/v520_final_release_tag_readiness.md`](docs/v520_final_release_tag_readiness.md).
+
+## v5.3.0 development: Public Voice Input / Real STT Provider Boundary
+
+v5.3.0 begins the real STT provider boundary work needed by DRC RT-3.
+
+Current checkpoint:
+
+```text
+STT-1a: ACCEPTED
+STT-1b: READY pending next small commit
+```
+
+See:
+
+- [`docs/roadmap_feature_v5.3.0.md`](docs/roadmap_feature_v5.3.0.md)
+- [`docs/v530_real_stt_provider_boundary_inventory.md`](docs/v530_real_stt_provider_boundary_inventory.md)
+- [`docs/v530_real_stt_small_commit_checklist.md`](docs/v530_real_stt_small_commit_checklist.md)
