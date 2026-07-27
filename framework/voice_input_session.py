@@ -6,6 +6,9 @@ It intentionally does not execute real STT providers yet.
 
 from __future__ import annotations
 
+from .voice_input_audio import VoiceInputAudioSource
+from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceInputProviderAdapter
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
@@ -204,6 +207,47 @@ class VoiceInputSession:
                 **dict(public_metadata or {}),
             },
         )
+
+    def transcribe_audio_result(
+        self,
+        audio_source: VoiceInputAudioSource,
+        *,
+        request: VoiceInputRequest | None = None,
+        adapter: VoiceInputProviderAdapter | None = None,
+    ) -> VoiceInputResult:
+        """Transcribe host-captured audio through a lazy provider adapter.
+
+        This public wiring path is data-only from the session side. It does not
+        read audio, open microphones, create provider clients, or execute a real
+        STT provider by itself. The default adapter is the mock-safe fake adapter.
+        """
+
+        if self.is_closed:
+            try:
+                return self.listen_result(request=request)
+            except TypeError:
+                return self.listen_result()
+
+        if not isinstance(audio_source, VoiceInputAudioSource):
+            raise TypeError("audio_source must be a VoiceInputAudioSource")
+
+        effective_request = request or VoiceInputRequest(
+            language=audio_source.language,
+            max_duration_ms=audio_source.max_duration_ms,
+        )
+        effective_adapter = adapter or FakeVoiceInputProviderAdapter()
+        return effective_adapter.transcribe(audio_source=audio_source, request=effective_request)
+
+    def listen_audio_result(
+        self,
+        audio_source: VoiceInputAudioSource,
+        *,
+        request: VoiceInputRequest | None = None,
+        adapter: VoiceInputProviderAdapter | None = None,
+    ) -> VoiceInputResult:
+        """Alias for host-captured audio transcription through a lazy adapter."""
+
+        return self.transcribe_audio_result(audio_source, request=request, adapter=adapter)
 
     def close(self) -> None:
         if self._closed:

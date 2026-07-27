@@ -103,5 +103,28 @@ Acceptance requirements:
 Status:
 
 ```text
+ACCEPTED
+```
+
+### STT-1d acceptance evidence
+
+- [x] `python -m compileall -q framework core stt scripts`
+- [x] `python scripts/smoke_v530_voice_input_session_adapter_wiring.py`
+- [x] `python scripts/smoke_v530_lazy_provider_adapter_fake.py`
+- [x] `python scripts/smoke_v530_host_audio_source_contract.py`
+- [x] `python scripts/smoke_v530_real_stt_provider_boundary_inventory.py`
+- [x] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [x] `python scripts/smoke_v520_release_readiness_gate.py`
+- [x] `git diff --check` for STT-1d files
+- [x] no real provider execution
+- [x] no microphone access
+- [x] no audio file read
+- [x] `.vscode/settings.json` remains local-only and is not included
+
+## STT-1e - First guarded real provider adapter
+
+Status:
+
+```text
 READY pending next small commit
 ```

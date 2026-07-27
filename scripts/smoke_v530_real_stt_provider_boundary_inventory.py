@@ -1,4 +1,10 @@
-"""v5.3.0 real STT provider boundary inventory smoke."""
+"""v5.3.0 real STT provider boundary inventory smoke.
+
+This inventory gate is cumulative across v5.3.0 STT small commits. It verifies
+which public contracts are present while still ensuring no unapproved real
+provider execution, microphone access, audio reads, or raw audio handling are
+claimed by the inventory path.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +14,7 @@ import sys
 from pathlib import Path
 
 SOURCE_COMMIT = "c2e247064987c94bf735a359700f0462439b8286"
+
 ALLOWED_CHANGED = {
     "README.md",
     "docs/roadmap_feature_v5.3.0.md",
@@ -23,6 +30,10 @@ ALLOWED_CHANGED = {
     "docs/v530_lazy_provider_adapter_fake.md",
     "framework/voice_input_provider_adapter.py",
     "scripts/smoke_v530_lazy_provider_adapter_fake.py",
+    # STT-1d public VoiceInputSession adapter wiring files.
+    "docs/v530_voice_input_session_adapter_wiring.md",
+    "framework/voice_input_session.py",
+    "scripts/smoke_v530_voice_input_session_adapter_wiring.py",
 }
 
 
@@ -69,6 +80,8 @@ def _git_diff_names(root: Path) -> set[str]:
 
 def main() -> None:
     root = _repo_root()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
 
     docs = {
         "README.md": _read(root / "README.md"),
@@ -76,20 +89,29 @@ def main() -> None:
         "inventory": _read(root / "docs" / "v530_real_stt_provider_boundary_inventory.md"),
         "checklist": _read(root / "docs" / "v530_real_stt_small_commit_checklist.md"),
     }
-    _require("v5.3.0 development: Public Voice Input / Real STT Provider Boundary" in docs["README.md"], "README missing v5.3.0 STT section")
+    _require(
+        "v5.3.0 development: Public Voice Input / Real STT Provider Boundary" in docs["README.md"],
+        "README missing v5.3.0 STT section",
+    )
     _require("Public Voice Input / Real STT Provider Boundary" in docs["roadmap"], "roadmap missing STT theme")
     _require("STT-1a: ACCEPTED" in docs["inventory"], "inventory missing accepted STT-1a status")
-    _require("STT-1b: READY" in docs["inventory"], "inventory missing STT-1b ready status")
-    _require("ACCEPTED" in docs["checklist"], "checklist missing accepted STT-1a status")
+    _require("STT-1b" in docs["checklist"], "checklist missing STT-1b")
+    _require("STT-1c" in docs["checklist"], "checklist missing STT-1c")
     _ok("v5.3.0 real STT provider boundary inventory docs are present")
-
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
 
     before = set(sys.modules)
     framework = importlib.import_module("framework")
     loaded = set(sys.modules) - before
-    forbidden = ("speech_recognition", "pyaudio", "sounddevice", "whisper", "faster_whisper", "google.cloud", "boto3", "azure")
+    forbidden = (
+        "speech_recognition",
+        "pyaudio",
+        "sounddevice",
+        "whisper",
+        "faster_whisper",
+        "google.cloud",
+        "boto3",
+        "azure",
+    )
     provider_import_hits = sorted(name for name in loaded if any(part in name.lower() for part in forbidden))
     framework_import_provider_safe = not provider_import_hits
     _require(framework_import_provider_safe, "framework import loaded STT provider/runtime modules")
@@ -112,11 +134,32 @@ def main() -> None:
     default_provider_execution_allowed = bool(getattr(session.capabilities, "provider_execution_allowed", False))
     _require(default_provider_execution_allowed is False, "provider execution must not be allowed by default")
 
-    text = _source_text(root).lower()
+    source_text = _source_text(root).lower()
     public_real_stt_execution_present = False
-    legacy_microphone_stt_present = ("speech_recognition" in text and "recognize_google" in text) or "microphone(" in text
-    host_audio_source_contract_present = any(s.lower() in text for s in ("VoiceInputAudioSource", "VoiceInputAudioFormat", "VoiceInputAudioRef", "host_audio_source"))
-    lazy_provider_adapter_present = any(s.lower() in text for s in ("VoiceInputProviderAdapter", "FakeVoiceInputProviderAdapter", "transcribe_audio"))
+    legacy_microphone_stt_present = (
+        ("speech_recognition" in source_text and "recognize_google" in source_text)
+        or "microphone(" in source_text
+    )
+    host_audio_source_contract_present = all(
+        hasattr(framework, name)
+        for name in (
+            "VoiceInputAudioSource",
+            "VoiceInputAudioFormat",
+            "VoiceInputAudioRef",
+        )
+    )
+    lazy_provider_adapter_present = all(
+        hasattr(framework, name)
+        for name in (
+            "VoiceInputProviderAdapter",
+            "VoiceInputProviderAdapterInfo",
+            "FakeVoiceInputProviderAdapter",
+        )
+    )
+    voice_input_session_adapter_wiring_present = (
+        hasattr(session, "transcribe_audio_result")
+        and hasattr(session, "listen_audio_result")
+    )
 
     caps = None
     try:
@@ -135,8 +178,15 @@ def main() -> None:
     _require(legacy_microphone_stt_present is True, "legacy microphone STT should be detected for inventory")
     _require(host_audio_source_contract_present is True, "host-audio source contract should exist after STT-1b implementation")
     _require(lazy_provider_adapter_present is True, "lazy provider adapter should exist after STT-1c implementation")
-    _require(global_capability_voice_input_synced is True, "global capability voice_input should already be synced in the v5.2.0 baseline")
-    _require(runtime_code_changed is False, "STT inventory must not include unapproved provider/audio runtime code changes")
+    _require(
+        voice_input_session_adapter_wiring_present is True,
+        "VoiceInputSession adapter wiring should exist after STT-1d implementation",
+    )
+    _require(global_capability_voice_input_synced is True, "global capability voice_input should already be synced")
+    _require(
+        runtime_code_changed is False,
+        "STT inventory must not include unapproved provider/audio runtime code changes",
+    )
 
     print("v530_real_stt_provider_boundary_inventory_status: accepted")
     print(f"v530_source_commit: {SOURCE_COMMIT}")
@@ -145,6 +195,7 @@ def main() -> None:
     print(f"v530_legacy_microphone_stt_present: {legacy_microphone_stt_present}")
     print(f"v530_host_audio_source_contract_present: {host_audio_source_contract_present}")
     print(f"v530_lazy_provider_adapter_present: {lazy_provider_adapter_present}")
+    print(f"v530_voice_input_session_adapter_wiring_present: {voice_input_session_adapter_wiring_present}")
     print(f"v530_global_capability_voice_input_synced: {global_capability_voice_input_synced}")
     print(f"v530_framework_import_provider_safe: {framework_import_provider_safe}")
     print(f"v530_default_provider_execution_allowed: {default_provider_execution_allowed}")
@@ -155,7 +206,8 @@ def main() -> None:
     print("v530_drc_rt3_status: blocked-pending-framework-real-stt")
     print("v530_stt1b_status: accepted")
     print("v530_stt1c_status: accepted")
-    print("v530_stt1d_authorization: ready-for-stt1d")
+    print("v530_stt1d_status: accepted")
+    print("v530_stt1e_authorization: ready-for-stt1e")
     _ok("v5.3.0 real STT provider boundary inventory smoke is mock-safe")
 
 

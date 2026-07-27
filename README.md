@@ -1428,3 +1428,24 @@ STT-1d: READY pending next small commit
 
 STT-1c added only a lazy provider adapter protocol and fake adapter. It did not
 read audio, access microphones, execute real providers, or change DRC.
+
+## v5.3.0 STT-1d VoiceInputSession adapter wiring
+
+STT-1d wires host-captured audio and lazy adapters into the public
+`VoiceInputSession` boundary:
+
+- `VoiceInputSession.transcribe_audio_result(...)`
+- `VoiceInputSession.listen_audio_result(...)`
+
+See [`docs/v530_voice_input_session_adapter_wiring.md`](docs/v530_voice_input_session_adapter_wiring.md).
+
+### v5.3.0 STT-1d acceptance status
+
+```text
+STT-1d: ACCEPTED
+STT-1e: READY pending next small commit
+```
+
+STT-1d wired host-captured audio and lazy adapters into public
+`VoiceInputSession` methods. It did not read audio, access microphones, execute
+real providers, or change DRC.

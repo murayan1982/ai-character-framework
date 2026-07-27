@@ -198,3 +198,38 @@ The fake adapter is mock-safe and returns typed `VoiceInputResult` without
 reading audio or executing a real provider.
 
 STT-1d is now ready to start in the next small commit.
+
+## STT-1d session adapter wiring inventory note
+
+After STT-1d implementation, the public `VoiceInputSession` adapter wiring is
+present.
+
+The inventory now expects:
+
+```text
+v530_voice_input_session_adapter_wiring_present: True
+```
+
+This wiring uses the mock-safe fake adapter by default and does not read audio,
+access microphones, call real providers, create provider clients, or read API
+keys.
+
+## STT-1d acceptance sync note
+
+STT-1d is accepted.
+
+The public `VoiceInputSession` adapter wiring is now present:
+
+```text
+v530_voice_input_session_adapter_wiring_present: True
+v530_provider_execution_executed: False
+v530_microphone_accessed: False
+v530_audio_handled: False
+v530_stt1d_status: accepted
+v530_stt1e_authorization: ready-for-stt1e
+```
+
+The wiring uses the mock-safe fake adapter path by default and returns typed
+`VoiceInputResult` without reading audio or executing a real provider.
+
+STT-1e is now ready to start in the next small commit.
