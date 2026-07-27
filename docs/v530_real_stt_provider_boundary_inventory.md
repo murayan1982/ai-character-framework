@@ -233,3 +233,38 @@ The wiring uses the mock-safe fake adapter path by default and returns typed
 `VoiceInputResult` without reading audio or executing a real provider.
 
 STT-1e is now ready to start in the next small commit.
+
+## STT-1e guarded real provider adapter inventory note
+
+After STT-1e implementation, the first guarded real-provider adapter boundary is
+present.
+
+The inventory now expects:
+
+```text
+v530_guarded_real_provider_adapter_present: True
+```
+
+The guarded adapter does not execute a provider in this checkpoint. It only
+returns typed guard outcomes for provider execution not allowed, missing
+credentials, and real STT not implemented.
+
+## STT-1e acceptance sync note
+
+STT-1e is accepted.
+
+The guarded real-provider adapter boundary is now present:
+
+```text
+v530_guarded_real_provider_adapter_present: True
+v530_provider_execution_executed: False
+v530_microphone_accessed: False
+v530_audio_handled: False
+v530_stt1e_status: accepted
+v530_stt1f_authorization: ready-for-stt1f
+```
+
+The guarded adapter returns typed guard outcomes without importing provider SDKs,
+reading API keys, reading audio, or executing a real provider.
+
+STT-1f is now ready to start in the next small commit.

@@ -121,6 +121,33 @@ def _completed_result(
     return VoiceInputResult(text=text, language=language, confidence=confidence, duration_ms=duration_ms)
 
 
+def _unavailable_result(
+    *,
+    safe_message: str,
+    language: str | None,
+    public_metadata: Mapping[str, Any],
+) -> VoiceInputResult:
+    unavailable = getattr(VoiceInputResult, "unavailable", None)
+    if callable(unavailable):
+        attempts = (
+            {"safe_message": safe_message, "language": language, "public_metadata": public_metadata},
+            {"safe_message": safe_message, "language": language},
+            {"safe_message": safe_message},
+        )
+        for kwargs in attempts:
+            try:
+                return unavailable(**kwargs)
+            except TypeError:
+                continue
+    try:
+        return VoiceInputResult(text="", language=language, safe_message=safe_message, public_metadata=public_metadata)
+    except TypeError:
+        try:
+            return VoiceInputResult(text="", language=language, safe_message=safe_message)
+        except TypeError:
+            return VoiceInputResult(text="", language=language)
+
+
 @dataclass(frozen=True)
 class FakeVoiceInputProviderAdapter:
     """Mock-safe fake adapter for host-app and framework contract tests."""
@@ -168,5 +195,92 @@ class FakeVoiceInputProviderAdapter:
                 "provider_execution_executed": False,
                 "audio_read": False,
                 "microphone_accessed": False,
+            },
+        )
+
+
+@dataclass(frozen=True)
+class GuardedRealVoiceInputProviderAdapter:
+    """Guarded real-provider adapter boundary.
+
+    This class represents the first real-provider adapter boundary without
+    executing a provider. It is intentionally guarded by explicit opt-in flags
+    and credential-presence metadata.
+    """
+
+    provider: str
+    allow_provider_execution: bool = False
+    credentials_available: bool = False
+    public_metadata: Mapping[str, Any] = field(default_factory=dict)
+
+    @property
+    def adapter_name(self) -> str:
+        return f"guarded_{self.provider}"
+
+    def preflight(self) -> VoiceInputProviderAdapterInfo:
+        if not self.allow_provider_execution:
+            return VoiceInputProviderAdapterInfo(
+                adapter_name=self.adapter_name,
+                provider=self.provider,
+                available=False,
+                real_provider=True,
+                provider_execution_required=True,
+                safe_message="Provider execution is not allowed. Set an explicit host-controlled opt-in before real STT.",
+                public_metadata={
+                    **_redact_mapping(self.public_metadata),
+                    "guard": "provider_execution_not_allowed",
+                    "provider_execution_executed": False,
+                },
+            )
+
+        if not self.credentials_available:
+            return VoiceInputProviderAdapterInfo(
+                adapter_name=self.adapter_name,
+                provider=self.provider,
+                available=False,
+                real_provider=True,
+                provider_execution_required=True,
+                safe_message="Provider credentials are not available to the guarded adapter.",
+                public_metadata={
+                    **_redact_mapping(self.public_metadata),
+                    "guard": "missing_credentials",
+                    "provider_execution_executed": False,
+                },
+            )
+
+        return VoiceInputProviderAdapterInfo(
+            adapter_name=self.adapter_name,
+            provider=self.provider,
+            available=False,
+            real_provider=True,
+            provider_execution_required=True,
+            safe_message="Guard passed, but real STT execution is not implemented in this checkpoint.",
+            public_metadata={
+                **_redact_mapping(self.public_metadata),
+                "guard": "real_stt_not_implemented",
+                "provider_execution_executed": False,
+            },
+        )
+
+    def transcribe(
+        self,
+        *,
+        audio_source: VoiceInputAudioSource,
+        request: VoiceInputRequest | None = None,
+    ) -> VoiceInputResult:
+        info = self.preflight()
+        return _unavailable_result(
+            safe_message=info.safe_message,
+            language=getattr(request, "language", None) or audio_source.language,
+            public_metadata={
+                "adapter": self.adapter_name,
+                "provider": self.provider,
+                "real_provider": True,
+                "available": info.available,
+                "provider_execution_required": info.provider_execution_required,
+                "provider_execution_executed": False,
+                "audio_read": False,
+                "microphone_accessed": False,
+                **dict(info.public_metadata),
             },
         )

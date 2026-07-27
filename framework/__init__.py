@@ -1,5 +1,6 @@
 from .voice_input_provider_adapter import (
     FakeVoiceInputProviderAdapter,
+    GuardedRealVoiceInputProviderAdapter,
     VoiceInputProviderAdapter,
     VoiceInputProviderAdapterInfo,
 )
@@ -34,6 +35,7 @@ from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
 __all__ = [
+    "GuardedRealVoiceInputProviderAdapter",
     "VoiceInputProviderAdapterInfo",
     "VoiceInputProviderAdapter",
     "FakeVoiceInputProviderAdapter",

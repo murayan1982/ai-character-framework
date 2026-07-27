@@ -34,6 +34,9 @@ ALLOWED_CHANGED = {
     "docs/v530_voice_input_session_adapter_wiring.md",
     "framework/voice_input_session.py",
     "scripts/smoke_v530_voice_input_session_adapter_wiring.py",
+    # STT-1e guarded real provider adapter files.
+    "docs/v530_guarded_real_provider_adapter.md",
+    "scripts/smoke_v530_guarded_real_provider_adapter.py",
 }
 
 
@@ -95,8 +98,8 @@ def main() -> None:
     )
     _require("Public Voice Input / Real STT Provider Boundary" in docs["roadmap"], "roadmap missing STT theme")
     _require("STT-1a: ACCEPTED" in docs["inventory"], "inventory missing accepted STT-1a status")
-    _require("STT-1b" in docs["checklist"], "checklist missing STT-1b")
-    _require("STT-1c" in docs["checklist"], "checklist missing STT-1c")
+    for marker in ("STT-1b", "STT-1c", "STT-1d", "STT-1e"):
+        _require(marker in docs["checklist"], f"checklist missing {marker}")
     _ok("v5.3.0 real STT provider boundary inventory docs are present")
 
     before = set(sys.modules)
@@ -160,6 +163,7 @@ def main() -> None:
         hasattr(session, "transcribe_audio_result")
         and hasattr(session, "listen_audio_result")
     )
+    guarded_real_provider_adapter_present = hasattr(framework, "GuardedRealVoiceInputProviderAdapter")
 
     caps = None
     try:
@@ -182,6 +186,10 @@ def main() -> None:
         voice_input_session_adapter_wiring_present is True,
         "VoiceInputSession adapter wiring should exist after STT-1d implementation",
     )
+    _require(
+        guarded_real_provider_adapter_present is True,
+        "guarded real provider adapter should exist after STT-1e implementation",
+    )
     _require(global_capability_voice_input_synced is True, "global capability voice_input should already be synced")
     _require(
         runtime_code_changed is False,
@@ -196,6 +204,7 @@ def main() -> None:
     print(f"v530_host_audio_source_contract_present: {host_audio_source_contract_present}")
     print(f"v530_lazy_provider_adapter_present: {lazy_provider_adapter_present}")
     print(f"v530_voice_input_session_adapter_wiring_present: {voice_input_session_adapter_wiring_present}")
+    print(f"v530_guarded_real_provider_adapter_present: {guarded_real_provider_adapter_present}")
     print(f"v530_global_capability_voice_input_synced: {global_capability_voice_input_synced}")
     print(f"v530_framework_import_provider_safe: {framework_import_provider_safe}")
     print(f"v530_default_provider_execution_allowed: {default_provider_execution_allowed}")
@@ -207,7 +216,8 @@ def main() -> None:
     print("v530_stt1b_status: accepted")
     print("v530_stt1c_status: accepted")
     print("v530_stt1d_status: accepted")
-    print("v530_stt1e_authorization: ready-for-stt1e")
+    print("v530_stt1e_status: accepted")
+    print("v530_stt1f_authorization: ready-for-stt1f")
     _ok("v5.3.0 real STT provider boundary inventory smoke is mock-safe")
 
 

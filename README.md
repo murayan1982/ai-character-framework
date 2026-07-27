@@ -1449,3 +1449,26 @@ STT-1e: READY pending next small commit
 STT-1d wired host-captured audio and lazy adapters into public
 `VoiceInputSession` methods. It did not read audio, access microphones, execute
 real providers, or change DRC.
+
+## v5.3.0 STT-1e guarded real provider adapter
+
+STT-1e adds the first guarded real-provider adapter boundary:
+
+- `GuardedRealVoiceInputProviderAdapter`
+
+The adapter exposes typed guard behavior for provider execution opt-in,
+missing credentials, and real-STT-not-implemented status.
+
+See [`docs/v530_guarded_real_provider_adapter.md`](docs/v530_guarded_real_provider_adapter.md).
+
+### v5.3.0 STT-1e acceptance status
+
+```text
+STT-1e: ACCEPTED
+STT-1f: READY pending next small commit
+```
+
+STT-1e added a guarded real-provider adapter boundary. It reports typed guard
+outcomes for provider execution not allowed, missing credentials, and real STT
+not implemented. It did not import provider SDKs, read API keys, read audio,
+access microphones, execute real providers, or change DRC.
