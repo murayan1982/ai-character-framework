@@ -288,3 +288,77 @@ READY pending next small commit
 - [x] no audio file read
 - [x] no API key read
 - [x] `.vscode/settings.json` remains local-only and is not included
+
+## v5.3.0 release package gate
+
+Status:
+
+```text
+ACCEPTED
+```
+
+Changed files:
+
+```text
+README.md
+docs/v530_release_package_gate.md
+docs/v530_real_stt_small_commit_checklist.md
+scripts/build_v530_release_package.py
+scripts/smoke_v530_release_package_gate.py
+```
+
+Acceptance requirements:
+
+- [ ] `python -m compileall -q framework core stt scripts examples`
+- [ ] `python scripts/smoke_v530_release_package_gate.py`
+- [ ] `python scripts/smoke_v530_release_readiness_gate.py`
+- [ ] `python scripts/smoke_v530_drc_public_handoff_verification.py`
+- [ ] `python scripts/smoke_v530_guarded_real_provider_adapter.py`
+- [ ] `python scripts/smoke_v530_voice_input_session_adapter_wiring.py`
+- [ ] `python scripts/smoke_v530_lazy_provider_adapter_fake.py`
+- [ ] `python scripts/smoke_v530_host_audio_source_contract.py`
+- [ ] `python scripts/smoke_v530_real_stt_provider_boundary_inventory.py`
+- [ ] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [ ] `python scripts/smoke_v520_release_readiness_gate.py`
+- [ ] `git diff --check` for release package gate files
+- [ ] no final release package creation
+- [ ] no tag creation
+- [ ] no remote push
+- [ ] no DRC repo change
+- [ ] no real provider execution
+- [ ] no microphone access
+- [ ] no audio file read
+- [ ] no API key read
+- [ ] `.vscode/settings.json` remains local-only and is not included
+
+## v5.3.0 tag/push
+
+Status:
+
+```text
+READY pending final release package build
+```
+
+### v5.3.0 release package gate acceptance evidence
+
+- [x] `python -m compileall -q framework core stt scripts examples`
+- [x] `python scripts/smoke_v530_release_package_gate.py`
+- [x] `python scripts/smoke_v530_release_readiness_gate.py`
+- [x] `python scripts/smoke_v530_drc_public_handoff_verification.py`
+- [x] `python scripts/smoke_v530_guarded_real_provider_adapter.py`
+- [x] `python scripts/smoke_v530_voice_input_session_adapter_wiring.py`
+- [x] `python scripts/smoke_v530_lazy_provider_adapter_fake.py`
+- [x] `python scripts/smoke_v530_host_audio_source_contract.py`
+- [x] `python scripts/smoke_v530_real_stt_provider_boundary_inventory.py`
+- [x] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [x] `python scripts/smoke_v520_release_readiness_gate.py`
+- [x] `git diff --check` for release package gate files
+- [x] no final release package creation
+- [x] no tag creation
+- [x] no remote push
+- [x] no DRC repo change
+- [x] no real provider execution
+- [x] no microphone access
+- [x] no audio file read
+- [x] no API key read
+- [x] `.vscode/settings.json` remains local-only and is not included

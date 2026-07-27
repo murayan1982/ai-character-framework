@@ -1520,3 +1520,39 @@ The source-tree release readiness gate passed after accepted STT-1a through
 STT-1f checkpoints. This did not create a release package, tag, or remote push.
 Real provider execution remains unimplemented and DRC RT-3 remains blocked
 pending real provider execution.
+
+## v5.3.0 release package gate
+
+The v5.3.0 release package gate adds a deterministic source package builder:
+
+```text
+scripts/build_v530_release_package.py
+scripts/smoke_v530_release_package_gate.py
+```
+
+The final package target is:
+
+```text
+release/ai-character-framework_v5.3.0.zip
+release/ai-character-framework_v5.3.0.zip.sha256
+```
+
+See [`docs/v530_release_package_gate.md`](docs/v530_release_package_gate.md).
+
+Current status:
+
+```text
+v5.3.0 release package gate: IMPLEMENTED / NOT_ACCEPTED
+v5.3.0 tag/push: BLOCKED pending release package acceptance
+```
+
+### v5.3.0 release package gate acceptance status
+
+```text
+v5.3.0 release package gate: ACCEPTED
+v5.3.0 tag/push: READY pending final release package build
+```
+
+The package gate dry-run passed and confirmed the package set excludes local
+VS Code settings, private/operator evidence, env files, and generated release
+artifacts. This did not create the final `release/` package, tag, or remote push.
