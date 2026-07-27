@@ -163,3 +163,38 @@ v530_audio_handled: False
 ```
 
 STT-1c is now ready to start in the next small commit.
+
+## STT-1c lazy provider adapter inventory note
+
+After STT-1c implementation, the lazy provider adapter protocol and fake adapter
+are present.
+
+The inventory now expects:
+
+```text
+v530_lazy_provider_adapter_present: True
+```
+
+This does not mean real provider execution occurred. The fake adapter remains
+mock-safe and does not read audio, access microphones, call providers, or read
+API keys.
+
+## STT-1c acceptance sync note
+
+STT-1c is accepted.
+
+The lazy provider adapter protocol and fake adapter are now present:
+
+```text
+v530_lazy_provider_adapter_present: True
+v530_provider_execution_executed: False
+v530_microphone_accessed: False
+v530_audio_handled: False
+v530_stt1c_status: accepted
+v530_stt1d_authorization: ready-for-stt1d
+```
+
+The fake adapter is mock-safe and returns typed `VoiceInputResult` without
+reading audio or executing a real provider.
+
+STT-1d is now ready to start in the next small commit.

@@ -1408,3 +1408,23 @@ STT-1c: READY pending next small commit
 
 STT-1b added only a provider-neutral host-captured audio source contract. It did
 not read audio, access microphones, execute providers, or change DRC.
+
+## v5.3.0 STT-1c lazy provider adapter + fake adapter
+
+STT-1c adds a lazy provider adapter protocol and fake adapter:
+
+- `VoiceInputProviderAdapter`
+- `VoiceInputProviderAdapterInfo`
+- `FakeVoiceInputProviderAdapter`
+
+See [`docs/v530_lazy_provider_adapter_fake.md`](docs/v530_lazy_provider_adapter_fake.md).
+
+### v5.3.0 STT-1c acceptance status
+
+```text
+STT-1c: ACCEPTED
+STT-1d: READY pending next small commit
+```
+
+STT-1c added only a lazy provider adapter protocol and fake adapter. It did not
+read audio, access microphones, execute real providers, or change DRC.

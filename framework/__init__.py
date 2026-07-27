@@ -1,3 +1,8 @@
+from .voice_input_provider_adapter import (
+    FakeVoiceInputProviderAdapter,
+    VoiceInputProviderAdapter,
+    VoiceInputProviderAdapterInfo,
+)
 from .voice_input_audio import (
     VoiceInputAudioEncoding,
     VoiceInputAudioFormat,
@@ -29,6 +34,9 @@ from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
 __all__ = [
+    "VoiceInputProviderAdapterInfo",
+    "VoiceInputProviderAdapter",
+    "FakeVoiceInputProviderAdapter",
     "VoiceInputAudioSourceKind",
     "VoiceInputAudioSource",
     "VoiceInputAudioRef",

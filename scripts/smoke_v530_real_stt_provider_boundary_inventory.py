@@ -19,6 +19,10 @@ ALLOWED_CHANGED = {
     "framework/__init__.py",
     "framework/voice_input_audio.py",
     "scripts/smoke_v530_host_audio_source_contract.py",
+    # STT-1c lazy provider adapter protocol + fake adapter files.
+    "docs/v530_lazy_provider_adapter_fake.md",
+    "framework/voice_input_provider_adapter.py",
+    "scripts/smoke_v530_lazy_provider_adapter_fake.py",
 }
 
 
@@ -130,7 +134,7 @@ def main() -> None:
 
     _require(legacy_microphone_stt_present is True, "legacy microphone STT should be detected for inventory")
     _require(host_audio_source_contract_present is True, "host-audio source contract should exist after STT-1b implementation")
-    _require(lazy_provider_adapter_present is False, "lazy provider adapter should not exist before STT-1c")
+    _require(lazy_provider_adapter_present is True, "lazy provider adapter should exist after STT-1c implementation")
     _require(global_capability_voice_input_synced is True, "global capability voice_input should already be synced in the v5.2.0 baseline")
     _require(runtime_code_changed is False, "STT inventory must not include unapproved provider/audio runtime code changes")
 
@@ -150,7 +154,8 @@ def main() -> None:
     print("v530_audio_handled: False")
     print("v530_drc_rt3_status: blocked-pending-framework-real-stt")
     print("v530_stt1b_status: accepted")
-    print("v530_stt1c_authorization: ready-for-stt1c")
+    print("v530_stt1c_status: accepted")
+    print("v530_stt1d_authorization: ready-for-stt1d")
     _ok("v5.3.0 real STT provider boundary inventory smoke is mock-safe")
 
 
