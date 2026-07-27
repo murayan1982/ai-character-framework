@@ -1494,3 +1494,29 @@ v5.3.0 release readiness: READY pending next small commit
 STT-1f verified the DRC-facing public handoff shape using only public framework
 imports. It did not change DRC, read audio, access microphones, execute real
 providers, read API keys, create a release package, or create a tag.
+
+## v5.3.0 release readiness gate
+
+The v5.3.0 source-tree release readiness gate checks all accepted STT-1a through
+STT-1f public voice-input / real STT provider boundary checkpoints.
+
+See [`docs/v530_release_readiness_gate.md`](docs/v530_release_readiness_gate.md).
+
+Current status:
+
+```text
+v5.3.0 release readiness: IMPLEMENTED / NOT_ACCEPTED
+v5.3.0 release package/tag: BLOCKED pending release readiness acceptance
+```
+
+### v5.3.0 release readiness acceptance status
+
+```text
+v5.3.0 release readiness: ACCEPTED
+v5.3.0 release package/tag: READY pending next small commit
+```
+
+The source-tree release readiness gate passed after accepted STT-1a through
+STT-1f checkpoints. This did not create a release package, tag, or remote push.
+Real provider execution remains unimplemented and DRC RT-3 remains blocked
+pending real provider execution.
