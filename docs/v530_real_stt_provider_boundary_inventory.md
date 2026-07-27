@@ -115,3 +115,51 @@ The v5.2.0 compatibility gates also passed:
 
 No provider execution, microphone access, raw audio handling, DRC change, release
 package, tag creation, or runtime code change was performed.
+
+## STT-1b implementation inventory note
+
+After STT-1b implementation, the provider-neutral host-audio source contract is
+present and exported from the public framework root.
+
+The inventory now expects:
+
+```text
+v530_host_audio_source_contract_present: True
+```
+
+The contract remains data-only. It does not read audio, access microphones, call
+providers, read API keys, or execute real STT.
+
+## STT-1b data-only runtime allowlist note
+
+The inventory smoke allows the STT-1b public data-only host-audio contract files
+while continuing to reject unapproved provider/audio runtime changes.
+
+Allowed STT-1b implementation files:
+
+```text
+framework/__init__.py
+framework/voice_input_audio.py
+docs/v530_host_audio_source_contract.md
+scripts/smoke_v530_host_audio_source_contract.py
+```
+
+This does not mean provider execution, microphone access, audio file reads, raw
+audio handling, or real STT execution occurred.
+
+## STT-1b acceptance sync note
+
+STT-1b is accepted.
+
+The public host-audio source contract is now present as a data-only framework
+boundary, while lazy provider adapter execution remains absent:
+
+```text
+v530_host_audio_source_contract_present: True
+v530_lazy_provider_adapter_present: False
+v530_provider_execution_executed: False
+v530_microphone_accessed: False
+v530_audio_handled: False
+```
+
+STT-1c is now ready to start in the next small commit.

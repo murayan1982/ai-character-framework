@@ -1,3 +1,10 @@
+from .voice_input_audio import (
+    VoiceInputAudioEncoding,
+    VoiceInputAudioFormat,
+    VoiceInputAudioRef,
+    VoiceInputAudioSource,
+    VoiceInputAudioSourceKind,
+)
 """Public facade API for AI Character Framework."""
 
 from framework.facade import (
@@ -22,6 +29,11 @@ from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
 __all__ = [
+    "VoiceInputAudioSourceKind",
+    "VoiceInputAudioSource",
+    "VoiceInputAudioRef",
+    "VoiceInputAudioFormat",
+    "VoiceInputAudioEncoding",
     "FacadeConfigError",
     "FacadeError",
     "FacadeProviderError",

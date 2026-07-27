@@ -1386,3 +1386,25 @@ See:
 - [`docs/roadmap_feature_v5.3.0.md`](docs/roadmap_feature_v5.3.0.md)
 - [`docs/v530_real_stt_provider_boundary_inventory.md`](docs/v530_real_stt_provider_boundary_inventory.md)
 - [`docs/v530_real_stt_small_commit_checklist.md`](docs/v530_real_stt_small_commit_checklist.md)
+
+## v5.3.0 STT-1b host-audio source contract
+
+STT-1b adds a provider-neutral public contract for host-captured audio handoff:
+
+- `VoiceInputAudioSourceKind`
+- `VoiceInputAudioEncoding`
+- `VoiceInputAudioFormat`
+- `VoiceInputAudioRef`
+- `VoiceInputAudioSource`
+
+See [`docs/v530_host_audio_source_contract.md`](docs/v530_host_audio_source_contract.md).
+
+### v5.3.0 STT-1b acceptance status
+
+```text
+STT-1b: ACCEPTED
+STT-1c: READY pending next small commit
+```
+
+STT-1b added only a provider-neutral host-captured audio source contract. It did
+not read audio, access microphones, execute providers, or change DRC.

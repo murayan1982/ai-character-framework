@@ -36,5 +36,29 @@ Acceptance requirements:
 Status:
 
 ```text
-READY pending next small commit
+ACCEPTED
 ```
+
+### STT-1b implementation files
+
+```text
+README.md
+framework/__init__.py
+framework/voice_input_audio.py
+docs/v530_host_audio_source_contract.md
+docs/v530_real_stt_small_commit_checklist.md
+scripts/smoke_v530_host_audio_source_contract.py
+```
+
+### STT-1b acceptance requirements
+
+- [x] `python -m compileall -q framework core stt scripts`
+- [x] `python scripts/smoke_v530_host_audio_source_contract.py`
+- [x] `python scripts/smoke_v530_real_stt_provider_boundary_inventory.py`
+- [x] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [x] `python scripts/smoke_v520_release_readiness_gate.py`
+- [x] `git diff --check` for STT-1b files
+- [x] no provider execution
+- [x] no microphone access
+- [x] no audio file read
+- [x] `.vscode/settings.json` remains local-only and is not included
