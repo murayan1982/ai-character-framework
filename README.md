@@ -435,6 +435,10 @@ python examples/app_interrupt_text_chat.py --provider openai --model gpt-4o-mini
 
 ---
 
+## Demo applications
+
+- [Daily Rhythm Companion (DRC)](https://github.com/murayan1982/daily-rhythm-companion-public) — A public demo application for AI-Character-Framework integration. DRC demonstrates host-app integration patterns around Flutter/FastAPI, character-side app orchestration, daily advice flow, and public FW voice/text boundaries.
+
 ## Runtime modes
 
 ### Full runtime
