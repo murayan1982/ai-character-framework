@@ -1747,3 +1747,33 @@ v540_req5_release_readiness_authorization: ready-for-next-small-commit
 REQ-5: ACCEPTED
 release readiness: READY pending next small commit
 ```
+
+\
+## v5.4.0 release readiness gate
+
+The v5.4.0 source-tree release-readiness gate aggregates the accepted REQ-1
+through REQ-5 checks, v5.3.0 and v5.2.0 release-readiness regressions, and the
+baseline release-package check:
+
+```powershell
+python scripts\smoke_v540_release_readiness_gate.py
+```
+
+The gate relies only on committed public acceptance markers. The private WAV,
+transcript, evidence JSON, API key, private paths, and provider response remain
+outside the repository and are not read by the gate.
+
+```text
+v5.4.0 release readiness: ACCEPTED
+v5.4.0 release package/tag: READY pending next small commit
+v540_release_readiness_gate_status: accepted
+v540_req5_private_evidence_status: accepted-by-validator
+v540_release_package_authorization: ready-for-release-package-gate
+```
+
+This checkpoint does not import the actual OpenAI SDK, read private evidence,
+execute a network request, access the microphone, modify DRC, create the release
+package, create a tag, push, or publish.
+
+See
+[`docs/v540_release_readiness_gate.md`](docs/v540_release_readiness_gate.md).

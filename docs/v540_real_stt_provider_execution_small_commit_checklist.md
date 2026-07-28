@@ -452,3 +452,41 @@ v540_req5_release_readiness_authorization: ready-for-next-small-commit
 REQ-5: ACCEPTED
 release readiness: READY pending next small commit
 ```
+
+\
+## v5.4.0 release readiness gate
+
+- [x] REQ-1 provider execution configuration/status accepted.
+- [x] REQ-2 adapter/client-injection contract accepted.
+- [x] REQ-3 bounded fake execution accepted.
+- [x] REQ-4 lazy real-provider runtime accepted.
+- [x] REQ-5 private real-provider evidence accepted.
+- [x] Public REQ-5 acceptance sync committed.
+- [x] Framework root import remains provider-safe.
+- [x] Accepted v5.4.0 public runtime symbols remain exported.
+- [x] v5.3.0 release-readiness regression passes.
+- [x] v5.2.0 release-readiness regression passes.
+- [x] Baseline release-package check passes.
+- [x] Private evidence remained outside the repository.
+- [x] No private WAV, transcript, evidence JSON, API key, private path, or
+      provider response is committed or read by this gate.
+- [x] No actual SDK import, provider-client creation, or network request occurs
+      in this gate.
+- [x] No microphone access.
+- [x] No DRC change.
+- [x] No v5.4.0 release package creation.
+- [x] No checksum-sidecar creation.
+- [x] No v5.4.0 tag creation.
+- [x] No push or publication.
+
+```text
+v5.4.0 release readiness: ACCEPTED
+v5.4.0 release package/tag: READY pending next small commit
+v540_release_readiness_gate_status: accepted
+v540_req5_private_evidence_status: accepted-by-validator
+v540_release_package_authorization: ready-for-release-package-gate
+```
+
+The next small commit is the deterministic v5.4.0 release-package gate. The
+final package build, checksum verification, tag, push, and publication remain
+separate operator steps.
