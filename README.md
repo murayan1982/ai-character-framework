@@ -1808,3 +1808,45 @@ access the microphone, or modify DRC.
 
 See
 [`docs/v540_release_package_gate.md`](docs/v540_release_package_gate.md).
+
+## v5.4.0 final release tag readiness
+
+The final pre-tag gate verifies the clean committed source tree, release notes,
+release-package gate, final ZIP and sidecar, exact current-HEAD archive
+membership, deterministic package bytes, Framework remote/branch state, and
+absence of an existing local `v5.4.0` tag.
+
+Before committing this checkpoint:
+
+```powershell
+python scripts\smoke_v540_final_release_tag_readiness.py --allow-dirty
+```
+
+After committing, the existing ZIP generated from `3108109` is stale because
+the tracked source set has changed. Delete it, rebuild from the new clean commit,
+and run:
+
+```powershell
+python scripts\build_v540_release_package.py
+
+python scripts\smoke_v540_final_release_tag_readiness.py `
+  --require-clean-tree `
+  --require-package
+```
+
+```text
+v5.4.0 final tag readiness: ACCEPTED
+v5.4.0 tag/push: READY after clean committed package rebuild
+v540_final_tag_readiness_status: accepted
+v540_final_package_rebuild_required_after_checkpoint_commit: True
+v540_tag_authorization: ready-after-strict-package-verification
+```
+
+This checkpoint does not create a tag, push, publish, upload assets, execute a
+real provider, read private evidence/audio/transcripts or an API key, access the
+microphone, or modify DRC.
+
+See:
+
+- [`docs/v540_final_release_tag_readiness.md`](docs/v540_final_release_tag_readiness.md)
+- [`docs/release_notes_v5.4.0.md`](docs/release_notes_v5.4.0.md)

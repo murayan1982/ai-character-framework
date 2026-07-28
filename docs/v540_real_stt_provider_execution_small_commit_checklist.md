@@ -530,3 +530,39 @@ v540_tag_authorization: ready-for-final-release-package-build
 
 After this checkpoint is committed and the tree is clean, build and verify the
 final ZIP and checksum as a separate operator step before tag creation.
+
+## v5.4.0 final release tag readiness
+
+- [x] Add v5.4.0 release notes.
+- [x] Add final tag-readiness documentation and smoke.
+- [x] Require accepted REQ-1 through REQ-5.
+- [x] Require accepted release-readiness and package gates.
+- [x] Require `main`, Framework `origin`, and a resolved HEAD.
+- [x] Require the local `v5.4.0` tag to be absent before tagging.
+- [x] Permit only the exact five-file uncommitted checkpoint surface.
+- [x] Require a clean worktree in strict pre-tag mode.
+- [x] Require the final ZIP and `.zip.sha256` sidecar.
+- [x] Verify sidecar filename and SHA-256.
+- [x] Verify ZIP integrity, exact current-HEAD membership, and deterministic
+      byte-for-byte rebuild.
+- [x] Require tag-readiness docs, smoke, and release notes inside the ZIP.
+- [x] Exclude private evidence, transcript, audio, credentials, environments,
+      local settings, and generated release entries.
+- [x] Do not import the actual OpenAI SDK.
+- [x] Do not execute a real provider or network request.
+- [x] Do not access the microphone.
+- [x] Do not modify DRC.
+- [x] Do not create a tag.
+- [x] Do not push or publish.
+- [x] Do not create a GitHub Release or upload assets.
+
+The package already verified from commit `3108109` must be deleted and rebuilt
+after this checkpoint is committed because the tracked source set changes.
+
+```text
+v5.4.0 final tag readiness: ACCEPTED
+v5.4.0 tag/push: READY after clean committed package rebuild
+v540_final_tag_readiness_status: accepted
+v540_final_package_rebuild_required_after_checkpoint_commit: True
+v540_tag_authorization: ready-after-strict-package-verification
+```
