@@ -5,7 +5,8 @@ Status:
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 ## Purpose
@@ -122,3 +123,21 @@ REQ-4 is accepted after its full verification command set, exact
 eleven-file diff review, test-double execution evidence review, and
 explicit operator approval passed. REQ-5 may begin only in the next
 small commit.
+\
+
+## REQ-5 private operator use
+
+REQ-4 remains accepted. REQ-5 now supplies an operator-only path that exercises
+this runtime with the actual optional SDK and a private WAV.
+
+The operator reads the credential from a named process environment variable,
+then passes the value explicitly into `OpenAIVoiceInputPrivateCredential`.
+Framework runtime code still does not read credential environment variables.
+
+```text
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```
+
+Private evidence, full transcript, private WAV, and credential values remain
+outside the repository.

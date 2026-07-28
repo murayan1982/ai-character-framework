@@ -250,7 +250,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-1 implements the provider execution configuration and status foundation
@@ -284,7 +285,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-2 implements the provider-specific adapter/config/client-injection
@@ -310,7 +312,8 @@ microphone access, private evidence, DRC changes, package creation, or tags.
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-3 implements bounded FILE_PATH reading and execution against a directly
@@ -329,7 +332,8 @@ changes, private provider evidence, release packages, or tags.
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-4 implements the first concrete lazy OpenAI provider runtime.
@@ -348,3 +352,26 @@ REQ-4 smoke uses only an injected SDK test double. Actual SDK import, actual
 client creation, real credential use, network execution, private operator
 evidence, microphone access, DRC changes, packages, and tags remain blocked
 until later checkpoints.
+\
+
+## REQ-5 private operator acceptance checkpoint
+
+```text
+REQ-4: ACCEPTED
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```
+
+REQ-5 adds operator-only tooling for private real-provider acceptance. Source
+and smoke verification remain network-free. The actual operator run is separate
+and requires a private WAV, private credential, explicit opt-in, actual SDK
+availability, real provider success, real transcript presence, public result
+redaction, private evidence outside the repository, staged-audio cleanup, and a
+clean repository before and after.
+
+The operator runner stores the complete transcript only in a private
+outside-repository file. The private JSON evidence stores hashes, lengths,
+statuses, SDK version, and public-safe result metadata but no credential, raw
+audio, full transcript, provider payload, or private absolute path.
+
+Release readiness and DRC adoption remain blocked until REQ-5 is accepted.

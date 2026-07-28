@@ -69,7 +69,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 Changed files:
@@ -148,7 +149,8 @@ Status:
 
 ```text
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 Changed files:
@@ -209,15 +211,85 @@ request, access a microphone, write private evidence into the repository,
 change DRC, build a release package, or create a tag.
 ```
 
+\
 ## REQ-5 - Private real-provider operator acceptance
 
 Status:
 
 ```text
-BLOCKED pending REQ-4 acceptance
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
-Expected focus: private WAV, private credentials, real transcript, public result redaction, and private evidence outside repository.
+Changed files:
+
+```text
+README.md
+docs/v540_openai_adapter_client_injection_contract.md
+docs/v540_openai_fake_execution_boundary.md
+docs/v540_openai_private_real_provider_operator_acceptance.md
+docs/v540_openai_real_provider_runtime.md
+docs/v540_provider_execution_configuration_status.md
+docs/v540_real_stt_provider_execution_requirements.md
+docs/v540_real_stt_provider_execution_small_commit_checklist.md
+scripts/operator_v540_openai_private_real_provider_acceptance.py
+scripts/smoke_v540_openai_private_real_provider_operator_acceptance.py
+scripts/smoke_v540_openai_real_provider_runtime.py
+scripts/verify_v540_openai_private_real_provider_evidence.py
+```
+
+Source/tooling acceptance requirements:
+
+- [ ] Python source compiles
+- [ ] exact twelve-file worktree surface
+- [ ] REQ-1 through REQ-4 acceptance gates remain green
+- [ ] operator help is network-free
+- [ ] operator help does not read a credential
+- [ ] actual OpenAI SDK not imported by source smoke
+- [ ] explicit real-execution confirmation required
+- [ ] explicit private-data confirmation required
+- [ ] private audio must be outside repository
+- [ ] private evidence must be outside repository
+- [ ] `OPENAI_LOG=debug` is rejected
+- [ ] original private WAV is not deleted
+- [ ] private staged WAV cleanup is implemented
+- [ ] complete transcript is not printed
+- [ ] API key/private path/raw audio/provider payload is not printed
+- [ ] private evidence validator is present
+- [ ] exact twelve-file `git diff --check`
+
+Private operator acceptance requirements:
+
+- [ ] optional OpenAI SDK installed in private operator environment
+- [ ] private credential not committed or pasted
+- [ ] private WAV outside repository
+- [ ] explicit SDK import opt-in
+- [ ] explicit client-creation opt-in
+- [ ] explicit real-provider execution opt-in
+- [ ] actual OpenAI SDK imported
+- [ ] actual provider client created
+- [ ] actual provider call completed
+- [ ] real non-empty transcript obtained
+- [ ] public result type is `VoiceInputResult`
+- [ ] public result marks real execution
+- [ ] public result omits credential/path/audio/payload
+- [ ] transcript text omitted from console
+- [ ] transcript/evidence remain outside repository
+- [ ] private staged WAV cleanup verified
+- [ ] repository clean before and after
+- [ ] private evidence validator passes
+- [ ] explicit operator approval given
+
+Stop rule:
+
+```text
+Do not mark REQ-5 accepted from source smoke alone.
+Do not paste or commit credential values, private paths, raw audio, complete
+transcript text, provider payloads, provider exception details, or private
+operator evidence.
+Do not begin release readiness, DRC adoption, package creation, tagging, or
+release before REQ-5 acceptance.
+```
 
 ## REQ-6 - DRC released-FW adoption gate
 
@@ -237,7 +309,8 @@ Status:
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 Changed files:
@@ -301,7 +374,8 @@ Status:
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 Changed files:

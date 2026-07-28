@@ -1602,7 +1602,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 ## v5.4.0 candidate REQ-2 OpenAI adapter/client-injection contract
 
@@ -1630,7 +1631,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 ## v5.4.0 candidate REQ-3 bounded audio / fake execution boundary
 
@@ -1660,7 +1662,8 @@ See
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 ## v5.4.0 candidate REQ-4 lazy OpenAI real-provider runtime
 
@@ -1690,5 +1693,37 @@ See
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```
+\
+
+## v5.4.0 candidate REQ-5 private real-provider operator acceptance
+
+REQ-5 adds operator-only tooling for the first actual OpenAI transcription
+acceptance run.
+
+The source commit adds:
+
+- a private operator runner;
+- an outside-repository evidence format;
+- a private evidence validator;
+- network-free source/operator smoke checks.
+
+The operator requires a private WAV, private credential, explicit execution
+confirmation, and private evidence root outside the repository. It uses the
+accepted REQ-4 public runtime and stores the full transcript only in a private
+outside-repository file.
+
+The operator console and committed files exclude credential values, private
+paths, raw audio, complete transcript text, provider payloads, and exception
+details. A temporary staged WAV is deleted after the provider call.
+
+See
+[`docs/v540_openai_private_real_provider_operator_acceptance.md`](docs/v540_openai_private_real_provider_operator_acceptance.md).
+
+```text
+REQ-4: ACCEPTED
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```

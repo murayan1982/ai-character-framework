@@ -7,7 +7,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 ## Purpose
@@ -154,7 +155,8 @@ REQ-3 is ready to begin only in the next small commit.
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-3 consumes the accepted REQ-1 configuration/status contract and accepted
@@ -165,10 +167,25 @@ resolution and marked-fake client execution.
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-4 consumes the accepted explicit provider configuration, adapter/client
 injection contract, and bounded audio boundary. It adds a concrete lazy OpenAI
 client factory and real-provider executor with no default SDK import, client
 creation, or execution.
+\
+
+## REQ-5 private operator status
+
+```text
+REQ-4: ACCEPTED
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```
+
+The committed tooling is ready for source verification. Actual SDK import,
+private credential use, private WAV read, provider client creation, network
+execution, and real transcript acquisition occur only in the separate
+operator-confirmed private run.

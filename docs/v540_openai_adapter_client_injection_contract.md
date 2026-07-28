@@ -7,7 +7,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 ## Purpose
@@ -150,7 +151,8 @@ directly injected client inherits `OpenAIVoiceInputFakeClientMarker`.
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
 
 REQ-3 does not change the REQ-2 guarantee that the adapter itself never
@@ -169,5 +171,17 @@ SDK lazily and passes an explicit private credential, timeout, and retry count.
 
 ```text
 REQ-4: ACCEPTED
-REQ-5: READY pending next small commit
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```
+\
+
+## REQ-5 operator acceptance dependency
+
+REQ-2 remains accepted. REQ-5 uses the public adapter and concrete REQ-4 factory
+without adding provider-native objects to the public result.
+
+```text
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
 ```
