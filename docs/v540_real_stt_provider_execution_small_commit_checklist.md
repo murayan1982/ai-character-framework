@@ -65,10 +65,59 @@ Acceptance requirements:
 Status:
 
 ```text
-READY_FOR_IMPLEMENTATION
+REQ-1: ACCEPTED
+REQ-2: READY pending next small commit
 ```
 
-Expected focus: explicit enable flag, provider selection, model/config surface, credential availability without secret exposure, and capability/status mapping.
+Changed files:
+
+```text
+README.md
+framework/__init__.py
+framework/voice_input_provider_execution.py
+docs/v540_provider_execution_configuration_status.md
+docs/v540_real_stt_provider_execution_requirements.md
+docs/v540_real_stt_provider_execution_small_commit_checklist.md
+scripts/smoke_v540_provider_execution_configuration_status.py
+```
+
+Acceptance requirements:
+
+- [x] `python -m compileall -q framework core stt scripts examples`
+- [x] `python scripts/smoke_v540_provider_execution_configuration_status.py`
+- [x] `python scripts/smoke_v540_real_stt_provider_execution_requirements.py`
+- [x] `python scripts/smoke_v530_release_package_gate.py`
+- [x] `python scripts/smoke_v530_release_readiness_gate.py`
+- [x] `python scripts/smoke_v530_drc_public_handoff_verification.py`
+- [x] `python scripts/smoke_v530_guarded_real_provider_adapter.py`
+- [x] `python scripts/smoke_v530_voice_input_session_adapter_wiring.py`
+- [x] `python scripts/smoke_v530_lazy_provider_adapter_fake.py`
+- [x] `python scripts/smoke_v530_host_audio_source_contract.py`
+- [x] `python scripts/smoke_v530_real_stt_provider_boundary_inventory.py`
+- [x] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [x] `python scripts/smoke_v520_release_readiness_gate.py`
+- [x] exact seven-file `git diff --check`
+- [x] existing v5.2.0/v5.3.0 gates remain green
+- [x] provider-safe public import remains green
+- [x] explicit opt-in defaults to false
+- [x] provider configuration is explicit-only
+- [x] credential availability is boolean-only
+- [x] no credential value read or output
+- [x] no provider SDK import or client creation
+- [x] no provider execution
+- [x] no audio file read
+- [x] no microphone access
+- [x] no DRC repository change
+- [x] `.vscode/settings.json` remains local-only and is not included
+
+Stop rule:
+
+```text
+REQ-2 may start only in the next small commit.
+REQ-1 acceptance does not retroactively add a provider SDK, client factory,
+executor, audio reader, microphone path, credential resolver, private
+evidence, release package, or tag.
+```
 
 ## REQ-2 - Safe FILE_PATH validation
 

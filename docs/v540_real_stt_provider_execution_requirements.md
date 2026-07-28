@@ -243,3 +243,34 @@ DRC released-FW adoption gate: ACCEPTED
 ```
 
 DRC must not unblock RT-3d using unreleased Framework code, Framework internals, or DRC-owned provider-specific STT clients.
+## REQ-1 implementation checkpoint
+
+```text
+REQ-1: ACCEPTED
+REQ-2: READY pending next small commit
+```
+
+REQ-1 implements the provider execution configuration and status foundation
+defined by REQ-0.
+
+The new v5.4 boundary is explicit-only and separate from the existing v5.2
+`VoiceInputProviderConfig` resolver. It accepts a provider name, an explicit
+execution opt-in, and credential availability as a boolean assertion. It does
+not inspect credential values or process environment.
+
+Capability reasons are fixed as:
+
+```text
+provider_execution_not_allowed
+provider_not_configured
+credentials_unavailable
+provider_execution_not_implemented
+```
+
+Implementation details and the acceptance command set are in
+[`v540_provider_execution_configuration_status.md`](v540_provider_execution_configuration_status.md).
+
+REQ-1 acceptance authorizes REQ-2 to begin in the next small commit. It does
+not itself authorize provider SDK import, client creation, provider execution,
+credential-value read, audio read, microphone access, private provider
+acceptance, DRC change, package build, or tag creation.

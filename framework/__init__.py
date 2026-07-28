@@ -4,6 +4,11 @@ from .voice_input_provider_adapter import (
     VoiceInputProviderAdapter,
     VoiceInputProviderAdapterInfo,
 )
+from .voice_input_provider_execution import (
+    VoiceInputProviderExecutionConfig,
+    get_voice_input_provider_execution_status,
+    resolve_voice_input_provider_execution_config,
+)
 from .voice_input_audio import (
     VoiceInputAudioEncoding,
     VoiceInputAudioFormat,
@@ -35,6 +40,9 @@ from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
 __all__ = [
+    "VoiceInputProviderExecutionConfig",
+    "resolve_voice_input_provider_execution_config",
+    "get_voice_input_provider_execution_status",
     "GuardedRealVoiceInputProviderAdapter",
     "VoiceInputProviderAdapterInfo",
     "VoiceInputProviderAdapter",

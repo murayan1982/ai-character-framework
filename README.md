@@ -1580,3 +1580,24 @@ implementation: NOT_STARTED
 private real-provider acceptance: NOT_STARTED
 release readiness: BLOCKED pending implementation acceptance
 ```
+## v5.4.0 candidate REQ-1 provider execution configuration and status
+
+REQ-1 adds a separate explicit-only configuration snapshot for later real STT
+provider execution:
+
+- `VoiceInputProviderExecutionConfig`
+- `resolve_voice_input_provider_execution_config`
+- `get_voice_input_provider_execution_status`
+
+It records explicit opt-in, provider configuration, credential availability,
+and conservative capability status without reading credential values, importing
+provider SDKs, creating clients, reading audio, opening microphones, or executing
+STT.
+
+See
+[`docs/v540_provider_execution_configuration_status.md`](docs/v540_provider_execution_configuration_status.md).
+
+```text
+REQ-1: ACCEPTED
+REQ-2: READY pending next small commit
+```
