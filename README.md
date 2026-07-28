@@ -1777,3 +1777,34 @@ package, create a tag, push, or publish.
 
 See
 [`docs/v540_release_readiness_gate.md`](docs/v540_release_readiness_gate.md).
+
+\
+## v5.4.0 release package gate
+
+The deterministic v5.4.0 package builder creates a source ZIP from the sorted
+git-tracked public file set:
+
+```powershell
+python scripts\build_v540_release_package.py --dry-run
+python scripts\smoke_v540_release_package_gate.py
+```
+
+The package gate builds twice in temporary directories and verifies identical
+SHA-256 digests, ZIP integrity, exact archive membership, and exclusion of
+local/private/generated artifacts.
+
+```text
+v5.4.0 release package gate: ACCEPTED
+v5.4.0 tag/push: READY pending final release package build
+v540_release_package_gate_status: accepted
+v540_release_package_deterministic: True
+v540_tag_authorization: ready-for-final-release-package-build
+```
+
+This checkpoint does not create the final release package, checksum sidecar,
+tag, push, or GitHub Release. It also does not import the actual OpenAI SDK,
+read private evidence/audio/transcripts or an API key, execute a real provider,
+access the microphone, or modify DRC.
+
+See
+[`docs/v540_release_package_gate.md`](docs/v540_release_package_gate.md).

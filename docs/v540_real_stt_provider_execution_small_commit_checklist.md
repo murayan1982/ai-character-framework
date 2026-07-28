@@ -490,3 +490,43 @@ v540_release_package_authorization: ready-for-release-package-gate
 The next small commit is the deterministic v5.4.0 release-package gate. The
 final package build, checksum verification, tag, push, and publication remain
 separate operator steps.
+
+\
+## v5.4.0 release package gate
+
+- [x] Add deterministic v5.4.0 source-package builder.
+- [x] Package only sorted git-tracked public files.
+- [x] Require the v5.4.0 public runtime and accepted REQ/release gate files.
+- [x] Use fixed ZIP timestamps, permissions, ordering, and compression.
+- [x] Write a SHA-256 sidecar.
+- [x] Exclude `release/`, local VS Code settings, environments, caches, and
+      bytecode.
+- [x] Exclude private operator evidence and transcripts.
+- [x] Exclude private staged/source WAV and other WAV files.
+- [x] Build twice in temporary directories.
+- [x] Verify equal SHA-256 digests.
+- [x] Verify ZIP integrity and exact package membership.
+- [x] Re-run v5.4.0 release-readiness gate.
+- [x] Re-run v5.3.0 release-package regression.
+- [x] Re-run baseline release-package check.
+- [x] Do not create the final release package.
+- [x] Do not create the final checksum sidecar.
+- [x] Do not import the actual OpenAI SDK.
+- [x] Do not read API credentials/private evidence/audio/transcripts.
+- [x] Do not execute a real provider or network request.
+- [x] Do not access the microphone.
+- [x] Do not modify DRC.
+- [x] Do not create a tag, push, or publish.
+
+```text
+v5.4.0 release package gate: ACCEPTED
+v5.4.0 tag/push: READY pending final release package build
+v540_release_package_gate_status: accepted
+v540_release_package_dry_run_succeeded: True
+v540_release_package_deterministic: True
+v540_release_package_created_in_release_dir: False
+v540_tag_authorization: ready-for-final-release-package-build
+```
+
+After this checkpoint is committed and the tree is clean, build and verify the
+final ZIP and checksum as a separate operator step before tag creation.

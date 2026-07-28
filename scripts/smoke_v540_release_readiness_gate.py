@@ -42,12 +42,26 @@ PUBLIC_V540_SYMBOLS = (
     "OpenAIVoiceInputRealProviderExecutor",
 )
 
-ALLOWED_ACCEPTANCE_WORKTREE = {
+RELEASE_READINESS_ACCEPTANCE_WORKTREE = {
     "README.md",
     "docs/v540_release_readiness_gate.md",
     "docs/v540_real_stt_provider_execution_small_commit_checklist.md",
     "scripts/smoke_v540_release_readiness_gate.py",
 }
+
+RELEASE_PACKAGE_GATE_ACCEPTANCE_WORKTREE = {
+    "README.md",
+    "docs/v540_release_package_gate.md",
+    "docs/v540_real_stt_provider_execution_small_commit_checklist.md",
+    "scripts/build_v540_release_package.py",
+    "scripts/smoke_v540_release_package_gate.py",
+    "scripts/smoke_v540_release_readiness_gate.py",
+}
+
+ALLOWED_ACCEPTANCE_WORKTREES = (
+    RELEASE_READINESS_ACCEPTANCE_WORKTREE,
+    RELEASE_PACKAGE_GATE_ACCEPTANCE_WORKTREE,
+)
 
 FORBIDDEN_PRIVATE_TRACKED_MARKERS = (
     "operator_evidence.json",
@@ -164,7 +178,11 @@ def _validate_docs() -> None:
 def _validate_worktree_scope() -> None:
     changed = _changed_paths()
     _require(
-        not changed or changed == ALLOWED_ACCEPTANCE_WORKTREE,
+        not changed
+        or any(
+            changed == allowed
+            for allowed in ALLOWED_ACCEPTANCE_WORKTREES
+        ),
         "release-readiness gate worktree contains unexpected paths: "
         + ", ".join(sorted(changed)),
     )
