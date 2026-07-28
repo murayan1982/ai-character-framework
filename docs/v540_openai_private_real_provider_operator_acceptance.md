@@ -169,3 +169,28 @@ explicit operator approval is given
 
 Do not begin release readiness, DRC adoption, package creation, tagging, or
 release before REQ-5 acceptance.
+\
+
+## Safe failed-run diagnostics
+
+When a private provider call fails, the operator may print only these additional
+fixed diagnostics:
+
+```text
+v540_req5_provider_runtime_status
+v540_req5_provider_error_type
+v540_req5_provider_http_status
+```
+
+These values are a Framework-owned status token, a fixed error category, and a
+numeric HTTP status or `none`. The operator never prints the SDK exception
+message, provider response body, request/response payload, request ID,
+credential, private path, raw audio, or transcript.
+
+After applying this repair, the source changes must be committed and the
+worktree must be clean before another private operator attempt.
+
+```text
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```

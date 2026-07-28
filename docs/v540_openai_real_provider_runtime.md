@@ -141,3 +141,43 @@ release readiness: BLOCKED pending REQ-5 acceptance
 
 Private evidence, full transcript, private WAV, and credential values remain
 outside the repository.
+\
+
+## REQ-5 safe OpenAI API-status diagnostics
+
+The first private operator attempts reached actual SDK import, actual client
+creation, and the provider protocol call, but the previous generic failure
+mapping did not distinguish non-401/429 API status errors.
+
+The runtime now normalizes official OpenAI SDK error classes into fixed public
+tokens:
+
+```text
+BadRequestError -> provider_bad_request / bad_request / 400
+AuthenticationError -> provider_authentication_error / authentication_error / 401
+PermissionDeniedError -> provider_permission_denied / permission_denied / 403
+NotFoundError -> provider_not_found / not_found / 404
+ConflictError -> provider_conflict / conflict / 409
+UnprocessableEntityError -> provider_unprocessable_entity / unprocessable_entity / 422
+RateLimitError -> provider_rate_limited / rate_limited / 429
+InternalServerError -> provider_internal_error / internal_server_error / 5xx
+APIStatusError -> provider_api_status_error / api_status_error / numeric status
+```
+
+Connection and timeout failures remain separately normalized.
+
+Public metadata may include only:
+
+```text
+provider_error_type
+provider_http_status
+```
+
+The runtime does not expose provider error text, response bodies, request or
+response payloads, authorization data, private paths, raw audio, provider
+objects, or request IDs.
+
+```text
+REQ-5: IMPLEMENTED / NOT_ACCEPTED
+release readiness: BLOCKED pending REQ-5 acceptance
+```

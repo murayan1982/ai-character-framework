@@ -54,6 +54,13 @@ class OpenAIVoiceInputRealProviderStatus(str, Enum):
     PROVIDER_RATE_LIMITED = "provider_rate_limited"
     PROVIDER_CONNECTION_ERROR = "provider_connection_error"
     PROVIDER_AUTHENTICATION_ERROR = "provider_authentication_error"
+    PROVIDER_BAD_REQUEST = "provider_bad_request"
+    PROVIDER_PERMISSION_DENIED = "provider_permission_denied"
+    PROVIDER_NOT_FOUND = "provider_not_found"
+    PROVIDER_CONFLICT = "provider_conflict"
+    PROVIDER_UNPROCESSABLE_ENTITY = "provider_unprocessable_entity"
+    PROVIDER_INTERNAL_ERROR = "provider_internal_error"
+    PROVIDER_API_STATUS_ERROR = "provider_api_status_error"
     PROVIDER_ERROR = "provider_error"
     NO_TRANSCRIPT = "no_transcript"
     COMPLETED = "completed"
@@ -210,6 +217,8 @@ class OpenAIVoiceInputRealProviderExecutor:
         sdk_imported: bool = False,
         client_created: bool = False,
         provider_protocol_call_executed: bool = False,
+        provider_error_type: str | None = None,
+        provider_http_status: int | None = None,
     ) -> dict[str, Any]:
         runtime_mode = (
             policy.runtime_mode.value
@@ -238,6 +247,8 @@ class OpenAIVoiceInputRealProviderExecutor:
                 and runtime_mode == OpenAIVoiceInputRuntimeMode.TEST_DOUBLE.value
             ),
             "provider_protocol_call_executed": provider_protocol_call_executed,
+            "provider_error_type": provider_error_type,
+            "provider_http_status": provider_http_status,
             "real_provider_execution_executed": (
                 provider_protocol_call_executed
                 and runtime_mode == OpenAIVoiceInputRuntimeMode.REAL.value
@@ -289,31 +300,127 @@ class OpenAIVoiceInputRealProviderExecutor:
         audio_bytes_read: int,
     ) -> VoiceInputResult:
         name = self._exception_name(exc)
+        status_code_value = getattr(exc, "status_code", None)
+        provider_http_status = (
+            status_code_value
+            if isinstance(status_code_value, int)
+            else None
+        )
+
         if name == "APITimeoutError":
             status = OpenAIVoiceInputRealProviderStatus.PROVIDER_TIMEOUT
+            provider_error_type = "timeout"
             safe_message = "OpenAI transcription timed out."
             retryable = True
             error_code = VoiceInputErrorCode.PROVIDER_ERROR
         elif name == "RateLimitError":
             status = OpenAIVoiceInputRealProviderStatus.PROVIDER_RATE_LIMITED
+            provider_error_type = "rate_limited"
+            provider_http_status = 429
             safe_message = "OpenAI transcription is temporarily rate limited."
             retryable = True
             error_code = VoiceInputErrorCode.PROVIDER_ERROR
         elif name == "APIConnectionError":
-            status = OpenAIVoiceInputRealProviderStatus.PROVIDER_CONNECTION_ERROR
+            status = (
+                OpenAIVoiceInputRealProviderStatus
+                .PROVIDER_CONNECTION_ERROR
+            )
+            provider_error_type = "connection_error"
             safe_message = "OpenAI transcription could not connect."
             retryable = True
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "BadRequestError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus.PROVIDER_BAD_REQUEST
+            )
+            provider_error_type = "bad_request"
+            provider_http_status = 400
+            safe_message = "OpenAI transcription request was rejected."
+            retryable = False
             error_code = VoiceInputErrorCode.PROVIDER_ERROR
         elif name == "AuthenticationError":
             status = (
                 OpenAIVoiceInputRealProviderStatus
                 .PROVIDER_AUTHENTICATION_ERROR
             )
+            provider_error_type = "authentication_error"
+            provider_http_status = 401
             safe_message = "OpenAI transcription credentials were rejected."
             retryable = False
             error_code = VoiceInputErrorCode.MISSING_CREDENTIALS
+        elif name == "PermissionDeniedError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus
+                .PROVIDER_PERMISSION_DENIED
+            )
+            provider_error_type = "permission_denied"
+            provider_http_status = 403
+            safe_message = "OpenAI transcription permission was denied."
+            retryable = False
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "NotFoundError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus.PROVIDER_NOT_FOUND
+            )
+            provider_error_type = "not_found"
+            provider_http_status = 404
+            safe_message = (
+                "OpenAI transcription model or endpoint was not found."
+            )
+            retryable = False
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "ConflictError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus.PROVIDER_CONFLICT
+            )
+            provider_error_type = "conflict"
+            provider_http_status = 409
+            safe_message = "OpenAI transcription encountered a conflict."
+            retryable = True
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "UnprocessableEntityError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus
+                .PROVIDER_UNPROCESSABLE_ENTITY
+            )
+            provider_error_type = "unprocessable_entity"
+            provider_http_status = 422
+            safe_message = "OpenAI transcription input was not processable."
+            retryable = False
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "InternalServerError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus
+                .PROVIDER_INTERNAL_ERROR
+            )
+            provider_error_type = "internal_server_error"
+            if provider_http_status is None:
+                provider_http_status = 500
+            safe_message = (
+                "OpenAI transcription encountered a provider server error."
+            )
+            retryable = True
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
+        elif name == "APIStatusError":
+            status = (
+                OpenAIVoiceInputRealProviderStatus
+                .PROVIDER_API_STATUS_ERROR
+            )
+            provider_error_type = "api_status_error"
+            safe_message = (
+                "OpenAI transcription returned an unsuccessful status."
+            )
+            retryable = bool(
+                provider_http_status is not None
+                and (
+                    provider_http_status in (408, 409, 429)
+                    or provider_http_status >= 500
+                )
+            )
+            error_code = VoiceInputErrorCode.PROVIDER_ERROR
         else:
             status = OpenAIVoiceInputRealProviderStatus.PROVIDER_ERROR
+            provider_error_type = "provider_error"
             safe_message = "OpenAI transcription failed."
             retryable = False
             error_code = VoiceInputErrorCode.PROVIDER_ERROR
@@ -329,6 +436,8 @@ class OpenAIVoiceInputRealProviderExecutor:
                 sdk_imported=True,
                 client_created=True,
                 provider_protocol_call_executed=True,
+                provider_error_type=provider_error_type,
+                provider_http_status=provider_http_status,
             ),
         )
 

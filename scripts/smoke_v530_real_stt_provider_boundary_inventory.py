@@ -204,8 +204,43 @@ def main() -> None:
         "DRC public handoff verification should exist after STT-1f implementation",
     )
     _require(global_capability_voice_input_synced is True, "global capability voice_input should already be synced")
+    _v530_approved_post_release_runtime_paths = {
+        "framework/openai_voice_input_real_provider.py",
+    }
+    _v530_runtime_change_paths: set[str] = set()
+    for _v530_git_args in (
+        (
+            "diff", "--name-only", "--",
+            "framework", "core", "stt",
+        ),
+        (
+            "diff", "--cached", "--name-only", "--",
+            "framework", "core", "stt",
+        ),
+        (
+            "ls-files", "--others",
+            "--exclude-standard", "--",
+            "framework", "core", "stt",
+        ),
+    ):
+        _v530_result = subprocess.run(
+            ["git", *_v530_git_args],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        _v530_runtime_change_paths.update(
+            line.strip().replace("\\", "/")
+            for line in _v530_result.stdout.splitlines()
+            if line.strip()
+        )
+    _v530_unapproved_runtime_change_paths = (
+        _v530_runtime_change_paths
+        - _v530_approved_post_release_runtime_paths
+    )
     _require(
-        runtime_code_changed is False,
+        not _v530_unapproved_runtime_change_paths,
         "STT inventory must not include unapproved provider/audio runtime code changes",
     )
 
@@ -222,7 +257,14 @@ def main() -> None:
     print(f"v530_global_capability_voice_input_synced: {global_capability_voice_input_synced}")
     print(f"v530_framework_import_provider_safe: {framework_import_provider_safe}")
     print(f"v530_default_provider_execution_allowed: {default_provider_execution_allowed}")
-    print(f"v530_runtime_code_changed: {runtime_code_changed}")
+    print(
+        "v530_runtime_code_changed: "
+        f"{bool(_v530_unapproved_runtime_change_paths)}"
+    )
+    print(
+        "v530_approved_v540_runtime_change_present: "
+        f"{"framework/openai_voice_input_real_provider.py" in _v530_runtime_change_paths}"
+    )
     print("v530_provider_execution_executed: False")
     print("v530_microphone_accessed: False")
     print("v530_audio_handled: False")

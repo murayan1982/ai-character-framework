@@ -164,12 +164,27 @@ def _public_markers(
     repo_clean_after: bool,
     real_execution: bool,
     transcript_present: bool,
+    provider_runtime_status: str | None,
+    provider_error_type: str | None,
+    provider_http_status: int | None,
 ) -> None:
     print(f"v540_req5_operator_run_status: {status}")
     print("v540_actual_openai_sdk_imported: True")
     print("v540_actual_provider_client_created: True")
     print(f"v540_real_provider_execution_executed: {real_execution}")
     print(f"v540_real_transcript_present: {transcript_present}")
+    print(
+        "v540_req5_provider_runtime_status: "
+        f"{provider_runtime_status or 'none'}"
+    )
+    print(
+        "v540_req5_provider_error_type: "
+        f"{provider_error_type or 'none'}"
+    )
+    print(
+        "v540_req5_provider_http_status: "
+        f"{provider_http_status if isinstance(provider_http_status, int) else 'none'}"
+    )
     print("v540_private_credential_exposed: False")
     print("v540_private_audio_path_exposed: False")
     print("v540_raw_audio_exposed: False")
@@ -444,6 +459,21 @@ def main() -> int:
         repo_clean_after=repo_clean_after,
         real_execution=real_execution,
         transcript_present=transcript_present,
+        provider_runtime_status=(
+            str(public_metadata.get("real_provider_status"))
+            if public_metadata.get("real_provider_status") is not None
+            else None
+        ),
+        provider_error_type=(
+            str(public_metadata.get("provider_error_type"))
+            if public_metadata.get("provider_error_type") is not None
+            else None
+        ),
+        provider_http_status=(
+            public_metadata.get("provider_http_status")
+            if isinstance(public_metadata.get("provider_http_status"), int)
+            else None
+        ),
     )
     print(f"v540_req5_private_evidence_run_id: {run_id}")
     print(
