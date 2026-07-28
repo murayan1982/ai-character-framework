@@ -68,7 +68,8 @@ Status:
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 Changed files:
@@ -146,10 +147,67 @@ Expected focus: fake injected client, provider call shape, model/config propagat
 Status:
 
 ```text
-BLOCKED pending REQ-3 acceptance
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
-Expected focus: lazy provider runtime, explicit opt-in, private credential use, provider-safe import preserved, and no default execution.
+Changed files:
+
+```text
+README.md
+framework/__init__.py
+framework/openai_voice_input_real_provider.py
+docs/v540_openai_real_provider_runtime.md
+docs/v540_openai_adapter_client_injection_contract.md
+docs/v540_openai_fake_execution_boundary.md
+docs/v540_provider_execution_configuration_status.md
+docs/v540_real_stt_provider_execution_requirements.md
+docs/v540_real_stt_provider_execution_small_commit_checklist.md
+scripts/smoke_v540_openai_fake_execution_boundary.py
+scripts/smoke_v540_openai_real_provider_runtime.py
+```
+
+Acceptance requirements:
+
+- [x] Python source compiles
+- [x] exact eleven-file worktree surface
+- [x] REQ-1 through REQ-3 acceptance gates remain green
+- [x] framework root import remains provider-safe
+- [x] actual `openai` module is not loaded by root import
+- [x] SDK import default is false
+- [x] client creation default is false
+- [x] real provider execution default is false
+- [x] private credential is explicit and non-empty
+- [x] Framework does not read credential environment variables
+- [x] private credential repr/str is redacted
+- [x] concrete factory forwards explicit API key, timeout, and retry count
+- [x] `client.audio.transcriptions.create(...)` call shape verified
+- [x] bounded FILE_PATH/WAV handoff verified
+- [x] missing/non-regular/empty/oversized source rejection present
+- [x] timeout mapping present
+- [x] rate-limit mapping present
+- [x] connection/authentication mapping present
+- [x] transcript normalization present
+- [x] source path not exposed
+- [x] raw audio not exposed
+- [x] credential value not exposed
+- [x] provider payload/exception detail not exposed
+- [x] actual OpenAI SDK not imported in smoke
+- [x] actual provider client not created in smoke
+- [x] real provider execution not performed in smoke
+- [x] microphone not accessed
+- [x] DRC repository not changed
+- [x] exact eleven-file `git diff --check`
+
+Stop rule:
+
+```text
+REQ-5 may start only in the next small commit.
+REQ-4 acceptance does not use a real credential, import the actual SDK in
+acceptance smoke, create an actual provider client, execute a network
+request, access a microphone, write private evidence into the repository,
+change DRC, build a release package, or create a tag.
+```
 
 ## REQ-5 - Private real-provider operator acceptance
 
@@ -178,7 +236,8 @@ Status:
 ```text
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 Changed files:
@@ -241,7 +300,8 @@ Status:
 
 ```text
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 Changed files:

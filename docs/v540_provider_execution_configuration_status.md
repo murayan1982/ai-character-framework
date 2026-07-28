@@ -6,7 +6,8 @@ Status:
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 ## Purpose
@@ -152,9 +153,22 @@ REQ-3 is ready to begin only in the next small commit.
 ```text
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 REQ-3 consumes the accepted REQ-1 configuration/status contract and accepted
 REQ-2 adapter/client-injection contract. It adds only bounded audio-file
 resolution and marked-fake client execution.
+## REQ-4 real-provider runtime status
+
+```text
+REQ-3: ACCEPTED
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
+```
+
+REQ-4 consumes the accepted explicit provider configuration, adapter/client
+injection contract, and bounded audio boundary. It adds a concrete lazy OpenAI
+client factory and real-provider executor with no default SDK import, client
+creation, or execution.

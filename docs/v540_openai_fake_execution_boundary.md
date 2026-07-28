@@ -5,7 +5,8 @@ Status:
 ```text
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 ## Purpose
@@ -81,3 +82,16 @@ the only audio read authorized by REQ-3 verification.
 REQ-3 is accepted after the complete command set, exact ten-file diff
 review, bounded temporary-file execution evidence review, and explicit
 operator approval passed. REQ-4 may begin only in the next small commit.
+## REQ-4 separation from fake execution
+
+REQ-3 remains accepted and unchanged. Its nominal fake-client marker continues
+to prevent fake clients from being confused with the concrete REQ-4 runtime.
+
+REQ-4 uses `OpenAIVoiceInputRealClientFactory`; REQ-3 uses a directly injected
+`OpenAIVoiceInputFakeClientMarker`. Neither path silently falls back to the
+other.
+
+```text
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
+```

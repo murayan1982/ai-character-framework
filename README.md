@@ -1601,7 +1601,8 @@ See
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 ## v5.4.0 candidate REQ-2 OpenAI adapter/client-injection contract
 
@@ -1628,7 +1629,8 @@ See
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 ## v5.4.0 candidate REQ-3 bounded audio / fake execution boundary
 
@@ -1657,5 +1659,36 @@ See
 ```text
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
+```
+## v5.4.0 candidate REQ-4 lazy OpenAI real-provider runtime
+
+REQ-4 adds the first concrete real-provider runtime:
+
+- `OpenAIVoiceInputPrivateCredential`
+- `OpenAIVoiceInputRealProviderPolicy`
+- `OpenAIVoiceInputRealClientFactory`
+- `OpenAIVoiceInputRealProviderExecutor`
+
+The OpenAI SDK, client creation, and real execution each have separate
+false-by-default host-controlled gates. The Framework does not read credential
+environment variables. A private credential is explicitly injected and
+redacted from representations and public results.
+
+The actual SDK is imported lazily only after every gate passes. The call shape
+is `client.audio.transcriptions.create(...)`, using the accepted bounded
+FILE_PATH/WAV contract and a sanitized in-memory `audio.wav` object.
+
+REQ-4 smoke uses an injected SDK test double. It does not import the actual SDK,
+create an actual provider client, use a real credential, or execute a network
+request.
+
+See
+[`docs/v540_openai_real_provider_runtime.md`](docs/v540_openai_real_provider_runtime.md).
+
+```text
+REQ-3: ACCEPTED
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```

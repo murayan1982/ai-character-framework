@@ -6,7 +6,8 @@ Status:
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 ## Purpose
@@ -148,8 +149,25 @@ directly injected client inherits `OpenAIVoiceInputFakeClientMarker`.
 
 ```text
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 REQ-3 does not change the REQ-2 guarantee that the adapter itself never
 reads audio or invokes a client.
+## REQ-4 dependent runtime
+
+REQ-2 remains accepted. REQ-4 now supplies the first Framework-owned concrete
+client factory:
+
+```text
+OpenAIVoiceInputRealClientFactory
+```
+
+It is the only factory REQ-4 executes. The factory resolves the optional OpenAI
+SDK lazily and passes an explicit private credential, timeout, and retry count.
+
+```text
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
+```

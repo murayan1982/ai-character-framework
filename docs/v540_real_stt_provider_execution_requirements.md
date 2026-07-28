@@ -249,7 +249,8 @@ DRC must not unblock RT-3d using unreleased Framework code, Framework internals,
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 REQ-1 implements the provider execution configuration and status foundation
@@ -282,7 +283,8 @@ acceptance, DRC change, package build, or tag creation.
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 REQ-2 implements the provider-specific adapter/config/client-injection
@@ -307,7 +309,8 @@ microphone access, private evidence, DRC changes, package creation, or tags.
 ```text
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
-REQ-4: READY pending next small commit
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
 ```
 
 REQ-3 implements bounded FILE_PATH reading and execution against a directly
@@ -321,3 +324,27 @@ REQ-3 authorizes only fake provider-protocol execution in its isolated smoke.
 It does not authorize an OpenAI SDK dependency, credential-value access,
 provider-client creation, real provider execution, microphone access, DRC
 changes, private provider evidence, release packages, or tags.
+## REQ-4 implementation checkpoint
+
+```text
+REQ-3: ACCEPTED
+REQ-4: ACCEPTED
+REQ-5: READY pending next small commit
+```
+
+REQ-4 implements the first concrete lazy OpenAI provider runtime.
+
+The runtime requires explicit private credential injection and separate opt-ins
+for SDK import, client creation, and real provider execution. Defaults remain
+false. The Framework does not read credential environment variables.
+
+The concrete client factory calls `OpenAI(api_key=..., timeout=...,
+max_retries=...)` only after all gates pass. The executor uses
+`client.audio.transcriptions.create(...)`, bounded FILE_PATH/WAV audio handoff,
+transcript normalization, timeout/rate-limit/connection/authentication mapping,
+and public result redaction.
+
+REQ-4 smoke uses only an injected SDK test double. Actual SDK import, actual
+client creation, real credential use, network execution, private operator
+evidence, microphone access, DRC changes, packages, and tags remain blocked
+until later checkpoints.

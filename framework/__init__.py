@@ -49,6 +49,12 @@ __all__ = [
     "OpenAIVoiceInputFakeExecutionPolicy",
     "OpenAIVoiceInputFakeExecutionStatus",
     "OpenAIVoiceInputFakeExecutor",
+    "OpenAIVoiceInputPrivateCredential",
+    "OpenAIVoiceInputRealClientFactory",
+    "OpenAIVoiceInputRealProviderExecutor",
+    "OpenAIVoiceInputRealProviderPolicy",
+    "OpenAIVoiceInputRealProviderStatus",
+    "OpenAIVoiceInputRuntimeMode",
     "VoiceInputProviderExecutionConfig",
     "resolve_voice_input_provider_execution_config",
     "get_voice_input_provider_execution_status",
@@ -190,6 +196,12 @@ _PROVIDER_SPECIFIC_LAZY_EXPORTS = {
     "OpenAIVoiceInputFakeExecutionPolicy": ".openai_voice_input_fake_execution",
     "OpenAIVoiceInputFakeExecutionStatus": ".openai_voice_input_fake_execution",
     "OpenAIVoiceInputFakeExecutor": ".openai_voice_input_fake_execution",
+    "OpenAIVoiceInputPrivateCredential": ".openai_voice_input_real_provider",
+    "OpenAIVoiceInputRealClientFactory": ".openai_voice_input_real_provider",
+    "OpenAIVoiceInputRealProviderExecutor": ".openai_voice_input_real_provider",
+    "OpenAIVoiceInputRealProviderPolicy": ".openai_voice_input_real_provider",
+    "OpenAIVoiceInputRealProviderStatus": ".openai_voice_input_real_provider",
+    "OpenAIVoiceInputRuntimeMode": ".openai_voice_input_real_provider",
 }
 
 
