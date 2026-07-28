@@ -217,8 +217,8 @@ change DRC, build a release package, or create a tag.
 Status:
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 Changed files:
@@ -309,8 +309,8 @@ Status:
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 Changed files:
@@ -374,8 +374,8 @@ Status:
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 Changed files:
@@ -427,4 +427,28 @@ REQ-4 may start only in the next small commit.
 REQ-3 acceptance does not add OpenAI SDK loading, credential resolution,
 real provider clients or execution, private operator evidence, microphone
 capture, DRC changes, release packages, or tags.
+```
+
+### REQ-5 acceptance sync completion
+
+- [x] Actual OpenAI SDK imported only after explicit authorization.
+- [x] Actual provider client created.
+- [x] Real provider execution completed.
+- [x] Real transcript obtained.
+- [x] Provider-neutral Framework result present.
+- [x] API key, private path, raw audio, provider payload, and transcript text
+      omitted from public output.
+- [x] Private evidence remained outside the repository.
+- [x] Private staged audio cleanup verified.
+- [x] Worktree clean before and after the operator run.
+- [x] Microphone not accessed.
+- [x] DRC not changed.
+- [x] Private evidence accepted by the public-safe validator.
+
+```text
+v540_req5_private_evidence_status: accepted-by-validator
+v540_req5_public_acceptance_sync_status: accepted
+v540_req5_release_readiness_authorization: ready-for-next-small-commit
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```

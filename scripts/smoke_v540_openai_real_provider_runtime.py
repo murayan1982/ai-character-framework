@@ -49,8 +49,17 @@ def _validate_docs() -> None:
     )
     _require("REQ-4: ACCEPTED" in combined, "REQ-4 accepted marker missing")
     _require(
-        "REQ-5: IMPLEMENTED / NOT_ACCEPTED" in combined,
-        "REQ-5 implemented-not-accepted marker missing",
+        "REQ-5: ACCEPTED" in combined,
+        "REQ-5 accepted marker missing",
+    )
+    _require(
+        "release readiness: READY pending next small commit" in combined,
+        "REQ-5 release-readiness handoff marker missing",
+    )
+    _require(
+        "v540_req5_private_evidence_status: accepted-by-validator"
+        in combined,
+        "REQ-5 public validator acceptance marker missing",
     )
     for marker in (
         "OpenAIVoiceInputPrivateCredential",

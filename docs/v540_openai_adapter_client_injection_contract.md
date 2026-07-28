@@ -7,8 +7,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 ## Purpose
@@ -182,6 +182,6 @@ REQ-2 remains accepted. REQ-5 uses the public adapter and concrete REQ-4 factory
 without adding provider-native objects to the public result.
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```

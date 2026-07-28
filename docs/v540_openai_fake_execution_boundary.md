@@ -6,8 +6,8 @@ Status:
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 ## Purpose
@@ -105,6 +105,6 @@ REQ-3 remains accepted. The fake execution path remains available and does not
 silently select the private real-provider operator path.
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```

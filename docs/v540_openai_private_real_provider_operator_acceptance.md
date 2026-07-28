@@ -5,8 +5,8 @@ Status:
 
 ```text
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 ## Purpose
@@ -191,6 +191,26 @@ After applying this repair, the source changes must be committed and the
 worktree must be clean before another private operator attempt.
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
+```
+
+## Accepted private real-provider checkpoint
+
+A private operator run completed with the actual OpenAI SDK, an actual provider
+client, real provider execution, a real transcript, and a provider-neutral
+Framework result. The public-safe validator accepted the private evidence.
+
+The API key, private WAV path, raw audio, provider payload, transcript text,
+private evidence JSON, and private run details were not committed. Private
+evidence remained outside the repository, private staged audio cleanup was
+verified, the worktree remained clean before and after the run, the microphone
+was not accessed, and DRC was not changed.
+
+```text
+v540_req5_private_evidence_status: accepted-by-validator
+v540_req5_public_acceptance_sync_status: accepted
+v540_req5_release_readiness_authorization: ready-for-next-small-commit
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```

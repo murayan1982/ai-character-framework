@@ -7,8 +7,8 @@ REQ-1: ACCEPTED
 REQ-2: ACCEPTED
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 ## Purpose
@@ -181,8 +181,8 @@ creation, or execution.
 
 ```text
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 The committed tooling is ready for source verification. Actual SDK import,

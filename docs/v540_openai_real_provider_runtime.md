@@ -5,8 +5,8 @@ Status:
 ```text
 REQ-3: ACCEPTED
 REQ-4: ACCEPTED
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 ## Purpose
@@ -135,8 +135,8 @@ then passes the value explicitly into `OpenAIVoiceInputPrivateCredential`.
 Framework runtime code still does not read credential environment variables.
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```
 
 Private evidence, full transcript, private WAV, and credential values remain
@@ -178,6 +178,6 @@ response payloads, authorization data, private paths, raw audio, provider
 objects, or request IDs.
 
 ```text
-REQ-5: IMPLEMENTED / NOT_ACCEPTED
-release readiness: BLOCKED pending REQ-5 acceptance
+REQ-5: ACCEPTED
+release readiness: READY pending next small commit
 ```

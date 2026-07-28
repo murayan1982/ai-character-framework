@@ -66,12 +66,16 @@ def _validate_docs() -> None:
 
     for marker in (
         "REQ-4: ACCEPTED",
-        "REQ-5: IMPLEMENTED / NOT_ACCEPTED",
-        "release readiness: BLOCKED pending REQ-5 acceptance",
+        "REQ-5: ACCEPTED",
+        "release readiness: READY pending next small commit",
         "private WAV",
         "private credential",
         "real transcript",
         "private evidence outside the repository",
+        "v540_req5_private_evidence_status: accepted-by-validator",
+        "v540_req5_public_acceptance_sync_status: accepted",
+        "v540_req5_release_readiness_authorization: "
+        "ready-for-next-small-commit",
         "provider_error_type",
         "provider_http_status",
         "operator_v540_openai_private_real_provider_acceptance.py",
@@ -100,16 +104,16 @@ def _validate_docs() -> None:
         ("checklist REQ-5 section", checklist_req5),
     ):
         _require(
-            "REQ-5: IMPLEMENTED / NOT_ACCEPTED" in text,
+            "REQ-5: ACCEPTED" in text,
             f"REQ-5 current marker missing from {label}",
         )
         _require(
-            "release readiness: BLOCKED pending REQ-5 acceptance" in text,
+            "release readiness: READY pending next small commit" in text,
             f"REQ-5 release block missing from {label}",
         )
         _require(
-            "REQ-5: ACCEPTED" not in text,
-            f"REQ-5 premature acceptance marker in {label}",
+            "REQ-5: IMPLEMENTED / NOT_ACCEPTED" not in text,
+            f"REQ-5 stale not-accepted marker in {label}",
         )
 
     _ok("REQ-5 committed operator-tooling documentation remains valid")
@@ -195,7 +199,9 @@ def main() -> None:
     _validate_operator_source()
     _validate_no_execution_help()
 
-    print("v540_req5_operator_tooling_status: implemented-not-accepted")
+    print("v540_req5_operator_tooling_status: accepted")
+    print("v540_req5_public_acceptance_sync_status: accepted")
+    print("v540_req5_private_evidence_status: accepted-by-validator")
     print("v540_req5_committed_source_regression_status: accepted")
     print("v540_req5_safe_api_status_diagnostics_present: True")
     print("v540_req5_private_real_provider_execution_performed_in_smoke: False")
@@ -211,7 +217,10 @@ def main() -> None:
     print("v540_req5_transcript_text_exposed: False")
     print("v540_req5_microphone_accessed: False")
     print("v540_req5_drc_repo_changed: False")
-    print("v540_req5_private_retry_authorization: ready-after-repair-commit")
+    print(
+        "v540_req5_release_readiness_authorization: "
+        "ready-for-next-small-commit"
+    )
     print("[OK] v5.4.0 REQ-5 committed operator tooling regression passed")
 
 
