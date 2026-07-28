@@ -5,7 +5,8 @@ Status:
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 
 ## Purpose
@@ -139,3 +140,16 @@ python scripts\smoke_v520_release_readiness_gate.py
 REQ-2 is accepted after the complete command set, exact nine-file diff
 review, provider-safe lazy-export review, and explicit operator approval
 passed. REQ-3 may begin only in the next small commit.
+## REQ-3 dependent checkpoint
+
+REQ-2 is accepted and unchanged. REQ-3 now consumes its
+`ready_not_executed` preflight result to permit bounded execution only when a
+directly injected client inherits `OpenAIVoiceInputFakeClientMarker`.
+
+```text
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
+```
+
+REQ-3 does not change the REQ-2 guarantee that the adapter itself never
+reads audio or invokes a client.

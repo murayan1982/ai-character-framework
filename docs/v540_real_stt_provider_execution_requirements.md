@@ -248,7 +248,8 @@ DRC must not unblock RT-3d using unreleased Framework code, Framework internals,
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 
 REQ-1 implements the provider execution configuration and status foundation
@@ -280,7 +281,8 @@ acceptance, DRC change, package build, or tag creation.
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 
 REQ-2 implements the provider-specific adapter/config/client-injection
@@ -300,3 +302,22 @@ Details and verification commands are in
 REQ-2 does not authorize an OpenAI SDK dependency, environment credential
 resolution, credential-value access, audio-file opening, provider execution,
 microphone access, private evidence, DRC changes, package creation, or tags.
+## REQ-3 implementation checkpoint
+
+```text
+REQ-2: ACCEPTED
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
+```
+
+REQ-3 implements bounded FILE_PATH reading and execution against a directly
+injected client that inherits `OpenAIVoiceInputFakeClientMarker`.
+
+It requires explicit fake-execution opt-in and an explicit `max_audio_bytes`
+bound. It rejects client factories, unmarked clients, unsupported sources,
+non-regular files, and oversized reads.
+
+REQ-3 authorizes only fake provider-protocol execution in its isolated smoke.
+It does not authorize an OpenAI SDK dependency, credential-value access,
+provider-client creation, real provider execution, microphone access, DRC
+changes, private provider evidence, release packages, or tags.

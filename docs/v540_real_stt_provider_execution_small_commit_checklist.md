@@ -67,7 +67,8 @@ Status:
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 
 Changed files:
@@ -176,7 +177,8 @@ Status:
 
 ```text
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 
 Changed files:
@@ -231,4 +233,64 @@ REQ-3 may start only in the next small commit.
 REQ-2 acceptance does not add audio-file resolution, fake or real provider
 execution, SDK loading, credential resolution, private evidence, DRC changes,
 release packages, or tags.
+```
+
+## REQ-3 - Bounded audio-file resolution / marked-fake execution
+
+Status:
+
+```text
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
+```
+
+Changed files:
+
+```text
+README.md
+framework/__init__.py
+framework/openai_voice_input_fake_execution.py
+docs/v540_openai_fake_execution_boundary.md
+docs/v540_openai_adapter_client_injection_contract.md
+docs/v540_provider_execution_configuration_status.md
+docs/v540_real_stt_provider_execution_requirements.md
+docs/v540_real_stt_provider_execution_small_commit_checklist.md
+scripts/smoke_v540_openai_adapter_client_injection_contract.py
+scripts/smoke_v540_openai_fake_execution_boundary.py
+```
+
+Acceptance requirements:
+
+- [x] Python source compiles
+- [x] exact ten-file worktree surface
+- [x] REQ-1 and REQ-2 acceptance gates remain green
+- [x] framework root import remains provider-safe
+- [x] direct client injection required
+- [x] `OpenAIVoiceInputFakeClientMarker` inheritance required
+- [x] fake execution opt-in required
+- [x] positive `max_audio_bytes` required
+- [x] regular FILE_PATH/WAV source required
+- [x] pre-read and during-read byte bounds enforced
+- [x] client factory not invoked
+- [x] marked fake `create(...)` called exactly once in success smoke
+- [x] unmarked client never called
+- [x] fake exception converted to safe typed failure
+- [x] source path not exposed
+- [x] raw audio not exposed
+- [x] provider payload not exposed
+- [x] no OpenAI SDK import
+- [x] no credential-value read
+- [x] no provider client creation
+- [x] no real provider execution
+- [x] no microphone access
+- [x] no DRC repository change
+- [x] exact ten-file `git diff --check`
+
+Stop rule:
+
+```text
+REQ-4 may start only in the next small commit.
+REQ-3 acceptance does not add OpenAI SDK loading, credential resolution,
+real provider clients or execution, private operator evidence, microphone
+capture, DRC changes, release packages, or tags.
 ```

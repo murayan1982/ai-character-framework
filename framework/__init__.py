@@ -45,6 +45,10 @@ __all__ = [
     "OpenAIVoiceInputPreflight",
     "OpenAIVoiceInputPreflightStatus",
     "OpenAIVoiceInputProviderAdapter",
+    "OpenAIVoiceInputFakeClientMarker",
+    "OpenAIVoiceInputFakeExecutionPolicy",
+    "OpenAIVoiceInputFakeExecutionStatus",
+    "OpenAIVoiceInputFakeExecutor",
     "VoiceInputProviderExecutionConfig",
     "resolve_voice_input_provider_execution_config",
     "get_voice_input_provider_execution_status",
@@ -174,28 +178,27 @@ for _name in ['MotionSession', 'MotionSessionInfo', 'create_motion_session']:
     if _name not in __all__:
         __all__.append(_name)
 del _name
-# v5.4.0 REQ-2 provider-specific exports are resolved lazily so that
-# `import framework` remains provider-safe and does not load an OpenAI-named
-# adapter module until a host explicitly requests one of these symbols.
-_OPENAI_VOICE_INPUT_LAZY_EXPORTS = frozenset(
-    {
-        "OpenAIVoiceInputClient",
-        "OpenAIVoiceInputClientFactory",
-        "OpenAIVoiceInputPreflight",
-        "OpenAIVoiceInputPreflightStatus",
-        "OpenAIVoiceInputProviderAdapter",
-    }
-)
+# v5.4.0 provider-specific exports are resolved lazily so that
+# `import framework` remains provider-safe.
+_PROVIDER_SPECIFIC_LAZY_EXPORTS = {
+    "OpenAIVoiceInputClient": ".openai_voice_input_provider_adapter",
+    "OpenAIVoiceInputClientFactory": ".openai_voice_input_provider_adapter",
+    "OpenAIVoiceInputPreflight": ".openai_voice_input_provider_adapter",
+    "OpenAIVoiceInputPreflightStatus": ".openai_voice_input_provider_adapter",
+    "OpenAIVoiceInputProviderAdapter": ".openai_voice_input_provider_adapter",
+    "OpenAIVoiceInputFakeClientMarker": ".openai_voice_input_fake_execution",
+    "OpenAIVoiceInputFakeExecutionPolicy": ".openai_voice_input_fake_execution",
+    "OpenAIVoiceInputFakeExecutionStatus": ".openai_voice_input_fake_execution",
+    "OpenAIVoiceInputFakeExecutor": ".openai_voice_input_fake_execution",
+}
 
 
 def __getattr__(name: str):
-    if name in _OPENAI_VOICE_INPUT_LAZY_EXPORTS:
+    module_name = _PROVIDER_SPECIFIC_LAZY_EXPORTS.get(name)
+    if module_name is not None:
         from importlib import import_module
 
-        module = import_module(
-            ".openai_voice_input_provider_adapter",
-            __name__,
-        )
+        module = import_module(module_name, __name__)
         value = getattr(module, name)
         globals()[name] = value
         return value

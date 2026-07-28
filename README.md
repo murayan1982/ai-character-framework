@@ -1600,7 +1600,8 @@ See
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
 ## v5.4.0 candidate REQ-2 OpenAI adapter/client-injection contract
 
@@ -1626,5 +1627,35 @@ See
 ```text
 REQ-1: ACCEPTED
 REQ-2: ACCEPTED
-REQ-3: READY pending next small commit
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
+```
+## v5.4.0 candidate REQ-3 bounded audio / fake execution boundary
+
+REQ-3 adds a bounded FILE_PATH reader and a provider-shaped execution path
+that can call only a directly injected client inheriting
+`OpenAIVoiceInputFakeClientMarker`.
+
+The host must explicitly provide:
+
+- `allow_fake_client_execution=True`
+- a positive `max_audio_bytes`
+- the accepted REQ-2 FILE_PATH/WAV/duration-bound source contract
+- a directly injected marked fake client
+
+Client factories, unmarked clients, oversized files, missing files, and
+non-regular files are rejected without execution.
+
+REQ-3 may read bounded local bytes and call the marked fake client's
+`client.audio.transcriptions.create(...)`. It does not import the OpenAI SDK,
+read credential values, create a provider client, execute a real provider,
+access a microphone, expose paths/raw audio/provider payloads, or change DRC.
+
+See
+[`docs/v540_openai_fake_execution_boundary.md`](docs/v540_openai_fake_execution_boundary.md).
+
+```text
+REQ-2: ACCEPTED
+REQ-3: ACCEPTED
+REQ-4: READY pending next small commit
 ```
