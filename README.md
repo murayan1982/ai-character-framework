@@ -1560,3 +1560,23 @@ v5.3.0 tag/push: READY pending final release package build
 The package gate dry-run passed and confirmed the package set excludes local
 VS Code settings, private/operator evidence, env files, and generated release
 artifacts. This did not create the final `release/` package, tag, or remote push.
+
+## v5.4.0 candidate development: Real STT Provider Execution
+
+v5.4.0 is the candidate next Framework development line for explicit real STT provider execution through the public Voice Input API.
+
+The requirements are driven by DRC v3.0.0 RT-3d, which remains blocked until a released Framework version can execute a real STT provider from a DRC-owned private WAV through public APIs and return a provider-neutral typed transcript.
+
+See:
+
+- [`docs/v540_real_stt_provider_execution_requirements.md`](docs/v540_real_stt_provider_execution_requirements.md)
+- [`docs/v540_real_stt_provider_execution_small_commit_checklist.md`](docs/v540_real_stt_provider_execution_small_commit_checklist.md)
+
+Current status:
+
+```text
+requirements definition: ACCEPTED
+implementation: NOT_STARTED
+private real-provider acceptance: NOT_STARTED
+release readiness: BLOCKED pending implementation acceptance
+```
