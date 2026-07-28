@@ -13,6 +13,7 @@ create a tag, push, or publish.
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import os
 import subprocess
@@ -38,6 +39,17 @@ ALLOWED_ACCEPTANCE_WORKTREE = {
     "scripts/smoke_v540_release_package_gate.py",
     "scripts/smoke_v540_release_readiness_gate.py",
 }
+
+FINAL_PACKAGE_PRESENCE_REPAIR_WORKTREE = {
+    "scripts/smoke_v540_final_release_tag_readiness.py",
+    "scripts/smoke_v540_release_package_gate.py",
+    "scripts/smoke_v540_release_readiness_gate.py",
+}
+
+ALLOWED_ACCEPTANCE_WORKTREES = (
+    ALLOWED_ACCEPTANCE_WORKTREE,
+    FINAL_PACKAGE_PRESENCE_REPAIR_WORKTREE,
+)
 
 REQUIRED_ZIP_ENTRIES = {
     "README.md",
@@ -124,14 +136,17 @@ def _load_builder():
     return module
 
 
-def _run_dependency(script: str) -> None:
+def _run_dependency(
+    script: str,
+    *extra_args: str,
+) -> None:
     env = dict(os.environ)
     env.pop("OPENAI_API_KEY", None)
     env.pop("OPENAI_LOG", None)
     env.pop("FW_REQ5_AUDIO_PATH", None)
 
     completed = subprocess.run(
-        [sys.executable, script],
+        [sys.executable, script, *extra_args],
         cwd=ROOT,
         env=env,
         capture_output=True,
@@ -184,7 +199,11 @@ def _validate_docs() -> None:
 def _validate_worktree_scope() -> None:
     changed = _changed_paths()
     _require(
-        not changed or changed == ALLOWED_ACCEPTANCE_WORKTREE,
+        not changed
+        or any(
+            changed == allowed
+            for allowed in ALLOWED_ACCEPTANCE_WORKTREES
+        ),
         "release-package gate worktree contains unexpected paths: "
         + ", ".join(sorted(changed)),
     )
@@ -235,7 +254,45 @@ def _archive_names(path: Path) -> set[str]:
         return set(archive.namelist())
 
 
-def _validate_deterministic_dry_run(builder, files: list[str]) -> None:
+def _validate_deterministic_dry_run(
+    builder,
+    files: list[str],
+    *,
+    allow_final_package: bool,
+) -> None:
+    final_zip = ROOT / "release" / builder.PACKAGE_BASENAME
+    final_sidecar = final_zip.with_suffix(final_zip.suffix + ".sha256")
+
+    preexisting_zip = (
+        final_zip.read_bytes()
+        if final_zip.is_file()
+        else None
+    )
+    preexisting_sidecar = (
+        final_sidecar.read_bytes()
+        if final_sidecar.is_file()
+        else None
+    )
+
+    if allow_final_package:
+        _require(
+            preexisting_zip is not None,
+            "allowed final release ZIP is missing",
+        )
+        _require(
+            preexisting_sidecar is not None,
+            "allowed final release SHA-256 sidecar is missing",
+        )
+    else:
+        _require(
+            preexisting_zip is None,
+            "package gate found a pre-existing final release ZIP",
+        )
+        _require(
+            preexisting_sidecar is None,
+            "package gate found a pre-existing final SHA-256 sidecar",
+        )
+
     with tempfile.TemporaryDirectory(
         prefix="acf_v540_package_gate_"
     ) as temp:
@@ -299,21 +356,51 @@ def _validate_deterministic_dry_run(builder, files: list[str]) -> None:
             "dry-run ZIP includes WAV audio",
         )
 
-    final_zip = ROOT / "release" / builder.PACKAGE_BASENAME
-    final_sidecar = final_zip.with_suffix(final_zip.suffix + ".sha256")
-    _require(
-        not final_zip.exists(),
-        "package gate created the final release ZIP",
-    )
-    _require(
-        not final_sidecar.exists(),
-        "package gate created the final release SHA-256 sidecar",
-    )
+    if allow_final_package:
+        _require(
+            final_zip.is_file(),
+            "package gate removed the allowed final release ZIP",
+        )
+        _require(
+            final_sidecar.is_file(),
+            "package gate removed the allowed final SHA-256 sidecar",
+        )
+        _require(
+            final_zip.read_bytes() == preexisting_zip,
+            "package gate changed the allowed final release ZIP",
+        )
+        _require(
+            final_sidecar.read_bytes() == preexisting_sidecar,
+            "package gate changed the allowed final SHA-256 sidecar",
+        )
+    else:
+        _require(
+            not final_zip.exists(),
+            "package gate created the final release ZIP",
+        )
+        _require(
+            not final_sidecar.exists(),
+            "package gate created the final release SHA-256 sidecar",
+        )
 
     _ok("v5.4.0 deterministic temporary package build passed")
+    _ok("final release artifact presence boundary remained unchanged")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(
+        description="Run v5.4.0 release-package gate"
+    )
+    parser.add_argument(
+        "--allow-final-package",
+        action="store_true",
+        help=(
+            "Allow an existing final v5.4.0 ZIP and sidecar, "
+            "while requiring both to remain byte-for-byte unchanged"
+        ),
+    )
+    args = parser.parse_args(argv)
+
     _validate_docs()
     _validate_worktree_scope()
 
@@ -328,10 +415,26 @@ def main() -> None:
     )
 
     files = _validate_package_set(builder)
-    _validate_deterministic_dry_run(builder, files)
+    _validate_deterministic_dry_run(
+        builder,
+        files,
+        allow_final_package=args.allow_final_package,
+    )
 
     for dependency in DEPENDENCIES:
-        _run_dependency(dependency)
+        dependency_extra_args = (
+            ("--allow-final-package",)
+            if (
+                args.allow_final_package
+                and dependency
+                == "scripts/smoke_v540_release_readiness_gate.py"
+            )
+            else ()
+        )
+        _run_dependency(
+            dependency,
+            *dependency_extra_args,
+        )
 
     _require(
         "openai" not in sys.modules,
@@ -341,6 +444,11 @@ def main() -> None:
     print("v540_release_package_gate_status: accepted")
     print("v540_release_package_dry_run_succeeded: True")
     print("v540_release_package_deterministic: True")
+    print(
+        "v540_release_package_final_artifacts_allowed:",
+        args.allow_final_package,
+    )
+    print("v540_release_package_final_artifacts_unchanged: True")
     print("v540_release_package_created_in_release_dir: False")
     print("v540_release_package_sha256_present: True")
     print("v540_release_package_excludes_vscode_settings: True")

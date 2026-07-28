@@ -13,6 +13,7 @@ publish.
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -58,9 +59,16 @@ RELEASE_PACKAGE_GATE_ACCEPTANCE_WORKTREE = {
     "scripts/smoke_v540_release_readiness_gate.py",
 }
 
+FINAL_PACKAGE_PRESENCE_REPAIR_WORKTREE = {
+    "scripts/smoke_v540_final_release_tag_readiness.py",
+    "scripts/smoke_v540_release_package_gate.py",
+    "scripts/smoke_v540_release_readiness_gate.py",
+}
+
 ALLOWED_ACCEPTANCE_WORKTREES = (
     RELEASE_READINESS_ACCEPTANCE_WORKTREE,
     RELEASE_PACKAGE_GATE_ACCEPTANCE_WORKTREE,
+    FINAL_PACKAGE_PRESENCE_REPAIR_WORKTREE,
 )
 
 FORBIDDEN_PRIVATE_TRACKED_MARKERS = (
@@ -206,22 +214,47 @@ def _validate_private_artifacts_not_tracked() -> None:
     _ok("private REQ-5 artifacts are absent from tracked source")
 
 
-def _validate_no_v540_release_outputs() -> None:
-    package = ROOT / "release" / "ai-character-framework_v5.4.0.zip"
-    sidecars = (
-        ROOT / "release" / "ai-character-framework_v5.4.0.zip.sha256",
-        ROOT / "release" / "ai-character-framework_v5.4.0.sha256.txt",
+def _validate_no_v540_release_outputs(
+    *,
+    allow_final_package: bool,
+) -> None:
+    package = (
+        ROOT
+        / "release"
+        / "ai-character-framework_v5.4.0.zip"
     )
-    _require(not package.exists(), "v5.4.0 release package already exists")
-    _require(
-        not any(path.exists() for path in sidecars),
-        "v5.4.0 release checksum sidecar already exists",
-    )
+    sidecar = package.with_suffix(package.suffix + ".sha256")
 
-    local_tag = _run("git", "tag", "--list", "v5.4.0").stdout.strip()
-    _require(not local_tag, "v5.4.0 tag already exists")
-    _ok("v5.4.0 release package and tag remain uncreated")
+    if allow_final_package:
+        _require(
+            package.is_file(),
+            "allowed v5.4.0 release package is missing",
+        )
+        _require(
+            sidecar.is_file(),
+            "allowed v5.4.0 SHA-256 sidecar is missing",
+        )
+        _ok("v5.4.0 final package and sidecar are explicitly allowed")
+    else:
+        _require(
+            not package.exists(),
+            "v5.4.0 release package already exists",
+        )
+        _require(
+            not sidecar.exists(),
+            "v5.4.0 release SHA-256 sidecar already exists",
+        )
+        _ok("v5.4.0 release package remains uncreated")
 
+    tag = subprocess.run(
+        ["git", "tag", "--list", "v5.4.0"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    _require(not tag, "v5.4.0 tag already exists")
+    _ok("v5.4.0 tag remains uncreated")
 
 def _validate_public_import() -> None:
     _require(
@@ -253,11 +286,26 @@ def _validate_public_import() -> None:
     _ok("Framework exports the accepted v5.4.0 public runtime symbols")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(
+        description="Run v5.4.0 source-tree release-readiness gate"
+    )
+    parser.add_argument(
+        "--allow-final-package",
+        action="store_true",
+        help=(
+            "Allow the final v5.4.0 ZIP and .zip.sha256 after "
+            "the package gate has been accepted"
+        ),
+    )
+    args = parser.parse_args(argv)
+
     _validate_docs()
     _validate_worktree_scope()
     _validate_private_artifacts_not_tracked()
-    _validate_no_v540_release_outputs()
+    _validate_no_v540_release_outputs(
+        allow_final_package=args.allow_final_package,
+    )
     _validate_public_import()
 
     for dependency in DEPENDENCIES:
@@ -281,7 +329,14 @@ def main() -> None:
     print("v540_private_transcript_read_in_gate: False")
     print("v540_microphone_accessed: False")
     print("v540_drc_repo_changed: False")
-    print("v540_release_package_created: False")
+    print(
+        "v540_final_release_package_allowed:",
+        args.allow_final_package,
+    )
+    print(
+        "v540_release_package_created:",
+        args.allow_final_package,
+    )
     print("v540_tag_created: False")
     print(
         "v540_release_package_authorization: "

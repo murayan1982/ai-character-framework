@@ -127,14 +127,17 @@ def _load_builder():
     return module
 
 
-def _run_strict_dependency(script: str) -> None:
+def _run_strict_dependency(
+    script: str,
+    *extra_args: str,
+) -> None:
     env = dict(os.environ)
     env.pop("OPENAI_API_KEY", None)
     env.pop("OPENAI_LOG", None)
     env.pop("FW_REQ5_AUDIO_PATH", None)
 
     completed = subprocess.run(
-        [sys.executable, script],
+        [sys.executable, script, *extra_args],
         cwd=ROOT,
         env=env,
         capture_output=True,
@@ -428,7 +431,10 @@ def main(argv: list[str] | None = None) -> int:
 
     package_hash = "not-required-in-local-checkpoint"
     if args.require_package:
-        _run_strict_dependency("scripts/smoke_v540_release_package_gate.py")
+        _run_strict_dependency(
+            "scripts/smoke_v540_release_package_gate.py",
+            "--allow-final-package",
+        )
         _run_strict_dependency("scripts/check_release_package.py")
         package_hash = _validate_final_package(builder, expected_files)
     else:
