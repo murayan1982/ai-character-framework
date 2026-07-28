@@ -4,7 +4,8 @@ Status:
 
 ```text
 REQ-1: ACCEPTED
-REQ-2: READY pending next small commit
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
 ```
 
 ## Purpose
@@ -143,5 +144,5 @@ git status --short
 ```
 
 REQ-1 is accepted after the complete command set, exact seven-file diff
-review, and safety-boundary review passed. REQ-2 is ready to begin only in
-the next small commit.
+review, and safety-boundary review passed. REQ-2 is accepted after its separate small-commit verification.
+REQ-3 is ready to begin only in the next small commit.

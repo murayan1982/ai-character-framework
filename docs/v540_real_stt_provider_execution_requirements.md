@@ -247,7 +247,8 @@ DRC must not unblock RT-3d using unreleased Framework code, Framework internals,
 
 ```text
 REQ-1: ACCEPTED
-REQ-2: READY pending next small commit
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
 ```
 
 REQ-1 implements the provider execution configuration and status foundation
@@ -274,3 +275,28 @@ REQ-1 acceptance authorizes REQ-2 to begin in the next small commit. It does
 not itself authorize provider SDK import, client creation, provider execution,
 credential-value read, audio read, microphone access, private provider
 acceptance, DRC change, package build, or tag creation.
+## REQ-2 implementation checkpoint
+
+```text
+REQ-1: ACCEPTED
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
+```
+
+REQ-2 implements the provider-specific adapter/config/client-injection
+contract authorized by REQ-1.
+
+The selected adapter is `OpenAIVoiceInputProviderAdapter`. It exposes an
+explicit model, direct client injection, client-factory injection, typed
+preflight states, and FILE_PATH/WAV/bounded source-metadata validation.
+
+The structural provider boundary is
+`client.audio.transcriptions.create(...)`, but no client or factory is
+resolved and no provider call is executed in REQ-2.
+
+Details and verification commands are in
+[`v540_openai_adapter_client_injection_contract.md`](v540_openai_adapter_client_injection_contract.md).
+
+REQ-2 does not authorize an OpenAI SDK dependency, environment credential
+resolution, credential-value access, audio-file opening, provider execution,
+microphone access, private evidence, DRC changes, package creation, or tags.

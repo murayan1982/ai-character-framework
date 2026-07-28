@@ -66,7 +66,8 @@ Status:
 
 ```text
 REQ-1: ACCEPTED
-REQ-2: READY pending next small commit
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
 ```
 
 Changed files:
@@ -168,3 +169,66 @@ BLOCKED pending FW release
 ```
 
 Expected focus: DRC public-only import, DRC private WAV handoff, real transcript handoff, fake path preserved, and RT-3d unblock criteria.
+
+## REQ-2 - OpenAI adapter/config/client-injection contract
+
+Status:
+
+```text
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
+```
+
+Changed files:
+
+```text
+README.md
+framework/__init__.py
+framework/openai_voice_input_provider_adapter.py
+docs/v540_openai_adapter_client_injection_contract.md
+docs/v540_provider_execution_configuration_status.md
+docs/v540_real_stt_provider_execution_requirements.md
+docs/v540_real_stt_provider_execution_small_commit_checklist.md
+scripts/smoke_v540_provider_execution_configuration_status.py
+scripts/smoke_v540_openai_adapter_client_injection_contract.py
+```
+
+Acceptance requirements:
+
+- [x] `python -m compileall -q framework core stt scripts examples`
+- [x] `python scripts/smoke_v540_openai_adapter_client_injection_contract.py`
+- [x] `python scripts/smoke_v540_provider_execution_configuration_status.py`
+- [x] `python scripts/smoke_v540_real_stt_provider_execution_requirements.py`
+- [x] `python scripts/smoke_v530_release_package_gate.py`
+- [x] `python scripts/smoke_v530_release_readiness_gate.py`
+- [x] `python scripts/smoke_v530_guarded_real_provider_adapter.py`
+- [x] `python scripts/smoke_v530_drc_public_handoff_verification.py`
+- [x] `python scripts/smoke_v520_voice_input_public_contract_conformance_gate.py`
+- [x] `python scripts/smoke_v520_release_readiness_gate.py`
+- [x] exact nine-file `git diff --check`
+- [x] provider-safe `import framework`
+- [x] exact OpenAI client protocol is public
+- [x] model configuration is explicit
+- [x] client and client-factory injection are explicit
+- [x] client factory is not invoked
+- [x] FILE_PATH-only source metadata
+- [x] WAV-only source metadata
+- [x] explicit max-duration bound required
+- [x] source path is not exposed
+- [x] no OpenAI SDK import or dependency change
+- [x] no credential value read or output
+- [x] no client creation
+- [x] no audio file read
+- [x] no microphone access
+- [x] no provider execution
+- [x] no DRC repository change
+- [x] `.vscode/settings.json` remains local-only and is not included
+
+Stop rule:
+
+```text
+REQ-3 may start only in the next small commit.
+REQ-2 acceptance does not add audio-file resolution, fake or real provider
+execution, SDK loading, credential resolution, private evidence, DRC changes,
+release packages, or tags.
+```

@@ -1599,5 +1599,32 @@ See
 
 ```text
 REQ-1: ACCEPTED
-REQ-2: READY pending next small commit
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
+```
+## v5.4.0 candidate REQ-2 OpenAI adapter/client-injection contract
+
+REQ-2 adds the first concrete provider-specific voice-input adapter contract:
+
+- `OpenAIVoiceInputProviderAdapter`
+- `OpenAIVoiceInputClient`
+- `OpenAIVoiceInputClientFactory`
+- `OpenAIVoiceInputPreflight`
+- `OpenAIVoiceInputPreflightStatus`
+
+The selected later execution boundary is
+`client.audio.transcriptions.create(...)`, but REQ-2 does not call it.
+
+REQ-2 validates only explicit configuration and public source metadata:
+FILE_PATH, WAV, and a host-provided duration bound. It does not import the
+OpenAI SDK, invoke a client factory, read credentials, open an audio file,
+access a microphone, execute a provider, or change DRC.
+
+See
+[`docs/v540_openai_adapter_client_injection_contract.md`](docs/v540_openai_adapter_client_injection_contract.md).
+
+```text
+REQ-1: ACCEPTED
+REQ-2: ACCEPTED
+REQ-3: READY pending next small commit
 ```

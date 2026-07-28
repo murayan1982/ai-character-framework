@@ -40,6 +40,11 @@ from .text_chat_result import TextChatResult
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 
 __all__ = [
+    "OpenAIVoiceInputClient",
+    "OpenAIVoiceInputClientFactory",
+    "OpenAIVoiceInputPreflight",
+    "OpenAIVoiceInputPreflightStatus",
+    "OpenAIVoiceInputProviderAdapter",
     "VoiceInputProviderExecutionConfig",
     "resolve_voice_input_provider_execution_config",
     "get_voice_input_provider_execution_status",
@@ -169,3 +174,31 @@ for _name in ['MotionSession', 'MotionSessionInfo', 'create_motion_session']:
     if _name not in __all__:
         __all__.append(_name)
 del _name
+# v5.4.0 REQ-2 provider-specific exports are resolved lazily so that
+# `import framework` remains provider-safe and does not load an OpenAI-named
+# adapter module until a host explicitly requests one of these symbols.
+_OPENAI_VOICE_INPUT_LAZY_EXPORTS = frozenset(
+    {
+        "OpenAIVoiceInputClient",
+        "OpenAIVoiceInputClientFactory",
+        "OpenAIVoiceInputPreflight",
+        "OpenAIVoiceInputPreflightStatus",
+        "OpenAIVoiceInputProviderAdapter",
+    }
+)
+
+
+def __getattr__(name: str):
+    if name in _OPENAI_VOICE_INPUT_LAZY_EXPORTS:
+        from importlib import import_module
+
+        module = import_module(
+            ".openai_voice_input_provider_adapter",
+            __name__,
+        )
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(
+        f"module {__name__!r} has no attribute {name!r}"
+    )
