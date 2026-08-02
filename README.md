@@ -1942,3 +1942,48 @@ connection during validation.
 
 See
 [`docs/v550_vtube_studio_pyvts_transport.md`](docs/v550_vtube_studio_pyvts_transport.md).
+
+## v5.5.0 candidate root-public VTube Studio MotionSession composition
+
+FW-VTS-0e composes the accepted internal VTube Studio transport into the
+root-public `MotionSession` boundary without exporting provider-specific types.
+The existing mock path and the legacy three-argument VTS `not_implemented` path
+remain compatible.
+
+The real-capable path is explicit-only and default-off. Host applications must
+provide all readiness assertions, endpoint values, authentication material, and
+hotkey bindings directly:
+
+```python
+from framework import MotionRequest, create_motion_session
+
+session = create_motion_session(
+    adapter="vts",
+    real_adapter_enabled=True,
+    allow_provider_execution=True,
+    runtime_available=True,
+    model_selected=True,
+    vts_endpoint_host="<explicit-host>",
+    vts_endpoint_port=8001,
+    vts_authentication_token="<explicit-authentication-material>",
+    vts_hotkey_bindings={
+        "expression:happy": "<configured-hotkey-name>",
+    },
+)
+
+capability = session.preflight()
+result = session.apply_motion(MotionRequest.expression_change("happy"))
+session.close()
+```
+
+A VTS session owns one lazily started worker thread and one persistent asyncio
+event loop so preflight, trigger, and close reuse the same provider-client loop.
+There is no per-call `asyncio.run`, automatic retry, reconnect loop, token-file
+fallback, or background polling task.
+
+FW-VTS-0e validation injects deterministic in-memory transports only. Actual
+pyvts import, WebSocket connection, VTube Studio authentication, hotkey trigger,
+and real motion remain **NOT_AUTHORIZED** until FW-VTS-0f.
+
+See
+[`docs/v550_motion_session_real_adapter_composition.md`](docs/v550_motion_session_real_adapter_composition.md).

@@ -18,9 +18,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -466,3 +469,22 @@ v550_commit_created: False
 v550_push_performed: False
 v550_next_authorization: exact-review-required-for-FW-VTS-0e
 ```
+
+## FW-VTS-0e MotionSession composition
+
+FW-VTS-0e composes this accepted transport without changing its frozen source.
+The transport is constructed only after the root-public session has passed all
+explicit adapter, provider-execution, endpoint, runtime, authentication, model,
+and hotkey-binding guards.
+
+The synchronous public API does not create a new event loop for each call.
+Instead, each composed session lazily owns one worker thread and one persistent
+asyncio event loop. Preflight, hotkey trigger, and transport close are submitted
+to that same loop. Closing the session marks it closed first, invokes bounded
+transport cleanup, cancels remaining session operations, stops the loop, and
+joins the worker thread.
+
+The FW-VTS-0e smoke replaces `VTubeStudioPyvtsTransport` with an in-memory
+Protocol implementation. Therefore actual lazy pyvts import, WebSocket
+connection, VTube Studio authentication, and real hotkey execution remain
+NOT_AUTHORIZED and are not performed by this checkpoint.

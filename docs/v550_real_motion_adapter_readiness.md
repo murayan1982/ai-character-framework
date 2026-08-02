@@ -8,8 +8,9 @@ release line: v5.5.0 candidate
 FW-VTS-0a: COMPLETED / ACCEPTED / PUSHED
 FW-VTS-0b: COMPLETED / ACCEPTED / PUSHED
 FW-VTS-0c: COMPLETED / ACCEPTED / PUSHED
-FW-VTS-0d: IMPLEMENTED / AWAITING_REVIEW
-FW-VTS-0e through FW-VTS-0f: NOT_AUTHORIZED
+FW-VTS-0d: COMPLETED / ACCEPTED / PUSHED
+FW-VTS-0e: IMPLEMENTED / AWAITING_REVIEW
+FW-VTS-0f: NOT_AUTHORIZED
 real VTS execution: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -474,9 +475,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -529,9 +533,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -578,4 +585,58 @@ docs/v550_vtube_studio_pyvts_transport.md
 framework/vtube_studio_pyvts_transport.py
 scripts/smoke_v550_vtube_studio_pyvts_transport.py
 scripts/check_v550_vtube_studio_pyvts_transport.py
+```
+
+## FW-VTS-0e implementation checkpoint
+
+```text
+baseline:
+767a5f428998927c183a4c6040cb948b98f86711
+
+FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Implemented boundaries:
+
+- root-public `MotionSession` VTS composition behind explicit-only arguments;
+- preserved mock and legacy VTS `not_implemented` compatibility paths;
+- normalized and bounded hotkey bindings for five accepted intents;
+- mandatory explicit preflight before apply;
+- one session-owned worker thread and persistent asyncio event loop;
+- `asyncio.run_coroutine_threadsafe` submission from the synchronous public API;
+- immediate internal single-flight `BUSY` normalization;
+- provider-safe capability, result, and event normalization;
+- idempotent close, pending-operation cancellation, worker termination, and
+  late-completion suppression;
+- no root export of composition, bridge, transport, or pyvts symbols.
+
+Validation uses injected in-memory transports only. It blocks network calls and
+verifies that actual pyvts/WebSocket modules remain unloaded. Token-file
+read/write/bootstrap, retry, reconnect, polling, actual authentication, real
+hotkey trigger, and real motion are not performed.
+
+FW-VTS-0e exact eleven-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_motion_adapter_configuration_status.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_vtube_studio_transport_protocol_fake.md
+docs/v550_vtube_studio_pyvts_transport.md
+docs/v550_motion_session_real_adapter_composition.md
+framework/motion_session.py
+framework/vtube_studio_motion_composition.py
+scripts/smoke_v550_motion_session_real_adapter_composition.py
+scripts/check_v550_motion_session_real_adapter_composition.py
 ```

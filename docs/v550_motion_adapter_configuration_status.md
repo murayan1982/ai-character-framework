@@ -18,9 +18,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -357,9 +360,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -398,9 +404,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -418,3 +427,32 @@ creation.
 The configuration resolver does not learn endpoint values, authentication
 material, pyvts objects, WebSocket objects, or provider responses. MotionSession
 composition remains deferred to FW-VTS-0e.
+
+## FW-VTS-0e root-public composition status
+
+```text
+FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0e consumes the frozen explicit-only
+`MotionAdapterExecutionConfig` without changing its fields or resolver. The
+root-public session derives its boolean declarations only from explicitly
+supplied VTS arguments and binding intent inventory.
+
+A `CONFIGURED` resolver result still represents declaration completeness. The
+session reports `supports_real_adapter=true` only after the injected internal
+transport returns `READY` from explicit preflight. Failed static guards return
+before importing the composition module or starting its worker thread.
+
+No environment, dotenv, endpoint file, token file, model file, provider payload,
+or legacy VTS runtime fallback is added.

@@ -795,3 +795,44 @@ returns typed `not_implemented`.
 The FW-VTS-0d smoke uses only an injected fake pyvts module and fake client.
 Actual pyvts import, WebSocket connection, VTube Studio authentication, and real
 hotkey execution are not performed.
+
+## v5.5.0 candidate root-public VTS MotionSession composition
+
+FW-VTS-0e keeps the application-facing boundary provider-neutral:
+
+```python
+from framework import MotionRequest, create_motion_session
+```
+
+The new VTS arguments are keyword-only and default-off. A session enters the
+real-capable composition path only when VTS-specific configuration is explicitly
+supplied. The earlier call remains a compatibility boundary and still returns
+typed `not_implemented`:
+
+```python
+create_motion_session(
+    adapter="vts",
+    real_adapter_enabled=True,
+    allow_provider_execution=True,
+)
+```
+
+An explicitly composed session requires `preflight()` before `apply_motion()`.
+Hotkey bindings support only the accepted hotkey-first intents:
+
+```text
+expression:<value>
+emotion:<value>
+gesture:<value>
+stop_motion
+reset_expression
+```
+
+Speaking state, idle motion, and look-at remain unsupported. Endpoint values,
+authentication material, hotkey names, provider payloads, and raw exceptions are
+never returned through `MotionSessionInfo`, `MotionCapability`, `MotionResult`,
+or public events.
+
+The internal composition, bridge, transport, and pyvts configuration types are
+not exported from `framework`. Host applications and DRC must not import them.
+Actual VTube Studio execution remains NOT_AUTHORIZED in FW-VTS-0e validation.

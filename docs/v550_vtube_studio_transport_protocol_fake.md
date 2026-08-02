@@ -18,9 +18,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -410,9 +413,12 @@ FW-VTS-0c:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0d:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0e:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0e through FW-VTS-0f:
+FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -428,3 +434,17 @@ bounded connect/authentication/inventory/trigger/close operations,
 single-flight enforcement, idempotent cleanup, and late-completion suppression.
 
 MotionSession composition remains deferred to FW-VTS-0e.
+
+## FW-VTS-0e composition handoff
+
+The FW-VTS-0c async Protocol and result enums remain frozen. FW-VTS-0e binds an
+implementation of that Protocol behind root-public `MotionSession` using an
+internal persistent sync/async bridge.
+
+The dedicated composition smoke substitutes deterministic in-memory Protocol
+implementations. It verifies preflight, trigger outcome normalization,
+single-flight behavior, close during an active trigger, and late-completion
+suppression without importing pyvts or opening a network connection.
+
+The Protocol, fake transport, hotkey request, and transport result remain
+internal and are not exported from the Framework root.
