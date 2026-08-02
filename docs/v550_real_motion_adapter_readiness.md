@@ -7,8 +7,9 @@ work name: FW-VTS
 release line: v5.5.0 candidate
 FW-VTS-0a: COMPLETED / ACCEPTED / PUSHED
 FW-VTS-0b: COMPLETED / ACCEPTED / PUSHED
-FW-VTS-0c: IMPLEMENTED / AWAITING_REVIEW
-FW-VTS-0d through FW-VTS-0f: NOT_AUTHORIZED
+FW-VTS-0c: COMPLETED / ACCEPTED / PUSHED
+FW-VTS-0d: IMPLEMENTED / AWAITING_REVIEW
+FW-VTS-0e through FW-VTS-0f: NOT_AUTHORIZED
 real VTS execution: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -470,9 +471,12 @@ FW-VTS-0b:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0d through FW-VTS-0f:
+FW-VTS-0e through FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -511,3 +515,67 @@ client creation, network execution, authentication material access, model
 discovery, provider hotkey-ID resolution, real hotkey trigger, real motion,
 legacy VTS runtime change, requirements change, release metadata change, or DRC
 change is authorized.
+
+## FW-VTS-0d implementation checkpoint
+
+```text
+FW-VTS-0a:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0b:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0e through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0d baseline:
+
+```text
+9b22985c5b3b1bf53cea5397baf28e970a5b01a1
+```
+
+The checkpoint implements the frozen internal async transport Protocol with a
+guarded lazy pyvts transport.
+
+Implemented boundaries:
+
+- explicit double opt-in before provider import;
+- explicit endpoint and authentication-material injection;
+- no environment or token-file fallback;
+- bounded connect, authentication, inventory, trigger, and close operations;
+- single-flight preflight/trigger reservation without a waiting queue;
+- idempotent close;
+- late-completion suppression after close;
+- provider-safe result and exception normalization;
+- no automatic retry or reconnect;
+- no background tasks;
+- no public endpoint, authentication material, model identity, hotkey name,
+  hotkey ID, raw response, or raw exception.
+
+The dedicated smoke executes the transport only with an injected fake pyvts
+module and fake client. Actual pyvts/WebSocket/VTube Studio execution remains
+unauthorized.
+
+FW-VTS-0d exact nine-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_motion_adapter_configuration_status.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_vtube_studio_transport_protocol_fake.md
+docs/v550_vtube_studio_pyvts_transport.md
+framework/vtube_studio_pyvts_transport.py
+scripts/smoke_v550_vtube_studio_pyvts_transport.py
+scripts/check_v550_vtube_studio_pyvts_transport.py
+```

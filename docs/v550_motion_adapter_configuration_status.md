@@ -15,9 +15,12 @@ FW-VTS-0b:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0d through FW-VTS-0f:
+FW-VTS-0e through FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -351,9 +354,12 @@ FW-VTS-0b:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0d through FW-VTS-0f:
+FW-VTS-0e through FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -381,3 +387,34 @@ framework/vtube_studio_transport.py
 scripts/smoke_v550_vtube_studio_transport_protocol_fake.py
 scripts/check_v550_vtube_studio_transport_protocol_fake.py
 ```
+
+## FW-VTS-0d guarded transport separation
+
+```text
+FW-VTS-0b:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0e through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The accepted FW-VTS-0b explicit-only resolver remains unchanged. Its
+`CONFIGURED` status still represents declaration completeness only.
+
+FW-VTS-0d consumes `MotionAdapterExecutionConfig` inside an internal transport.
+All failed adapter, opt-in, endpoint, runtime, authentication-material, and
+model-selection guards return before lazy pyvts import or provider-client
+creation.
+
+The configuration resolver does not learn endpoint values, authentication
+material, pyvts objects, WebSocket objects, or provider responses. MotionSession
+composition remains deferred to FW-VTS-0e.

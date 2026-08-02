@@ -15,9 +15,12 @@ FW-VTS-0b:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0d through FW-VTS-0f:
+FW-VTS-0e through FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -399,3 +402,29 @@ v550_commit_created: False
 v550_push_performed: False
 v550_next_authorization: exact-review-required-for-FW-VTS-0d
 ```
+
+## FW-VTS-0d guarded implementation handoff
+
+```text
+FW-VTS-0c:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0d:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0e through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The FW-VTS-0c Protocol and result enums remain frozen. FW-VTS-0d implements the
+Protocol in `framework.vtube_studio_pyvts_transport` without changing this
+module or exporting provider-specific symbols from the Framework root.
+
+The implementation adds lazy pyvts import, explicit private configuration,
+bounded connect/authentication/inventory/trigger/close operations,
+single-flight enforcement, idempotent cleanup, and late-completion suppression.
+
+MotionSession composition remains deferred to FW-VTS-0e.

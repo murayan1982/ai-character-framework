@@ -772,3 +772,26 @@ returns typed `not_implemented`.
 The internal fake executes only deterministic in-memory protocol calls. It does
 not connect to VTube Studio, expose hotkey names or IDs in results, or execute
 real motion.
+
+## v5.5.0 candidate guarded pyvts transport boundary
+
+FW-VTS-0d adds `framework.vtube_studio_pyvts_transport` as an internal
+provider-specific implementation of the frozen FW-VTS-0c transport Protocol.
+
+The following remain internal and are not exported from `framework`:
+
+```python
+VTubeStudioPyvtsTransportConfig
+VTubeStudioPyvtsClient
+VTubeStudioPyvtsClientFactory
+VTubeStudioPyvtsModuleImporter
+VTubeStudioPyvtsTransport
+```
+
+Host applications and DRC must not import these symbols. MotionSession
+composition remains deferred to FW-VTS-0e, so the root-public VTS alias still
+returns typed `not_implemented`.
+
+The FW-VTS-0d smoke uses only an injected fake pyvts module and fake client.
+Actual pyvts import, WebSocket connection, VTube Studio authentication, and real
+hotkey execution are not performed.

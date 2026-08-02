@@ -1924,3 +1924,21 @@ MotionSession.
 
 See
 [`docs/v550_vtube_studio_transport_protocol_fake.md`](docs/v550_vtube_studio_transport_protocol_fake.md).
+
+## v5.5.0 candidate guarded lazy pyvts transport
+
+FW-VTS-0d adds an internal guarded pyvts transport implementation behind the
+FW-VTS-0c async Protocol.
+
+The transport requires explicit real-adapter and provider-execution opt-in,
+then lazily imports pyvts only after endpoint, runtime, authentication-material,
+and model-selection guards pass. Connect, authentication, hotkey inventory,
+hotkey trigger, and close are individually bounded by timeouts.
+
+This checkpoint does not export provider-specific symbols from the Framework
+root, compose the transport into MotionSession, bootstrap or persist tokens,
+retry, reconnect, create background tasks, or execute an actual VTube Studio
+connection during validation.
+
+See
+[`docs/v550_vtube_studio_pyvts_transport.md`](docs/v550_vtube_studio_pyvts_transport.md).
