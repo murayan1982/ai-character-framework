@@ -1987,3 +1987,23 @@ and real motion remain **NOT_AUTHORIZED** until FW-VTS-0f.
 
 See
 [`docs/v550_motion_session_real_adapter_composition.md`](docs/v550_motion_session_real_adapter_composition.md).
+
+## v5.5.0 candidate VTube Studio operator acceptance tooling
+
+FW-VTS-0f1 adds operator-only token bootstrap, root-public real-motion
+acceptance, and private evidence validation commands. These commands require a
+clean repository, explicit confirmations, pyvts 0.3.3, a loopback only endpoint,
+and absolute private paths that keep token, configuration, and evidence
+repository outside.
+
+The committed smoke is source-only. It validates imports, private configuration
+shape, bounded evidence schemas, and command help without importing actual
+pyvts, opening a WebSocket, reading or writing a real token, or executing real
+motion.
+
+FW-VTS-0f1 does not authorize private token bootstrap or real VTube Studio
+execution. Both remain **NOT_AUTHORIZED** until the operator checkpoint is
+reviewed, committed, pushed, and separately authorized.
+
+See
+[`docs/v550_vtube_studio_operator_acceptance.md`](docs/v550_vtube_studio_operator_acceptance.md).

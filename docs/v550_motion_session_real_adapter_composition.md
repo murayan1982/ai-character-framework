@@ -254,3 +254,27 @@ v550_commit_created: False
 v550_push_performed: False
 v550_next_authorization: exact-review-required-for-FW-VTS-0f
 ```
+
+## FW-VTS-0f1 operator use of the accepted composition
+
+FW-VTS-0f1 leaves the accepted FW-VTS-0e runtime unchanged. The private
+real-motion operator invokes the root-public `create_motion_session()` boundary
+with explicit runtime/model assertions, loopback endpoint, private injected
+authentication material, and exactly five private hotkey bindings.
+
+The operator source must not import this internal composition module or any
+transport/pyvts type. Private token, configuration, and evidence remain
+repository outside. The source checkpoint requires pyvts 0.3.3 but does not
+import it during smoke validation.
+
+The accepted persistent event loop, single-flight behavior, preflight
+requirement, idempotent close, bridge-thread termination, and late-completion
+suppression remain frozen. FW-VTS-0f1 only supplies operator tooling around the
+public session.
+
+```text
+real VTS execution: NOT_AUTHORIZED
+private token bootstrap: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+next: exact-review-required-for-FW-VTS-0f2
+```

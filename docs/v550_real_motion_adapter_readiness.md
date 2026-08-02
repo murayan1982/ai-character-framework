@@ -640,3 +640,57 @@ framework/vtube_studio_motion_composition.py
 scripts/smoke_v550_motion_session_real_adapter_composition.py
 scripts/check_v550_motion_session_real_adapter_composition.py
 ```
+
+## FW-VTS-0f1 operator-tooling implementation checkpoint
+
+```text
+baseline:
+48c25b4cd90478bb4bbd18f9a06daf2f4146c179
+
+FW-VTS-0e:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0f1:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0f2 through FW-VTS-0f4:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+private token bootstrap: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0f1 adds operator-only source tooling for a later configured local VTube
+Studio acceptance. It requires pyvts 0.3.3, loopback only endpoints, exact
+five-intent configuration, explicit operator confirmations, manual visual
+confirmation, bounded cleanup, and private artifacts repository outside.
+
+The root-public runtime remains unchanged. `MotionSession` still does not read,
+write, or bootstrap token files. The real-motion operator calls only the
+Framework root-public API, while the separate bootstrap tool owns the later
+operator-approved local authentication request.
+
+FW-VTS-0f1 exact eleven-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_motion_session_real_adapter_composition.md
+docs/v550_vtube_studio_pyvts_transport.md
+docs/v550_vtube_studio_operator_acceptance.md
+scripts/operator_v550_vtube_studio_token_bootstrap.py
+scripts/operator_v550_vtube_studio_real_motion_acceptance.py
+scripts/verify_v550_vtube_studio_private_evidence.py
+scripts/smoke_v550_vtube_studio_operator_acceptance.py
+scripts/check_v550_vtube_studio_operator_acceptance.py
+```
+
+Validation is source-only and network-free. It does not import actual pyvts,
+open a WebSocket, read or write a real token, request authentication material,
+trigger a real hotkey, execute real motion, or authorize FW-VTS-0f2.
+
+```text
+v550_next_authorization: exact-review-required-for-FW-VTS-0f2
+```

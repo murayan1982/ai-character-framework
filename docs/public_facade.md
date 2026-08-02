@@ -836,3 +836,26 @@ or public events.
 The internal composition, bridge, transport, and pyvts configuration types are
 not exported from `framework`. Host applications and DRC must not import them.
 Actual VTube Studio execution remains NOT_AUTHORIZED in FW-VTS-0e validation.
+
+## v5.5.0 candidate operator acceptance boundary
+
+FW-VTS-0f1 does not add a new root-public runtime API. The operator real-motion
+command is a separate CLI and imports only `MotionIntent`, `MotionOutcome`,
+`MotionRequest`, and `create_motion_session` from `framework`.
+
+Token bootstrap remains operator-only and is never called by `MotionSession`.
+Private token, configuration, and evidence must use absolute paths repository
+outside. The operator tools accept pyvts 0.3.3 and loopback only VTube Studio
+endpoints.
+
+The source smoke does not perform real provider execution. In FW-VTS-0f1:
+
+```text
+real VTS execution: NOT_AUTHORIZED
+private token bootstrap: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Provider-specific clients, transport/configuration types, private paths, token
+material, hotkey names, model identities, and raw payloads remain absent from
+the public facade.

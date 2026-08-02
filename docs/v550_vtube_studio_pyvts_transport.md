@@ -488,3 +488,24 @@ The FW-VTS-0e smoke replaces `VTubeStudioPyvtsTransport` with an in-memory
 Protocol implementation. Therefore actual lazy pyvts import, WebSocket
 connection, VTube Studio authentication, and real hotkey execution remain
 NOT_AUTHORIZED and are not performed by this checkpoint.
+
+## FW-VTS-0f1 operator acceptance boundary
+
+FW-VTS-0f1 does not modify this accepted transport. The separate token bootstrap
+operator uses the same public plugin identity and exact pyvts 0.3.3 against a
+loopback only endpoint. It persists authentication material only to an explicit
+private path repository outside.
+
+The later real-motion operator does not import this module. It injects private
+authentication material through the root-public `MotionSession`, which lazily
+constructs this transport after all existing guards pass.
+
+The FW-VTS-0f1 smoke validates source structure only. It does not import actual
+pyvts, create a provider client, connect a WebSocket, request/authenticate a
+token, enumerate real hotkeys, or execute real motion.
+
+```text
+real VTS execution: NOT_AUTHORIZED
+private token bootstrap: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
