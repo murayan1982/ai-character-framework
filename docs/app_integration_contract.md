@@ -488,3 +488,41 @@ python scripts/smoke_voice_output_v500_release_readiness.py
 
 See `voice_output_v500_release_readiness_checklist.md` for the full release readiness checklist.
 
+## v5.5.0 candidate host-app motion contract
+
+The host-app motion boundary is Framework-root-only:
+
+```python
+from framework import (
+    MotionRequest,
+    MotionResult,
+    create_motion_session,
+)
+```
+
+FW owns adapter configuration, provider dependency loading, connection and
+authentication state, token handling, model readiness, request serialization,
+timeouts, cleanup, exception normalization, and public-safe event/result
+mapping.
+
+Host apps, including DRC, must not:
+
+- import `framework.motion` or `framework.motion_session` directly;
+- import `live2d`, plugins, internal adapters, or pyvts;
+- implement a VTube Studio WebSocket client;
+- generate, read, update, or delete VTS token files;
+- process raw VTS request/response payloads;
+- receive pyvts/WebSocket objects, internal hotkey IDs, private endpoints, raw
+  exceptions, credentials, or private model paths.
+
+The current v5.4.0 MotionSession is mock-safe and real-adapter
+`not_implemented`. FW-VTS-0a reserves a v5.5.0 candidate line but does not
+authorize real provider execution.
+
+DRC RT-7 stop rule:
+
+```text
+Do not begin DRC real-motion integration until FW-VTS-0f is accepted,
+a Framework real-motion adapter is released, and the root-public contract is
+fixed.
+```

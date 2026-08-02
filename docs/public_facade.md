@@ -674,3 +674,42 @@ External apps should not import internal runtime modules such as `core`, provide
 For voice output integrations, external apps should not import `tts.voice_engine`, should not own provider voice IDs or API keys, and should not treat local playback as Web evidence. The host app handoff policy is documented in `host_app_voice_output_integration_handoff.md`.
 
 Importing `framework` should remain lightweight and should not load runtime, provider SDK, legacy audio playback, or VTS modules.
+
+## v5.5.0 candidate public real-motion adapter boundary
+
+FW-VTS-0a freezes the existing v5.2.0 root-public motion skeleton before a
+future real VTube Studio adapter is implemented.
+
+Host applications use only the Framework root:
+
+```python
+from framework import (
+    MotionRequest,
+    MotionResult,
+    create_motion_session,
+)
+
+session = create_motion_session(adapter="mock")
+result = session.apply_motion(
+    MotionRequest.emotion_update("happy")
+)
+session.close()
+```
+
+Current v5.4.0 behavior remains unchanged:
+
+- the mock adapter executes locally;
+- real adapter support remains false;
+- a closed execution guard returns typed
+  `provider_execution_not_allowed`;
+- an enabled VTS alias still returns typed `not_implemented`;
+- normal import and mock execution do not import pyvts, open WebSockets, read
+  token files, or discover private models.
+
+External applications must not import `framework.motion`,
+`framework.motion_session`, `live2d`, plugins, internal adapters, or pyvts. They
+must not implement a VTS WebSocket client, read token files, or process raw VTS
+requests/responses.
+
+The proposed v5.5.0 real adapter remains default-off and unimplemented in
+FW-VTS-0a. See `v550_real_motion_adapter_readiness.md`.

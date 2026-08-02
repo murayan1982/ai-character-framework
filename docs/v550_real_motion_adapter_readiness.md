@@ -1,0 +1,411 @@
+# v5.5.0 Candidate Real Motion Adapter Readiness
+
+## Status
+
+```text
+work name: FW-VTS
+release line: v5.5.0 candidate
+FW-VTS-0a: IMPLEMENTED / AWAITING_REVIEW
+FW-VTS-0b through FW-VTS-0f: NOT_AUTHORIZED
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0a is a docs/test-only inventory and safety-contract checkpoint. It does
+not implement or authorize real VTube Studio execution.
+
+Baseline:
+
+```text
+FW v5.4.0:
+d313eb6acb643103fe25988720ebee5976a04f78
+```
+
+The Framework release line may become v5.5.0, while the existing public motion
+API remains the v5.2.0 contract until a later exact review explicitly changes
+its API version.
+
+## Driver
+
+Daily Rhythm Companion RT-7 already has provider-neutral lifecycle-to-motion
+mapping and root-public mock MotionSession integration. DRC must not implement a
+VTube Studio client or bypass Framework ownership.
+
+```text
+DRC RT-7:
+CURRENT / NOT_COMPLETED
+BLOCKED_FRAMEWORK_REAL_MOTION_ADAPTER_RELEASE_REQUIRED
+```
+
+## Public motion skeleton freeze
+
+The v5.2.0 root-public motion skeleton is frozen as the starting contract:
+
+- `MotionAdapterStatus`
+- `MotionCapability`
+- `MotionErrorCode`
+- `MotionEventType`
+- `MotionIntent`
+- `MotionOutcome`
+- `MotionRequest`
+- `MotionResult`
+- `MotionState`
+- `MotionSession`
+- `MotionSessionInfo`
+- `create_motion_session`
+
+Host applications import only from `framework`.
+
+```python
+from framework import (
+    MotionRequest,
+    MotionResult,
+    create_motion_session,
+)
+```
+
+Current behavior remains unchanged:
+
+- `adapter="mock"` executes locally;
+- VTS aliases are recognized but do not execute;
+- a closed provider-execution guard returns typed
+  `provider_execution_not_allowed`;
+- an open guard still returns typed `not_implemented`;
+- `real_adapter_supported` remains false;
+- root import and mock operation do not import pyvts or open a WebSocket.
+
+FW-VTS-0a does not change `framework/motion.py`,
+`framework/motion_session.py`, or `framework/__init__.py`.
+
+## Legacy VTS call graph
+
+The existing full runtime owns a working legacy VTS hotkey flow:
+
+```text
+presets/text_vts.json or presets/voice_vts.json
+  -> config.vts_enabled
+  -> core.runtime.initialize_components()
+  -> live2d.vts_client.VTSClient()
+  -> VTSClient.connect()
+  -> runtime["vts"]
+  -> pipeline emotion event
+  -> plugins.builtin.emotion_vts.EmotionVTSPlugin
+  -> core.emotion.resolve_emotion_hotkey()
+  -> VTSClient.trigger_hotkey()
+  -> core.runtime.shutdown_components()
+  -> VTSClient.close()
+```
+
+## Legacy transport ownership
+
+`live2d/vts_client.py` currently owns all of the following responsibilities:
+
+- eager `pyvts` import;
+- pyvts client construction;
+- WebSocket connect and close;
+- token-directory creation;
+- stored-token loading;
+- authentication request handling;
+- token request, replacement, persistence, and deletion;
+- hotkey-list request and hotkey-ID cache;
+- named hotkey triggering;
+- an `asyncio.Lock` around API requests;
+- reconnect behavior;
+- internal exception/debug output.
+
+This implementation is an inventory and reuse source. It is not itself the
+root-public real adapter.
+
+## Responsibility split
+
+Reusable internal behavior:
+
+- VTS hotkey-list and trigger request knowledge;
+- emotion-to-character-hotkey resolution;
+- bounded connection/authentication concepts;
+- API-call serialization concept;
+- explicit close ownership.
+
+Behavior that must not cross directly into the public contract:
+
+- pyvts objects;
+- WebSocket objects;
+- authentication tokens;
+- plugin developer tokens;
+- token file paths;
+- private model paths;
+- raw request/response payloads;
+- raw API exceptions;
+- internal hotkey IDs;
+- private endpoint details;
+- credential or environment values.
+
+New public-adapter responsibilities:
+
+- explicit default-off configuration;
+- pre-import fail-closed checks;
+- provider-neutral typed preflight;
+- intent-specific honest capability reporting;
+- bounded request/result normalization;
+- timeout and single-flight ownership;
+- idempotent cleanup;
+- bounded public-safe events and messages;
+- late-completion suppression after close.
+
+## Hotkey-first initial scope
+
+The legacy implementation proves hotkey-list and hotkey-trigger operations.
+It does not currently prove public-safe parameter injection, look-at control,
+mouth-parameter control, or model discovery.
+
+The initial real adapter therefore uses a hotkey-first scope.
+
+| Motion intent | Initial real-adapter position |
+| --- | --- |
+| `expression` | supported only with configured hotkey mapping |
+| `emotion` | emotion-to-hotkey mapping |
+| `gesture` | supported only with configured hotkey mapping |
+| `reset_expression` | supported only with configured reset hotkey |
+| `stop_motion` | supported only with configured stop/remove hotkey |
+| `speaking_state` | unsupported until separately proven |
+| `idle_motion` | unsupported until separately proven |
+| `look_at` | unsupported until a parameter API is separately proven |
+
+Current `MotionCapability` does not expose every intent independently. The
+exact provider-neutral capability expansion belongs to FW-VTS-0b.
+
+## Guard reservation
+
+FW-VTS-0a reserves the following candidate configuration names:
+
+```env
+FRAMEWORK_MOTION_REAL_ADAPTER=0
+FRAMEWORK_MOTION_ALLOW_PROVIDER_EXECUTION=0
+FRAMEWORK_MOTION_ADAPTER=mock
+```
+
+These entries are documentation-only in FW-VTS-0a and have no runtime effect.
+
+Before a future real transport may import pyvts, all of the following must be
+true:
+
+1. real adapter is enabled;
+2. external/provider execution is allowed;
+3. selected adapter is a VTS alias;
+4. endpoint configuration is valid;
+5. authentication/token readiness is valid;
+6. model-selection state is valid;
+7. a single-flight apply slot is available.
+
+Normal Framework import, capability inventory, mock session creation, and
+closed-guard preflight must stop before pyvts import.
+
+## Token policy
+
+The legacy full runtime can bootstrap and persist a token. The new public
+MotionSession adapter does not silently bootstrap a token during ordinary
+preflight.
+
+Required future behavior:
+
+- missing token returns typed `token_missing`;
+- token values are never returned, logged, committed, or stored in operator
+  evidence;
+- token path stays internal;
+- token bootstrap is operator-only and belongs to FW-VTS-0f;
+- DRC does not read or write the token.
+
+Current source safety:
+
+- `.gitignore` excludes `config/tokens/`;
+- `.gitignore` excludes `*_token.json`;
+- no token file is tracked.
+
+Current package hardening gap:
+
+- the v5.4.0 package builder uses `git ls-files`;
+- this excludes an ordinary untracked token;
+- it does not yet explicitly reject a force-tracked `config/tokens/` file.
+
+FW-VTS-0f owns an explicit release-package rejection for `config/tokens/` and
+`*_token.json`.
+
+## Sync/async bridge
+
+The root-public `MotionSession.apply_motion()` API is synchronous while pyvts is
+asynchronous. FW-VTS-0a does not choose or implement the bridge.
+
+FW-VTS-0d and FW-VTS-0e exact reviews must choose a bounded design that:
+
+- does not create a background reconnect loop;
+- does not retry automatically in the first release;
+- enforces connect/auth/apply/close timeouts;
+- permits at most one active apply per session;
+- makes close idempotent;
+- suppresses late completion after close;
+- does not deadlock when called from a host with an active event loop.
+
+## Exact ownership split
+
+### FW-VTS-0b
+
+Provider-neutral real-motion configuration, capability, and status contract.
+
+- fake-only;
+- no pyvts import;
+- no network;
+- pre-import fail-closed states;
+- intent-specific honest capability.
+
+### FW-VTS-0c
+
+Injected VTube Studio transport protocol and fake transport/client adapter.
+
+- fake/in-memory only;
+- no WebSocket;
+- deterministic tests;
+- bounded transport request/result contract.
+
+### FW-VTS-0d
+
+Guarded real pyvts/WebSocket transport.
+
+- lazy pyvts import;
+- explicit double opt-in;
+- bounded connect/auth/apply/close;
+- timeout and single-flight;
+- safe exception normalization;
+- no automatic retry or background reconnect;
+- no public token or raw payload.
+
+### FW-VTS-0e
+
+Root-public MotionSession real-adapter composition.
+
+- `create_motion_session(adapter="vts", ...)`;
+- root-public imports only for host apps;
+- mock compatibility;
+- provider-neutral capability/result/event normalization;
+- bounded sync/async composition.
+
+### FW-VTS-0f
+
+Configured local VTube Studio operator acceptance and release preparation.
+
+- configured real VTube Studio execution;
+- supported expression/emotion/gesture/reset/stop verification;
+- cleanup and token privacy;
+- aggregate readiness and package gate;
+- released DRC handoff contract.
+
+Completion of one checkpoint does not authorize the next checkpoint.
+
+## DRC minimum released contract
+
+DRC may re-evaluate RT-7 only after a Framework release provides:
+
+```python
+session = create_motion_session(
+    adapter="vts",
+    real_adapter_enabled=True,
+    allow_provider_execution=True,
+)
+
+capability = session.preflight()
+result = session.apply_motion(request)
+session.close()
+```
+
+Required behavior includes:
+
+- real support is reported only when actually available;
+- closed guards fail before provider import;
+- VTS unavailable, token missing, runtime missing, model missing, unsupported
+  intent, and not-implemented cases are typed;
+- `apply_motion()` returns provider-neutral outcomes;
+- capabilities are honest per intent;
+- close releases adapter resources;
+- mock behavior remains compatible;
+- raw exceptions, tokens, paths, payloads, hotkey IDs, and provider objects
+  never reach public results.
+
+## DRC RT-7 stop rule
+
+```text
+DRC RT-7 stop rule:
+do not begin DRC real-motion integration before FW-VTS-0f is accepted,
+the Framework real adapter is released, and its root-public contract is fixed.
+```
+
+DRC must not:
+
+- import `framework.motion` or `framework.motion_session` directly;
+- import `live2d`, plugins, or internal adapters;
+- import or use pyvts;
+- implement a WebSocket client;
+- operate token files;
+- process raw VTS payloads;
+- own provider exception normalization.
+
+## FW-VTS-0a exact seven-file surface
+
+```text
+README.md
+.env.example
+docs/public_facade.md
+docs/app_integration_contract.md
+docs/v550_real_motion_adapter_readiness.md
+scripts/smoke_v550_real_motion_adapter_readiness.py
+scripts/check_v550_real_motion_adapter_readiness.py
+```
+
+No Framework runtime Python, legacy VTS runtime, plugin, preset, character,
+requirements/lockfile, release metadata, package metadata, or DRC file changes
+belong to this checkpoint.
+
+## Non-actions
+
+FW-VTS-0a:
+
+- does not import pyvts;
+- does not open a WebSocket;
+- does not authenticate with VTube Studio;
+- does not generate, read, update, or remove a token;
+- does not discover a model;
+- does not trigger a hotkey;
+- does not update a parameter;
+- does not execute real motion;
+- does not access a private model path;
+- does not change runtime Python;
+- does not change requirements;
+- does not change release metadata;
+- does not change DRC;
+- does not authorize FW-VTS-0b;
+- does not commit or push.
+
+## Acceptance markers
+
+```text
+v550_real_motion_adapter_readiness_status: implemented-awaiting-review
+v550_exact_change_surface: True
+v550_framework_runtime_changed: False
+v550_legacy_vts_runtime_changed: False
+v550_requirements_changed: False
+v550_release_metadata_changed: False
+v550_drc_changed: False
+v550_public_motion_skeleton_frozen: True
+v550_legacy_vts_inventory_complete: True
+v550_hotkey_first_scope_fixed: True
+v550_motion_guards_default_off: True
+v550_actual_pyvts_imported: False
+v550_websocket_connection_executed: False
+v550_token_read: False
+v550_token_written: False
+v550_model_discovery_executed: False
+v550_hotkey_triggered: False
+v550_parameter_update_executed: False
+v550_real_motion_executed: False
+v550_commit_created: False
+v550_push_performed: False
+v550_next_authorization: exact-review-required-for-FW-VTS-0b
+```
