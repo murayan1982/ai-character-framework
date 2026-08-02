@@ -11,6 +11,7 @@ from typing import Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_HEAD = "a1c39369bd35b21196b25a93a82798f47f1dad30"
+CORRECTIVE_BASELINE_HEAD = "4f643b7cfa4e77c71ba6a0a857ceb390beb7397e"
 ACCEPTED_REAL_MOTION_HEAD = (
     "b7b9639dfa1f675ba04a33cd8ce297429f98fd15"
 )
@@ -37,6 +38,22 @@ DEPENDENCIES = (
     "scripts/smoke_v550_vtube_studio_real_motion_acceptance_sync.py",
     "scripts/check_release_package.py",
 )
+
+HISTORICAL_INCOMPATIBLE_DEPENDENCIES = (
+    "scripts/smoke_public_facade.py",
+    "scripts/smoke_v550_real_motion_adapter_readiness.py",
+    "scripts/smoke_v550_motion_adapter_configuration_status.py",
+)
+
+CORRECTIVE_SURFACE = {
+    "docs/v550_release_readiness_gate.md",
+    "scripts/smoke_v550_release_readiness_gate.py",
+    "scripts/check_v550_release_readiness_dependency_sync_corrective.py",
+}
+
+DEPENDENCY_DOC_PATH = "docs/v550_release_readiness_gate.md"
+DEPENDENCY_DOC_BEGIN = "<!-- FW-VTS-0f3c1-DEPENDENCY-SYNC:BEGIN -->"
+DEPENDENCY_DOC_END = "<!-- FW-VTS-0f3c1-DEPENDENCY-SYNC:END -->"
 
 EXPECTED_OUTPUT_MARKERS: Mapping[str, tuple[str, ...]] = {
     "scripts/smoke_v550_motion_session_real_adapter_composition.py": (
@@ -191,7 +208,19 @@ def _safe_dependency_environment() -> dict[str, str]:
     return env
 
 
-def _validate_repository_state() -> None:
+def _is_ancestor(ancestor: str, descendant: str) -> bool:
+    completed = _run(
+        "git",
+        "merge-base",
+        "--is-ancestor",
+        ancestor,
+        descendant,
+        check=False,
+    )
+    return completed.returncode == 0
+
+
+def _validate_repository_state() -> str:
     head = _run("git", "rev-parse", "HEAD").stdout.strip()
     origin_main = _run(
         "git",
@@ -204,14 +233,6 @@ def _validate_repository_state() -> None:
         "--show-current",
     ).stdout.strip()
 
-    _require(
-        head == BASELINE_HEAD,
-        f"readiness gate requires HEAD {BASELINE_HEAD}, found {head}",
-    )
-    _require(
-        origin_main == BASELINE_HEAD,
-        "origin/main does not match the accepted FW-VTS-0f2 head",
-    )
     _require(branch == "main", f"expected main branch, found: {branch}")
 
     origin = _run(
@@ -225,25 +246,38 @@ def _validate_repository_state() -> None:
         "origin is not AI Character Framework",
     )
 
+    _require(
+        _is_ancestor(CORRECTIVE_BASELINE_HEAD, head),
+        "FW-VTS-0f3c1 corrective baseline is not an ancestor of HEAD",
+    )
+    _require(
+        _is_ancestor(CORRECTIVE_BASELINE_HEAD, origin_main),
+        "FW-VTS-0f3c1 corrective baseline is not an ancestor of origin/main",
+    )
+
     changed = (
         _git_lines("diff", "--name-only")
         | _git_lines("diff", "--cached", "--name-only")
         | _git_lines("ls-files", "--others", "--exclude-standard")
     ) - {".vscode/settings.json"}
 
-    allowed = {
-        "README.md",
-        "docs/v550_real_motion_adapter_readiness.md",
-        "docs/v550_vtube_studio_operator_acceptance.md",
-        "docs/v550_release_readiness_gate.md",
-        "scripts/smoke_v550_release_readiness_gate.py",
-        "scripts/check_v550_release_readiness_gate.py",
-    }
-    _require(
-        not changed or changed == allowed,
-        "readiness gate worktree contains unexpected paths: "
-        + ", ".join(sorted(changed)),
-    )
+    if changed:
+        _require(
+            head == CORRECTIVE_BASELINE_HEAD,
+            "dirty corrective mode requires the exact FW-VTS-0f3 commit",
+        )
+        _require(
+            origin_main == CORRECTIVE_BASELINE_HEAD,
+            "dirty corrective mode requires origin/main at FW-VTS-0f3",
+        )
+        _require(
+            changed == CORRECTIVE_SURFACE,
+            "readiness gate worktree contains unexpected paths: "
+            + ", ".join(sorted(changed)),
+        )
+        return "corrective-worktree"
+
+    return "clean-committed"
 
 
 def _validate_docs() -> None:
@@ -280,6 +314,49 @@ def _validate_docs() -> None:
         _require(
             marker in operator_doc,
             f"accepted FW-VTS-0f2 marker missing: {marker}",
+        )
+
+
+
+def _validate_dependency_documentation() -> None:
+    source = _read(DEPENDENCY_DOC_PATH)
+    _require(
+        source.count(DEPENDENCY_DOC_BEGIN) == 1,
+        "dependency-sync begin marker must appear exactly once",
+    )
+    _require(
+        source.count(DEPENDENCY_DOC_END) == 1,
+        "dependency-sync end marker must appear exactly once",
+    )
+
+    _, remainder = source.split(DEPENDENCY_DOC_BEGIN, 1)
+    section, _ = remainder.split(DEPENDENCY_DOC_END, 1)
+
+    for relative in DEPENDENCIES:
+        _require(
+            relative in section,
+            f"public dependency documentation missing: {relative}",
+        )
+
+    for relative in HISTORICAL_INCOMPATIBLE_DEPENDENCIES:
+        _require(
+            relative in section,
+            f"historical exclusion is not documented: {relative}",
+        )
+        _require(
+            relative not in DEPENDENCIES,
+            f"historical dependency remains executable: {relative}",
+        )
+
+    for reason in (
+        "pre-v5.2 exact",
+        "pre-real-adapter",
+        "earlier configuration checkpoint",
+        "executable dependency tuple and this public list must remain identical",
+    ):
+        _require(
+            reason in section,
+            f"dependency-sync documentation missing rationale: {reason}",
         )
 
 
@@ -395,14 +472,21 @@ def _run_dependencies() -> None:
 
 
 def main() -> None:
-    _validate_repository_state()
+    worktree_mode = _validate_repository_state()
     _validate_docs()
+    _validate_dependency_documentation()
     _validate_private_artifacts_not_tracked()
     _validate_public_import()
     _validate_release_state()
     _run_dependencies()
 
     print("v550_release_readiness_gate_status: accepted")
+    print(f"v550_release_readiness_worktree_mode: {worktree_mode}")
+    print("v550_release_readiness_dependency_count: 7")
+    print("v550_release_readiness_dependency_docs_synced: True")
+    print("v550_release_readiness_historical_exclusions_recorded: True")
+    print("v550_release_readiness_obsolete_dependency_executed: False")
+    print("v550_release_readiness_corrective_baseline_ancestor: True")
     print("v550_fw_vts_0a_status: accepted")
     print("v550_fw_vts_0b_status: accepted")
     print("v550_fw_vts_0c_status: accepted")

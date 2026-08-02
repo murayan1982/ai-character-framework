@@ -65,13 +65,37 @@ stop_motion_verified: False
 
 ## Source-only dependency set
 
-The gate runs the existing public facade, app SDK, FW-VTS readiness,
-configuration, fake transport, guarded pyvts transport, root-public
-composition, optional-stop operator contract, public acceptance-sync, and
-baseline package-policy checks.
+<!-- FW-VTS-0f3c1-DEPENDENCY-SYNC:BEGIN -->
+The gate executes exactly these seven current-compatible source-only
+dependencies:
+
+```text
+scripts/smoke_app_sdk.py
+scripts/smoke_v550_vtube_studio_transport_protocol_fake.py
+scripts/smoke_v550_vtube_studio_pyvts_transport.py
+scripts/smoke_v550_motion_session_real_adapter_composition.py
+scripts/smoke_v550_vtube_studio_operator_acceptance.py
+scripts/smoke_v550_vtube_studio_real_motion_acceptance_sync.py
+scripts/check_release_package.py
+```
 
 All dependency runs are local and source-only. Provider execution guards are
 forced closed for the gate.
+
+The following historical smokes are deliberately excluded from the aggregate
+v5.5.0 gate because later accepted checkpoints superseded their exact
+assumptions:
+
+- `scripts/smoke_public_facade.py` requires the pre-v5.2 exact
+  `framework.__all__` list;
+- `scripts/smoke_v550_real_motion_adapter_readiness.py` requires the
+  pre-real-adapter `not_implemented` behavior;
+- `scripts/smoke_v550_motion_adapter_configuration_status.py` freezes an
+  earlier configuration checkpoint superseded by the accepted transport and
+  root-public composition checkpoints.
+
+The executable dependency tuple and this public list must remain identical.
+<!-- FW-VTS-0f3c1-DEPENDENCY-SYNC:END -->
 
 ## Private artifact rejection
 
