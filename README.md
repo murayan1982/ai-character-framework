@@ -2007,3 +2007,58 @@ reviewed, committed, pushed, and separately authorized.
 
 See
 [`docs/v550_vtube_studio_operator_acceptance.md`](docs/v550_vtube_studio_operator_acceptance.md).
+
+<!-- FW-VTS-0f1c-OPTIONAL-STOP-CORRECTIVE -->
+## FW-VTS-0f1c optional stop_motion corrective
+
+Baseline:
+
+```text
+1f737128554d701150427da4ce1c146759881255
+```
+
+Status:
+
+```text
+implementation: COMPLETED / AWAITING REVIEW
+private token bootstrap: COMPLETED / ACCEPTED / REUSE
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+This corrective supersedes the earlier operator-only exact-five requirement.
+VTube Studio hotkey acceptance now has four required intents:
+
+```text
+expression
+emotion
+gesture
+reset_expression
+```
+
+`stop_motion` is optional and may be configured only when the selected adapter
+and model have an actually proven stop operation. A four-binding private config
+is valid and must report `supports_stop_motion == false`. A five-binding private
+config is valid only when its fifth binding is a real stop operation; renaming
+`RemoveAllExpressions` or `TriggerAnimation` to `stop_motion` does not prove
+stop support.
+
+The operator executes and visually verifies the four required intents. It
+executes and verifies `stop_motion` only when the optional binding is present.
+Private evidence records:
+
+```text
+required_four_intents_verified
+stop_motion_supported
+stop_motion_verified
+optional_stop_motion_contract
+```
+
+Accepted bootstrap evidence may remain tied to the accepted bootstrap commit
+when that commit is an ancestor of the corrective acceptance commit and
+`scripts/operator_v550_vtube_studio_token_bootstrap.py` is unchanged between
+the two commits.
+
+The corrective is an exact ten-file surface limited to six documentation files
+and four operator/checker scripts. Framework runtime, public API, pyvts
+transport, token bootstrap tooling, release files, and DRC are frozen.
