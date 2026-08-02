@@ -5,8 +5,9 @@
 ```text
 work name: FW-VTS
 release line: v5.5.0 candidate
-FW-VTS-0a: IMPLEMENTED / AWAITING_REVIEW
-FW-VTS-0b through FW-VTS-0f: NOT_AUTHORIZED
+FW-VTS-0a: COMPLETED / ACCEPTED / PUSHED
+FW-VTS-0b: IMPLEMENTED / AWAITING_REVIEW
+FW-VTS-0c through FW-VTS-0f: NOT_AUTHORIZED
 real VTS execution: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -380,7 +381,7 @@ FW-VTS-0a:
 - does not change requirements;
 - does not change release metadata;
 - does not change DRC;
-- does not authorize FW-VTS-0b;
+- did not automatically authorize FW-VTS-0b;
 - does not commit or push.
 
 ## Acceptance markers
@@ -409,3 +410,51 @@ v550_commit_created: False
 v550_push_performed: False
 v550_next_authorization: exact-review-required-for-FW-VTS-0b
 ```
+
+## FW-VTS-0b implementation checkpoint
+
+```text
+FW-VTS-0a:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0b:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0c through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0b baseline:
+
+```text
+ab5b83cbbaeb88cff9bba352e6b4f46ef5d08294
+```
+
+The checkpoint adds a standalone explicit-only provider-neutral configuration
+and capability resolver, `MotionAdapterStatus.CONFIGURED`, complete eight-intent
+capability inspection, and hotkey-first VTS configured-intent validation.
+
+MotionSession composition remains deferred to FW-VTS-0e. The existing public
+session still reports typed `not_implemented` for an enabled VTS alias.
+
+FW-VTS-0b exact nine-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_motion_adapter_configuration_status.md
+framework/__init__.py
+framework/motion.py
+framework/motion_adapter_execution.py
+scripts/smoke_v550_motion_adapter_configuration_status.py
+scripts/check_v550_motion_adapter_configuration_status.py
+```
+
+No environment lookup, filesystem access, pyvts/WebSocket import, provider
+client creation, network execution, token/model path access, real motion,
+legacy VTS runtime change, requirements change, release metadata change, or DRC
+change is authorized.

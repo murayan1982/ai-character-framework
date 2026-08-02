@@ -52,6 +52,7 @@ class MotionAdapterStatus(str, Enum):
     PROVIDER_EXECUTION_NOT_ALLOWED = "provider_execution_not_allowed"
     RUNTIME_NOT_INSTALLED = "runtime_not_installed"
     MODEL_NOT_SELECTED = "model_not_selected"
+    CONFIGURED = "configured"
     NOT_IMPLEMENTED = "not_implemented"
     UNSUPPORTED_ADAPTER = "unsupported_adapter"
     CLOSED = "closed"
@@ -140,9 +141,11 @@ class MotionCapability:
     supports_expression: bool = False
     supports_emotion: bool = False
     supports_speaking_state: bool = False
+    supports_idle_motion: bool = False
     supports_gesture: bool = False
     supports_look_at: bool = False
     supports_stop_motion: bool = False
+    supports_reset_expression: bool = False
     safe_message: str = ""
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
 
@@ -154,6 +157,25 @@ class MotionCapability:
         )
         object.__setattr__(self, "adapter_status", status)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+
+    def supports_intent(self, intent: MotionIntent | str) -> bool:
+        """Return support for one provider-neutral motion intent."""
+
+        resolved = (
+            intent
+            if isinstance(intent, MotionIntent)
+            else MotionIntent(str(intent))
+        )
+        return {
+            MotionIntent.EXPRESSION: self.supports_expression,
+            MotionIntent.EMOTION: self.supports_emotion,
+            MotionIntent.SPEAKING_STATE: self.supports_speaking_state,
+            MotionIntent.IDLE_MOTION: self.supports_idle_motion,
+            MotionIntent.GESTURE: self.supports_gesture,
+            MotionIntent.LOOK_AT: self.supports_look_at,
+            MotionIntent.STOP_MOTION: self.supports_stop_motion,
+            MotionIntent.RESET_EXPRESSION: self.supports_reset_expression,
+        }[resolved]
 
     @classmethod
     def disabled(cls, *, adapter: str = "mock") -> "MotionCapability":
@@ -172,9 +194,11 @@ class MotionCapability:
             supports_expression=True,
             supports_emotion=True,
             supports_speaking_state=True,
+            supports_idle_motion=True,
             supports_gesture=True,
             supports_look_at=True,
             supports_stop_motion=True,
+            supports_reset_expression=True,
             safe_message="Mock motion adapter is available.",
             public_metadata={"boundary": "motion", "reason": "mock_available"},
         )

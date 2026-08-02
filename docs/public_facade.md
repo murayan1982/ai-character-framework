@@ -713,3 +713,42 @@ requests/responses.
 
 The proposed v5.5.0 real adapter remains default-off and unimplemented in
 FW-VTS-0a. See `v550_real_motion_adapter_readiness.md`.
+
+## v5.5.0 candidate motion adapter configuration/status
+
+FW-VTS-0b exposes a standalone explicit-only configuration and capability
+resolver from the Framework root:
+
+```python
+from framework import (
+    MotionAdapterExecutionConfig,
+    MotionIntent,
+    get_motion_adapter_execution_capability,
+    resolve_motion_adapter_execution_config,
+)
+
+config = resolve_motion_adapter_execution_config(
+    adapter="vts",
+    real_adapter_enabled=True,
+    allow_provider_execution=True,
+    endpoint_configured=True,
+    runtime_available=True,
+    token_available=True,
+    model_selected=True,
+    configured_intents=(
+        MotionIntent.EXPRESSION,
+        MotionIntent.EMOTION,
+    ),
+)
+
+capability = get_motion_adapter_execution_capability(config)
+```
+
+The resolver accepts boolean readiness assertions only. Host apps do not pass
+endpoint values, tokens, token paths, model paths, hotkey IDs, provider clients,
+WebSocket objects, or raw VTS payloads.
+
+A `configured` capability is diagnostic configuration state, not real adapter
+availability. `supports_real_adapter` remains false and public
+`MotionSession` execution remains `not_implemented` until later composition and
+real-transport checkpoints.

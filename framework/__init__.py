@@ -184,6 +184,26 @@ for _name in ['MotionSession', 'MotionSessionInfo', 'create_motion_session']:
     if _name not in __all__:
         __all__.append(_name)
 del _name
+from .motion_adapter_execution import (
+    MotionAdapterExecutionConfig,
+    get_motion_adapter_execution_capability,
+    resolve_motion_adapter_execution_config,
+)
+
+# v5.5.0 candidate explicit motion-adapter configuration exports
+try:
+    __all__
+except NameError:
+    __all__ = []
+for _name in [
+    "MotionAdapterExecutionConfig",
+    "get_motion_adapter_execution_capability",
+    "resolve_motion_adapter_execution_config",
+]:
+    if _name not in __all__:
+        __all__.append(_name)
+del _name
+
 # v5.4.0 provider-specific exports are resolved lazily so that
 # `import framework` remains provider-safe.
 _PROVIDER_SPECIFIC_LAZY_EXPORTS = {

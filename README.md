@@ -1884,3 +1884,29 @@ root-public real-motion adapter.
 
 See
 [`docs/v550_real_motion_adapter_readiness.md`](docs/v550_real_motion_adapter_readiness.md).
+
+## v5.5.0 candidate motion adapter configuration/status
+
+FW-VTS-0b adds an explicit-only provider-neutral configuration and capability
+foundation for the future real VTube Studio adapter.
+
+Public symbols:
+
+```python
+from framework import (
+    MotionAdapterExecutionConfig,
+    get_motion_adapter_execution_capability,
+    resolve_motion_adapter_execution_config,
+)
+```
+
+This checkpoint is fake-only and execution-free. It does not read environment
+variables or files, import pyvts/WebSocket modules, create a provider client,
+connect to VTube Studio, inspect token/model paths, or execute real motion.
+
+`MotionAdapterStatus.CONFIGURED` means only that explicit boolean declarations
+are complete. It does not mean a real transport is bound or available.
+`MotionSession` composition remains deferred to FW-VTS-0e.
+
+See
+[`docs/v550_motion_adapter_configuration_status.md`](docs/v550_motion_adapter_configuration_status.md).
