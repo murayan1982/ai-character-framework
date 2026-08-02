@@ -206,7 +206,7 @@ class VTubeStudioMotionComposition:
         )
         self._bridge = _PersistentAsyncBridge()
         self._transport: VTubeStudioTransport = VTubeStudioPyvtsTransport(
-            VTubeStudioPyvtsTransportConfig(
+            config=VTubeStudioPyvtsTransportConfig(
                 execution_config=execution_config,
                 endpoint_host=endpoint_host,
                 endpoint_port=endpoint_port,

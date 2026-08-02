@@ -294,7 +294,7 @@ class _TransportFactory:
         self._queue.append(transport)
         return transport
 
-    def __call__(self, config: Any) -> _FakeTransport:
+    def __call__(self, *, config: Any) -> _FakeTransport:
         _require(self._queue, "fake transport factory queue is empty")
         transport = self._queue.pop(0)
         self.created.append(transport)
