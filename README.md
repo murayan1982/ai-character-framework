@@ -1910,3 +1910,17 @@ are complete. It does not mean a real transport is bound or available.
 
 See
 [`docs/v550_motion_adapter_configuration_status.md`](docs/v550_motion_adapter_configuration_status.md).
+
+## v5.5.0 candidate internal VTube Studio transport Protocol/fake
+
+FW-VTS-0c adds an internal async VTube Studio transport Protocol and a
+deterministic in-memory fake for later real-adapter composition.
+
+The transport symbols are not exported from the Framework root. Host apps and
+DRC continue to use only provider-neutral root-public APIs. This checkpoint
+does not import pyvts/WebSocket modules, connect or authenticate, resolve
+provider hotkey IDs, trigger a real hotkey, execute motion, or change
+MotionSession.
+
+See
+[`docs/v550_vtube_studio_transport_protocol_fake.md`](docs/v550_vtube_studio_transport_protocol_fake.md).

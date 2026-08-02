@@ -12,9 +12,12 @@ FW-VTS-0a:
 COMPLETED / ACCEPTED / PUSHED
 
 FW-VTS-0b:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0c:
 IMPLEMENTED / AWAITING_REVIEW
 
-FW-VTS-0c through FW-VTS-0f:
+FW-VTS-0d through FW-VTS-0f:
 NOT_AUTHORIZED
 
 real VTS execution: NOT_AUTHORIZED
@@ -308,7 +311,7 @@ FW-VTS-0b:
 - does not change legacy VTS runtime;
 - does not change requirements or release metadata;
 - does not change DRC;
-- does not authorize FW-VTS-0c automatically;
+- did not automatically authorize FW-VTS-0c;
 - does not commit or push.
 
 ## Acceptance markers
@@ -339,4 +342,42 @@ v550_drc_changed: False
 v550_commit_created: False
 v550_push_performed: False
 v550_next_authorization: exact-review-required-for-FW-VTS-0c
+```
+
+## FW-VTS-0c transport separation
+
+```text
+FW-VTS-0b:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0c:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0d through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The accepted FW-VTS-0b resolver remains unchanged. A `CONFIGURED` capability
+still means only that explicit declarations are complete and no transport is
+bound.
+
+FW-VTS-0c adds a provider-specific internal async Protocol and in-memory fake in
+`framework.vtube_studio_transport`. The transport symbols are not exported from
+the Framework root, and MotionSession composition remains deferred to
+FW-VTS-0e.
+
+FW-VTS-0c exact eight-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_motion_adapter_configuration_status.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_vtube_studio_transport_protocol_fake.md
+framework/vtube_studio_transport.py
+scripts/smoke_v550_vtube_studio_transport_protocol_fake.py
+scripts/check_v550_vtube_studio_transport_protocol_fake.py
 ```

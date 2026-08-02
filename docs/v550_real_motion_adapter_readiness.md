@@ -6,8 +6,9 @@
 work name: FW-VTS
 release line: v5.5.0 candidate
 FW-VTS-0a: COMPLETED / ACCEPTED / PUSHED
-FW-VTS-0b: IMPLEMENTED / AWAITING_REVIEW
-FW-VTS-0c through FW-VTS-0f: NOT_AUTHORIZED
+FW-VTS-0b: COMPLETED / ACCEPTED / PUSHED
+FW-VTS-0c: IMPLEMENTED / AWAITING_REVIEW
+FW-VTS-0d through FW-VTS-0f: NOT_AUTHORIZED
 real VTS execution: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -456,5 +457,57 @@ scripts/check_v550_motion_adapter_configuration_status.py
 
 No environment lookup, filesystem access, pyvts/WebSocket import, provider
 client creation, network execution, token/model path access, real motion,
+legacy VTS runtime change, requirements change, release metadata change, or DRC
+change is authorized.
+
+## FW-VTS-0c implementation checkpoint
+
+```text
+FW-VTS-0a:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0b:
+COMPLETED / ACCEPTED / PUSHED
+
+FW-VTS-0c:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-VTS-0d through FW-VTS-0f:
+NOT_AUTHORIZED
+
+real VTS execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-VTS-0c baseline:
+
+```text
+31a6f6abcd4096a07a3719fb937e3a907fd044cd
+```
+
+The checkpoint adds an internal async VTube Studio transport Protocol, bounded
+hotkey request/result types, a transport factory alias, and a deterministic
+in-memory fake.
+
+The symbols are not exported from the Framework root. MotionSession composition
+remains deferred to FW-VTS-0e, and the real lazy pyvts/WebSocket transport
+remains deferred to FW-VTS-0d.
+
+FW-VTS-0c exact eight-file surface:
+
+```text
+README.md
+docs/public_facade.md
+docs/v550_motion_adapter_configuration_status.md
+docs/v550_real_motion_adapter_readiness.md
+docs/v550_vtube_studio_transport_protocol_fake.md
+framework/vtube_studio_transport.py
+scripts/smoke_v550_vtube_studio_transport_protocol_fake.py
+scripts/check_v550_vtube_studio_transport_protocol_fake.py
+```
+
+No environment lookup, filesystem access, pyvts/WebSocket import, provider
+client creation, network execution, authentication material access, model
+discovery, provider hotkey-ID resolution, real hotkey trigger, real motion,
 legacy VTS runtime change, requirements change, release metadata change, or DRC
 change is authorized.

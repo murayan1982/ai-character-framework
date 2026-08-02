@@ -752,3 +752,23 @@ A `configured` capability is diagnostic configuration state, not real adapter
 availability. `supports_real_adapter` remains false and public
 `MotionSession` execution remains `not_implemented` until later composition and
 real-transport checkpoints.
+
+## v5.5.0 candidate internal VTube Studio transport boundary
+
+FW-VTS-0c adds provider-specific internal transport symbols under
+`framework.vtube_studio_transport`. They are intentionally not exported from
+the Framework root.
+
+Host applications and DRC must not import:
+
+```python
+from framework.vtube_studio_transport import VTubeStudioTransport
+```
+
+They continue to use root-public provider-neutral APIs. MotionSession
+composition remains deferred to FW-VTS-0e, so an enabled VTS alias still
+returns typed `not_implemented`.
+
+The internal fake executes only deterministic in-memory protocol calls. It does
+not connect to VTube Studio, expose hotkey names or IDs in results, or execute
+real motion.
