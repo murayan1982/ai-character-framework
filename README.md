@@ -2108,3 +2108,36 @@ No token material, private path, endpoint value, hotkey identity, selector
 value, model identity, provider payload, raw exception, evidence document,
 or screenshot is part of this public acceptance record.
 <!-- FW-VTS-0f2-REAL-MOTION-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-VTS-0f3-RELEASE-READINESS:BEGIN -->
+## FW-VTS-0f3 aggregate release readiness
+
+This block records only public, repository-safe facts. It does not repeat the
+private VTube Studio operator run and does not read private token,
+configuration, or evidence files.
+
+```text
+checkpoint: FW-VTS-0f3
+status: IMPLEMENTED / AWAITING_REVIEW
+baseline head: a1c39369bd35b21196b25a93a82798f47f1dad30
+accepted real-motion head: b7b9639dfa1f675ba04a33cd8ce297429f98fd15
+accepted bootstrap head: 1f737128554d701150427da4ce1c146759881255
+FW-VTS-0a: ACCEPTED / PUSHED
+FW-VTS-0b: ACCEPTED / PUSHED
+FW-VTS-0c: ACCEPTED / PUSHED
+FW-VTS-0d: ACCEPTED / PUSHED
+FW-VTS-0e: ACCEPTED / PUSHED
+FW-VTS-0f1: ACCEPTED / PUSHED
+FW-VTS-0f2: ACCEPTED / PUSHED
+required four intents: ACCEPTED
+stop_motion_supported: False
+stop_motion_verified: False
+optional stop_motion contract: ACCEPTED
+private real-motion evidence: ACCEPTED_BY_PUBLIC_SYNC
+release package created: False
+v5.5.0 tag created: False
+DRC repository changed: False
+release package authorization: READY_FOR_FW-VTS-0f4_AFTER_REVIEW
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-VTS-0f3-RELEASE-READINESS:END -->
