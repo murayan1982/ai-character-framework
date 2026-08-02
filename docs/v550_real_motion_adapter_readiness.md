@@ -828,3 +828,32 @@ release package authorization: READY_FOR_FW-VTS-0f4_AFTER_REVIEW
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-VTS-0f3-RELEASE-READINESS:END -->
+
+<!-- FW-VTS-0f4b-FINAL-TAG-READINESS:BEGIN -->
+## FW-VTS-0f4b final tag readiness and DRC handoff
+
+This public checkpoint fixes the v5.5.0 release notes, final pre-tag package
+verification contract, and released DRC RT-7 handoff boundary. It does not
+create the final package, tag, push, publish, or modify DRC.
+
+```text
+checkpoint: FW-VTS-0f4b
+status: IMPLEMENTED / AWAITING_REVIEW
+baseline head: 77a6a679f35cbf03fffeff7e8fee8a1c8863fc26
+release version: 5.5.0
+release theme: Real Motion Adapter / VTube Studio
+release notes present: True
+DRC handoff present: True
+DRC RT-7 status: READY_AFTER_V5.5.0_TAG_PUSH
+accepted required intents: expression, emotion, gesture, reset_expression
+stop_motion_supported: False
+stop_motion_verified: False
+optional stop_motion contract: ACCEPTED
+final package rebuild required after checkpoint commit: True
+final package verified for checkpoint commit: False
+v5.5.0 tag created: False
+DRC repository changed: False
+tag authorization: READY_AFTER_STRICT_PACKAGE_VERIFICATION
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-VTS-0f4b-FINAL-TAG-READINESS:END -->

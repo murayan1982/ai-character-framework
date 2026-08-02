@@ -1,3 +1,35 @@
+<!-- CURRENT-RELEASE-v5.5.0:BEGIN -->
+# v5.5.0 - Real Motion Adapter / VTube Studio
+
+The current Framework release adds the guarded root-public VTube Studio
+real-motion adapter, deterministic package verification, and fixed DRC RT-7
+handoff.
+
+See the version-fixed release notes:
+
+```text
+docs/release_notes_v5.5.0.md
+```
+
+Current release status at this source checkpoint:
+
+```text
+FW-VTS-0f4a: ACCEPTED / PUSHED
+FW-VTS-0f4b: IMPLEMENTED / AWAITING_REVIEW
+final package rebuild required after checkpoint commit: True
+v5.5.0 tag created: False
+DRC RT-7: READY_AFTER_V5.5.0_TAG_PUSH
+```
+
+The accepted real-motion scope is expression, emotion, gesture, and
+reset_expression. `stop_motion` is optional and the accepted model reports
+`stop_motion_supported=False`.
+
+Real provider/VTube Studio execution remains explicit opt-in. Tokens, private
+configuration, private evidence, identifiers, raw payloads, exceptions, and
+screenshots remain outside the repository and release package.
+<!-- CURRENT-RELEASE-v5.5.0:END -->
+
 # v5.0.0 - Public Voice Output / TTS Boundary Foundation
 
 ## Release scope
