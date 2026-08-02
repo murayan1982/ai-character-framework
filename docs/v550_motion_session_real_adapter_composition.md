@@ -333,3 +333,49 @@ the two commits.
 The corrective is an exact ten-file surface limited to six documentation files
 and four operator/checker scripts. Framework runtime, public API, pyvts
 transport, token bootstrap tooling, release files, and DRC are frozen.
+
+<!-- FW-VTS-0f2-REAL-MOTION-ACCEPTANCE-SYNC:BEGIN -->
+## FW-VTS-0f2 public real-motion acceptance sync
+
+This block supersedes earlier pre-execution authorization status for the
+FW-VTS-0f operator checkpoint. It records only public-safe facts already
+accepted by the private evidence validator.
+
+```text
+checkpoint: FW-VTS-0f2
+status: IMPLEMENTED / AWAITING_REVIEW
+accepted framework head: b7b9639dfa1f675ba04a33cd8ce297429f98fd15
+accepted bootstrap head: 1f737128554d701150427da4ce1c146759881255
+pyvts version: 0.3.3
+actual pyvts import: VERIFIED
+actual WebSocket connection: VERIFIED
+actual VTube Studio authentication: VERIFIED
+model loaded: VERIFIED
+hotkey inventory loaded: VERIFIED
+expression: VERIFIED
+emotion: VERIFIED
+gesture: VERIFIED
+reset_expression: VERIFIED
+required four intents: VERIFIED
+stop_motion_supported: False
+stop_motion_verified: False
+optional stop_motion contract: VERIFIED
+real hotkey execution: VERIFIED
+real motion execution: VERIFIED
+operator visual confirmation: COMPLETE
+session close: VERIFIED
+bridge thread termination: VERIFIED
+bootstrap evidence reused: VERIFIED
+bootstrap operator unchanged: VERIFIED
+private evidence: ACCEPTED_BY_VALIDATOR
+DRC repository changed: False
+private values recorded in repository: False
+real VTS execution repeated by this sync: False
+private evidence read by this sync: False
+commit / push: NOT_AUTHORIZED
+```
+
+No token material, private path, endpoint value, hotkey identity, selector
+value, model identity, provider payload, raw exception, evidence document,
+or screenshot is part of this public acceptance record.
+<!-- FW-VTS-0f2-REAL-MOTION-ACCEPTANCE-SYNC:END -->
