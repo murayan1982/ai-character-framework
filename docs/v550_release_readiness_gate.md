@@ -140,3 +140,26 @@ FW-VTS-0f3:
 - does not create a release ZIP or checksum;
 - does not create or push a tag;
 - does not modify DRC.
+
+<!-- FW-VTS-0f4a-RELEASE-PACKAGE-GATE:BEGIN -->
+## FW-VTS-0f4a deterministic release-package gate
+
+This checkpoint adds the deterministic v5.5.0 source-package builder and
+temporary package gate. It does not create the final release package, tag,
+push, publish, connect to VTube Studio, or read private VTS artifacts.
+
+```text
+checkpoint: FW-VTS-0f4a
+status: IMPLEMENTED / AWAITING_REVIEW
+baseline head: a83f7efe85d489887b1d97122b2756e2a1b57ff5
+package version: 5.5.0
+deterministic temporary builds required: 2
+tracked private VTS artifact rejection: REQUIRED
+final release ZIP created: False
+final SHA-256 sidecar created: False
+v5.5.0 tag created: False
+DRC repository changed: False
+next authorization: READY_FOR_FW-VTS-0f4b_AFTER_REVIEW
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-VTS-0f4a-RELEASE-PACKAGE-GATE:END -->

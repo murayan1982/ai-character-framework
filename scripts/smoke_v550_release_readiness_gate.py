@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from typing import Mapping
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_HEAD = "a1c39369bd35b21196b25a93a82798f47f1dad30"
 CORRECTIVE_BASELINE_HEAD = "4f643b7cfa4e77c71ba6a0a857ceb390beb7397e"
+PACKAGE_GATE_BASELINE_HEAD = "a83f7efe85d489887b1d97122b2756e2a1b57ff5"
 ACCEPTED_REAL_MOTION_HEAD = (
     "b7b9639dfa1f675ba04a33cd8ce297429f98fd15"
 )
@@ -49,6 +51,16 @@ CORRECTIVE_SURFACE = {
     "docs/v550_release_readiness_gate.md",
     "scripts/smoke_v550_release_readiness_gate.py",
     "scripts/check_v550_release_readiness_dependency_sync_corrective.py",
+}
+
+PACKAGE_GATE_SURFACE = {
+    "README.md",
+    "docs/v550_release_readiness_gate.md",
+    "docs/v550_release_package_gate.md",
+    "scripts/build_v550_release_package.py",
+    "scripts/smoke_v550_release_package_gate.py",
+    "scripts/check_v550_release_package_gate.py",
+    "scripts/smoke_v550_release_readiness_gate.py",
 }
 
 DEPENDENCY_DOC_PATH = "docs/v550_release_readiness_gate.md"
@@ -261,7 +273,7 @@ def _validate_repository_state() -> str:
         | _git_lines("ls-files", "--others", "--exclude-standard")
     ) - {".vscode/settings.json"}
 
-    if changed:
+    if changed == CORRECTIVE_SURFACE:
         _require(
             head == CORRECTIVE_BASELINE_HEAD,
             "dirty corrective mode requires the exact FW-VTS-0f3 commit",
@@ -270,13 +282,24 @@ def _validate_repository_state() -> str:
             origin_main == CORRECTIVE_BASELINE_HEAD,
             "dirty corrective mode requires origin/main at FW-VTS-0f3",
         )
-        _require(
-            changed == CORRECTIVE_SURFACE,
-            "readiness gate worktree contains unexpected paths: "
-            + ", ".join(sorted(changed)),
-        )
         return "corrective-worktree"
 
+    if changed == PACKAGE_GATE_SURFACE:
+        _require(
+            head == PACKAGE_GATE_BASELINE_HEAD,
+            "package-gate mode requires the accepted FW-VTS-0f3c1 commit",
+        )
+        _require(
+            origin_main == PACKAGE_GATE_BASELINE_HEAD,
+            "package-gate mode requires origin/main at FW-VTS-0f3c1",
+        )
+        return "package-gate-worktree"
+
+    _require(
+        not changed,
+        "readiness gate worktree contains unexpected paths: "
+        + ", ".join(sorted(changed)),
+    )
     return "clean-committed"
 
 
@@ -416,7 +439,10 @@ def _validate_public_import() -> None:
         )
 
 
-def _validate_release_state() -> None:
+def _validate_release_state(
+    *,
+    allow_final_package: bool,
+) -> tuple[bytes | None, bytes | None]:
     v540_tag = _run(
         "git",
         "tag",
@@ -432,15 +458,57 @@ def _validate_release_state() -> None:
 
     _require(v540_tag == "v5.4.0", "accepted v5.4.0 tag is missing")
     _require(not v550_tag, "v5.5.0 tag already exists")
+
+    sidecar = V550_PACKAGE.with_suffix(V550_PACKAGE.suffix + ".sha256")
+    package_exists = V550_PACKAGE.is_file()
+    sidecar_exists = sidecar.is_file()
     _require(
-        not V550_PACKAGE.exists(),
+        package_exists == sidecar_exists,
+        "v5.5.0 ZIP and SHA-256 sidecar presence must match",
+    )
+
+    if allow_final_package:
+        _require(
+            package_exists and sidecar_exists,
+            "--allow-final-package requires the v5.5.0 ZIP and sidecar",
+        )
+        return V550_PACKAGE.read_bytes(), sidecar.read_bytes()
+
+    _require(
+        not package_exists,
         "v5.5.0 release package already exists",
     )
     _require(
-        not V550_PACKAGE.with_suffix(
-            V550_PACKAGE.suffix + ".sha256"
-        ).exists(),
+        not sidecar_exists,
         "v5.5.0 release SHA-256 sidecar already exists",
+    )
+    return None, None
+
+
+def _assert_release_artifacts_unchanged(
+    before: tuple[bytes | None, bytes | None],
+) -> None:
+    package_before, sidecar_before = before
+    sidecar = V550_PACKAGE.with_suffix(V550_PACKAGE.suffix + ".sha256")
+
+    if package_before is None:
+        _require(
+            not V550_PACKAGE.exists() and not sidecar.exists(),
+            "readiness gate created a final v5.5.0 release artifact",
+        )
+        return
+
+    _require(
+        V550_PACKAGE.is_file() and sidecar.is_file(),
+        "readiness gate removed a final v5.5.0 release artifact",
+    )
+    _require(
+        V550_PACKAGE.read_bytes() == package_before,
+        "readiness gate changed the final v5.5.0 ZIP",
+    )
+    _require(
+        sidecar.read_bytes() == sidecar_before,
+        "readiness gate changed the final v5.5.0 SHA-256 sidecar",
     )
 
 
@@ -471,16 +539,37 @@ def _run_dependencies() -> None:
         print(f"[OK] FW-VTS-0f3 dependency passed: {relative}")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(
+        description="Run v5.5.0 source-tree release-readiness checks"
+    )
+    parser.add_argument(
+        "--allow-final-package",
+        action="store_true",
+        help=(
+            "Allow an existing final v5.5.0 ZIP and SHA-256 sidecar "
+            "while requiring both to remain byte-for-byte unchanged"
+        ),
+    )
+    args = parser.parse_args(argv)
+
     worktree_mode = _validate_repository_state()
     _validate_docs()
     _validate_dependency_documentation()
     _validate_private_artifacts_not_tracked()
     _validate_public_import()
-    _validate_release_state()
+    release_artifacts = _validate_release_state(
+        allow_final_package=args.allow_final_package,
+    )
     _run_dependencies()
+    _assert_release_artifacts_unchanged(release_artifacts)
 
     print("v550_release_readiness_gate_status: accepted")
+    print(
+        "v550_release_readiness_final_package_allowed:",
+        args.allow_final_package,
+    )
+    print("v550_release_readiness_final_artifacts_unchanged: True")
     print(f"v550_release_readiness_worktree_mode: {worktree_mode}")
     print("v550_release_readiness_dependency_count: 7")
     print("v550_release_readiness_dependency_docs_synced: True")
