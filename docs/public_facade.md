@@ -1108,3 +1108,17 @@ next control: FW-RT6-0b Control D
 next control authorized: False
 ```
 <!-- FW-RT6-0b-C-VERSION-METADATA:END -->
+
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:BEGIN -->
+## Installable resource resolution
+
+Public text-chat sessions resolve presets and character data independently of
+the process working directory. Existing four text factory parameters remain
+positional-compatible; `project_root` is an optional keyword-only compatibility
+override for preset and character resources.
+
+Resolution order is explicit `project_root`, then bundled package resources.
+Invalid resource names and missing resources return path-safe public errors.
+The default public voice-output artifact directory is the system temporary
+area under `ai-character-framework/voice_output`, not `./temp/voice_output`.
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:END -->

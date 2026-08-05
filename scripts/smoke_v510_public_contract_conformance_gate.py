@@ -171,16 +171,18 @@ def _assert_factory_signatures(framework: object) -> None:
     _info(f"signature create_voice_output_session{voice_sig}")
 
     _require(
-        list(text_sig.parameters) == ["preset", "character_name", "provider", "model"],
+        list(text_sig.parameters) == ["preset", "character_name", "provider", "model", "project_root"],
         "create_text_chat_session parameter names drifted from transition baseline",
     )
-    text_non_kw_only = [
-        name
-        for name, param in text_sig.parameters.items()
-        if param.kind is not inspect.Parameter.KEYWORD_ONLY
-    ]
-    if text_non_kw_only:
-        _warn("create_text_chat_session remains transition baseline, not keyword-only yet")
+    for name in ("preset", "character_name", "provider", "model"):
+        _require(
+            text_sig.parameters[name].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            f"create_text_chat_session {name} compatibility changed",
+        )
+    _require(
+        text_sig.parameters["project_root"].kind is inspect.Parameter.KEYWORD_ONLY,
+        "create_text_chat_session project_root must be keyword-only",
+    )
 
     _require(
         list(voice_sig.parameters) == [

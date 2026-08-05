@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Generator
 
 from llm.base import BaseLLM
@@ -321,6 +322,8 @@ def _validate_text_only_config(config: "RuntimeConfig") -> None:
 def _load_facade_config(
     preset: str | None,
     character_name: str | None,
+    *,
+    project_root: str | Path | None = None,
 ) -> "RuntimeConfig":
     """Build RuntimeConfig for the public facade without starting the runtime loop.
 
@@ -340,8 +343,11 @@ def _load_facade_config(
     preset_name = _resolve_preset_name(preset)
 
     try:
-        preset_data = load_preset_file(preset_name)
-    except FileNotFoundError as e:
+        preset_data = load_preset_file(
+            preset_name,
+            project_root=project_root,
+        )
+    except (FileNotFoundError, ValueError) as e:
         raise FacadeConfigError(
             f"Facade preset not found: {preset_name!r}. "
             "Pass an existing text-only preset name, such as 'text_chat'."
@@ -353,8 +359,11 @@ def _load_facade_config(
     )
 
     try:
-        character_data = load_character_data(resolved_character_name)
-    except FileNotFoundError as e:
+        character_data = load_character_data(
+            resolved_character_name,
+            project_root=project_root,
+        )
+    except (FileNotFoundError, ValueError) as e:
         raise FacadeConfigError(
             f"Facade character not found: {resolved_character_name!r}. "
             "Pass an existing character name or update the selected preset."
@@ -545,6 +554,8 @@ def create_text_chat_session(
     character_name: str | None = None,
     provider: str | None = None,
     model: str | None = None,
+    *,
+    project_root: str | Path | None = None,
 ) -> TextChatSession:
     """Create a text-only chat session without starting the app runtime loop.
 
@@ -557,10 +568,13 @@ def create_text_chat_session(
             facade uses the default chat route with fallback.
         model: Optional model override for the selected provider. Ignored when
             provider is omitted.
+        project_root: Optional compatibility root for preset and character
+            resources. Provider configuration is not resolved from this path.
     """
     config = _load_facade_config(
         preset=preset,
         character_name=character_name,
+        project_root=project_root,
     )
     system_instruction = _build_system_instruction(config)
     info = _build_text_chat_info(

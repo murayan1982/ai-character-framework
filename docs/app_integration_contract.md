@@ -632,3 +632,15 @@ next control: FW-RT6-0b Control D
 next control authorized: False
 ```
 <!-- FW-RT6-0b-C-VERSION-METADATA:END -->
+
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:BEGIN -->
+## Resource-root integration contract
+
+Host applications do not need to change CWD or prepend the checkout to
+`sys.path` for preset and character resource lookup. A host-owned resource tree
+may be selected explicitly with keyword-only `project_root`; provider secrets
+and provider configuration are not read from that argument.
+
+Voice-output artifact precedence remains explicit `artifact_dir`, environment
+override, explicit project root, then a framework-owned system temporary root.
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:END -->

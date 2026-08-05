@@ -11,6 +11,8 @@ Run:
 
 from __future__ import annotations
 
+import inspect
+
 import os
 import sys
 from pathlib import Path
@@ -170,6 +172,30 @@ def check_version_metadata() -> None:
     _assert_no_forbidden_runtime_imports("central version metadata")
     print("[OK] app SDK source and public contract version metadata are centralized")
 
+
+
+def check_resource_resolution_signature() -> None:
+    from framework import create_text_chat_session
+
+    signature = inspect.signature(create_text_chat_session)
+    _assert(
+        list(signature.parameters)
+        == ["preset", "character_name", "provider", "model", "project_root"],
+        "text factory resource-root signature drifted",
+    )
+    for name in ("preset", "character_name", "provider", "model"):
+        _assert(
+            signature.parameters[name].kind
+            is inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            f"text factory {name} compatibility changed",
+        )
+    _assert(
+        signature.parameters["project_root"].kind
+        is inspect.Parameter.KEYWORD_ONLY,
+        "text factory project_root should be keyword-only",
+    )
+    _assert_no_forbidden_runtime_imports("resource-root signature")
+    print("[OK] app SDK resource-root override preserves factory compatibility")
 
 def check_public_sdk_imports() -> None:
     from framework import (
@@ -513,6 +539,7 @@ def check_sdk_examples_importable() -> None:
 def main() -> None:
     check_public_api_manifest()
     check_version_metadata()
+    check_resource_resolution_signature()
     check_public_sdk_imports()
     check_session_info_contract()
     check_event_models()

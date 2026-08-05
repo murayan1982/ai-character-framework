@@ -10,6 +10,7 @@ models from ``framework.audio.voice_output``.
 from __future__ import annotations
 
 import os
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -341,7 +342,7 @@ class ElevenLabsVoiceOutputAdapter:
         if self._project_root is not None:
             return self._project_root / "temp" / "voice_output"
 
-        return Path("temp") / "voice_output"
+        return Path(tempfile.gettempdir()) / "ai-character-framework" / "voice_output"
 
 
 def _resolve_real_tts_enabled(value: bool | None) -> bool:

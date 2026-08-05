@@ -79,3 +79,21 @@ framework.__all__ changed: False
 provider/network/microphone/playback/VTS execution: False
 DRC repository accessed or changed: False
 ```
+
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:BEGIN -->
+## Control B — package resource resolution
+
+```text
+preset lookup uses process CWD: False
+character lookup uses process CWD: False
+explicit project_root override: Preserved / keyword-only
+package resource fallback: presets + characters
+public voice artifact CWD fallback: Removed
+public voice artifact default: system temp/ai-character-framework/voice_output
+framework.__all__ count: 95 / unchanged
+provider execution: False
+network execution: False
+next control: FW-RT6-0c Control C
+next control authorized: False
+```
+<!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:END -->

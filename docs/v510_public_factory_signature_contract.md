@@ -132,3 +132,24 @@ Before each future factory is exposed, it should have:
 - Provider-specific implementation details do not appear in public signatures.
 - Public signature changes are detected by smoke tests before release.
 ```
+
+<!-- FW-RT6-0c-B-FACTORY-RESOURCE-ROOT:BEGIN -->
+## v6 installable-resource compatibility extension
+
+The accepted v5.1 four-parameter text factory prefix is preserved and one
+keyword-only compatibility argument is appended:
+
+```python
+create_text_chat_session(
+    preset=None,
+    character_name=None,
+    provider=None,
+    model=None,
+    *,
+    project_root=None,
+)
+```
+
+`project_root` resolves preset and character resources only. It is not a
+provider credential or provider configuration path.
+<!-- FW-RT6-0c-B-FACTORY-RESOURCE-ROOT:END -->
