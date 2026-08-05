@@ -142,11 +142,22 @@ def check_runtime_values() -> None:
 
     _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
-    _assert(len(framework.__all__) == 99, "root-public name count drift")
+    _assert(len(framework.__all__) == 104, "root-public name count drift")
     _assert(
-        tuple(framework.__all__[-4:])
+        tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
-        "public identity suffix drift",
+        "public identity position drift",
+    )
+    _assert(
+        tuple(framework.__all__[-5:])
+        == (
+            "RealtimePhase",
+            "TurnOutcome",
+            "RecoveryAction",
+            "LifecycleTransitionErrorCode",
+            "LifecycleTransitionError",
+        ),
+        "public lifecycle suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -174,7 +185,7 @@ def check_runtime_values() -> None:
 
     imported = [name for name in FORBIDDEN_IMPORTS if name in sys.modules]
     _assert(not imported, f"version inspection imported forbidden modules: {imported}")
-    print("[OK] runtime metadata values are unchanged and identity exports are additive")
+    print("[OK] runtime metadata values are unchanged and lifecycle exports are additive")
 
 
 def check_docs() -> None:
@@ -203,15 +214,15 @@ def main() -> None:
     print("v600_version_metadata_status: implemented-awaiting-review")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
-    print("v600_root_public_name_count: 99")
-    print("v600_public_api_values_changed: additive-identity-only")
+    print("v600_root_public_name_count: 104")
+    print("v600_public_api_values_changed: additive-identity-and-lifecycle-only")
     print("v600_capability_truthfulness_changed: False")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1a Control B")
+    print("v600_next_control: FW-RT6-1b Control B")
     print("v600_next_control_authorized: False")
-    print("[OK] central version metadata smoke passed with additive v6 identities")
+    print("[OK] central version metadata smoke passed with additive v6 lifecycle models")
 
 
 if __name__ == "__main__":

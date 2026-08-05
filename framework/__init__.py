@@ -5,6 +5,13 @@ from __future__ import annotations
 from .audio.voice_output import VoiceArtifactRef
 from .capabilities import CapabilityStatus, FrameworkCapabilities, get_capabilities
 from .identity import EventSequence, GenerationId, SessionId, TurnId
+from .lifecycle import (
+    LifecycleTransitionError,
+    LifecycleTransitionErrorCode,
+    RealtimePhase,
+    RecoveryAction,
+    TurnOutcome,
+)
 from .facade import (
     FacadeConfigError,
     FacadeError,

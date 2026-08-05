@@ -153,6 +153,14 @@ IDENTITY_PUBLIC_EXPORTS = (
     "EventSequence",
 )
 
+LIFECYCLE_PUBLIC_EXPORTS = (
+    "RealtimePhase",
+    "TurnOutcome",
+    "RecoveryAction",
+    "LifecycleTransitionErrorCode",
+    "LifecycleTransitionError",
+)
+
 PUBLIC_API_GROUPS = MappingProxyType(
     {
         "provider_compat_lazy": PROVIDER_COMPAT_LAZY_EXPORTS,
@@ -168,6 +176,7 @@ PUBLIC_API_GROUPS = MappingProxyType(
         "motion_session": MOTION_SESSION_EXPORTS,
         "motion_adapter_execution": MOTION_ADAPTER_EXECUTION_EXPORTS,
         "identity": IDENTITY_PUBLIC_EXPORTS,
+        "lifecycle": LIFECYCLE_PUBLIC_EXPORTS,
     }
 )
 

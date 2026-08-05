@@ -1166,7 +1166,7 @@ wrong-kind or malformed value in the reserved `fw_` namespace is rejected.
 
 ```text
 checkpoint: FW-RT6-1a Control B
-baseline head: 0b435e407a3fec018dce29b7446082948d1d2307
+baseline head: faef0cf09dc965ce5069687cd021f00bbfebdc0f
 status: IMPLEMENTED / AWAITING_REVIEW
 Framework-generated session identity: SessionId
 Framework-generated turn identity: TurnId
@@ -1222,3 +1222,37 @@ This control does not invent turn or generation identities for standalone motion
 operations. Text, voice-input, and voice-output result correlation remains
 deferred, and ordered event sequencing remains FW-RT6-1c.
 <!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:END -->
+
+<!-- FW-RT6-1b-A-LIFECYCLE-MODELS:BEGIN -->
+## FW-RT6-1b Control A — public lifecycle primitives
+
+The root-public SDK now defines separate transient phase, terminal turn outcome,
+recovery action, and typed transition failure models:
+
+```text
+RealtimePhase
+TurnOutcome
+RecoveryAction
+LifecycleTransitionErrorCode
+LifecycleTransitionError
+```
+
+The original 99 public names remain in the same order and these five names are
+appended, producing 104 names. `RealtimeState` and current session/result runtime
+behavior remain unchanged in this control. Host applications should treat the
+new models as the canonical v6 vocabulary, but must not assume that the current
+mock-safe `RealtimeSession` has adopted them until Controls B and C are accepted.
+
+```text
+checkpoint: FW-RT6-1b Control A
+baseline head: c89ca5f0ae186564a8f7bced2ea7ce1462459172
+status: IMPLEMENTED / AWAITING_REVIEW
+invalid phase transition: LifecycleTransitionError
+first terminal validation: ACCEPTED
+terminal registry / duplicate suppression runtime: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1b Control B
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->

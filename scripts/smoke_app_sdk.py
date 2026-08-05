@@ -131,11 +131,22 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 99, "canonical public API count should be 99")
+    _assert(len(framework.__all__) == 104, "canonical public API count should be 104")
     _assert(
-        tuple(framework.__all__[-4:])
+        tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
-        "public identity suffix drift",
+        "public identity position drift",
+    )
+    _assert(
+        tuple(framework.__all__[-5:])
+        == (
+            "RealtimePhase",
+            "TurnOutcome",
+            "RecoveryAction",
+            "LifecycleTransitionErrorCode",
+            "LifecycleTransitionError",
+        ),
+        "public lifecycle suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -209,8 +220,13 @@ def check_public_sdk_imports() -> None:
         FacadeProviderError,
         EventSequence,
         GenerationId,
+        LifecycleTransitionError,
+        LifecycleTransitionErrorCode,
+        RealtimePhase,
+        RecoveryAction,
         SessionId,
         TurnId,
+        TurnOutcome,
         TextChatSession,
         TextChatSessionEvent,
         TextChatSessionInfo,
@@ -228,6 +244,15 @@ def check_public_sdk_imports() -> None:
     _assert(TurnId.new().startswith("fw_turn_"), "TurnId should be root-public")
     _assert(GenerationId.new().startswith("fw_generation_"), "GenerationId should be root-public")
     _assert(EventSequence.first() == 1, "EventSequence should be root-public")
+    _assert(RealtimePhase.IDLE.value == "idle", "RealtimePhase should be root-public")
+    _assert(TurnOutcome.REJECTED.value == "rejected", "TurnOutcome should be root-public")
+    _assert(RecoveryAction.RESET_TURN.value == "reset_turn", "RecoveryAction should be root-public")
+    _assert(
+        LifecycleTransitionErrorCode.INVALID_PHASE_TRANSITION.value
+        == "invalid_phase_transition",
+        "LifecycleTransitionErrorCode should be root-public",
+    )
+    _assert(issubclass(LifecycleTransitionError, ValueError), "LifecycleTransitionError should be public")
     _assert(issubclass(FacadeProviderError, FacadeError), "provider error should be public facade error")
     _assert(TextChatSession is not None, "TextChatSession should be importable")
     _assert(TextChatSessionInfo is not None, "TextChatSessionInfo should be importable")
