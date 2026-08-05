@@ -102,6 +102,9 @@ from .voice_input_session import (
     VoiceInputSessionInfo,
     create_voice_input_session,
 )
+from .version import FRAMEWORK_SOURCE_VERSION
+
+__version__ = FRAMEWORK_SOURCE_VERSION
 
 # One canonical, ordered source controls the root-public wildcard surface.
 __all__ = list(PUBLIC_API_NAMES)

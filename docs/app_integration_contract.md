@@ -585,3 +585,50 @@ This cleanup removes duplicate internal method definitions only. Host code does
 not need to change, and no provider, network, microphone, audio playback, VTS,
 or host-application repository operation is performed by the checkpoint.
 <!-- FW-RT6-0b-B-VOICE-OUTPUT-SESSION-HYGIENE:END -->
+
+<!-- FW-RT6-0b-C-VERSION-METADATA:BEGIN -->
+## v6.0.0 development: central version and schema metadata
+
+FW-RT6-0b Control C defines source-development and frozen public-contract
+versions in one provider-safe module:
+
+```text
+framework/version.py
+```
+
+The source version identifies the unreleased v6 development line:
+
+```text
+framework.__version__: 6.0.0.dev0
+latest published release: 5.5.0
+```
+
+`framework.__version__` is metadata and is intentionally not added to
+`framework.__all__`; the canonical root-public compatibility inventory remains
+95 names.
+
+Existing public session and schema values are preserved:
+
+```text
+TextChatSessionInfo.api_version: 4.0
+VoiceOutputSessionInfo.boundary_version: v5.lazy_provider_adapter
+VoiceInputSessionInfo.api_version: 5.2.0
+RealtimeSessionInfo.api_version: 5.2.0
+MotionSessionInfo.api_version: 5.5.0
+FrameworkCapabilities.schema_version: v5.1.capabilities
+```
+
+This checkpoint centralizes the literals only. It does not claim that v6.0.0 is
+released, correct the known capability-truthfulness gap, compose a real
+realtime runtime, import a provider SDK, or execute a network, microphone,
+playback, or motion operation.
+
+```text
+checkpoint: FW-RT6-0b Control C
+status: IMPLEMENTED / AWAITING_REVIEW
+public API values changed: False
+capability truthfulness changed: False
+next control: FW-RT6-0b Control D
+next control authorized: False
+```
+<!-- FW-RT6-0b-C-VERSION-METADATA:END -->

@@ -97,6 +97,80 @@ def check_public_api_manifest() -> None:
     _assert_no_forbidden_runtime_imports("canonical public API manifest")
     print("[OK] app SDK canonical public API manifest is stable")
 
+
+def check_version_metadata() -> None:
+    import framework
+    from framework.capabilities import get_capabilities
+    from framework.facade import TextChatSessionInfo
+    from framework.audio.voice_output import VoiceOutputSessionInfo
+    from framework.motion_session import MotionSessionInfo
+    from framework.realtime_session import RealtimeSessionInfo
+    from framework.version import (
+        CAPABILITIES_SCHEMA_VERSION,
+        FRAMEWORK_SOURCE_VERSION,
+        LATEST_PUBLISHED_RELEASE,
+        MOTION_API_VERSION,
+        REALTIME_API_VERSION,
+        TEXT_CHAT_API_VERSION,
+        VOICE_INPUT_API_VERSION,
+        VOICE_OUTPUT_BOUNDARY_VERSION,
+    )
+    from framework.voice_input_session import VoiceInputSessionInfo
+
+    _assert(
+        framework.__version__ == FRAMEWORK_SOURCE_VERSION == "6.0.0.dev0",
+        "framework source version should identify the v6 development line",
+    )
+    _assert(
+        LATEST_PUBLISHED_RELEASE == "5.5.0",
+        "latest published release should remain v5.5.0",
+    )
+    _assert(
+        "__version__" not in framework.__all__,
+        "framework.__version__ should not change the wildcard public API",
+    )
+    _assert(len(framework.__all__) == 95, "canonical public API count should remain 95")
+
+    text_info = TextChatSessionInfo(
+        preset="text_chat",
+        character_name="default",
+        input_language_code="ja",
+        output_language_code="ja",
+        llm_mode="default_route",
+        provider=None,
+        model=None,
+        route_name="chat",
+    )
+    _assert(text_info.api_version == TEXT_CHAT_API_VERSION == "4.0", "text API version should remain 4.0")
+    _assert(
+        VoiceOutputSessionInfo().boundary_version
+        == VOICE_OUTPUT_BOUNDARY_VERSION
+        == "v5.lazy_provider_adapter",
+        "voice output boundary version should remain compatible",
+    )
+    _assert(
+        VoiceInputSessionInfo().api_version == VOICE_INPUT_API_VERSION == "5.2.0",
+        "voice input API version should remain 5.2.0",
+    )
+    _assert(
+        RealtimeSessionInfo().api_version == REALTIME_API_VERSION == "5.2.0",
+        "realtime API version should remain 5.2.0",
+    )
+    _assert(
+        MotionSessionInfo().api_version == MOTION_API_VERSION == "5.5.0",
+        "motion API version should remain 5.5.0",
+    )
+    _assert(
+        get_capabilities().schema_version
+        == CAPABILITIES_SCHEMA_VERSION
+        == "v5.1.capabilities",
+        "capability schema should remain v5.1.capabilities",
+    )
+
+    _assert_no_forbidden_runtime_imports("central version metadata")
+    print("[OK] app SDK source and public contract version metadata are centralized")
+
+
 def check_public_sdk_imports() -> None:
     from framework import (
         FacadeConfigError,
@@ -438,6 +512,7 @@ def check_sdk_examples_importable() -> None:
 
 def main() -> None:
     check_public_api_manifest()
+    check_version_metadata()
     check_public_sdk_imports()
     check_session_info_contract()
     check_event_models()

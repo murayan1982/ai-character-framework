@@ -10,6 +10,8 @@ from config.prompt_builder import build_final_system_instruction
 if TYPE_CHECKING:
     from config.loader import RuntimeConfig
 
+from framework.version import TEXT_CHAT_API_VERSION
+
 from framework.audio import (
     VoiceOutputRequest,
     VoiceOutputResult,
@@ -59,7 +61,7 @@ class TextChatSessionInfo:
     provider: str | None
     model: str | None
     route_name: str | None
-    api_version: str = "4.0"
+    api_version: str = TEXT_CHAT_API_VERSION
     session_type: str = "text_chat"
     supports_streaming: bool = True
     supports_reset: bool = True

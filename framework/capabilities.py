@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Mapping
 
+from .version import CAPABILITIES_SCHEMA_VERSION
+
 
 CapabilityState = Literal[
     "supported",
@@ -110,7 +112,7 @@ def get_capabilities(
 
     resolved_project_root = Path(project_root).resolve() if project_root is not None else None
     return FrameworkCapabilities(
-        schema_version="v5.1.capabilities",
+        schema_version=CAPABILITIES_SCHEMA_VERSION,
         text_chat=_text_chat_capability(),
         voice_output=_voice_output_capability(real_tts_enabled=real_tts_enabled),
         voice_input=_missing_capability("voice_input", "public_boundary_missing", "Voice input public boundary is not implemented yet."),

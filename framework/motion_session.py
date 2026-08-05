@@ -28,6 +28,8 @@ from .motion import (
     MotionState,
     _public_mapping,
 )
+from .version import MOTION_API_VERSION
+
 from .motion_adapter_execution import (
     MotionAdapterExecutionConfig,
     get_motion_adapter_execution_capability,
@@ -193,7 +195,7 @@ class MotionSessionInfo:
 
     # FW-VTS-0a historical marker retained for its frozen readiness checker:
     # api_version: str = "5.2.0"
-    api_version: str = "5.5.0"
+    api_version: str = MOTION_API_VERSION
     session_type: str = "motion"
     session_id: str = field(default_factory=lambda: uuid4().hex)
     adapter: str = "mock"

@@ -21,6 +21,8 @@ from .voice_input import (
     VoiceInputResult,
     _public_mapping,
 )
+from .version import VOICE_INPUT_API_VERSION
+
 from .voice_input_capability import (
     VoiceInputCapabilities,
     VoiceInputProviderStatus,
@@ -35,7 +37,7 @@ VoiceInputCallback = Callable[[Mapping[str, Any]], None]
 class VoiceInputSessionInfo:
     """App-safe metadata for a public voice-input session."""
 
-    api_version: str = "5.2.0"
+    api_version: str = VOICE_INPUT_API_VERSION
     session_type: str = "voice_input"
     provider: str | None = None
     language: str | None = None

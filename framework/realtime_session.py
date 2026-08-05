@@ -24,6 +24,8 @@ from .output_control import (
     OutputFlushResult,
     TTSQueueState,
 )
+from .version import REALTIME_API_VERSION
+
 from .realtime import (
     RealtimeErrorCode,
     RealtimeEvent,
@@ -42,7 +44,7 @@ RealtimeEventCallback = Callable[[RealtimeEvent], None]
 class RealtimeSessionInfo:
     """App-safe metadata for a public realtime session."""
 
-    api_version: str = "5.2.0"
+    api_version: str = REALTIME_API_VERSION
     session_type: str = "realtime"
     session_id: str = field(default_factory=lambda: uuid4().hex)
     state: RealtimeState | str = RealtimeState.IDLE

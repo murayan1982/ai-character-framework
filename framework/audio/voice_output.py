@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
 
+from ..version import VOICE_OUTPUT_BOUNDARY_VERSION
+
 
 @dataclass(frozen=True)
 class VoiceOutputRequest:
@@ -168,7 +170,7 @@ class VoiceOutputSessionInfo:
     """Public, app-safe metadata for a voice output session."""
 
     session_type: str = "voice_output"
-    boundary_version: str = "v5.lazy_provider_adapter"
+    boundary_version: str = VOICE_OUTPUT_BOUNDARY_VERSION
     supports_voice_output: bool = True
     real_tts_enabled: bool = False
     provider_configured: bool = False
