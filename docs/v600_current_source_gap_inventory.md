@@ -232,3 +232,29 @@ central module; it does not mean every historical API/schema value was changed
 to `6.0.0`. G-16 remains open because release smokes were strengthened, but a
 normal deterministic unit-test layer is still absent.
 <!-- FW-RT6-0b-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-0c-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-0c installable SDK gap resolution sync
+
+This sync records the accepted public-SDK portion of G-14 while preserving the
+historical source observations above.
+
+```text
+baseline head: cf9949579d971de68b2b763928f1c8052cf49921
+G-14 installable SDK/package metadata: RESOLVED
+G-14 preset/character public CWD dependency: RESOLVED
+G-14 public VoiceOutput artifact CWD dependency: RESOLVED
+G-14 public example sys.path bootstrap: RESOLVED
+editable install outside checkout: VERIFIED
+wheel install outside checkout: VERIFIED
+public resource lookup outside CWD: VERIFIED
+legacy main.py/runtime CWD-relative paths: UNRESOLVED / OUT OF FW-RT6-0c SCOPE
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+capability truthfulness across modules: UNRESOLVED / FW-RT6-1d
+unified realtime orchestration: UNRESOLVED
+```
+
+G-14 is resolved for the installable public SDK boundary only. The legacy
+interactive runtime remains intentionally outside this checkpoint, and v6.0.0
+is not released by this sync.
+<!-- FW-RT6-0c-D-GAP-RESOLUTION-SYNC:END -->

@@ -448,15 +448,15 @@ PASS
 
 **Tasks:**
 
-- [ ] `pyproject.toml`を追加する。
-- [ ] package name/version/dependency groupsを定義する。
-- [ ] provider SDKをoptional dependencyへ分離できるか検討する。
-- [ ] preset/character resource resolverを追加する。
-- [ ] `Path("presets")`、`Path("characters")`をresource-root基準へ置換する。
-- [ ] artifact/output default pathをCWDから切り離す。
-- [ ] explicit `project_root` overrideはcompatibilityとして維持する。
-- [ ] temporary directoryからinstalled packageをimportしてsmokeを実行する。
-- [ ] `sys.path` mutationなしのpackage-import gateを追加する。
+- [x] `pyproject.toml`を追加する。
+- [x] package name/version/dependency groupsを定義する。
+- [x] provider SDKをoptional dependencyへ分離できるか検討する。
+- [x] preset/character resource resolverを追加する。
+- [x] `Path("presets")`、`Path("characters")`をresource-root基準へ置換する。
+- [x] artifact/output default pathをCWDから切り離す。
+- [x] explicit `project_root` overrideはcompatibilityとして維持する。
+- [x] temporary directoryからinstalled packageをimportしてsmokeを実行する。
+- [x] `sys.path` mutationなしのpackage-import gateを追加する。
 
 **Acceptance:**
 
@@ -479,6 +479,32 @@ False
 temporary CWD change required:
 False
 ```
+
+<!-- FW-RT6-0c-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-0c Control D
+baseline head: cf9949579d971de68b2b763928f1c8052cf49921
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A package metadata: ACCEPTED
+Control B resource resolution: ACCEPTED
+Control C isolated installation: ACCEPTED
+Control D exact change surface: 4 files
+editable install: PASS
+wheel install: PASS
+import outside checkout: PASS
+preset/resource lookup outside CWD: PASS
+sys.path mutation required: False
+temporary CWD change required: False
+canonical root-public names: 95
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-0c-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

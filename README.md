@@ -2323,3 +2323,40 @@ commit / push: NOT_AUTHORIZED
 The gate installs no provider extras and performs no live model, voice, motion,
 or host-application operation. Aggregate task/gap acceptance remains Control D.
 <!-- FW-RT6-0c-C-INSTALLABLE-SDK-ISOLATION:END -->
+
+<!-- FW-RT6-0c-D-INSTALLABLE-SDK-ACCEPTANCE:BEGIN -->
+## v6.0.0 installable SDK aggregate acceptance
+
+FW-RT6-0c Controls A through C establish normal package metadata, package-based
+preset/character resolution, a CWD-independent public voice artifact default,
+and isolated editable/wheel installation. Control D records aggregate
+acceptance only; it does not change package or runtime behavior.
+
+```text
+checkpoint: FW-RT6-0c Control D
+baseline head: cf9949579d971de68b2b763928f1c8052cf49921
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A package metadata: ACCEPTED
+Control B resource resolution: ACCEPTED
+Control C isolated installation: ACCEPTED
+distribution name: ai-character-framework
+source development version: 6.0.0.dev0
+editable install: PASS
+wheel build/install: PASS
+import outside checkout: PASS
+public preset/character CWD dependency: False
+public voice artifact CWD dependency: False
+public example sys.path mutation: False
+canonical root-public names: 95
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-1a
+next checkpoint authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+Legacy `main.py` and legacy runtime CWD-relative paths, capability truthfulness,
+normal deterministic unit-test architecture, and unified realtime composition
+remain separate later work. This checkpoint does not reclassify them as done.
+<!-- FW-RT6-0c-D-INSTALLABLE-SDK-ACCEPTANCE:END -->
