@@ -819,3 +819,31 @@ asynchronous interruption. Recovery values describe the next safe action and do
 not claim that reset, reconnect, close, or provider hard cancellation already
 completed.
 <!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:END -->
+
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:BEGIN -->
+## Realtime phase and terminal outcome separation
+
+For v6 realtime integration, applications should use `RealtimePhase` to observe
+transient session progress and `TurnOutcome` to interpret a terminal turn result.
+
+```text
+session.phase:
+RealtimePhase | None
+
+result.outcome:
+TurnOutcome
+
+closed session phase:
+None
+```
+
+The accepted v5 `RealtimeState` properties and event values remain compatible,
+but applications should not use terminal `RealtimeState` values as the canonical
+v6 phase model. Invalid internal phase regressions produce the public-safe
+`LifecycleTransitionError`; provider exceptions and payloads are not required at
+the host boundary.
+
+`RealtimeEvent` still uses the legacy state mapping in this control. Event phase,
+sequence, generation, terminal flag, and typed payload integration remain
+FW-RT6-1c.
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:END -->

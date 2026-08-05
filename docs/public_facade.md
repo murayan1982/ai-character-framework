@@ -1297,3 +1297,28 @@ asynchronous interruption. Recovery values describe the next safe action and do
 not claim that reset, reconnect, close, or provider hard cancellation already
 completed.
 <!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:END -->
+
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:BEGIN -->
+## Realtime canonical phase guidance
+
+FW-RT6-1b Control C adds `session.phase` as the canonical transient lifecycle
+surface. Host applications should inspect `RealtimePhase` for current progress
+and `TurnOutcome` for terminal turn meaning.
+
+```python
+phase = session.phase
+result = session.run_turn(input_text="hello")
+
+assert result.outcome is TurnOutcome.COMPLETED
+assert session.phase is RealtimePhase.IDLE
+```
+
+The legacy `session.state`, `session.info.state`, and `RealtimeEvent.state`
+contracts remain available for v5 compatibility. They are not the canonical v6
+terminal model. A closed session has `session.phase is None` and retains
+`session.state == RealtimeState.CLOSED`.
+
+This control does not add a canonical phase field to `RealtimeEvent`; ordered v6
+event phase, sequence, generation, terminal, and typed payload work remains
+FW-RT6-1c.
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:END -->

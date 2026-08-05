@@ -16,6 +16,7 @@ from .identity import SessionId, TurnId, normalize_session_id, normalize_turn_id
 from .lifecycle import (
     LifecycleTransitionError,
     LifecycleTransitionErrorCode,
+    RealtimePhase,
     RecoveryAction,
     TurnOutcome,
 )
@@ -62,6 +63,33 @@ class RealtimeState(str, Enum):
     FAILED = "failed"
     COMPLETED = "completed"
     CLOSED = "closed"
+
+
+_REALTIME_PHASE_BY_STATE = {
+    RealtimeState.IDLE: RealtimePhase.IDLE,
+    RealtimeState.LISTENING: RealtimePhase.LISTENING,
+    RealtimeState.TRANSCRIBING: RealtimePhase.TRANSCRIBING,
+    RealtimeState.THINKING: RealtimePhase.THINKING,
+    RealtimeState.SPEAKING: RealtimePhase.SPEAKING,
+    RealtimeState.MOTION: RealtimePhase.MOTION,
+}
+
+
+def _normalize_realtime_phase(
+    value: RealtimePhase | str | None,
+    *,
+    legacy_state: RealtimeState | str | None = None,
+) -> RealtimePhase | None:
+    if value is not None:
+        return value if isinstance(value, RealtimePhase) else RealtimePhase(str(value))
+    if legacy_state is None:
+        return None
+    state = (
+        legacy_state
+        if isinstance(legacy_state, RealtimeState)
+        else RealtimeState(str(legacy_state))
+    )
+    return _REALTIME_PHASE_BY_STATE.get(state)
 
 
 class RealtimeEventType(str, Enum):
@@ -173,10 +201,17 @@ class RealtimeTurn:
     state: RealtimeState | str = RealtimeState.IDLE
     session_id: SessionId | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    phase: RealtimePhase | str | None = None
 
     def __post_init__(self) -> None:
         state = self.state if isinstance(self.state, RealtimeState) else RealtimeState(str(self.state))
+        phase = _normalize_realtime_phase(self.phase, legacy_state=state)
+        if phase is None:
+            raise LifecycleTransitionError(
+                LifecycleTransitionErrorCode.PHASE_OUTCOME_MISMATCH
+            )
         object.__setattr__(self, "state", state)
+        object.__setattr__(self, "phase", phase)
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))

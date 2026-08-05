@@ -88,6 +88,7 @@ def _assert_public_exports(framework) -> None:
         "create_realtime_session",
         "RealtimeSession",
         "RealtimeSessionInfo",
+        "RealtimePhase",
     ]
     public = set(getattr(framework, "__all__", ()))
     for name in required:
@@ -198,6 +199,7 @@ def _assert_event_and_turn_types(framework) -> None:
     _require(type(turn.session_id) is str, "legacy RealtimeTurn session_id should remain str")
     _require(turn.input_text == "hello", "RealtimeTurn should preserve input text")
     _require(turn.state == framework.RealtimeState.IDLE, "RealtimeTurn default state should be idle")
+    _require(turn.phase is framework.RealtimePhase.IDLE, "RealtimeTurn default phase should be idle")
     _require(turn.public_metadata["api_key"] == "<redacted>", "RealtimeTurn should redact secret-like metadata")
 
     completed = framework.RealtimeTurnResult.completed(
@@ -259,14 +261,22 @@ def _assert_event_and_turn_types(framework) -> None:
 
 def _assert_session_contract(framework) -> None:
     events = []
+    phase_observations = []
     session = framework.create_realtime_session(public_metadata={"secret": "should-not-leak"})
-    session.on_event(events.append)
+
+    def record(event) -> None:
+        events.append(event)
+        phase_observations.append((event.type, session.phase))
+
+    session.on_event(record)
 
     _require(isinstance(session.info, framework.RealtimeSessionInfo), "session.info should be RealtimeSessionInfo")
     _require(session.info.session_type == "realtime", "session.info session_type mismatch")
     _require(isinstance(session.info.session_id, framework.SessionId), "new session should use SessionId")
     _require(session.info.state == framework.RealtimeState.IDLE, "new session info state should be idle")
+    _require(session.info.phase is framework.RealtimePhase.IDLE, "new session info phase should be idle")
     _require(session.state == framework.RealtimeState.IDLE, "new session state should be idle")
+    _require(session.phase is framework.RealtimePhase.IDLE, "new session phase should be idle")
     _require(session.info.public_metadata["secret"] == "<redacted>", "session.info metadata should be redacted")
     _require(not session.is_closed, "new RealtimeSession should be open")
     _require(not session.info.real_runtime_enabled, "session should not enable real runtime by default")
@@ -289,6 +299,21 @@ def _assert_session_contract(framework) -> None:
     _require(result.public_metadata["mock_runtime"], "run_turn should mark mock_runtime")
     _require(result.public_metadata["password"] == "<redacted>", "run_turn metadata should be redacted")
     _require(session.state == framework.RealtimeState.IDLE, "session should return to idle after mock turn")
+    _require(session.phase is framework.RealtimePhase.IDLE, "session phase should return to idle after mock turn")
+    _require(session.info.phase is framework.RealtimePhase.IDLE, "session info phase should return to idle")
+
+    expected_phase_observations = [
+        (framework.RealtimeEventType.SESSION_CREATED, framework.RealtimePhase.IDLE),
+        (framework.RealtimeEventType.TURN_STARTED, framework.RealtimePhase.LISTENING),
+        (framework.RealtimeEventType.VOICE_INPUT_STARTED, framework.RealtimePhase.LISTENING),
+        (framework.RealtimeEventType.VOICE_INPUT_COMPLETED, framework.RealtimePhase.TRANSCRIBING),
+        (framework.RealtimeEventType.TEXT_CHAT_STARTED, framework.RealtimePhase.THINKING),
+        (framework.RealtimeEventType.TEXT_CHAT_COMPLETED, framework.RealtimePhase.SPEAKING),
+        (framework.RealtimeEventType.VOICE_OUTPUT_STARTED, framework.RealtimePhase.SPEAKING),
+        (framework.RealtimeEventType.VOICE_OUTPUT_COMPLETED, framework.RealtimePhase.SPEAKING),
+        (framework.RealtimeEventType.TURN_COMPLETED, framework.RealtimePhase.SPEAKING),
+    ]
+    _require(phase_observations == expected_phase_observations, "RealtimeSession phase progression mismatch")
 
     event_types = [event.type for event in events]
     expected_order = [
@@ -312,6 +337,8 @@ def _assert_session_contract(framework) -> None:
     session.dispose()
     _require(session.is_closed, "RealtimeSession should be closed after close/dispose")
     _require(session.state == framework.RealtimeState.CLOSED, "closed session state mismatch")
+    _require(session.phase is None, "closed session should have no canonical phase")
+    _require(session.info.phase is None, "closed session info should have no canonical phase")
     _require(events[-1].type == framework.RealtimeEventType.SESSION_CLOSED, "close should emit session.closed")
 
     closed_result = session.run_turn(input_text="after close")
@@ -324,6 +351,7 @@ def _assert_session_contract(framework) -> None:
         _require(not managed.is_closed, "managed session should be open in context")
     _require(managed.is_closed, "managed session should close on context exit")
     _require(managed.state == framework.RealtimeState.CLOSED, "managed session should set closed state on context exit")
+    _require(managed.phase is None, "managed closed session should have no canonical phase")
     _ok("public RealtimeSession contract conforms")
 
 

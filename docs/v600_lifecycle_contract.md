@@ -172,3 +172,54 @@ asynchronous interruption. Recovery values describe the next safe action and do
 not claim that reset, reconnect, close, or provider hard cancellation already
 completed.
 <!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:END -->
+
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:BEGIN -->
+## FW-RT6-1b Control C — RealtimeSession canonical phase adoption
+
+Status:
+
+```text
+IMPLEMENTED / AWAITING_REVIEW
+```
+
+Baseline:
+
+```text
+5cbb1cbe40805db4aa475149030099ee68eb889b
+```
+
+`RealtimeSession`, `RealtimeSessionInfo`, and `RealtimeTurn` now expose the
+canonical transient `RealtimePhase` model while preserving the accepted v5
+`RealtimeState` callback and property contract.
+
+```text
+RealtimeSession canonical phase: IMPLEMENTED
+RealtimeSession.phase: RealtimePhase | None
+RealtimeSessionInfo.phase: RealtimePhase | None
+RealtimeTurn.phase: RealtimePhase
+new session phase: idle
+completed/interrupted mock turn phase: idle
+closed session phase: None
+legacy session.state: PRESERVED
+legacy RealtimeEvent.state order/values: PRESERVED
+invalid session phase transition: LifecycleTransitionError
+closed session active-phase transition: session_closed
+RealtimeEvent phase field added: False
+RealtimeEvent sequence/generation/terminal fields: DEFERRED / FW-RT6-1c
+terminal registry / exactly-once suppression: NOT IMPLEMENTED
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1b Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+The mock turn advances through `listening`, `transcribing`, `thinking`, and
+`speaking`, then returns to `idle` after the legacy terminal events are emitted.
+The legacy terminal event states remain `completed`, while terminal result
+meaning is owned by `TurnOutcome`. An active mock interrupt may expose
+`recovering` as the canonical phase during the legacy interrupted event and then
+returns to `idle`.
+
+This control does not add phase, sequence, generation, terminal, or typed payload
+fields to `RealtimeEvent`. Those ordered event changes remain FW-RT6-1c.
+<!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:END -->

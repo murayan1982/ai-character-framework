@@ -302,6 +302,8 @@ def _assert_realtime_session_output_control(framework) -> None:
     _require(not info.hard_cancel_supported, "RealtimeSessionInfo should not overclaim real hard cancel")
     _require(not info.tts_queue_flush_supported, "RealtimeSessionInfo should not overclaim real queue flush")
     _require(info.public_metadata["password"] == "<redacted>", "RealtimeSessionInfo metadata should be redacted")
+    _require(info.phase is framework.RealtimePhase.IDLE, "RealtimeSessionInfo phase should be idle")
+    _require(session.phase is framework.RealtimePhase.IDLE, "RealtimeSession phase should be idle")
 
     queue = session.get_tts_queue_state()
     _require(queue.queued_count == 0, "mock queue should be empty")
@@ -320,22 +322,26 @@ def _assert_realtime_session_interrupt_and_flush(framework) -> None:
     _require(events[0].type == framework.RealtimeEventType.INTERRUPT_REQUESTED, "interrupt should emit requested event")
     _require(events[-1].type == framework.RealtimeEventType.INTERRUPT_UNSUPPORTED, "no-active interrupt should emit unsupported event")
     _require("should-not-leak" not in repr(no_active), "interrupt result should not leak secret-like metadata")
+    _require(session.phase is framework.RealtimePhase.IDLE, "no-active interrupt should preserve idle phase")
 
     explicit = session.interrupt(framework.InterruptRequest.user_barge_in(turn_id="turn-1"))
     _require(explicit.outcome == framework.InterruptOutcome.NOT_IMPLEMENTED, "explicit turn interrupt should be not_implemented")
     _require(not explicit.provider_cancel_supported, "explicit interrupt should not claim provider cancel")
     _require(not explicit.queue_flush_supported, "explicit interrupt should not claim queue flush")
     _require(session.state == framework.RealtimeState.IDLE, "session should return to idle after not_implemented interrupt")
+    _require(session.phase is framework.RealtimePhase.IDLE, "explicit mock interrupt should return phase to idle")
 
     cancel = session.cancel_current_turn()
     _require(cancel.outcome == framework.InterruptOutcome.NO_ACTIVE_TURN, "cancel_current_turn without active turn should be no_active_turn")
     _require(cancel.scope == framework.InterruptScope.CURRENT_TURN, "cancel_current_turn scope mismatch")
+    _require(session.phase is framework.RealtimePhase.IDLE, "no-active cancellation should preserve idle phase")
 
     flush = session.flush_output(framework.OutputFlushRequest(public_metadata={"api_key": "should-not-leak"}))
     _require(flush.outcome == framework.OutputFlushOutcome.NOTHING_TO_FLUSH, "empty mock flush should be nothing_to_flush")
     _require(not flush.flushed, "empty mock flush should not report flushed")
     _require(events[-1].type == framework.RealtimeEventType.OUTPUT_FLUSH_COMPLETED, "empty flush should emit completed event")
     _require("should-not-leak" not in repr(flush), "flush result should not leak secret-like metadata")
+    _require(session.phase is framework.RealtimePhase.IDLE, "empty flush should preserve idle phase")
     _ok("RealtimeSession interrupt/cancel/flush behavior conforms")
 
 
@@ -363,6 +369,8 @@ def _assert_realtime_session_barge_in_and_closed(framework) -> None:
     _require(events[-1].type == framework.RealtimeEventType.BARGE_IN_ACCEPTED, "enabled barge-in should emit accepted")
 
     session.close()
+    _require(session.phase is None, "closed output-control session should have no canonical phase")
+    _require(session.info.phase is None, "closed output-control session info should have no canonical phase")
     closed_interrupt = session.interrupt(framework.InterruptRequest.user_barge_in())
     _require(closed_interrupt.outcome == framework.InterruptOutcome.ALREADY_CLOSED, "closed interrupt should be already_closed")
     closed_flush = session.flush_output()

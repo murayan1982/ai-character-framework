@@ -12,6 +12,12 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from .identity import SessionId, TurnId
+from .lifecycle import (
+    LifecycleTransitionError,
+    LifecycleTransitionErrorCode,
+    RealtimePhase,
+    validate_phase_transition,
+)
 
 from .output_control import (
     BargeInDecision,
@@ -34,11 +40,13 @@ from .realtime import (
     RealtimeState,
     RealtimeTurn,
     RealtimeTurnResult,
+    _normalize_realtime_phase,
     _public_mapping,
 )
 
 
 RealtimeEventCallback = Callable[[RealtimeEvent], None]
+_PHASE_UNCHANGED = object()
 
 
 @dataclass(frozen=True)
@@ -63,10 +71,13 @@ class RealtimeSessionInfo:
     hard_cancel_supported: bool = False
     tts_queue_flush_supported: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    phase: RealtimePhase | str | None = None
 
     def __post_init__(self) -> None:
         state = self.state if isinstance(self.state, RealtimeState) else RealtimeState(str(self.state))
+        phase = _normalize_realtime_phase(self.phase, legacy_state=state)
         object.__setattr__(self, "state", state)
+        object.__setattr__(self, "phase", phase)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -88,6 +99,7 @@ class RealtimeSession:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
         self._session_id = SessionId.new()
         self._state = RealtimeState.IDLE
+        self._phase: RealtimePhase | None = RealtimePhase.IDLE
         self._closed = False
         self._callbacks: list[RealtimeEventCallback] = []
         self._real_runtime_enabled = bool(real_runtime_enabled)
@@ -97,6 +109,7 @@ class RealtimeSession:
         self._info = RealtimeSessionInfo(
             session_id=self._session_id,
             state=self._state,
+            phase=self._phase,
             real_runtime_enabled=self._real_runtime_enabled,
             public_metadata={
                 "boundary": "realtime",
@@ -109,6 +122,7 @@ class RealtimeSession:
         return RealtimeSessionInfo(
             session_id=self._session_id,
             state=self._state,
+            phase=self._phase,
             real_runtime_enabled=self._real_runtime_enabled,
             public_metadata={
                 "boundary": "realtime",
@@ -120,6 +134,10 @@ class RealtimeSession:
     @property
     def state(self) -> RealtimeState:
         return self._state
+
+    @property
+    def phase(self) -> RealtimePhase | None:
+        return self._phase
 
     @property
     def is_closed(self) -> bool:
@@ -136,17 +154,41 @@ class RealtimeSession:
             raise TypeError("callback must be callable")
         self._callbacks.append(callback)
 
+    def _set_phase(
+        self,
+        next_phase: RealtimePhase | str | None,
+    ) -> RealtimePhase | None:
+        if next_phase is None:
+            self._phase = None
+            return None
+        resolved_next = (
+            next_phase
+            if isinstance(next_phase, RealtimePhase)
+            else RealtimePhase(str(next_phase))
+        )
+        if self._closed or self._phase is None:
+            raise LifecycleTransitionError(
+                LifecycleTransitionErrorCode.SESSION_CLOSED,
+                from_phase=self._phase,
+                to_phase=resolved_next,
+            )
+        self._phase = validate_phase_transition(self._phase, resolved_next)
+        return self._phase
+
     def _transition(
         self,
         event_type: RealtimeEventType,
         new_state: RealtimeState,
         *,
         turn_id: TurnId | str | None = None,
+        new_phase: RealtimePhase | str | None | object = _PHASE_UNCHANGED,
         public_error_code: RealtimeErrorCode = RealtimeErrorCode.NONE,
         safe_message: str = "",
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> RealtimeEvent:
+        if new_phase is not _PHASE_UNCHANGED:
+            self._set_phase(new_phase)
         previous_state = self._state
         self._state = new_state
         event = RealtimeEvent(
@@ -174,6 +216,7 @@ class RealtimeSession:
         return self._transition(
             RealtimeEventType.SESSION_CREATED,
             RealtimeState.IDLE,
+            new_phase=RealtimePhase.IDLE,
             public_metadata={"reason": "session_created"},
         )
 
@@ -200,6 +243,7 @@ class RealtimeSession:
                 state=turn.state,
                 session_id=self._session_id,
                 public_metadata=turn.public_metadata,
+                phase=turn.phase,
             )
 
         if self._closed:
@@ -213,22 +257,24 @@ class RealtimeSession:
             return RealtimeTurnResult.closed(turn_id=turn.turn_id)
 
         self._active_turn_id = turn.turn_id
-        self._transition(RealtimeEventType.TURN_STARTED, RealtimeState.LISTENING, turn_id=turn.turn_id)
-        self._transition(RealtimeEventType.VOICE_INPUT_STARTED, RealtimeState.LISTENING, turn_id=turn.turn_id)
+        self._transition(RealtimeEventType.TURN_STARTED, RealtimeState.LISTENING, turn_id=turn.turn_id, new_phase=RealtimePhase.LISTENING)
+        self._transition(RealtimeEventType.VOICE_INPUT_STARTED, RealtimeState.LISTENING, turn_id=turn.turn_id, new_phase=RealtimePhase.LISTENING)
         self._transition(
             RealtimeEventType.VOICE_INPUT_COMPLETED,
             RealtimeState.TRANSCRIBING,
             turn_id=turn.turn_id,
+            new_phase=RealtimePhase.TRANSCRIBING,
             public_metadata={"mock_stage": "voice_input"},
         )
-        self._transition(RealtimeEventType.TEXT_CHAT_STARTED, RealtimeState.THINKING, turn_id=turn.turn_id)
+        self._transition(RealtimeEventType.TEXT_CHAT_STARTED, RealtimeState.THINKING, turn_id=turn.turn_id, new_phase=RealtimePhase.THINKING)
         self._transition(
             RealtimeEventType.TEXT_CHAT_COMPLETED,
             RealtimeState.SPEAKING,
             turn_id=turn.turn_id,
+            new_phase=RealtimePhase.SPEAKING,
             public_metadata={"mock_stage": "text_chat"},
         )
-        self._transition(RealtimeEventType.VOICE_OUTPUT_STARTED, RealtimeState.SPEAKING, turn_id=turn.turn_id)
+        self._transition(RealtimeEventType.VOICE_OUTPUT_STARTED, RealtimeState.SPEAKING, turn_id=turn.turn_id, new_phase=RealtimePhase.SPEAKING)
         self._transition(
             RealtimeEventType.VOICE_OUTPUT_COMPLETED,
             RealtimeState.COMPLETED,
@@ -240,6 +286,7 @@ class RealtimeSession:
         self._active_turn_id = None
         # A completed turn returns the session to idle for the next host-app
         # interaction, without emitting another event.
+        self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
 
         return RealtimeTurnResult.completed(
@@ -320,10 +367,16 @@ class RealtimeSession:
             return result
 
         result = InterruptResult.not_implemented(request=request)
+        next_phase = (
+            RealtimePhase.RECOVERING
+            if self._active_turn_id is not None
+            else _PHASE_UNCHANGED
+        )
         self._transition(
             RealtimeEventType.INTERRUPT_UNSUPPORTED,
             RealtimeState.INTERRUPTED,
             turn_id=request.turn_id or self._active_turn_id,
+            new_phase=next_phase,
             public_error_code=RealtimeErrorCode.UNSUPPORTED,
             safe_message=result.safe_message,
             public_metadata={
@@ -332,6 +385,7 @@ class RealtimeSession:
                 "interrupt_outcome": result.outcome.value,
             },
         )
+        self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
         return result
 
@@ -476,6 +530,7 @@ class RealtimeSession:
             return
         self._closed = True
         self._active_turn_id = None
+        self._set_phase(None)
         self._transition(
             RealtimeEventType.SESSION_CLOSED,
             RealtimeState.CLOSED,
