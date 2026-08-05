@@ -526,3 +526,40 @@ Do not begin DRC real-motion integration until FW-VTS-0f is accepted,
 a Framework real-motion adapter is released, and the root-public contract is
 fixed.
 ```
+
+<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->
+## Canonical public import inventory
+
+Host applications continue to import supported SDK contracts from `framework`.
+The exact ordered root-public inventory is maintained by
+`framework.public_api.PUBLIC_API_NAMES` and exposed by `framework.__all__`.
+
+This change is an SDK hygiene checkpoint, not a host migration. Existing
+imports remain valid, including the frozen provider-specific OpenAI voice-input
+compatibility exports. Those compatibility exports stay lazy and do not cause
+provider SDK import or provider execution during ordinary application startup.
+
+Host applications should continue to prefer provider-neutral contracts such as:
+
+```python
+from framework import (
+    create_text_chat_session,
+    create_voice_input_session,
+    create_voice_output_session,
+    create_realtime_session,
+    create_motion_session,
+)
+```
+
+New provider-specific names must not be added to the root-public API without a
+separate exact contract review. Future provider integrations should use
+provider-neutral factories and capability/result contracts.
+
+```text
+checkpoint: FW-RT6-0b Control A
+runtime behavior changed: False
+provider execution: False
+network execution: False
+DRC or other host repository changes required: False
+```
+<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->

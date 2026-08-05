@@ -960,3 +960,49 @@ No token material, private path, endpoint value, hotkey identity, selector
 value, model identity, provider payload, raw exception, evidence document,
 or screenshot is part of this public acceptance record.
 <!-- FW-VTS-0f2-REAL-MOTION-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->
+## v6.0.0 development: canonical root-public API manifest
+
+FW-RT6-0b Control A removes the duplicated release-by-release construction of
+`framework.__all__`. The ordered root-public compatibility surface is now
+defined once in:
+
+```text
+framework/public_api.py
+```
+
+`framework.__init__` imports the public symbols and assigns:
+
+```python
+__all__ = list(PUBLIC_API_NAMES)
+```
+
+The manifest preserves the accepted v5.5.0 root-public surface exactly. It does
+not remove or rename existing text, voice-input, voice-output, realtime,
+interrupt/output-control, or motion symbols.
+
+The OpenAI voice-input compatibility names that were already root-public remain
+available through lazy `framework.__getattr__` resolution. They are listed in
+`PROVIDER_COMPAT_LAZY_EXPORT_MODULES`; importing `framework` alone does not
+import OpenAI, ElevenLabs, VTube Studio, websocket, microphone, playback, or
+legacy runtime modules.
+
+Control A does not:
+
+- clean up duplicate `VoiceOutputSession` method definitions;
+- change any session-info API or boundary version;
+- change capability truthfulness;
+- implement unified realtime orchestration;
+- execute a provider, network operation, microphone, playback, or VTS action.
+
+```text
+checkpoint: FW-RT6-0b Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+canonical root-public name count: 95
+v5.5 root-public compatibility preserved: True
+provider compatibility exports lazy: True
+next control: FW-RT6-0b Control B
+next control authorized: False
+```
+<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->

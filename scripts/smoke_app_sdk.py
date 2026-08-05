@@ -62,6 +62,41 @@ def _assert_no_forbidden_runtime_imports(context: str) -> None:
     )
 
 
+
+def check_public_api_manifest() -> None:
+    import framework
+    from framework.public_api import (
+        PROVIDER_COMPAT_LAZY_EXPORTS,
+        PUBLIC_API_NAMES,
+    )
+
+    _assert(
+        tuple(framework.__all__) == PUBLIC_API_NAMES,
+        "framework.__all__ should match the canonical public API manifest",
+    )
+    _assert(
+        len(PUBLIC_API_NAMES) == len(set(PUBLIC_API_NAMES)),
+        "canonical public API manifest should not contain duplicates",
+    )
+
+    lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
+    missing_eager_names = sorted(
+        name
+        for name in PUBLIC_API_NAMES
+        if name not in lazy_names and name not in framework.__dict__
+    )
+    _assert(
+        not missing_eager_names,
+        f"canonical eager public names should be bound: {missing_eager_names}",
+    )
+    _assert(
+        not [name for name in lazy_names if name in framework.__dict__],
+        "provider compatibility exports should remain lazy after root import",
+    )
+
+    _assert_no_forbidden_runtime_imports("canonical public API manifest")
+    print("[OK] app SDK canonical public API manifest is stable")
+
 def check_public_sdk_imports() -> None:
     from framework import (
         FacadeConfigError,
@@ -345,6 +380,7 @@ def check_sdk_examples_importable() -> None:
 
 
 def main() -> None:
+    check_public_api_manifest()
     check_public_sdk_imports()
     check_session_info_contract()
     check_event_models()

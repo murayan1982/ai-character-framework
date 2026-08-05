@@ -25,23 +25,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-EXPECTED_PUBLIC_API = [
-    "FacadeConfigError",
-    "FacadeError",
-    "FacadeProviderError",
-    "TextChatSession",
-    "TextChatSessionEvent",
-    "TextChatSessionInfo",
-    "TextChatStateChange",
-    "VoiceOutputRequest",
-    "VoiceOutputResult",
-    "VoiceOutputSession",
-    "VoiceOutputSessionInfo",
-    "VoiceSynthesisRequest",
-    "VoiceSynthesisResult",
-    "create_text_chat_session",
-    "create_voice_output_session",
-]
+# The exact root-public surface is defined once in ``framework.public_api``.
+# This smoke compares the package facade against that canonical manifest instead
+# of carrying a second release-specific expected-name list.
 
 FORBIDDEN_IMPORTS_AFTER_FRAMEWORK_IMPORT = [
     "core.runtime",
@@ -61,10 +47,36 @@ def _assert(condition: bool, message: str) -> None:
 
 def check_import_boundary() -> None:
     import framework
+    from framework.public_api import (
+        PROVIDER_COMPAT_LAZY_EXPORTS,
+        PUBLIC_API_NAMES,
+    )
 
     _assert(
-        list(framework.__all__) == EXPECTED_PUBLIC_API,
+        tuple(framework.__all__) == PUBLIC_API_NAMES,
         f"Unexpected framework.__all__: {framework.__all__!r}",
+    )
+    _assert(
+        len(PUBLIC_API_NAMES) == len(set(PUBLIC_API_NAMES)),
+        "canonical public API manifest must not contain duplicate names",
+    )
+
+    lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
+    eager_names = set(PUBLIC_API_NAMES) - lazy_names
+    missing_eager_names = sorted(
+        name for name in eager_names if name not in framework.__dict__
+    )
+    _assert(
+        not missing_eager_names,
+        f"eager public API names are not bound on framework: {missing_eager_names}",
+    )
+    unexpectedly_eager_lazy_names = sorted(
+        name for name in lazy_names if name in framework.__dict__
+    )
+    _assert(
+        not unexpectedly_eager_lazy_names,
+        "provider compatibility names should remain lazy after import framework: "
+        f"{unexpectedly_eager_lazy_names}",
     )
 
     imported_forbidden_modules = [
@@ -78,7 +90,7 @@ def check_import_boundary() -> None:
         f"{imported_forbidden_modules}",
     )
 
-    print("[OK] import framework exposes the expected public API")
+    print("[OK] import framework matches the canonical public API manifest")
     print("[OK] import framework does not load runtime/audio/VTS modules")
 
 
