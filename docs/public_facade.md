@@ -16,7 +16,7 @@ session = create_text_chat_session(
 
 print(session.info)
 
-response = session.ask("縺薙ｓ縺ｫ縺｡縺ｯ縲ら洒縺剰ｿ斐＠縺ｦ縲・)
+response = session.ask("こんにちは。短く返して。")
 print(response)
 ```
 
@@ -28,7 +28,7 @@ from framework import VoiceOutputRequest, create_voice_output_session
 voice_session = create_voice_output_session()
 result = voice_session.create_output(
     VoiceOutputRequest(
-        text="莉頑律縺ｯ蟆代＠譌ｩ繧√↓莨代・縺ｨ繧医＆縺昴≧縺ｧ縺吶・,
+        text="今日は少し早めに休むとよさそうです。",
         voice_profile_id="gentle_mina_default",
         requested_audio_format="mp3",
         utterance_purpose="daily_advice",
@@ -118,7 +118,7 @@ session = create_voice_output_session(
 )
 
 request = VoiceOutputRequest(
-    text="莉頑律縺ｯ蟆代＠譌ｩ繧√↓莨代・縺ｨ繧医＆縺昴≧縺ｧ縺吶・,
+    text="今日は少し早めに休むとよさそうです。",
     voice_profile_id="gentle_mina_default",
     requested_audio_format="mp3",
     utterance_purpose="daily_advice",
@@ -240,7 +240,7 @@ This is a minimal streaming facade. Provider-specific emotion metadata is intent
 For an app-oriented streaming example, run:
 
 ```powershell
-python examples/app_streaming_text_chat.py --provider openai --model gpt-4o-mini --message "縺薙ｓ縺ｫ縺｡縺ｯ縲・譁・〒遏ｭ縺剰ｿ斐＠縺ｦ縲・
+python examples/app_streaming_text_chat.py --provider openai --model gpt-4o-mini --message "こんにちは。1文で短く返して。"
 ```
 
 The example prints chunks as they arrive and keeps the app code limited to public
@@ -491,7 +491,7 @@ python examples/minimal_app_text_chat.py
 With provider/model override:
 
 ```powershell
-python examples/minimal_app_text_chat.py --provider openai --model gpt-4o-mini --message "縺薙ｓ縺ｫ縺｡縺ｯ縲・譁・〒遏ｭ縺剰ｿ斐＠縺ｦ縲・
+python examples/minimal_app_text_chat.py --provider openai --model gpt-4o-mini --message "こんにちは。1文で短く返して。"
 ```
 
 The example shows this shape:
@@ -536,13 +536,13 @@ python scripts/smoke_public_facade.py
 Optional live LLM check using the default chat route:
 
 ```powershell
-python scripts/smoke_public_facade.py --ask "縺薙ｓ縺ｫ縺｡縺ｯ縲ら洒縺剰ｿ斐＠縺ｦ"
+python scripts/smoke_public_facade.py --ask "こんにちは。短く返して"
 ```
 
 Optional live LLM check using direct provider mode:
 
 ```powershell
-python scripts/smoke_public_facade.py --provider openai --model gpt-4o-mini --ask "縺薙ｓ縺ｫ縺｡縺ｯ縲ら洒縺剰ｿ斐＠縺ｦ"
+python scripts/smoke_public_facade.py --provider openai --model gpt-4o-mini --ask "こんにちは。短く返して"
 ```
 
 Minimal direct facade example:
@@ -1156,7 +1156,7 @@ next control authorized: False
 <!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->
 
 <!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:BEGIN -->
-## FW-RT6-1a Control B 窶・realtime identity adoption
+## FW-RT6-1a Control B — realtime identity adoption
 
 Framework-generated realtime sessions and turns now use the root-public
 `SessionId` and `TurnId` scalar types. Existing host applications may continue
@@ -1189,7 +1189,7 @@ model changes remain later controls.
 <!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:END -->
 
 <!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:BEGIN -->
-## FW-RT6-1a Control C 窶・motion identity adoption
+## FW-RT6-1a Control C — motion identity adoption
 
 Framework-generated `MotionSession` instances now use the root-public
 `SessionId` scalar. `MotionSessionInfo`, `MotionResult`, and callback mappings
@@ -1224,7 +1224,7 @@ deferred, and ordered event sequencing remains FW-RT6-1c.
 <!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:END -->
 
 <!-- FW-RT6-1b-A-LIFECYCLE-MODELS:BEGIN -->
-## FW-RT6-1b Control A 窶・public lifecycle primitives
+## FW-RT6-1b Control A — public lifecycle primitives
 
 The root-public SDK now defines separate transient phase, terminal turn outcome,
 recovery action, and typed transition failure models:
@@ -1258,7 +1258,7 @@ commit / push: NOT_AUTHORIZED
 <!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->
 
 <!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:BEGIN -->
-## FW-RT6-1b Control B 窶・turn outcome and recovery adoption
+## FW-RT6-1b Control B — turn outcome and recovery adoption
 
 `RealtimeTurnResult` now normalizes every terminal result to the root-public
 `TurnOutcome` model and exposes one normalized `RecoveryAction`. Existing
