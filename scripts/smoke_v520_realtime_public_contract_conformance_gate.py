@@ -207,22 +207,53 @@ def _assert_event_and_turn_types(framework) -> None:
         public_metadata={"credential": "should-not-leak"},
     )
     _require(completed.outcome == framework.RealtimeState.COMPLETED, "completed result outcome mismatch")
+    _require(type(completed.outcome) is framework.TurnOutcome, "completed outcome should normalize to TurnOutcome")
+    _require(completed.recovery_action is framework.RecoveryAction.NONE, "completed recovery action mismatch")
     _require(completed.is_completed, "completed result should be completed")
     _require(completed.is_terminal, "completed result should be terminal")
     _require(completed.public_metadata["credential"] == "<redacted>", "completed result metadata should be redacted")
 
     interrupted = framework.RealtimeTurnResult.interrupted(turn_id=turn.turn_id)
     _require(interrupted.outcome == framework.RealtimeState.INTERRUPTED, "interrupted result outcome mismatch")
+    _require(type(interrupted.outcome) is framework.TurnOutcome, "interrupted outcome should normalize to TurnOutcome")
+    _require(interrupted.recovery_action is framework.RecoveryAction.RESET_TURN, "interrupted recovery action mismatch")
     _require(interrupted.public_error_code == framework.RealtimeErrorCode.INTERRUPTED, "interrupted result error code mismatch")
     _require(interrupted.retryable, "interrupted result should be retryable")
 
+    cancelled = framework.RealtimeTurnResult.cancelled(turn_id=turn.turn_id)
+    _require(cancelled.outcome is framework.TurnOutcome.CANCELLED, "cancelled result outcome mismatch")
+    _require(cancelled.recovery_action is framework.RecoveryAction.RESET_TURN, "cancelled recovery action mismatch")
+    _require(cancelled.public_error_code is framework.RealtimeErrorCode.CANCELLED, "cancelled error code mismatch")
+
+    rejected = framework.RealtimeTurnResult.rejected(turn_id=turn.turn_id)
+    _require(rejected.outcome is framework.TurnOutcome.REJECTED, "rejected result outcome mismatch")
+    _require(rejected.recovery_action is framework.RecoveryAction.REUSE_SESSION, "rejected recovery action mismatch")
+    _require(rejected.public_error_code is framework.RealtimeErrorCode.REJECTED, "rejected error code mismatch")
+
     failed = framework.RealtimeTurnResult.failed(turn_id=turn.turn_id)
     _require(failed.outcome == framework.RealtimeState.FAILED, "failed result outcome mismatch")
+    _require(type(failed.outcome) is framework.TurnOutcome, "failed outcome should normalize to TurnOutcome")
+    _require(failed.recovery_action is framework.RecoveryAction.RESET_SESSION, "failed recovery action mismatch")
     _require(failed.public_error_code == framework.RealtimeErrorCode.STAGE_FAILED, "failed result error code mismatch")
 
     closed = framework.RealtimeTurnResult.closed(turn_id=turn.turn_id)
     _require(closed.outcome == framework.RealtimeState.CLOSED, "closed result outcome mismatch")
+    _require(type(closed.outcome) is framework.TurnOutcome, "closed outcome should normalize to TurnOutcome")
+    _require(closed.recovery_action is framework.RecoveryAction.NONE, "closed recovery action mismatch")
     _require(closed.public_error_code == framework.RealtimeErrorCode.SESSION_CLOSED, "closed result error code mismatch")
+
+    try:
+        framework.RealtimeTurnResult(
+            turn_id=turn.turn_id,
+            outcome=framework.RealtimeState.THINKING,
+        )
+    except framework.LifecycleTransitionError as exc:
+        _require(
+            exc.code is framework.LifecycleTransitionErrorCode.PHASE_OUTCOME_MISMATCH,
+            "phase/outcome mismatch error code drift",
+        )
+    else:
+        raise ContractFailure("transient RealtimeState was accepted as turn outcome")
     _ok("Realtime event/turn public types conform")
 
 
@@ -251,6 +282,8 @@ def _assert_session_contract(framework) -> None:
 
     result = session.run_turn(input_text="今日は眠いです。", public_metadata={"password": "should-not-leak"})
     _require(result.outcome == framework.RealtimeState.COMPLETED, "run_turn result outcome mismatch")
+    _require(type(result.outcome) is framework.TurnOutcome, "run_turn result should use TurnOutcome")
+    _require(result.recovery_action is framework.RecoveryAction.NONE, "run_turn completed recovery mismatch")
     _require(isinstance(result.turn_id, framework.TurnId), "run_turn result should use TurnId")
     _require(result.input_text == "今日は眠いです。", "run_turn should preserve input text")
     _require(result.public_metadata["mock_runtime"], "run_turn should mark mock_runtime")
@@ -283,6 +316,8 @@ def _assert_session_contract(framework) -> None:
 
     closed_result = session.run_turn(input_text="after close")
     _require(closed_result.outcome == framework.RealtimeState.CLOSED, "closed session run_turn should return closed result")
+    _require(type(closed_result.outcome) is framework.TurnOutcome, "closed run_turn result should use TurnOutcome")
+    _require(closed_result.recovery_action is framework.RecoveryAction.NONE, "closed run_turn recovery mismatch")
     _require(closed_result.public_error_code == framework.RealtimeErrorCode.SESSION_CLOSED, "closed session error code mismatch")
 
     with framework.create_realtime_session() as managed:

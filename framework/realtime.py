@@ -13,6 +13,12 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from .identity import SessionId, TurnId, normalize_session_id, normalize_turn_id
+from .lifecycle import (
+    LifecycleTransitionError,
+    LifecycleTransitionErrorCode,
+    RecoveryAction,
+    TurnOutcome,
+)
 
 
 _SECRET_KEY_FRAGMENTS = (
@@ -98,6 +104,8 @@ class RealtimeErrorCode(str, Enum):
     INVALID_REQUEST = "invalid_request"
     STAGE_FAILED = "stage_failed"
     PROVIDER_ERROR = "provider_error"
+    CANCELLED = "cancelled"
+    REJECTED = "rejected"
 
 
 @dataclass(frozen=True)
@@ -174,12 +182,88 @@ class RealtimeTurn:
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
+_LEGACY_TERMINAL_OUTCOMES = {
+    RealtimeState.COMPLETED: TurnOutcome.COMPLETED,
+    RealtimeState.INTERRUPTED: TurnOutcome.INTERRUPTED,
+    RealtimeState.FAILED: TurnOutcome.FAILED,
+    RealtimeState.CLOSED: TurnOutcome.CLOSED,
+}
+_TRANSIENT_REALTIME_STATE_VALUES = frozenset(
+    {
+        RealtimeState.IDLE.value,
+        RealtimeState.LISTENING.value,
+        RealtimeState.TRANSCRIBING.value,
+        RealtimeState.THINKING.value,
+        RealtimeState.SPEAKING.value,
+        RealtimeState.MOTION.value,
+    }
+)
+_DEFAULT_RECOVERY_BY_OUTCOME = {
+    TurnOutcome.COMPLETED: RecoveryAction.NONE,
+    TurnOutcome.INTERRUPTED: RecoveryAction.RESET_TURN,
+    TurnOutcome.CANCELLED: RecoveryAction.RESET_TURN,
+    TurnOutcome.FAILED: RecoveryAction.RESET_SESSION,
+    TurnOutcome.REJECTED: RecoveryAction.REUSE_SESSION,
+    TurnOutcome.CLOSED: RecoveryAction.NONE,
+}
+
+
+def _normalize_turn_outcome(
+    value: TurnOutcome | RealtimeState | str,
+) -> TurnOutcome:
+    if isinstance(value, TurnOutcome):
+        return value
+    if isinstance(value, RealtimeState):
+        mapped = _LEGACY_TERMINAL_OUTCOMES.get(value)
+        if mapped is not None:
+            return mapped
+        raise LifecycleTransitionError(
+            LifecycleTransitionErrorCode.PHASE_OUTCOME_MISMATCH
+        )
+
+    text = str(value)
+    if text in _TRANSIENT_REALTIME_STATE_VALUES:
+        raise LifecycleTransitionError(
+            LifecycleTransitionErrorCode.PHASE_OUTCOME_MISMATCH
+        )
+    return TurnOutcome(text)
+
+
+def _normalize_recovery_action(
+    value: RecoveryAction | str | None,
+    *,
+    outcome: TurnOutcome,
+) -> RecoveryAction:
+    if value is None:
+        return _DEFAULT_RECOVERY_BY_OUTCOME[outcome]
+    return value if isinstance(value, RecoveryAction) else RecoveryAction(str(value))
+
+
+def _validate_recovery_contract(
+    *,
+    outcome: TurnOutcome,
+    recovery_action: RecoveryAction,
+    retryable: bool,
+) -> None:
+    if outcome in {TurnOutcome.COMPLETED, TurnOutcome.CLOSED} and recovery_action is not RecoveryAction.NONE:
+        raise ValueError(
+            "Completed or closed realtime turns cannot require a recovery action."
+        )
+    if retryable and recovery_action in {
+        RecoveryAction.CLOSE_SESSION,
+        RecoveryAction.PERMANENT_FAILURE,
+    }:
+        raise ValueError(
+            "A retryable realtime turn cannot require session closure or permanent failure."
+        )
+
+
 @dataclass(frozen=True)
 class RealtimeTurnResult:
-    """Provider-neutral public realtime turn result."""
+    """Provider-neutral terminal result for one realtime turn."""
 
     turn_id: TurnId | str
-    outcome: RealtimeState | str
+    outcome: TurnOutcome | RealtimeState | str
     input_text: str = ""
     output_text: str = ""
     voice_input_result: Any | None = None
@@ -189,10 +273,20 @@ class RealtimeTurnResult:
     public_error_code: RealtimeErrorCode | str = RealtimeErrorCode.NONE
     safe_message: str = ""
     retryable: bool = False
+    recovery_action: RecoveryAction | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        outcome = self.outcome if isinstance(self.outcome, RealtimeState) else RealtimeState(str(self.outcome))
+        outcome = _normalize_turn_outcome(self.outcome)
+        recovery_action = _normalize_recovery_action(
+            self.recovery_action,
+            outcome=outcome,
+        )
+        _validate_recovery_contract(
+            outcome=outcome,
+            recovery_action=recovery_action,
+            retryable=bool(self.retryable),
+        )
         error_code = (
             self.public_error_code
             if isinstance(self.public_error_code, RealtimeErrorCode)
@@ -200,21 +294,17 @@ class RealtimeTurnResult:
         )
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "outcome", outcome)
+        object.__setattr__(self, "recovery_action", recovery_action)
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     @property
     def is_completed(self) -> bool:
-        return self.outcome is RealtimeState.COMPLETED
+        return self.outcome is TurnOutcome.COMPLETED
 
     @property
     def is_terminal(self) -> bool:
-        return self.outcome in {
-            RealtimeState.COMPLETED,
-            RealtimeState.INTERRUPTED,
-            RealtimeState.FAILED,
-            RealtimeState.CLOSED,
-        }
+        return True
 
     @classmethod
     def completed(
@@ -227,7 +317,7 @@ class RealtimeTurnResult:
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
-            outcome=RealtimeState.COMPLETED,
+            outcome=TurnOutcome.COMPLETED,
             input_text=input_text,
             output_text=output_text,
             public_metadata=public_metadata or {},
@@ -243,10 +333,44 @@ class RealtimeTurnResult:
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
-            outcome=RealtimeState.INTERRUPTED,
+            outcome=TurnOutcome.INTERRUPTED,
             public_error_code=RealtimeErrorCode.INTERRUPTED,
             safe_message=safe_message,
             retryable=True,
+            public_metadata=public_metadata or {},
+        )
+
+    @classmethod
+    def cancelled(
+        cls,
+        *,
+        turn_id: TurnId | str,
+        safe_message: str = "Realtime turn was cancelled.",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> "RealtimeTurnResult":
+        return cls(
+            turn_id=turn_id,
+            outcome=TurnOutcome.CANCELLED,
+            public_error_code=RealtimeErrorCode.CANCELLED,
+            safe_message=safe_message,
+            retryable=True,
+            public_metadata=public_metadata or {},
+        )
+
+    @classmethod
+    def rejected(
+        cls,
+        *,
+        turn_id: TurnId | str,
+        safe_message: str = "Realtime turn was rejected before execution.",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> "RealtimeTurnResult":
+        return cls(
+            turn_id=turn_id,
+            outcome=TurnOutcome.REJECTED,
+            public_error_code=RealtimeErrorCode.REJECTED,
+            safe_message=safe_message,
+            retryable=False,
             public_metadata=public_metadata or {},
         )
 
@@ -258,14 +382,16 @@ class RealtimeTurnResult:
         public_error_code: RealtimeErrorCode | str = RealtimeErrorCode.STAGE_FAILED,
         safe_message: str = "Realtime turn failed.",
         retryable: bool = False,
+        recovery_action: RecoveryAction | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
-            outcome=RealtimeState.FAILED,
+            outcome=TurnOutcome.FAILED,
             public_error_code=public_error_code,
             safe_message=safe_message,
             retryable=retryable,
+            recovery_action=recovery_action,
             public_metadata=public_metadata or {},
         )
 
@@ -278,7 +404,7 @@ class RealtimeTurnResult:
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
-            outcome=RealtimeState.CLOSED,
+            outcome=TurnOutcome.CLOSED,
             public_error_code=RealtimeErrorCode.SESSION_CLOSED,
             safe_message=safe_message,
             retryable=False,

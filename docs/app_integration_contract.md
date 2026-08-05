@@ -778,3 +778,44 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->
+
+<!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:BEGIN -->
+## FW-RT6-1b Control B — turn outcome and recovery adoption
+
+`RealtimeTurnResult` now normalizes every terminal result to the root-public
+`TurnOutcome` model and exposes one normalized `RecoveryAction`. Existing
+terminal `RealtimeState` inputs and value comparisons remain compatible, while
+transient states are rejected with `LifecycleTransitionError` code
+`phase_outcome_mismatch`.
+
+```text
+checkpoint: FW-RT6-1b Control B
+baseline head: 6443e524d8bc4e32eb4d7e7ecba75e26244c9f10
+status: IMPLEMENTED / AWAITING_REVIEW
+RealtimeTurnResult canonical outcome: TurnOutcome
+RealtimeTurnResult recovery_action: RecoveryAction
+completed default recovery: none
+interrupted default recovery: reset_turn
+cancelled default recovery: reset_turn
+failed default recovery: reset_session
+rejected default recovery: reuse_session
+closed default recovery: none
+cancelled and interrupted: DISTINCT
+legacy terminal RealtimeState input/value comparison: PRESERVED
+transient RealtimeState as terminal outcome: TYPED REJECTION
+RealtimeSession phase adoption: DEFERRED TO CONTROL C
+terminal registry: NOT IMPLEMENTED
+RealtimeEvent sequence/generation/terminal fields: NOT ADDED
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1b Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+`rejected` means that active-turn ownership was not acquired. `cancelled` means
+an admitted turn ended through an explicit host/session cancellation request.
+`interrupted` means an admitted turn ended through barge-in or another
+asynchronous interruption. Recovery values describe the next safe action and do
+not claim that reset, reconnect, close, or provider hard cancellation already
+completed.
+<!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:END -->
