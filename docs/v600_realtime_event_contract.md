@@ -224,3 +224,70 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->
+
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:BEGIN -->
+## FW-RT6-1c Control D — ordered RealtimeSession event adoption
+
+`RealtimeSession.on_event()` now receives the canonical ordered event stream.
+`RealtimeSession.on_legacy_event()` receives only events for which the explicit
+`RealtimeEvent.to_v5()` projection exists. Both callback paths preserve the same
+session/turn correlation, `EventSequence`, `GenerationId`, typed payload, terminal
+flag, public timestamp, and monotonic timestamp.
+
+The mock-safe completed-turn stream is fixed as follows:
+
+```text
+canonical:
+TURN_STARTED
+LISTENING_STARTED
+LISTENING_COMPLETED
+TRANSCRIPT_FINAL
+RESPONSE_STARTED
+RESPONSE_COMPLETED
+SYNTHESIS_STARTED
+SYNTHESIS_COMPLETED
+TURN_COMPLETED
+
+legacy projection:
+TURN_STARTED
+VOICE_INPUT_STARTED
+VOICE_INPUT_COMPLETED
+TEXT_CHAT_STARTED
+TEXT_CHAT_COMPLETED
+VOICE_OUTPUT_STARTED
+VOICE_OUTPUT_COMPLETED
+TURN_COMPLETED
+```
+
+`EventSequence` starts at 1 and increments for the full session lifetime; it does
+not reset between turns. One new `GenerationId` is allocated after each turn is
+admitted and remains stable for that turn. Session-only events and
+rejected-before-admission events use `generation_id=None`. Runtime-emitted
+canonical categories carry their required typed payload, while public and
+monotonic timestamps are allocated automatically at emission. Ordering is
+authoritative by `EventSequence`, not by timestamp.
+
+```text
+checkpoint: FW-RT6-1c Control D
+baseline head: 007e1577a18c92a1dafdf9ede814b97dc2d0a05c
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 8 files
+root-public names: 114 / UNCHANGED
+on_event canonical stream: ADOPTED
+on_legacy_event mapped v5 stream: ADOPTED
+completed-turn canonical events: 9
+completed-turn legacy events: 8
+sequence reset between turns: False
+generation per admitted turn: True
+session/rejected generation: None
+automatic public timestamps: True
+typed runtime payloads: True
+terminal registry / duplicate suppression: DEFERRED
+automatic stale-result rejection: DEFERRED
+bounded queue / overflow runtime: DEFERRED
+provider partial transcript / response delta callbacks: DEFERRED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:END -->

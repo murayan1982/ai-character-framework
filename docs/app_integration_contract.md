@@ -951,3 +951,49 @@ provider payload parsing required: False
 Their v5 projections use the available interrupted and failed event categories,
 while preserving the typed lifecycle payload and public error code.
 <!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->
+
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:BEGIN -->
+## Host-app ordered realtime event integration
+
+New host applications register `on_event` and consume the canonical ordered
+stream. Applications that still require the v5 vocabulary register
+`on_legacy_event`; the Framework performs the explicit lossy projection and does
+not promote partial or unmapped events into legacy completion categories.
+
+Host applications must use `EventSequence` as the authoritative ordering value.
+Timestamps are diagnostic public values and do not replace sequence ordering. A
+completed admitted turn uses one stable `GenerationId`; the next admitted turn
+uses a different value. Session-only and rejected-before-admission events have no
+generation.
+
+```text
+canonical completed turn:
+TURN_STARTED -> LISTENING_STARTED -> LISTENING_COMPLETED -> TRANSCRIPT_FINAL
+-> RESPONSE_STARTED -> RESPONSE_COMPLETED -> SYNTHESIS_STARTED
+-> SYNTHESIS_COMPLETED -> TURN_COMPLETED
+
+legacy projection:
+TURN_STARTED -> VOICE_INPUT_STARTED -> VOICE_INPUT_COMPLETED
+-> TEXT_CHAT_STARTED -> TEXT_CHAT_COMPLETED -> VOICE_OUTPUT_STARTED
+-> VOICE_OUTPUT_COMPLETED -> TURN_COMPLETED
+```
+
+```text
+checkpoint: FW-RT6-1c Control D
+baseline head: 007e1577a18c92a1dafdf9ede814b97dc2d0a05c
+on_event canonical events: True
+on_legacy_event mapped v5 events only: True
+sequence session lifetime: True
+sequence reset between turns: False
+generation stable within admitted turn: True
+generation absent before admission: True
+typed payload by canonical runtime category: True
+automatic timestamp and monotonic_timestamp: True
+terminal registry / duplicate suppression: DEFERRED
+automatic stale-result rejection: DEFERRED
+bounded event queue / overflow runtime: DEFERRED
+provider partial transcript / response delta callbacks: DEFERRED
+provider/network/microphone/playback/VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:END -->

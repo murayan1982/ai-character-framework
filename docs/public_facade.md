@@ -1413,3 +1413,33 @@ The adapter preserves v6 correlation fields on the returned `RealtimeEvent`,
 while `as_v5_dict()` intentionally returns only the established ten-key legacy
 mapping.
 <!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->
+
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:BEGIN -->
+## Ordered canonical and legacy realtime callbacks
+
+`RealtimeSession.on_event(callback)` is the canonical v6 callback path. Events
+carry session-lifetime `EventSequence`, per-admitted-turn `GenerationId`, typed
+payload, terminal state, and automatic public/monotonic timestamps.
+
+`RealtimeSession.on_legacy_event(callback)` is the compatibility path. It emits
+only the explicit v5 projections and preserves the correlation and ordering
+fields of the canonical source event. `LISTENING_COMPLETED` is intentionally not
+projected; `TRANSCRIPT_FINAL` supplies the single legacy voice-input completion.
+
+```text
+checkpoint: FW-RT6-1c Control D
+baseline head: 007e1577a18c92a1dafdf9ede814b97dc2d0a05c
+canonical completed-turn order: 9 events / ADOPTED
+legacy completed-turn order: 8 events / ADOPTED
+EventSequence starts at 1: True
+EventSequence resets between turns: False
+GenerationId changes per admitted turn: True
+session-only generation: None
+rejected-before-admission generation: None
+root-public names: 114 / UNCHANGED
+terminal registry / exactly-once suppression: DEFERRED
+stale-result rejection / overflow queue: DEFERRED
+provider/network/microphone/playback/VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:END -->

@@ -261,6 +261,7 @@ def _assert_event_and_turn_types(framework) -> None:
 
 def _assert_session_contract(framework) -> None:
     events = []
+    legacy_events = []
     phase_observations = []
     session = framework.create_realtime_session(public_metadata={"secret": "should-not-leak"})
 
@@ -269,6 +270,7 @@ def _assert_session_contract(framework) -> None:
         phase_observations.append((event.type, session.phase))
 
     session.on_event(record)
+    session.on_legacy_event(legacy_events.append)
 
     _require(isinstance(session.info, framework.RealtimeSessionInfo), "session.info should be RealtimeSessionInfo")
     _require(session.info.session_type == "realtime", "session.info session_type mismatch")
@@ -288,7 +290,8 @@ def _assert_session_contract(framework) -> None:
     _require(not session.info.supports_motion, "motion should not be claimed yet")
 
     created = session.emit_created()
-    _require(created.type == framework.RealtimeEventType.SESSION_CREATED, "emit_created event type mismatch")
+    _require(created.type == framework.RealtimeEventType.SESSION_STARTED, "emit_created canonical event type mismatch")
+    _require(legacy_events[-1].type == framework.RealtimeEventType.SESSION_CREATED, "emit_created legacy event type mismatch")
 
     result = session.run_turn(input_text="今日は眠いです。", public_metadata={"password": "should-not-leak"})
     _require(result.outcome == framework.RealtimeState.COMPLETED, "run_turn result outcome mismatch")
@@ -303,20 +306,34 @@ def _assert_session_contract(framework) -> None:
     _require(session.info.phase is framework.RealtimePhase.IDLE, "session info phase should return to idle")
 
     expected_phase_observations = [
-        (framework.RealtimeEventType.SESSION_CREATED, framework.RealtimePhase.IDLE),
+        (framework.RealtimeEventType.SESSION_STARTED, framework.RealtimePhase.IDLE),
         (framework.RealtimeEventType.TURN_STARTED, framework.RealtimePhase.LISTENING),
-        (framework.RealtimeEventType.VOICE_INPUT_STARTED, framework.RealtimePhase.LISTENING),
-        (framework.RealtimeEventType.VOICE_INPUT_COMPLETED, framework.RealtimePhase.TRANSCRIBING),
-        (framework.RealtimeEventType.TEXT_CHAT_STARTED, framework.RealtimePhase.THINKING),
-        (framework.RealtimeEventType.TEXT_CHAT_COMPLETED, framework.RealtimePhase.SPEAKING),
-        (framework.RealtimeEventType.VOICE_OUTPUT_STARTED, framework.RealtimePhase.SPEAKING),
-        (framework.RealtimeEventType.VOICE_OUTPUT_COMPLETED, framework.RealtimePhase.SPEAKING),
+        (framework.RealtimeEventType.LISTENING_STARTED, framework.RealtimePhase.LISTENING),
+        (framework.RealtimeEventType.LISTENING_COMPLETED, framework.RealtimePhase.TRANSCRIBING),
+        (framework.RealtimeEventType.TRANSCRIPT_FINAL, framework.RealtimePhase.TRANSCRIBING),
+        (framework.RealtimeEventType.RESPONSE_STARTED, framework.RealtimePhase.THINKING),
+        (framework.RealtimeEventType.RESPONSE_COMPLETED, framework.RealtimePhase.THINKING),
+        (framework.RealtimeEventType.SYNTHESIS_STARTED, framework.RealtimePhase.SPEAKING),
+        (framework.RealtimeEventType.SYNTHESIS_COMPLETED, framework.RealtimePhase.SPEAKING),
         (framework.RealtimeEventType.TURN_COMPLETED, framework.RealtimePhase.SPEAKING),
     ]
     _require(phase_observations == expected_phase_observations, "RealtimeSession phase progression mismatch")
 
     event_types = [event.type for event in events]
     expected_order = [
+        framework.RealtimeEventType.SESSION_STARTED,
+        framework.RealtimeEventType.TURN_STARTED,
+        framework.RealtimeEventType.LISTENING_STARTED,
+        framework.RealtimeEventType.LISTENING_COMPLETED,
+        framework.RealtimeEventType.TRANSCRIPT_FINAL,
+        framework.RealtimeEventType.RESPONSE_STARTED,
+        framework.RealtimeEventType.RESPONSE_COMPLETED,
+        framework.RealtimeEventType.SYNTHESIS_STARTED,
+        framework.RealtimeEventType.SYNTHESIS_COMPLETED,
+        framework.RealtimeEventType.TURN_COMPLETED,
+    ]
+    _require(event_types == expected_order, "RealtimeSession canonical event order mismatch")
+    expected_legacy_order = [
         framework.RealtimeEventType.SESSION_CREATED,
         framework.RealtimeEventType.TURN_STARTED,
         framework.RealtimeEventType.VOICE_INPUT_STARTED,
@@ -327,7 +344,16 @@ def _assert_session_contract(framework) -> None:
         framework.RealtimeEventType.VOICE_OUTPUT_COMPLETED,
         framework.RealtimeEventType.TURN_COMPLETED,
     ]
-    _require(event_types == expected_order, "RealtimeSession event order mismatch")
+    _require([event.type for event in legacy_events] == expected_legacy_order, "RealtimeSession legacy event order mismatch")
+    _require([int(event.sequence) for event in events] == list(range(1, 11)), "RealtimeSession sequence allocation mismatch")
+    _require(all(isinstance(event.sequence, framework.EventSequence) for event in events), "generated events should use EventSequence")
+    _require(events[0].generation_id is None, "session event generation should be None")
+    turn_generation_ids = {event.generation_id for event in events[1:]}
+    _require(len(turn_generation_ids) == 1, "one completed turn should use one generation")
+    _require(isinstance(next(iter(turn_generation_ids)), framework.GenerationId), "turn generation should use GenerationId")
+    _require(all(event.timestamp is not None for event in events), "generated events should have public timestamps")
+    _require(all(event.monotonic_timestamp is not None for event in events), "generated events should have monotonic timestamps")
+    _require(all(event.payload is not None for event in events), "canonical runtime events should have typed payloads")
     _require(all(event.session_id == session.info.session_id for event in events), "events should expose session_id")
     _require(all(isinstance(event.session_id, framework.SessionId) for event in events), "generated events should use SessionId")
     _require(all(event.turn_id is None or isinstance(event.turn_id, framework.TurnId) for event in events), "generated turn events should use TurnId")
@@ -340,12 +366,16 @@ def _assert_session_contract(framework) -> None:
     _require(session.phase is None, "closed session should have no canonical phase")
     _require(session.info.phase is None, "closed session info should have no canonical phase")
     _require(events[-1].type == framework.RealtimeEventType.SESSION_CLOSED, "close should emit session.closed")
+    _require(events[-1].generation_id is None, "session close generation should be None")
 
     closed_result = session.run_turn(input_text="after close")
     _require(closed_result.outcome == framework.RealtimeState.CLOSED, "closed session run_turn should return closed result")
     _require(type(closed_result.outcome) is framework.TurnOutcome, "closed run_turn result should use TurnOutcome")
     _require(closed_result.recovery_action is framework.RecoveryAction.NONE, "closed run_turn recovery mismatch")
     _require(closed_result.public_error_code == framework.RealtimeErrorCode.SESSION_CLOSED, "closed session error code mismatch")
+    _require(events[-1].type is framework.RealtimeEventType.TURN_REJECTED, "closed run_turn should emit canonical turn.rejected")
+    _require(events[-1].generation_id is None, "rejected-before-admission generation should be None")
+    _require(legacy_events[-1].type is framework.RealtimeEventType.TURN_FAILED, "closed run_turn should project legacy turn.failed")
 
     with framework.create_realtime_session() as managed:
         _require(not managed.is_closed, "managed session should be open in context")

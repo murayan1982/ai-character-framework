@@ -228,6 +228,44 @@ _V6_TO_V5_REALTIME_EVENT_TYPE = MappingProxyType(
     }
 )
 
+_RUNTIME_PAYLOAD_TYPE_BY_EVENT = MappingProxyType(
+    {
+        RealtimeEventType.SESSION_STARTED: LifecycleEventPayload,
+        RealtimeEventType.SESSION_CLOSED: LifecycleEventPayload,
+        RealtimeEventType.TURN_STARTED: LifecycleEventPayload,
+        RealtimeEventType.TURN_COMPLETED: LifecycleEventPayload,
+        RealtimeEventType.TURN_CANCELLED: LifecycleEventPayload,
+        RealtimeEventType.TURN_REJECTED: LifecycleEventPayload,
+        RealtimeEventType.TURN_FAILED: LifecycleEventPayload,
+        RealtimeEventType.LISTENING_STARTED: LifecycleEventPayload,
+        RealtimeEventType.LISTENING_COMPLETED: LifecycleEventPayload,
+        RealtimeEventType.SPEECH_STARTED: LifecycleEventPayload,
+        RealtimeEventType.SPEECH_ENDED: LifecycleEventPayload,
+        RealtimeEventType.TRANSCRIPT_PARTIAL: TranscriptEventPayload,
+        RealtimeEventType.TRANSCRIPT_FINAL: TranscriptEventPayload,
+        RealtimeEventType.RESPONSE_STARTED: ResponseEventPayload,
+        RealtimeEventType.RESPONSE_DELTA: ResponseEventPayload,
+        RealtimeEventType.RESPONSE_COMPLETED: ResponseEventPayload,
+        RealtimeEventType.SYNTHESIS_STARTED: SynthesisEventPayload,
+        RealtimeEventType.SYNTHESIS_COMPLETED: SynthesisEventPayload,
+        RealtimeEventType.AUDIO_AVAILABLE: AudioEventPayload,
+        RealtimeEventType.AUDIO_INVALIDATED: AudioEventPayload,
+        RealtimeEventType.MOTION_REQUESTED: MotionEventPayload,
+        RealtimeEventType.MOTION_STARTED: MotionEventPayload,
+        RealtimeEventType.MOTION_COMPLETED: MotionEventPayload,
+        RealtimeEventType.MOTION_FAILED: MotionEventPayload,
+        RealtimeEventType.INTERRUPT_REQUESTED: InterruptEventPayload,
+        RealtimeEventType.INTERRUPT_ACCEPTED: InterruptEventPayload,
+        RealtimeEventType.INTERRUPT_COMPLETED: InterruptEventPayload,
+        RealtimeEventType.INTERRUPT_UNSUPPORTED: InterruptEventPayload,
+        RealtimeEventType.BARGE_IN_DETECTED: InterruptEventPayload,
+        RealtimeEventType.BARGE_IN_ACCEPTED: InterruptEventPayload,
+        RealtimeEventType.BARGE_IN_REJECTED: InterruptEventPayload,
+        RealtimeEventType.STALE_RESULT_DROPPED: DiagnosticEventPayload,
+        RealtimeEventType.EVENT_OVERFLOW: DiagnosticEventPayload,
+    }
+)
+
 
 def _normalize_event_sequence(
     value: EventSequence | int | None,
@@ -257,6 +295,32 @@ def _normalize_event_payload(
     if not isinstance(value, _REALTIME_EVENT_PAYLOAD_TYPES):
         raise TypeError("payload must be a typed RealtimeEventPayload or None")
     return value
+
+
+def _require_runtime_event_payload(
+    event_type: RealtimeEventType | str,
+    payload: RealtimeEventPayload | None,
+) -> RealtimeEventPayload | None:
+    """Validate the typed payload required by one runtime-emitted event category."""
+
+    resolved_type = (
+        event_type
+        if isinstance(event_type, RealtimeEventType)
+        else RealtimeEventType(str(event_type))
+    )
+    required_type = _RUNTIME_PAYLOAD_TYPE_BY_EVENT.get(resolved_type)
+    if required_type is None:
+        return _normalize_event_payload(payload)
+    if payload is None:
+        raise ValueError(
+            f"{resolved_type.value} requires a typed {required_type.__name__} payload"
+        )
+    if not isinstance(payload, required_type):
+        raise TypeError(
+            f"{resolved_type.value} requires {required_type.__name__}, "
+            f"not {type(payload).__name__}"
+        )
+    return payload
 
 
 def _normalize_public_timestamp(

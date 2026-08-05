@@ -287,6 +287,7 @@ def _assert_barge_in_types(framework) -> None:
 
 def _assert_realtime_session_output_control(framework) -> None:
     session = framework.create_realtime_session(public_metadata={"password": "should-not-leak"})
+    _require(hasattr(session, "on_legacy_event"), "RealtimeSession missing on_legacy_event")
     _require(hasattr(session, "get_tts_queue_state"), "RealtimeSession missing get_tts_queue_state")
     _require(hasattr(session, "interrupt"), "RealtimeSession missing interrupt")
     _require(hasattr(session, "cancel_current_turn"), "RealtimeSession missing cancel_current_turn")
@@ -314,8 +315,10 @@ def _assert_realtime_session_output_control(framework) -> None:
 
 def _assert_realtime_session_interrupt_and_flush(framework) -> None:
     events = []
+    legacy_events = []
     session = framework.create_realtime_session()
     session.on_event(events.append)
+    session.on_legacy_event(legacy_events.append)
 
     no_active = session.interrupt(framework.InterruptRequest.user_barge_in(public_metadata={"token": "should-not-leak"}))
     _require(no_active.outcome == framework.InterruptOutcome.NO_ACTIVE_TURN, "interrupt without active turn should be no_active_turn")
@@ -340,6 +343,11 @@ def _assert_realtime_session_interrupt_and_flush(framework) -> None:
     _require(flush.outcome == framework.OutputFlushOutcome.NOTHING_TO_FLUSH, "empty mock flush should be nothing_to_flush")
     _require(not flush.flushed, "empty mock flush should not report flushed")
     _require(events[-1].type == framework.RealtimeEventType.OUTPUT_FLUSH_COMPLETED, "empty flush should emit completed event")
+    _require([int(event.sequence) for event in events] == list(range(1, len(events) + 1)), "output-control sequence should be session-monotonic")
+    _require([event.type for event in legacy_events] == [event.type for event in events], "identity-mapped output-control order mismatch")
+    _require(all(event.sequence == legacy.sequence for event, legacy in zip(events, legacy_events)), "legacy output-control sequence drift")
+    _require(all(event.timestamp is not None and event.monotonic_timestamp is not None for event in events), "output-control timestamps missing")
+    _require(all(isinstance(event.payload, framework.InterruptEventPayload) for event in events if event.type.name.startswith("INTERRUPT_")), "interrupt events should use typed payloads")
     _require("should-not-leak" not in repr(flush), "flush result should not leak secret-like metadata")
     _require(session.phase is framework.RealtimePhase.IDLE, "empty flush should preserve idle phase")
     _ok("RealtimeSession interrupt/cancel/flush behavior conforms")
@@ -347,8 +355,10 @@ def _assert_realtime_session_interrupt_and_flush(framework) -> None:
 
 def _assert_realtime_session_barge_in_and_closed(framework) -> None:
     events = []
+    legacy_events = []
     session = framework.create_realtime_session()
     session.on_event(events.append)
+    session.on_legacy_event(legacy_events.append)
 
     rejected = session.decide_barge_in(turn_id="disabled-turn", public_metadata={"secret": "should-not-leak"})
     _require(not rejected.accepted, "default disabled barge-in should reject")
@@ -367,6 +377,9 @@ def _assert_realtime_session_barge_in_and_closed(framework) -> None:
     _require(accepted.should_cancel_current_turn, "accepted decision should cancel current turn")
     _require(accepted.public_metadata["credential"] == "<redacted>", "accepted decision metadata should be redacted")
     _require(events[-1].type == framework.RealtimeEventType.BARGE_IN_ACCEPTED, "enabled barge-in should emit accepted")
+    _require(all(isinstance(event.payload, framework.InterruptEventPayload) for event in events), "barge-in events should use typed interrupt payloads")
+    _require([event.type for event in legacy_events] == [event.type for event in events], "barge-in legacy identity order mismatch")
+    _require([int(event.sequence) for event in events] == list(range(1, len(events) + 1)), "barge-in sequence mismatch")
 
     session.close()
     _require(session.phase is None, "closed output-control session should have no canonical phase")
