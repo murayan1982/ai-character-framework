@@ -131,14 +131,14 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 104, "canonical public API count should be 104")
+    _assert(len(framework.__all__) == 114, "canonical public API count should be 114")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
         "public identity position drift",
     )
     _assert(
-        tuple(framework.__all__[-5:])
+        tuple(framework.__all__[99:104])
         == (
             "RealtimePhase",
             "TurnOutcome",
@@ -146,7 +146,23 @@ def check_version_metadata() -> None:
             "LifecycleTransitionErrorCode",
             "LifecycleTransitionError",
         ),
-        "public lifecycle suffix drift",
+        "public lifecycle position drift",
+    )
+    _assert(
+        tuple(framework.__all__[104:])
+        == (
+            "RealtimeEventPayloadKind",
+            "LifecycleEventPayload",
+            "TranscriptEventPayload",
+            "ResponseEventPayload",
+            "SynthesisEventPayload",
+            "AudioEventPayload",
+            "MotionEventPayload",
+            "InterruptEventPayload",
+            "DiagnosticEventPayload",
+            "RealtimeEventPayload",
+        ),
+        "typed event payload suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -223,6 +239,8 @@ def check_public_sdk_imports() -> None:
         LifecycleTransitionError,
         LifecycleTransitionErrorCode,
         RealtimePhase,
+        RealtimeEventPayloadKind,
+        TranscriptEventPayload,
         RecoveryAction,
         SessionId,
         TurnId,
@@ -245,6 +263,14 @@ def check_public_sdk_imports() -> None:
     _assert(GenerationId.new().startswith("fw_generation_"), "GenerationId should be root-public")
     _assert(EventSequence.first() == 1, "EventSequence should be root-public")
     _assert(RealtimePhase.IDLE.value == "idle", "RealtimePhase should be root-public")
+    _assert(
+        RealtimeEventPayloadKind.TRANSCRIPT.value == "transcript",
+        "RealtimeEventPayloadKind should be root-public",
+    )
+    _assert(
+        TranscriptEventPayload(text="hello", is_final=True).as_dict()["is_final"] is True,
+        "TranscriptEventPayload should be root-public and public-safe",
+    )
     _assert(TurnOutcome.REJECTED.value == "rejected", "TurnOutcome should be root-public")
     _assert(RecoveryAction.RESET_TURN.value == "reset_turn", "RecoveryAction should be root-public")
     _assert(

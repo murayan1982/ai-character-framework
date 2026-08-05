@@ -1268,7 +1268,7 @@ transient states are rejected with `LifecycleTransitionError` code
 
 ```text
 checkpoint: FW-RT6-1b Control B
-baseline head: 6443e524d8bc4e32eb4d7e7ecba75e26244c9f10
+baseline head: 3048984092bba58baf6c3841b53d58ec4c02b7fc
 status: IMPLEMENTED / AWAITING_REVIEW
 RealtimeTurnResult canonical outcome: TurnOutcome
 RealtimeTurnResult recovery_action: RecoveryAction
@@ -1322,3 +1322,26 @@ This control does not add a canonical phase field to `RealtimeEvent`; ordered v6
 event phase, sequence, generation, terminal, and typed payload work remains
 FW-RT6-1c.
 <!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:END -->
+
+<!-- FW-RT6-1c-A-TYPED-PAYLOADS:BEGIN -->
+## Typed realtime event payload foundation
+
+FW-RT6-1c Control A adds eight root-public immutable payload dataclasses and one
+public payload-kind discriminator. Host applications may construct, inspect,
+and serialize these provider-neutral payloads without importing Framework
+internal modules or provider SDKs.
+
+```text
+baseline head: 285e546d7065eee24d144a4fc39da82d3097bd1f
+root-public prefix preserved: 104 names / SAME ORDER
+canonical root-public total: 114
+RealtimeEvent payload field adopted: False
+RealtimeSession ordered payload emission: False
+provider object or raw provider payload exposed: False
+```
+
+The payload models distinguish transcript partial/final and response
+delta/completed meaning at the data-model level. Control A does not yet attach
+them to `RealtimeEvent`; envelope, compatibility adapter, and ordered session
+emission work remain Controls B through D.
+<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->

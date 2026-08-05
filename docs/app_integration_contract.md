@@ -790,7 +790,7 @@ transient states are rejected with `LifecycleTransitionError` code
 
 ```text
 checkpoint: FW-RT6-1b Control B
-baseline head: 6443e524d8bc4e32eb4d7e7ecba75e26244c9f10
+baseline head: 3048984092bba58baf6c3841b53d58ec4c02b7fc
 status: IMPLEMENTED / AWAITING_REVIEW
 RealtimeTurnResult canonical outcome: TurnOutcome
 RealtimeTurnResult recovery_action: RecoveryAction
@@ -847,3 +847,35 @@ the host boundary.
 sequence, generation, terminal flag, and typed payload integration remain
 FW-RT6-1c.
 <!-- FW-RT6-1b-C-REALTIME-PHASE-ADOPTION:END -->
+
+<!-- FW-RT6-1c-A-TYPED-PAYLOADS:BEGIN -->
+## Host-app typed realtime payload guidance
+
+Applications may import the v6 payload models from `framework` and branch on
+`RealtimeEventPayloadKind` instead of parsing provider-specific dictionaries.
+
+```python
+from framework import TranscriptEventPayload
+
+payload = TranscriptEventPayload(
+    text="hello",
+    is_final=True,
+    confidence=0.9,
+)
+public_value = payload.as_dict()
+```
+
+```text
+baseline head: 285e546d7065eee24d144a4fc39da82d3097bd1f
+public payload mapping: immutable / JSON-safe
+provider SDK object required: False
+provider payload parsing required: False
+local artifact path accepted: False
+RealtimeEvent integration: DEFERRED TO CONTROL B
+RealtimeSession emission integration: DEFERRED TO CONTROL D
+```
+
+Applications must not treat `AudioEventPayload.artifact_ref` as a filesystem
+path. Runtime callbacks continue to use the existing `RealtimeEvent` contract
+until later FW-RT6-1c controls adopt the v6 envelope.
+<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->

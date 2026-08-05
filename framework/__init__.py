@@ -72,6 +72,18 @@ from .realtime import (
     RealtimeTurn,
     RealtimeTurnResult,
 )
+from .realtime_event_payloads import (
+    AudioEventPayload,
+    DiagnosticEventPayload,
+    InterruptEventPayload,
+    LifecycleEventPayload,
+    MotionEventPayload,
+    RealtimeEventPayload,
+    RealtimeEventPayloadKind,
+    ResponseEventPayload,
+    SynthesisEventPayload,
+    TranscriptEventPayload,
+)
 from .realtime_session import RealtimeSession, RealtimeSessionInfo, create_realtime_session
 from .text_chat_result import TextChatResult
 from .voice_input import (

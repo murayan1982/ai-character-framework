@@ -161,6 +161,19 @@ LIFECYCLE_PUBLIC_EXPORTS = (
     "LifecycleTransitionError",
 )
 
+REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS = (
+    "RealtimeEventPayloadKind",
+    "LifecycleEventPayload",
+    "TranscriptEventPayload",
+    "ResponseEventPayload",
+    "SynthesisEventPayload",
+    "AudioEventPayload",
+    "MotionEventPayload",
+    "InterruptEventPayload",
+    "DiagnosticEventPayload",
+    "RealtimeEventPayload",
+)
+
 PUBLIC_API_GROUPS = MappingProxyType(
     {
         "provider_compat_lazy": PROVIDER_COMPAT_LAZY_EXPORTS,
@@ -177,6 +190,7 @@ PUBLIC_API_GROUPS = MappingProxyType(
         "motion_adapter_execution": MOTION_ADAPTER_EXECUTION_EXPORTS,
         "identity": IDENTITY_PUBLIC_EXPORTS,
         "lifecycle": LIFECYCLE_PUBLIC_EXPORTS,
+        "realtime_event_payloads": REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
     }
 )
 
