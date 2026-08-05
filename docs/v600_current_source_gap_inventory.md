@@ -207,3 +207,28 @@ release/**: NO CHANGE
 No network, provider, microphone, playback, private configuration, private
 evidence, application repository access, commit, push, tag, or publication is
 authorized by this checkpoint.
+
+<!-- FW-RT6-0b-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-0b public SDK hygiene resolution sync
+
+This sync records the result of Controls A through C against the original
+FW-RT6-0a inventory. Historical source observations above remain preserved.
+
+```text
+baseline head: 136be27c9f6fe62b7753c64f4fed02ae94f98da9
+legacy smoke_public_facade expected-surface drift: RESOLVED
+framework.__all__ fragmented construction: RESOLVED
+provider-specific compatibility exports: PRESERVED / LAZY
+G-11 repeated VoiceOutputSession compatibility overrides: RESOLVED
+G-17 distributed version/schema literal definitions: RESOLVED
+G-14 installable SDK/resource-root contract: UNRESOLVED / FW-RT6-0c
+G-16 normal unit-test architecture: UNRESOLVED / FW-RT6-3c
+capability truthfulness across modules: UNRESOLVED / FW-RT6-1d
+unified realtime orchestration: UNRESOLVED
+```
+
+G-17 resolution means the existing compatibility values now come from one
+central module; it does not mean every historical API/schema value was changed
+to `6.0.0`. G-16 remains open because release smokes were strengthened, but a
+normal deterministic unit-test layer is still absent.
+<!-- FW-RT6-0b-D-GAP-RESOLUTION-SYNC:END -->

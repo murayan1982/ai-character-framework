@@ -395,14 +395,14 @@ NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `scripts/smoke_public_facade.py`の期待surfaceをversion-awareに修正する。
-- [ ] `framework.__all__`の生成方式を一箇所へ統合する。
-- [ ] provider-specific lazy root exportsの維持/deprecation方針を決める。
-- [ ] `VoiceOutputSession`の重複method定義を一つに統合する。
-- [ ] `info` property/method、`close`、`dispose`、context managerの命名を整合させる。
-- [ ] package versionとpublic schema versionの中央定義を追加する。
-- [ ] full public facade smokeをcurrent sourceでPASSさせる。
-- [ ] v5 compatibility testsを追加する。
+- [x] `scripts/smoke_public_facade.py`の期待surfaceをversion-awareに修正する。
+- [x] `framework.__all__`の生成方式を一箇所へ統合する。
+- [x] provider-specific lazy root exportsの維持/deprecation方針を決める。
+- [x] `VoiceOutputSession`の重複method定義を一つに統合する。
+- [x] `info` property/method、`close`、`dispose`、context managerの命名を整合させる。
+- [x] package versionとpublic schema versionの中央定義を追加する。
+- [x] full public facade smokeをcurrent sourceでPASSさせる。
+- [x] v5 compatibility testsを追加する。
 
 **Likely files:**
 
@@ -1941,3 +1941,31 @@ NOT_AUTHORIZED
 DRC:
 OUT OF SCOPE / NOT_ACCESSED
 ```
+
+<!-- FW-RT6-0b-D-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-0b aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-0b Control D
+baseline head: 136be27c9f6fe62b7753c64f4fed02ae94f98da9
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+Control D exact change surface: 4 files
+runtime Python changed by Control D: False
+canonical root-public name count: 95
+VoiceOutputSession duplicate methods: False
+framework source version: 6.0.0.dev0
+latest published release: 5.5.0
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-0c
+next checkpoint authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-0c remains a separate authorization boundary for installable SDK and
+resource resolution. Capability truthfulness and unified realtime composition
+remain later tasklist work and are not completed by this sync.
+<!-- FW-RT6-0b-D-ACCEPTANCE-SYNC:END -->

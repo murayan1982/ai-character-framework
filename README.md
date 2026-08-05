@@ -2231,3 +2231,38 @@ terminal/stale guards, incomplete real-stage composition, stale capability
 status, split TTS ownership, SDK packaging gaps, and test-architecture gaps as
 not implemented. It does not treat roadmap intent as released behavior.
 <!-- FW-RT6-0a-SOURCE-INVENTORY:END -->
+
+<!-- FW-RT6-0b-D-PUBLIC-SDK-HYGIENE-ACCEPTANCE:BEGIN -->
+## v6.0.0 public SDK baseline hygiene checkpoint
+
+FW-RT6-0b Controls A through C align the root-public manifest, consolidate the
+`VoiceOutputSession` lifecycle, and centralize source/API/schema version
+metadata without changing the accepted v5 public contracts. Control D adds the
+aggregate docs/test acceptance gate only.
+
+```text
+checkpoint: FW-RT6-0b Control D
+baseline head: 136be27c9f6fe62b7753c64f4fed02ae94f98da9
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A canonical public API manifest: ACCEPTED
+Control B VoiceOutputSession lifecycle hygiene: ACCEPTED
+Control C central version metadata: ACCEPTED
+root-public name count: 95
+framework source version: 6.0.0.dev0
+latest published release: 5.5.0
+public API/schema compatibility values changed: False
+provider execution: False
+network execution: False
+microphone use: False
+audio playback: False
+VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-0c
+FW-RT6-0c implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Remaining work is not reclassified as complete: installable packaging and
+resource-root resolution remain FW-RT6-0c, capability truthfulness remains
+FW-RT6-1d, and unified realtime orchestration remains later FW-RT6 work.
+<!-- FW-RT6-0b-D-PUBLIC-SDK-HYGIENE-ACCEPTANCE:END -->
