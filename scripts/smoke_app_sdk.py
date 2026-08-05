@@ -290,6 +290,63 @@ def check_voice_output_boundary_contract() -> None:
     print("[OK] app SDK voice output boundary is mock-safe")
 
 
+def check_voice_output_session_lifecycle_hygiene() -> None:
+    from framework import VoiceOutputRequest, create_voice_output_session
+
+    request = VoiceOutputRequest(
+        text="セッション終了後の安全な結果を確認します。",
+        voice_profile_id="gentle_mina_default",
+        requested_audio_format="mp3",
+        utterance_purpose="lifecycle_smoke",
+        language_code="ja",
+    )
+
+    session = create_voice_output_session(
+        project_root=PROJECT_ROOT,
+        default_voice_profile_id="gentle_mina_default",
+    )
+    _assert(callable(session.info), "voice output info must remain a method")
+    _assert(not session.is_closed, "new voice output session should be open")
+
+    session.close()
+    session.close()
+    _assert(session.is_closed, "voice output close() should be idempotent")
+
+    create_result = session.create_output(request)
+    speak_result = session.speak(request)
+    for label, result in (
+        ("create_output", create_result),
+        ("speak", speak_result),
+    ):
+        _assert(
+            result.request_state == "failed",
+            f"{label} after close should return failed",
+        )
+        _assert(
+            result.public_metadata.get("public_error_code") == "session_closed",
+            f"{label} after close should expose session_closed",
+        )
+        _assert(not result.audio_ready, f"{label} after close must not expose audio")
+        _assert(result.audio_url is None, f"{label} after close must not expose URL")
+        _assert(
+            result.audio_artifact_ref is None,
+            f"{label} after close must not expose an artifact",
+        )
+
+    with create_voice_output_session(project_root=PROJECT_ROOT) as context_session:
+        _assert(
+            not context_session.is_closed,
+            "context-managed voice output session should start open",
+        )
+    _assert(
+        context_session.is_closed,
+        "context manager exit should close voice output session",
+    )
+
+    _assert_no_forbidden_runtime_imports("voice output lifecycle hygiene")
+    print("[OK] app SDK voice output lifecycle is single-path and idempotent")
+
+
 def check_voice_output_lazy_provider_adapter() -> None:
     from framework import VoiceOutputRequest, create_voice_output_session
 
@@ -386,6 +443,7 @@ def main() -> None:
     check_event_models()
     check_session_methods()
     check_voice_output_boundary_contract()
+    check_voice_output_session_lifecycle_hygiene()
     check_voice_output_lazy_provider_adapter()
     check_sdk_examples_importable()
 

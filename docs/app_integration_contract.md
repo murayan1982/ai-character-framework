@@ -563,3 +563,25 @@ network execution: False
 DRC or other host repository changes required: False
 ```
 <!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->
+
+<!-- FW-RT6-0b-B-VOICE-OUTPUT-SESSION-HYGIENE:BEGIN -->
+## Voice-output lifecycle compatibility
+
+Host applications keep the existing method-based voice-output contract:
+
+```python
+session = create_voice_output_session()
+info = session.info()
+result = session.speak(request)
+session.close()
+```
+
+`info` remains a method. `close()` and `dispose()` are idempotent, and context
+manager exit closes the session. Calls to `create_output()` or `speak()` after
+close return the same safe `session_closed` result and never expose playable
+audio.
+
+This cleanup removes duplicate internal method definitions only. Host code does
+not need to change, and no provider, network, microphone, audio playback, VTS,
+or host-application repository operation is performed by the checkpoint.
+<!-- FW-RT6-0b-B-VOICE-OUTPUT-SESSION-HYGIENE:END -->

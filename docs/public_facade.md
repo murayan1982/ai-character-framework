@@ -1006,3 +1006,58 @@ next control: FW-RT6-0b Control B
 next control authorized: False
 ```
 <!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->
+
+<!-- FW-RT6-0b-B-VOICE-OUTPUT-SESSION-HYGIENE:BEGIN -->
+## v6.0.0 development: VoiceOutputSession lifecycle hygiene
+
+FW-RT6-0b Control B consolidates the accumulated v5.0/v5.1
+`VoiceOutputSession` compatibility overrides into one readable implementation.
+
+The public contract remains unchanged:
+
+```text
+session.info():
+method
+
+session.is_closed:
+property
+
+session.close():
+idempotent
+
+session.dispose():
+close alias
+
+session.create_output():
+v5.0-compatible method
+
+session.speak():
+v5.1-compatible wrapper
+```
+
+A closed session returns a provider-neutral non-playable result from both
+`create_output()` and `speak()`:
+
+```text
+request_state: failed
+public_error_code: session_closed
+audio_ready: False
+audio_url: None
+audio_artifact_ref: None
+```
+
+Control B does not change the canonical root-public manifest, provider adapter,
+real TTS execution guard, artifact handoff design, version values, or realtime
+runtime behavior.
+
+```text
+checkpoint: FW-RT6-0b Control B
+status: IMPLEMENTED / AWAITING_REVIEW
+duplicate VoiceOutputSession methods: False
+provider execution: False
+network execution: False
+audio playback: False
+next control: FW-RT6-0b Control C
+next control authorized: False
+```
+<!-- FW-RT6-0b-B-VOICE-OUTPUT-SESSION-HYGIENE:END -->
