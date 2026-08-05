@@ -1553,3 +1553,30 @@ commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->
 
+<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:BEGIN -->
+## FW-RT6-2a Control A — recursive public-safety primitives
+
+The Framework now contains one provider-neutral recursive sanitizer and safe
+error-classification foundation in `framework.public_safety`.
+
+Control A changes no existing public session/model consumer. Existing shallow
+`_public_mapping` / `_redact_mapping` helpers and the TextChat raw error-event
+path remain explicit follow-up work.
+
+```text
+baseline head: 463496642f87daac1d280001d0385da1277a9f42
+Control A exact change surface: 5 files
+root-public names: 121 / UNCHANGED
+recursive mapping/list/tuple/dataclass sanitization: IMPLEMENTED
+secret-like key policy centralized: IMPLEMENTED
+private path redaction primitive: IMPLEMENTED
+raw exception serialization by utility: False
+safe error classification primitive: IMPLEMENTED
+existing consumer migration: DEFERRED / Control B
+TextChat raw error event correction: DEFERRED / Control C
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2a Control B
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:END -->
