@@ -171,3 +171,56 @@ are optional non-negative finite public values and do not establish ordering. A
 terminal flag must agree with the event type; this fixes envelope semantics but
 does not suppress duplicate terminal events.
 <!-- FW-RT6-1c-B-REALTIME-EVENT-ENVELOPE:END -->
+
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:BEGIN -->
+## FW-RT6-1c Control C — explicit v5 event adapter
+
+Status:
+
+```text
+IMPLEMENTED / AWAITING_REVIEW
+```
+
+Baseline:
+
+```text
+532d7852bfe9370514180800a84bfc0a8e13fa9c
+```
+
+`RealtimeEvent.to_v5()` and `RealtimeEvent.as_v5_dict()` provide an explicit,
+lossy compatibility projection without changing the canonical v6 envelope or
+`RealtimeSession` emission path. Existing v5 event types return the same event
+instance. Mapped v6 events preserve correlation, phase, payload, terminal, safe
+error, timestamp, and public metadata fields while replacing only the event type.
+
+```text
+SESSION_STARTED -> SESSION_CREATED
+LISTENING_STARTED -> VOICE_INPUT_STARTED
+TRANSCRIPT_FINAL -> VOICE_INPUT_COMPLETED
+RESPONSE_STARTED -> TEXT_CHAT_STARTED
+RESPONSE_COMPLETED -> TEXT_CHAT_COMPLETED
+SYNTHESIS_STARTED -> VOICE_OUTPUT_STARTED
+SYNTHESIS_COMPLETED -> VOICE_OUTPUT_COMPLETED
+TURN_CANCELLED -> TURN_INTERRUPTED
+TURN_REJECTED -> TURN_FAILED
+```
+
+Events without an honest v5 equivalent return `None`. In particular, listening
+completion is dropped because transcript final already projects to the single v5
+voice-input completion event. Transcript partial and response delta are never
+promoted to completed events.
+
+```text
+root-public names: 114 / UNCHANGED
+legacy as_dict keys: 10 / UNCHANGED
+RealtimeSession canonical v6 emission: DEFERRED TO CONTROL D
+on_legacy_event callback: DEFERRED TO CONTROL D
+sequence/generation runtime allocation: NOT IMPLEMENTED
+terminal registry / exactly-once suppression: NOT IMPLEMENTED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next control: FW-RT6-1c Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->

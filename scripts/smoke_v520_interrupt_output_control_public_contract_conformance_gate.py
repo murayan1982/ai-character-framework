@@ -461,6 +461,17 @@ def _check_v600_event_envelope_compatibility(framework) -> None:
         ),
         "legacy RealtimeEvent.as_dict key drift",
     )
+    _require(event.to_v5() is event, "legacy v5 event identity projection drift")
+    _require(
+        event.as_v5_dict() == event.as_dict(),
+        "legacy v5 dictionary projection drift",
+    )
+    partial = framework.RealtimeEvent(
+        type=framework.RealtimeEventType.TRANSCRIPT_PARTIAL,
+        state=framework.RealtimeState.TRANSCRIBING,
+    )
+    _require(partial.to_v5() is None, "partial transcript must remain unmapped")
+    _require(partial.as_v5_dict() is None, "partial transcript dictionary must remain unmapped")
 
 def main() -> None:
     root = _repo_root()

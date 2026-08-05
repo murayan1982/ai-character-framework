@@ -1389,3 +1389,27 @@ are optional non-negative finite public values and do not establish ordering. A
 terminal flag must agree with the event type; this fixes envelope semantics but
 does not suppress duplicate terminal events.
 <!-- FW-RT6-1c-B-REALTIME-EVENT-ENVELOPE:END -->
+
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:BEGIN -->
+## Explicit v5 projection for canonical realtime events
+
+Host applications that still consume the v5 event vocabulary may call
+`event.to_v5()` or `event.as_v5_dict()`. Existing v5 events are identity
+projections. Canonical v6 events use a fixed immutable mapping, and events with
+no honest v5 equivalent return `None`.
+
+```text
+checkpoint: FW-RT6-1c Control C
+baseline head: 532d7852bfe9370514180800a84bfc0a8e13fa9c
+root-public names: 114 / UNCHANGED
+legacy callback wiring: UNCHANGED
+RealtimeSession ordered v6 emission: DEFERRED TO CONTROL D
+partial transcript promoted to completion: False
+response delta promoted to completion: False
+provider/network/microphone/playback/VTS execution: False
+```
+
+The adapter preserves v6 correlation fields on the returned `RealtimeEvent`,
+while `as_v5_dict()` intentionally returns only the established ten-key legacy
+mapping.
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->

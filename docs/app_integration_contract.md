@@ -923,3 +923,31 @@ are optional non-negative finite public values and do not establish ordering. A
 terminal flag must agree with the event type; this fixes envelope semantics but
 does not suppress duplicate terminal events.
 <!-- FW-RT6-1c-B-REALTIME-EVENT-ENVELOPE:END -->
+
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:BEGIN -->
+## Host-app v5 event compatibility adapter
+
+Applications may explicitly project a canonical event before invoking legacy
+handlers:
+
+```python
+legacy_event = event.to_v5()
+if legacy_event is not None:
+    legacy_handler(legacy_event.as_dict())
+```
+
+```text
+checkpoint: FW-RT6-1c Control C
+baseline head: 532d7852bfe9370514180800a84bfc0a8e13fa9c
+identity v5 event returns same object: True
+unmapped event returns None: True
+legacy dictionary keys: 10 / SAME ORDER
+canonical on_event wiring: DEFERRED TO CONTROL D
+on_legacy_event wiring: DEFERRED TO CONTROL D
+provider payload parsing required: False
+```
+
+`TURN_CANCELLED` and `TURN_REJECTED` remain distinct canonical v6 meanings.
+Their v5 projections use the available interrupted and failed event categories,
+while preserving the typed lifecycle payload and public error code.
+<!-- FW-RT6-1c-C-V5-EVENT-ADAPTER:END -->

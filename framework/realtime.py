@@ -7,7 +7,7 @@ SDK modules.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import math
 from enum import Enum
 from types import MappingProxyType
@@ -181,6 +181,50 @@ _TERMINAL_REALTIME_EVENT_TYPES = frozenset(
         RealtimeEventType.TURN_FAILED,
         RealtimeEventType.TURN_REJECTED,
         RealtimeEventType.SESSION_CLOSED,
+    }
+)
+
+
+_V5_REALTIME_EVENT_TYPES = frozenset(
+    {
+        RealtimeEventType.SESSION_CREATED,
+        RealtimeEventType.TURN_STARTED,
+        RealtimeEventType.VOICE_INPUT_STARTED,
+        RealtimeEventType.VOICE_INPUT_COMPLETED,
+        RealtimeEventType.TEXT_CHAT_STARTED,
+        RealtimeEventType.TEXT_CHAT_COMPLETED,
+        RealtimeEventType.VOICE_OUTPUT_STARTED,
+        RealtimeEventType.VOICE_OUTPUT_COMPLETED,
+        RealtimeEventType.MOTION_STARTED,
+        RealtimeEventType.MOTION_COMPLETED,
+        RealtimeEventType.TURN_COMPLETED,
+        RealtimeEventType.TURN_INTERRUPTED,
+        RealtimeEventType.TURN_FAILED,
+        RealtimeEventType.SESSION_CLOSED,
+        RealtimeEventType.INTERRUPT_REQUESTED,
+        RealtimeEventType.INTERRUPT_ACCEPTED,
+        RealtimeEventType.INTERRUPT_COMPLETED,
+        RealtimeEventType.INTERRUPT_UNSUPPORTED,
+        RealtimeEventType.OUTPUT_FLUSH_REQUESTED,
+        RealtimeEventType.OUTPUT_FLUSH_COMPLETED,
+        RealtimeEventType.OUTPUT_FLUSH_UNSUPPORTED,
+        RealtimeEventType.BARGE_IN_DETECTED,
+        RealtimeEventType.BARGE_IN_ACCEPTED,
+        RealtimeEventType.BARGE_IN_REJECTED,
+    }
+)
+
+_V6_TO_V5_REALTIME_EVENT_TYPE = MappingProxyType(
+    {
+        RealtimeEventType.SESSION_STARTED: RealtimeEventType.SESSION_CREATED,
+        RealtimeEventType.LISTENING_STARTED: RealtimeEventType.VOICE_INPUT_STARTED,
+        RealtimeEventType.TRANSCRIPT_FINAL: RealtimeEventType.VOICE_INPUT_COMPLETED,
+        RealtimeEventType.RESPONSE_STARTED: RealtimeEventType.TEXT_CHAT_STARTED,
+        RealtimeEventType.RESPONSE_COMPLETED: RealtimeEventType.TEXT_CHAT_COMPLETED,
+        RealtimeEventType.SYNTHESIS_STARTED: RealtimeEventType.VOICE_OUTPUT_STARTED,
+        RealtimeEventType.SYNTHESIS_COMPLETED: RealtimeEventType.VOICE_OUTPUT_COMPLETED,
+        RealtimeEventType.TURN_CANCELLED: RealtimeEventType.TURN_INTERRUPTED,
+        RealtimeEventType.TURN_REJECTED: RealtimeEventType.TURN_FAILED,
     }
 )
 
@@ -376,6 +420,23 @@ class RealtimeEvent:
                 "public_metadata": self.public_metadata,
             }
         )
+
+
+    def to_v5(self) -> RealtimeEvent | None:
+        """Project this event to the explicit lossy v5 event vocabulary."""
+
+        if self.type in _V5_REALTIME_EVENT_TYPES:
+            return self
+        mapped_type = _V6_TO_V5_REALTIME_EVENT_TYPE.get(self.type)
+        if mapped_type is None:
+            return None
+        return replace(self, type=mapped_type)
+
+    def as_v5_dict(self) -> Mapping[str, Any] | None:
+        """Return the legacy ten-key mapping when a v5 projection exists."""
+
+        mapped = self.to_v5()
+        return mapped.as_dict() if mapped is not None else None
 
 
 @dataclass(frozen=True)
