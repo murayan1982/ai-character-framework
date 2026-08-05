@@ -1,6 +1,6 @@
 """Streaming text chat example for the public facade.
 
-Run from the project root after setting API keys in .env:
+Run after installing the SDK and setting API keys in .env:
 
     python examples/app_streaming_text_chat.py --provider openai --model gpt-4o-mini
 
@@ -13,12 +13,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Iterator, Sequence
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from framework import FacadeError, TextChatSessionInfo, create_text_chat_session
 

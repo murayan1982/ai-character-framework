@@ -1,6 +1,6 @@
 """Minimal public facade example.
 
-Run from the project root after setting API keys in .env:
+Run after installing the SDK and setting API keys in .env:
 
     python examples/public_text_chat.py
 
@@ -9,13 +9,6 @@ launch main.py, STT, TTS, VTube Studio, or the interactive runtime loop.
 """
 
 from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 from framework import create_text_chat_session
 

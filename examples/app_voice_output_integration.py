@@ -22,11 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from framework import (  # noqa: E402
+from framework import (
     VoiceOutputRequest,
     VoiceOutputResult,
     VoiceOutputSessionInfo,
@@ -166,7 +162,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     bridge = build_drc_voice_output_bridge(
-        project_root=PROJECT_ROOT,
         real_tts_enabled=args.real_tts,
         artifact_dir=args.artifact_dir,
     )

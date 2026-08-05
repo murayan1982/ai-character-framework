@@ -1,6 +1,6 @@
 """App-level error handling example for the public text chat facade.
 
-Run from the project root:
+Run after installing the SDK:
 
     python examples/app_error_handling.py
 
@@ -21,14 +21,9 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Sequence
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from framework import (  # noqa: E402
+from framework import (
     FacadeConfigError,
     FacadeError,
     FacadeProviderError,

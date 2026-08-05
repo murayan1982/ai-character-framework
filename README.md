@@ -2294,3 +2294,32 @@ commit / push: NOT_AUTHORIZED
 See `docs/v600_installable_sdk_contract.md` for the package and dependency
 boundary. Resource-root behavior remains unchanged until Control B.
 <!-- FW-RT6-0c-A-PACKAGE-METADATA:END -->
+
+<!-- FW-RT6-0c-C-INSTALLABLE-SDK-ISOLATION:BEGIN -->
+## v6.0.0 installable SDK isolation checkpoint
+
+FW-RT6-0c Control C verifies both editable and wheel installations from
+repository-external working directories. Public examples now import the
+installed `framework` package directly and no longer insert the checkout root
+into `sys.path`.
+
+```text
+checkpoint: FW-RT6-0c Control C
+baseline head: e51a07e62045b185799cd32d64127170c30ebe56
+status: IMPLEMENTED / AWAITING_REVIEW
+editable install: PASS
+wheel build/install: PASS
+import outside checkout: PASS
+bundled preset/character lookup outside CWD: PASS
+public example sys.path mutation: False
+canonical root-public names: 95
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next control: FW-RT6-0c Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+The gate installs no provider extras and performs no live model, voice, motion,
+or host-application operation. Aggregate task/gap acceptance remains Control D.
+<!-- FW-RT6-0c-C-INSTALLABLE-SDK-ISOLATION:END -->
