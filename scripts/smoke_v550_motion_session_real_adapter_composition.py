@@ -403,9 +403,14 @@ def _assert_signature_and_validation(framework: Any) -> None:
         ),
         "public factory arguments are not keyword-only",
     )
+    default_info = framework.MotionSessionInfo()
     _require(
-        framework.MotionSessionInfo().api_version == "5.5.0",
+        default_info.api_version == "5.5.0",
         "MotionSessionInfo api_version mismatch",
+    )
+    _require(
+        isinstance(default_info.session_id, framework.SessionId),
+        "MotionSessionInfo default identity should be SessionId",
     )
 
     try:
@@ -452,6 +457,11 @@ def _assert_basic_composition(
     events: list[Mapping[str, Any]] = []
     session = _session(framework)
     session.on_event(events.append)
+    session_id = session.info.session_id
+    _require(
+        isinstance(session_id, framework.SessionId),
+        "VTS MotionSession identity should be SessionId",
+    )
 
     before = session.apply_motion(
         framework.MotionRequest.expression_change("happy")
@@ -487,6 +497,19 @@ def _assert_basic_composition(
     )
     _require(transport.preflight_count == 1, "preflight call count mismatch")
     _require(transport.trigger_count == 1, "trigger call count mismatch")
+    _require(result.session_id == session_id, "VTS result session identity drift")
+    _require(
+        isinstance(result.session_id, framework.SessionId),
+        "VTS result identity should remain SessionId",
+    )
+    _require(
+        events and all(event["session_id"] == str(session_id) for event in events),
+        "VTS callback session identity drift",
+    )
+    _require(
+        all(type(event["session_id"]) is str for event in events),
+        "VTS callback session_id should be plain JSON string",
+    )
 
     unsupported = session.apply_motion(
         framework.MotionRequest.speaking_state(True)

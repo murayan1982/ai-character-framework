@@ -14,8 +14,8 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Mapping
-from uuid import uuid4
 
+from .identity import SessionId, normalize_session_id
 from .motion import (
     MotionAdapterStatus,
     MotionCapability,
@@ -197,7 +197,7 @@ class MotionSessionInfo:
     # api_version: str = "5.2.0"
     api_version: str = MOTION_API_VERSION
     session_type: str = "motion"
-    session_id: str = field(default_factory=lambda: uuid4().hex)
+    session_id: SessionId | str = field(default_factory=SessionId.new)
     adapter: str = "mock"
     adapter_status: MotionAdapterStatus | str = MotionAdapterStatus.MOCK_AVAILABLE
     state: MotionState | str = MotionState.IDLE
@@ -224,6 +224,7 @@ class MotionSessionInfo:
         state = self.state if isinstance(self.state, MotionState) else MotionState(str(self.state))
         object.__setattr__(self, "adapter_status", status)
         object.__setattr__(self, "state", state)
+        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -250,7 +251,7 @@ class MotionSession:
         public_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
-        self._session_id = uuid4().hex
+        self._session_id = SessionId.new()
         self._adapter = adapter or "mock"
         self._real_adapter_enabled = bool(real_adapter_enabled)
         self._allow_provider_execution = bool(allow_provider_execution)
@@ -431,7 +432,7 @@ class MotionSession:
         payload = _public_mapping(
             {
                 "type": event_type.value,
-                "session_id": self._session_id,
+                "session_id": str(self._session_id),
                 "request_id": request.request_id if request else result.request_id if result else None,
                 "state": (state or self._state).value,
                 "adapter": self._adapter,

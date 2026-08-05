@@ -256,6 +256,25 @@ def _assert_capability_request_result_types(framework) -> None:
     _require(stop.intent == framework.MotionIntent.STOP_MOTION, "stop request intent mismatch")
 
     completed = framework.MotionResult.completed(request=expression, session_id="motion-session")
+    _require(type(completed.session_id) is str, "legacy MotionResult session_id should remain str")
+    typed_session_text = str(framework.SessionId.new())
+    typed_completed = framework.MotionResult.completed(
+        request=expression,
+        session_id=typed_session_text,
+    )
+    _require(
+        isinstance(typed_completed.session_id, framework.SessionId),
+        "serialized SessionId should normalize on MotionResult",
+    )
+    try:
+        framework.MotionResult.completed(
+            request=expression,
+            session_id=str(framework.TurnId.new()),
+        )
+    except ValueError:
+        pass
+    else:
+        raise ContractFailure("wrong-kind TurnId was accepted as motion session_id")
     _require(completed.outcome == framework.MotionOutcome.COMPLETED, "completed result outcome mismatch")
     _require(completed.adapter_status == framework.MotionAdapterStatus.MOCK_AVAILABLE, "completed result adapter status mismatch")
     _require(completed.is_completed, "completed result should be completed")
@@ -291,6 +310,10 @@ def _assert_motion_session_contract(framework) -> None:
     session.on_event(events.append)
 
     _require(isinstance(session.info, framework.MotionSessionInfo), "session.info should be MotionSessionInfo")
+    _require(
+        isinstance(session.info.session_id, framework.SessionId),
+        "Framework-generated motion session_id should be SessionId",
+    )
     _require(session.info.session_type == "motion", "MotionSessionInfo session_type mismatch")
     _require(session.info.adapter == "mock", "default motion adapter should be mock")
     _require(session.info.adapter_status == framework.MotionAdapterStatus.MOCK_AVAILABLE, "default adapter status mismatch")
@@ -316,6 +339,10 @@ def _assert_motion_session_contract(framework) -> None:
     _require(result.adapter_status == framework.MotionAdapterStatus.MOCK_AVAILABLE, "mock apply_motion status mismatch")
     _require(result.request_id == request.request_id, "mock apply_motion should preserve request id")
     _require(result.session_id == session.info.session_id, "mock apply_motion should include session id")
+    _require(
+        isinstance(result.session_id, framework.SessionId),
+        "mock MotionResult session_id should preserve SessionId",
+    )
     _require(result.public_metadata["mock_motion"], "mock apply_motion should mark mock motion")
     _require(session.state == framework.MotionState.IDLE, "session should return to idle after mock motion")
     _require("should-not-leak" not in repr(result), "MotionResult should not leak secret-like metadata")
@@ -326,7 +353,14 @@ def _assert_motion_session_contract(framework) -> None:
     _require("motion.requested" in event_types, "motion session should emit requested")
     _require("motion.started" in event_types, "motion session should emit started")
     _require("motion.completed" in event_types, "motion session should emit completed")
-    _require(all(event["session_id"] == session.info.session_id for event in events), "events should include session_id")
+    _require(
+        all(event["session_id"] == str(session.info.session_id) for event in events),
+        "events should include JSON-safe session_id",
+    )
+    _require(
+        all(type(event["session_id"]) is str for event in events),
+        "motion callback session_id should be plain JSON string",
+    )
     _ok("MotionSession mock public contract conforms")
 
 

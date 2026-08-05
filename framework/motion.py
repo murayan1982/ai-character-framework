@@ -13,6 +13,8 @@ from types import MappingProxyType
 from typing import Any, Mapping
 from uuid import uuid4
 
+from .identity import SessionId, normalize_session_id
+
 
 _SECRET_KEY_FRAGMENTS = (
     "api_key",
@@ -305,7 +307,7 @@ class MotionResult:
     safe_message: str = ""
     retryable: bool = False
     request_id: str | None = None
-    session_id: str | None = None
+    session_id: SessionId | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -325,6 +327,7 @@ class MotionResult:
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "adapter_status", status)
         object.__setattr__(self, "public_error_code", error_code)
+        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     @property
@@ -349,7 +352,7 @@ class MotionResult:
         cls,
         *,
         request: MotionRequest | None = None,
-        session_id: str | None = None,
+        session_id: SessionId | str | None = None,
         state: MotionState | str = MotionState.IDLE,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "MotionResult":
@@ -371,7 +374,7 @@ class MotionResult:
         public_error_code: MotionErrorCode | str = MotionErrorCode.UNAVAILABLE,
         safe_message: str = "Motion adapter is unavailable.",
         retryable: bool = False,
-        session_id: str | None = None,
+        session_id: SessionId | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "MotionResult":
         return cls(
@@ -391,7 +394,7 @@ class MotionResult:
         cls,
         *,
         request: MotionRequest | None = None,
-        session_id: str | None = None,
+        session_id: SessionId | str | None = None,
         safe_message: str = "Motion adapter is not implemented yet.",
     ) -> "MotionResult":
         return cls(
@@ -411,7 +414,7 @@ class MotionResult:
         cls,
         *,
         request: MotionRequest | None = None,
-        session_id: str | None = None,
+        session_id: SessionId | str | None = None,
         safe_message: str = "Motion session is closed.",
     ) -> "MotionResult":
         return cls(

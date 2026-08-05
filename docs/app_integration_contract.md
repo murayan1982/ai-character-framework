@@ -709,3 +709,38 @@ Framework-owned identities. Only Framework-generated IDs use the `fw_session_`
 and `fw_turn_` formats. Event sequencing, generation correlation, and terminal
 model changes remain later controls.
 <!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:END -->
+
+<!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:BEGIN -->
+## FW-RT6-1a Control C — motion identity adoption
+
+Framework-generated `MotionSession` instances now use the root-public
+`SessionId` scalar. `MotionSessionInfo`, `MotionResult`, and callback mappings
+preserve one stable session identity across mock, guarded, closed, and composed
+VTube Studio paths. Callback mappings serialize the identity as a plain JSON
+string.
+
+```text
+checkpoint: FW-RT6-1a Control C
+baseline head: f740b374a35ed1a448beb6dc17a25427acb547fc
+status: IMPLEMENTED / AWAITING_REVIEW
+Framework-generated MotionSession identity: SessionId
+MotionResult session_id adoption: IMPLEMENTED
+legacy host session strings: PRESERVED
+valid serialized SessionId: NORMALIZED
+wrong-kind or malformed fw_* identity: REJECTED
+callback session_id serialization: JSON STRING
+MotionRequest request_id changed: False
+GenerationId promoted from MotionRequest request_id: False
+MotionResult turn_id/generation_id fields added: False
+root-public names: 99 / UNCHANGED
+VTS composition behavior changed: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1a Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+This control does not invent turn or generation identities for standalone motion
+operations. Text, voice-input, and voice-output result correlation remains
+deferred, and ordered event sequencing remains FW-RT6-1c.
+<!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:END -->
