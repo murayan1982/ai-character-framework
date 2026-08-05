@@ -1,0 +1,209 @@
+# AI Character Framework v6.0.0 Current Source Gap Inventory
+
+## FW-RT6-0a
+
+```text
+checkpoint: FW-RT6-0a
+baseline head: f56697b6de066b062794ac7bb01330d2d9e91759
+status: IMPLEMENTED / AWAITING_REVIEW
+release baseline: v5.5.0
+target release: v6.0.0
+theme: Unified Realtime Character Runtime
+runtime implementation: NOT_STARTED
+next checkpoint: FW-RT6-0b
+next checkpoint implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+This document records observable facts from the v5.5.0 source. It does not
+claim that missing v6 behavior already exists.
+
+## Source layout
+
+```text
+public SDK: framework/**
+legacy/runtime-oriented code: core/**, llm/**, stt/**, tts/**, live2d/**, plugins/**
+contract and release verification: scripts/smoke_*.py, scripts/check_*.py
+normal unit-test directory: tests/ exists but contains no test files
+```
+
+## Confirmed foundation
+
+The v5.5.0 source already contains provider-neutral public models and session
+boundaries for text chat, voice input, voice output, realtime lifecycle, output
+control, and motion. Real OpenAI STT and real VTube Studio adapter code also
+exist behind explicit guards.
+
+These pieces are not yet composed into one real unified turn runtime.
+
+## G-01 — RealtimeSession remains a mock-safe skeleton
+
+`framework/realtime_session.py` describes itself as a skeleton and its
+`run_turn()` method emits deterministic mock stage events without executing real
+STT, LLM, TTS, or motion stages.
+
+```text
+real unified turn orchestration: False
+```
+
+## G-02 — Session and turn identity are not shared across all stages
+
+`RealtimeSession` owns a `session_id` and `RealtimeTurn` owns a `turn_id`, but
+the standalone TextChat, VoiceInput, VoiceOutput, and Motion boundaries do not
+share one common session/turn/generation context.
+
+```text
+stable unified generation identity: False
+```
+
+## G-03 — RealtimeEvent lacks v6 ordering fields
+
+The current `RealtimeEvent` includes type, state, previous state, turn ID,
+session ID, public error code, safe message, retryability, and public metadata.
+It does not include the required v6 fields below.
+
+```text
+monotonic sequence: False
+generation: False
+typed payload union: False
+terminal flag: False
+```
+
+## G-04 — Exactly-once terminal enforcement is absent
+
+`RealtimeTurnResult.is_terminal` classifies terminal outcomes, but there is no
+per-session terminal registry, atomic first-terminal commit, duplicate terminal
+suppression, or state-regression gate.
+
+## G-05 — Provider-neutral stale-result rejection is absent
+
+The realtime skeleton has no generation gate for late transcript, response,
+voice artifact, or motion completion. The VTube Studio implementation contains
+a narrower lifecycle-generation and late-completion pattern that may inform a
+future provider-neutral primitive.
+
+## G-06 — Global capability snapshot is stale
+
+`framework/capabilities.py` still reports schema `v5.1.capabilities` and returns
+voice input, realtime, and motion as missing public boundaries even though later
+public modules and guarded implementations exist.
+
+```text
+capability truthfulness across modules: False
+```
+
+## G-07 — VoiceInputSession and real STT are not normally composed
+
+`framework/voice_input_session.py` still describes real STT as intentionally not
+executed by the session skeleton. Separate OpenAI real-provider executor and
+adapter modules exist. Normal host use still lacks a single provider-neutral
+composition root that selects and owns the real stage.
+
+## G-08 — Text streaming has no cancellation protocol
+
+`llm/base.py` exposes `ask_stream()` as a synchronous generator. It does not
+return a cooperative cancellation handle, provider hard-cancel capability, or
+typed stream cleanup result.
+
+## G-09 — Voice generation, queue, and playback responsibilities are split
+
+The public voice-output boundary performs per-request artifact generation. The
+legacy `tts/voice_engine.py` owns provider-specific synthesis, queueing, local
+playback, and temporary files. `RealtimeSession` does not own a provider-neutral
+bounded voice-output work queue.
+
+## G-10 — Voice artifact handoff has a path-contract mismatch
+
+`VoiceArtifactRef` rejects local/private path-looking identifiers, but the real
+voice-output provider adapter currently assigns `str(artifact_path)` to
+`audio_artifact_ref`. v6 requires an opaque Framework-owned artifact store and
+resolver contract.
+
+## G-11 — VoiceOutputSession contains repeated compatibility overrides
+
+The current class defines `close`, `is_closed`, `create_output`, and `speak`
+more than once. The effective behavior depends on later method overrides rather
+than one clear lifecycle implementation.
+
+## G-12 — Public text-chat error events may include raw exception text
+
+The text-chat streaming boundary includes exception-derived text/type in an
+app-facing event. v6 requires stable safe error classification without raw
+provider exception exposure.
+
+## G-13 — Metadata redaction helpers are shallow and duplicated
+
+Multiple modules implement separate shallow redaction helpers. Nested mappings,
+collections, or objects are not covered by one recursive public-safe utility.
+
+## G-14 — Installable SDK and resource-root contract are incomplete
+
+The source does not contain `pyproject.toml`. Existing smoke scripts add the
+repository root to `sys.path`, and parts of the runtime resolve presets,
+characters, output, or temporary resources relative to a checkout/CWD.
+
+## G-15 — Legacy runtime and public SDK coexist without a composition layer
+
+`core/pipeline.py` contains real streaming, interruption checks, TTS waits, and
+emotion handling. It is not the implementation behind the public
+`RealtimeSession`. v6 must extract provider-neutral stage protocols instead of
+exposing legacy internals.
+
+## G-16 — Verification is concentrated in release smoke scripts
+
+The source includes many versioned smoke/check scripts, while `tests/` contains
+no normal unit tests. Deterministic race, duplicate terminal, stale result, and
+fake-clock behavior need a fast unit-test layer.
+
+## G-17 — Version and schema values are distributed
+
+Public types expose several historical version strings (`4.0`, `5.2.0`,
+`v5.lazy_provider_adapter`, `v5.1.capabilities`, and `5.5.0`). v6 needs a
+central package version and separately versioned public schemas.
+
+## Baseline verification outcome
+
+```text
+compileall framework/core/llm/stt/tts/scripts: REQUIRED
+v5.2 realtime and output-control smokes: REQUIRED
+v5.3 VoiceInputSession adapter smoke: REQUIRED
+v5.4 OpenAI real-provider source-safe smoke: REQUIRED
+v5.5 MotionSession real-adapter composition smoke: REQUIRED
+legacy smoke_public_facade current-surface sync: KNOWN_GAP
+```
+
+## Scope lock
+
+FW-RT6-0a is an exact six-file docs/test-only checkpoint.
+
+```text
+README.md
+docs/roadmap_feature_v6.0.0.md
+docs/v600_current_source_gap_inventory.md
+docs/v600_tasklist.md
+scripts/smoke_v600_current_source_gap_inventory.py
+scripts/check_v600_tasklist_contract.py
+```
+
+Protected runtime and configuration surfaces must not change in this checkpoint.
+
+```text
+framework/**: NO CHANGE
+core/**: NO CHANGE
+llm/**: NO CHANGE
+stt/**: NO CHANGE
+tts/**: NO CHANGE
+live2d/**: NO CHANGE
+plugins/**: NO CHANGE
+registry/**: NO CHANGE
+config/**: NO CHANGE
+presets/**: NO CHANGE
+characters/**: NO CHANGE
+requirements.txt: NO CHANGE
+.env.example: NO CHANGE
+release/**: NO CHANGE
+```
+
+No network, provider, microphone, playback, private configuration, private
+evidence, application repository access, commit, push, tag, or publication is
+authorized by this checkpoint.

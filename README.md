@@ -2193,3 +2193,41 @@ tag authorization: READY_AFTER_STRICT_PACKAGE_VERIFICATION
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-VTS-0f4b-FINAL-TAG-READINESS:END -->
+
+<!-- FW-RT6-0a-SOURCE-INVENTORY:BEGIN -->
+## v6.0.0 Unified Realtime Character Runtime planning baseline
+
+FW-RT6-0a records the current-source gap inventory, v6.0.0 roadmap, and
+implementation tasklist against the accepted v5.5.0 baseline. This checkpoint
+is documentation/test only and does not implement the unified runtime.
+
+```text
+checkpoint: FW-RT6-0a
+baseline head: f56697b6de066b062794ac7bb01330d2d9e91759
+status: IMPLEMENTED / AWAITING_REVIEW
+release baseline: v5.5.0 TAGGED / PUSHED / ACCEPTED / PUBLISHED
+target release: v6.0.0
+theme: Unified Realtime Character Runtime
+exact change surface: 6 files
+runtime Python changed: False
+provider execution: False
+network execution: False
+microphone use: False
+audio playback: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-0b
+FW-RT6-0b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Planning documents:
+
+- [`docs/roadmap_feature_v6.0.0.md`](docs/roadmap_feature_v6.0.0.md)
+- [`docs/v600_current_source_gap_inventory.md`](docs/v600_current_source_gap_inventory.md)
+- [`docs/v600_tasklist.md`](docs/v600_tasklist.md)
+
+The inventory intentionally reports missing sequence/generation fields, absent
+terminal/stale guards, incomplete real-stage composition, stale capability
+status, split TTS ownership, SDK packaging gaps, and test-architecture gaps as
+not implemented. It does not treat roadmap intent as released behavior.
+<!-- FW-RT6-0a-SOURCE-INVENTORY:END -->
