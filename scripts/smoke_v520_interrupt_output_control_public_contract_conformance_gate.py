@@ -428,10 +428,45 @@ def _assert_readme(root: Path) -> None:
     _ok("README links public interrupt/output-control contract docs")
 
 
+
+def _check_v600_event_envelope_compatibility(framework) -> None:
+    import dataclasses
+
+    names = tuple(field.name for field in dataclasses.fields(framework.RealtimeEvent))
+    expected_prefix = (
+        "type", "state", "previous_state", "turn_id", "session_id",
+        "boundary", "public_error_code", "safe_message", "retryable",
+        "public_metadata",
+    )
+    expected_suffix = (
+        "sequence", "generation_id", "phase", "payload", "terminal",
+        "timestamp", "monotonic_timestamp",
+    )
+    _require(names[:10] == expected_prefix, "RealtimeEvent v5 field prefix drift")
+    _require(names[10:] == expected_suffix, "RealtimeEvent v6 field suffix drift")
+    event = framework.RealtimeEvent(
+        type=framework.RealtimeEventType.TURN_STARTED,
+        state=framework.RealtimeState.LISTENING,
+    )
+    _require(event.sequence is None, "legacy event sequence default drift")
+    _require(event.generation_id is None, "legacy event generation default drift")
+    _require(event.phase is None, "legacy event phase default drift")
+    _require(event.payload is None, "legacy event payload default drift")
+    _require(event.terminal is False, "legacy progress event terminal inference drift")
+    _require(
+        tuple(event.as_dict().keys()) == (
+            "type", "state", "previous_state", "turn_id", "session_id",
+            "boundary", "public_error_code", "safe_message", "retryable",
+            "public_metadata",
+        ),
+        "legacy RealtimeEvent.as_dict key drift",
+    )
+
 def main() -> None:
     root = _repo_root()
     _assert_doc(root)
     framework = _import_framework_safely(root)
+    _check_v600_event_envelope_compatibility(framework)
     _assert_public_exports(framework)
     _assert_realtime_factory_signature(framework)
     _assert_enum_contracts(framework)

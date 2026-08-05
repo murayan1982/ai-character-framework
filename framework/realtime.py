@@ -8,17 +8,36 @@ SDK modules.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from enum import Enum
 from types import MappingProxyType
 from typing import Any, Mapping
 
-from .identity import SessionId, TurnId, normalize_session_id, normalize_turn_id
+from .identity import (
+    EventSequence,
+    GenerationId,
+    SessionId,
+    TurnId,
+    normalize_session_id,
+    normalize_turn_id,
+)
 from .lifecycle import (
     LifecycleTransitionError,
     LifecycleTransitionErrorCode,
     RealtimePhase,
     RecoveryAction,
     TurnOutcome,
+)
+from .realtime_event_payloads import (
+    AudioEventPayload,
+    DiagnosticEventPayload,
+    InterruptEventPayload,
+    LifecycleEventPayload,
+    MotionEventPayload,
+    RealtimeEventPayload,
+    ResponseEventPayload,
+    SynthesisEventPayload,
+    TranscriptEventPayload,
 )
 
 
@@ -120,6 +139,111 @@ class RealtimeEventType(str, Enum):
     BARGE_IN_ACCEPTED = "realtime.barge_in.accepted"
     BARGE_IN_REJECTED = "realtime.barge_in.rejected"
 
+    # Canonical v6 event categories. Existing v5 members above remain stable.
+    SESSION_STARTED = "realtime.session.started"
+    TURN_CANCELLED = "realtime.turn.cancelled"
+    TURN_REJECTED = "realtime.turn.rejected"
+    LISTENING_STARTED = "realtime.listening.started"
+    LISTENING_COMPLETED = "realtime.listening.completed"
+    SPEECH_STARTED = "realtime.speech.started"
+    SPEECH_ENDED = "realtime.speech.ended"
+    TRANSCRIPT_PARTIAL = "realtime.transcript.partial"
+    TRANSCRIPT_FINAL = "realtime.transcript.final"
+    RESPONSE_STARTED = "realtime.response.started"
+    RESPONSE_DELTA = "realtime.response.delta"
+    RESPONSE_COMPLETED = "realtime.response.completed"
+    SYNTHESIS_STARTED = "realtime.synthesis.started"
+    SYNTHESIS_COMPLETED = "realtime.synthesis.completed"
+    AUDIO_AVAILABLE = "realtime.audio.available"
+    AUDIO_INVALIDATED = "realtime.audio.invalidated"
+    MOTION_REQUESTED = "realtime.motion.requested"
+    MOTION_FAILED = "realtime.motion.failed"
+    STALE_RESULT_DROPPED = "realtime.stale_result.dropped"
+    EVENT_OVERFLOW = "realtime.event.overflow"
+
+
+_REALTIME_EVENT_PAYLOAD_TYPES = (
+    LifecycleEventPayload,
+    TranscriptEventPayload,
+    ResponseEventPayload,
+    SynthesisEventPayload,
+    AudioEventPayload,
+    MotionEventPayload,
+    InterruptEventPayload,
+    DiagnosticEventPayload,
+)
+
+_TERMINAL_REALTIME_EVENT_TYPES = frozenset(
+    {
+        RealtimeEventType.TURN_COMPLETED,
+        RealtimeEventType.TURN_INTERRUPTED,
+        RealtimeEventType.TURN_CANCELLED,
+        RealtimeEventType.TURN_FAILED,
+        RealtimeEventType.TURN_REJECTED,
+        RealtimeEventType.SESSION_CLOSED,
+    }
+)
+
+
+def _normalize_event_sequence(
+    value: EventSequence | int | None,
+) -> EventSequence | None:
+    if value is None:
+        return None
+    return EventSequence.parse(value)
+
+
+def _normalize_generation_id(
+    value: GenerationId | str | None,
+) -> GenerationId | None:
+    if value is None:
+        return None
+    if isinstance(value, GenerationId):
+        return value
+    if not isinstance(value, str):
+        raise TypeError("generation_id must be a GenerationId, string, or None")
+    return GenerationId.parse(value)
+
+
+def _normalize_event_payload(
+    value: RealtimeEventPayload | None,
+) -> RealtimeEventPayload | None:
+    if value is None:
+        return None
+    if not isinstance(value, _REALTIME_EVENT_PAYLOAD_TYPES):
+        raise TypeError("payload must be a typed RealtimeEventPayload or None")
+    return value
+
+
+def _normalize_public_timestamp(
+    value: float | int | None,
+    *,
+    field_name: str,
+) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError(f"{field_name} must be a finite non-negative number or None")
+    normalized = float(value)
+    if not math.isfinite(normalized) or normalized < 0.0:
+        raise ValueError(f"{field_name} must be a finite non-negative number")
+    return normalized
+
+
+def _normalize_terminal_flag(
+    value: bool | None,
+    *,
+    event_type: RealtimeEventType,
+) -> bool:
+    inferred = event_type in _TERMINAL_REALTIME_EVENT_TYPES
+    if value is None:
+        return inferred
+    if type(value) is not bool:
+        raise TypeError("terminal must be a boolean or None")
+    if value is not inferred:
+        raise ValueError("terminal flag does not match realtime event type")
+    return value
+
 
 class RealtimeErrorCode(str, Enum):
     """Provider-neutral realtime public error code."""
@@ -150,6 +274,13 @@ class RealtimeEvent:
     safe_message: str = ""
     retryable: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    sequence: EventSequence | int | None = None
+    generation_id: GenerationId | str | None = None
+    phase: RealtimePhase | str | None = None
+    payload: RealtimeEventPayload | None = None
+    terminal: bool | None = None
+    timestamp: float | int | None = None
+    monotonic_timestamp: float | int | None = None
 
     def __post_init__(self) -> None:
         event_type = self.type if isinstance(self.type, RealtimeEventType) else RealtimeEventType(str(self.type))
@@ -166,10 +297,28 @@ class RealtimeEvent:
         object.__setattr__(self, "type", event_type)
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "previous_state", previous_state)
+        sequence = _normalize_event_sequence(self.sequence)
+        generation_id = _normalize_generation_id(self.generation_id)
+        phase = _normalize_realtime_phase(self.phase)
+        payload = _normalize_event_payload(self.payload)
+        terminal = _normalize_terminal_flag(self.terminal, event_type=event_type)
+        timestamp = _normalize_public_timestamp(self.timestamp, field_name="timestamp")
+        monotonic_timestamp = _normalize_public_timestamp(
+            self.monotonic_timestamp,
+            field_name="monotonic_timestamp",
+        )
+
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        object.__setattr__(self, "sequence", sequence)
+        object.__setattr__(self, "generation_id", generation_id)
+        object.__setattr__(self, "phase", phase)
+        object.__setattr__(self, "payload", payload)
+        object.__setattr__(self, "terminal", terminal)
+        object.__setattr__(self, "timestamp", timestamp)
+        object.__setattr__(self, "monotonic_timestamp", monotonic_timestamp)
 
     def as_dict(self) -> Mapping[str, Any]:
         """Return an immutable public-safe event mapping for host-app callbacks."""
@@ -183,6 +332,43 @@ class RealtimeEvent:
                 "session_id": (
                     str(self.session_id) if self.session_id is not None else None
                 ),
+                "boundary": self.boundary,
+                "public_error_code": self.public_error_code.value,
+                "safe_message": self.safe_message,
+                "retryable": self.retryable,
+                "public_metadata": self.public_metadata,
+            }
+        )
+
+    def as_v6_dict(self) -> Mapping[str, Any]:
+        """Return the immutable canonical v6 event-envelope mapping."""
+
+        return MappingProxyType(
+            {
+                "type": self.type.value,
+                "state": self.state.value,
+                "previous_state": (
+                    self.previous_state.value if self.previous_state else None
+                ),
+                "session_id": (
+                    str(self.session_id) if self.session_id is not None else None
+                ),
+                "turn_id": str(self.turn_id) if self.turn_id is not None else None,
+                "generation_id": (
+                    str(self.generation_id)
+                    if self.generation_id is not None
+                    else None
+                ),
+                "sequence": (
+                    int(self.sequence) if self.sequence is not None else None
+                ),
+                "phase": self.phase.value if self.phase is not None else None,
+                "payload": (
+                    self.payload.as_dict() if self.payload is not None else None
+                ),
+                "terminal": self.terminal,
+                "timestamp": self.timestamp,
+                "monotonic_timestamp": self.monotonic_timestamp,
                 "boundary": self.boundary,
                 "public_error_code": self.public_error_code.value,
                 "safe_message": self.safe_message,

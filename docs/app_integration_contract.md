@@ -879,3 +879,47 @@ Applications must not treat `AudioEventPayload.artifact_ref` as a filesystem
 path. Runtime callbacks continue to use the existing `RealtimeEvent` contract
 until later FW-RT6-1c controls adopt the v6 envelope.
 <!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->
+
+<!-- FW-RT6-1c-B-REALTIME-EVENT-ENVELOPE:BEGIN -->
+## FW-RT6-1c Control B — RealtimeEvent v6 envelope
+
+Status:
+
+```text
+IMPLEMENTED / AWAITING_REVIEW
+```
+
+Baseline:
+
+```text
+a29b90cadcb6b7917499c30cbe753d2c72ea353b
+```
+
+`RealtimeEvent` preserves its accepted v5 constructor prefix and legacy
+`as_dict()` mapping while appending an optional canonical v6 envelope. The
+envelope normalizes Framework-owned sequence and generation identities, the
+last observed transient phase, one typed Control A payload, terminal meaning,
+and optional public timestamps.
+
+```text
+accepted root-public count: 114 / UNCHANGED
+legacy RealtimeEvent field prefix: PRESERVED
+legacy RealtimeEvent.as_dict keys: PRESERVED
+new suffix: sequence / generation_id / phase / payload / terminal / timestamp / monotonic_timestamp
+sequence continuity enforcement: False
+generation lifecycle ownership: False
+automatic clock reads: False
+RealtimeSession canonical emission: False
+v5 mapping adapter: DEFERRED / CONTROL C
+terminal registry / exactly-once suppression: NOT IMPLEMENTED
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1c Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+`EventSequence` is the authoritative ordering scalar when present. Timestamps
+are optional non-negative finite public values and do not establish ordering. A
+terminal flag must agree with the event type; this fixes envelope semantics but
+does not suppress duplicate terminal events.
+<!-- FW-RT6-1c-B-REALTIME-EVENT-ENVELOPE:END -->
