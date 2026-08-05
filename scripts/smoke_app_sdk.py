@@ -218,6 +218,27 @@ def check_version_metadata() -> None:
         REALTIME_CAPABILITIES_SCHEMA_VERSION == "v6.realtime_capabilities",
         "detailed realtime capability schema drift",
     )
+    capabilities = get_capabilities()
+    _assert(
+        capabilities.realtime_snapshot is not None,
+        "global detailed realtime capability snapshot should be attached",
+    )
+    _assert(
+        capabilities.realtime_snapshot.snapshot_scope.value == "global",
+        "global detailed capability scope drift",
+    )
+    _assert(
+        capabilities.voice_input.reason_code == "mock_voice_input_available",
+        "voice input current capability should be truthful",
+    )
+    _assert(
+        capabilities.realtime.reason_code == "mock_realtime_available",
+        "realtime current capability should be truthful",
+    )
+    _assert(
+        capabilities.motion.reason_code == "mock_motion_available",
+        "motion current capability should be truthful",
+    )
 
     _assert_no_forbidden_runtime_imports("central version metadata")
     print("[OK] app SDK source and public contract version metadata are centralized")

@@ -99,3 +99,39 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->
+
+<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN -->
+## FW-RT6-1d Control B — truthful global capability aggregation
+
+`get_capabilities()` preserves the v5.1 `FrameworkCapabilities` return type,
+keyword-only signature, five summary fields, and `v5.1.capabilities` schema. The
+builder no longer reports voice input, realtime, and motion as missing public
+boundaries. Their deterministic mock-safe public runtimes are reported as
+available fallback capabilities, while real provider or transport success is not
+claimed.
+
+The additive `FrameworkCapabilities.realtime_snapshot` field contains one
+`v6.realtime_capabilities` global snapshot built from the same authoritative
+facts. It separates configured, runtime availability, guard state, fake runtime,
+real runtime, and unavailable reason for every stage.
+
+```text
+checkpoint: FW-RT6-1d Control B
+baseline head: a27b3e17ff7d8158859a5a624e3b03225384bfc8
+Control B exact change surface: 10 files
+root-public names: 121 / UNCHANGED
+v5 compatibility schema: v5.1.capabilities / PRESERVED
+detailed schema: v6.realtime_capabilities
+voice input summary reason: mock_voice_input_available
+realtime summary reason: mock_realtime_available
+motion summary reason: mock_motion_available
+voice output real runtime default: UNAVAILABLE
+provider hard cancel supported: False
+TTS pending flush supported: False
+RealtimeSession snapshot adoption: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1d Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->

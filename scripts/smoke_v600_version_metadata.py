@@ -213,9 +213,19 @@ def check_runtime_values() -> None:
     _assert(VoiceInputSessionInfo().api_version == "5.2.0", "voice input API changed")
     _assert(RealtimeSessionInfo().api_version == "5.2.0", "realtime API changed")
     _assert(MotionSessionInfo().api_version == "5.5.0", "motion API changed")
+    capabilities = get_capabilities()
     _assert(
-        get_capabilities().schema_version == "v5.1.capabilities",
+        capabilities.schema_version == "v5.1.capabilities",
         "capability schema changed",
+    )
+    _assert(
+        capabilities.realtime_snapshot is not None,
+        "truthful global detailed capability snapshot is missing",
+    )
+    _assert(
+        capabilities.realtime_snapshot.schema_version
+        == "v6.realtime_capabilities",
+        "aggregated detailed realtime capability schema changed",
     )
     _assert(
         RealtimeCapabilitySnapshot(
@@ -249,6 +259,10 @@ def check_docs() -> None:
             "FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN" in text,
             f"{relative_path} should record detailed capability models",
         )
+        _assert(
+            "FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN" in text,
+            f"{relative_path} should record truthful global capability aggregation",
+        )
     print("[OK] public docs distinguish source version from frozen API versions")
 
 
@@ -263,13 +277,13 @@ def main() -> None:
     print("v600_latest_published_release: 5.5.0")
     print("v600_root_public_name_count: 121")
     print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-and-capability-models-only")
-    print("v600_capability_truthfulness_changed: models-added-builder-not-replaced")
+    print("v600_capability_truthfulness_changed: global-builder-replaced-session-adoption-pending")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1d Control B")
+    print("v600_next_control: FW-RT6-1d Control C")
     print("v600_next_control_authorized: False")
-    print("[OK] central version metadata smoke passed with additive detailed capability models")
+    print("[OK] central version metadata smoke passed with truthful global capability aggregation")
 
 
 if __name__ == "__main__":

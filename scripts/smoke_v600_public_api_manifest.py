@@ -279,6 +279,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->",
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN -->",
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
+            "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN -->",
+            "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
         ),
         PROJECT_ROOT / "docs" / "app_integration_contract.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
@@ -291,6 +293,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->",
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN -->",
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
+            "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN -->",
+            "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
         ),
     }
     for path, markers in required_markers.items():
@@ -298,7 +302,7 @@ def _check_docs_and_status_markers() -> None:
         for marker in markers:
             _assert(marker in text, f"missing marker in {path.name}: {marker}")
 
-    print("[OK] public facade and app integration docs record Control A")
+    print("[OK] public facade and app integration docs record Control B without public-name drift")
 
 
 def main() -> None:
@@ -316,9 +320,9 @@ def main() -> None:
     print("v600_runtime_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1d Control B")
+    print("v600_next_control: FW-RT6-1d Control C")
     print("v600_next_control_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with detailed capability models")
+    print("[OK] canonical public API manifest smoke passed with unchanged names and truthful global aggregation")
 
 
 if __name__ == "__main__":

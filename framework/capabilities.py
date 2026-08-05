@@ -1,8 +1,9 @@
 """Provider-neutral public capability snapshot for FW host apps.
 
-This module is intentionally lightweight. Importing it must not import provider
-SDKs, runtime audio modules, voice input adapters, motion adapters, or
-application-specific configuration.
+Importing this module remains provider-safe. The global snapshot reports the
+truthful public SDK boundaries and the deterministic mock-safe runtimes that are
+available without importing provider SDKs, creating clients, accessing the
+network, microphone, playback, VTube Studio, or private configuration values.
 """
 
 from __future__ import annotations
@@ -12,6 +13,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Mapping
 
+from .realtime_capabilities import (
+    CapabilitySnapshotScope,
+    RealtimeCapabilitySnapshot,
+    RealtimeMotionCapability,
+    RealtimeVoiceInputCapability,
+    RealtimeVoiceOutputCapability,
+    RuntimeCapabilityState,
+    TextGenerationCapability,
+)
 from .version import CAPABILITIES_SCHEMA_VERSION
 
 
@@ -27,12 +37,7 @@ CapabilityState = Literal[
 
 @dataclass(frozen=True, slots=True)
 class CapabilityStatus:
-    """Provider-neutral status for one public framework capability.
-
-    `supported`, `configured`, and `available` are deliberately separate.
-    A feature can be implemented but not configured, configured but blocked by a
-    guard, or detected but not currently available.
-    """
+    """Provider-neutral status for one public framework capability."""
 
     name: str
     status: CapabilityState
@@ -74,7 +79,12 @@ class CapabilityStatus:
 
 @dataclass(frozen=True, slots=True)
 class FrameworkCapabilities:
-    """Versioned snapshot of public FW capabilities."""
+    """Versioned compatibility snapshot with one detailed v6 global snapshot.
+
+    The five ``CapabilityStatus`` fields and ``schema_version`` retain the v5.1
+    public contract. ``realtime_snapshot`` is additive and carries the detailed
+    v6 global capability model produced from the same authoritative decisions.
+    """
 
     schema_version: str
     text_chat: CapabilityStatus
@@ -83,6 +93,7 @@ class FrameworkCapabilities:
     realtime: CapabilityStatus
     motion: CapabilityStatus
     public_metadata: Mapping[str, str] = field(default_factory=dict)
+    realtime_snapshot: RealtimeCapabilitySnapshot | None = None
 
     def to_public_dict(self) -> dict[str, object]:
         """Return a provider-neutral dictionary representation."""
@@ -95,6 +106,11 @@ class FrameworkCapabilities:
             "realtime": self.realtime.to_public_dict(),
             "motion": self.motion.to_public_dict(),
             "public_metadata": dict(self.public_metadata),
+            "realtime_snapshot": (
+                dict(self.realtime_snapshot.as_dict())
+                if self.realtime_snapshot is not None
+                else None
+            ),
         }
 
 
@@ -103,25 +119,63 @@ def get_capabilities(
     project_root: str | Path | None = None,
     real_tts_enabled: bool | None = None,
 ) -> FrameworkCapabilities:
-    """Return a mock-safe runtime capability snapshot.
+    """Return a mock-safe truthful global capability snapshot.
 
-    The snapshot reports public boundary status without importing provider SDKs
-    or performing provider API calls. It is safe to call during application
-    startup and before provider credentials are configured.
+    This function preserves the v5.1 return type and keyword-only signature. It
+    now reports the existing voice-input, realtime, and motion public boundaries
+    truthfully instead of claiming that they are missing. The additive detailed
+    snapshot distinguishes deterministic fake runtimes from unprobed real
+    runtimes and never treats configuration or an open guard as provider success.
     """
 
-    resolved_project_root = Path(project_root).resolve() if project_root is not None else None
+    resolved_project_root = (
+        Path(project_root).resolve() if project_root is not None else None
+    )
+    text_chat = _text_chat_capability()
+    voice_output = _voice_output_capability(real_tts_enabled=real_tts_enabled)
+    voice_input = _mock_fallback_capability(
+        "voice_input",
+        "mock_voice_input_available",
+        (
+            "The public voice-input boundary and mock-safe adapter are available; "
+            "real STT availability is not claimed."
+        ),
+    )
+    realtime = _mock_fallback_capability(
+        "realtime",
+        "mock_realtime_available",
+        (
+            "The public realtime session and deterministic mock runtime are "
+            "available; real unified orchestration is not claimed."
+        ),
+    )
+    motion = _mock_fallback_capability(
+        "motion",
+        "mock_motion_available",
+        (
+            "The public motion session and mock adapter are available; real "
+            "motion transport availability is not claimed."
+        ),
+    )
+    detailed = _global_realtime_snapshot(voice_output=voice_output)
+
     return FrameworkCapabilities(
         schema_version=CAPABILITIES_SCHEMA_VERSION,
-        text_chat=_text_chat_capability(),
-        voice_output=_voice_output_capability(real_tts_enabled=real_tts_enabled),
-        voice_input=_missing_capability("voice_input", "public_boundary_missing", "Voice input public boundary is not implemented yet."),
-        realtime=_missing_capability("realtime", "public_boundary_missing", "Realtime public session boundary is not implemented yet."),
-        motion=_missing_capability("motion", "public_boundary_missing", "Motion public adapter boundary is not implemented yet."),
+        text_chat=text_chat,
+        voice_output=voice_output,
+        voice_input=voice_input,
+        realtime=realtime,
+        motion=motion,
         public_metadata={
             "boundary": "capabilities",
-            "project_root_provided": "true" if resolved_project_root is not None else "false",
+            "project_root_provided": (
+                "true" if resolved_project_root is not None else "false"
+            ),
+            "detailed_realtime_snapshot": "true",
+            "snapshot_scope": CapabilitySnapshotScope.GLOBAL.value,
+            "provider_execution_performed": "false",
         },
+        realtime_snapshot=detailed,
     )
 
 
@@ -139,10 +193,39 @@ def _text_chat_capability() -> CapabilityStatus:
     )
 
 
+def _mock_fallback_capability(
+    name: str,
+    reason_code: str,
+    safe_message: str,
+) -> CapabilityStatus:
+    return CapabilityStatus(
+        name=name,
+        status="fallback",
+        supported=True,
+        configured=True,
+        available=True,
+        blocked=False,
+        reason_code=reason_code,
+        safe_message=safe_message,
+        public_metadata={
+            "boundary": name,
+            "fake_runtime": "true",
+            "real_runtime": "false",
+            "provider_execution_performed": "false",
+        },
+    )
+
+
 def _voice_output_capability(*, real_tts_enabled: bool | None) -> CapabilityStatus:
-    enabled = _env_flag("FRAMEWORK_VOICE_OUTPUT_REAL_TTS") if real_tts_enabled is None else bool(real_tts_enabled)
+    enabled = (
+        _env_flag("FRAMEWORK_VOICE_OUTPUT_REAL_TTS")
+        if real_tts_enabled is None
+        else bool(real_tts_enabled)
+    )
     provider_configured = bool(os.environ.get("FRAMEWORK_VOICE_OUTPUT_PROVIDER"))
-    execution_allowed = _env_flag("FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION")
+    execution_allowed = _env_flag(
+        "FRAMEWORK_VOICE_OUTPUT_ALLOW_PROVIDER_EXECUTION"
+    )
 
     metadata = {
         "boundary": "voice_output",
@@ -150,6 +233,7 @@ def _voice_output_capability(*, real_tts_enabled: bool | None) -> CapabilityStat
         "provider_configured": str(provider_configured).lower(),
         "provider_execution_allowed": str(execution_allowed).lower(),
         "provider_details_exposed": "false",
+        "provider_execution_performed": "false",
     }
 
     if not enabled:
@@ -161,7 +245,10 @@ def _voice_output_capability(*, real_tts_enabled: bool | None) -> CapabilityStat
             available=False,
             blocked=False,
             reason_code="real_tts_disabled",
-            safe_message="Voice output public boundary is available, but real TTS is disabled.",
+            safe_message=(
+                "Voice output public boundary is available, but real TTS is "
+                "disabled."
+            ),
             public_metadata=metadata,
         )
 
@@ -199,22 +286,115 @@ def _voice_output_capability(*, real_tts_enabled: bool | None) -> CapabilityStat
         available=False,
         blocked=False,
         reason_code="real_provider_not_probed",
-        safe_message="Voice output provider is configured, but availability was not probed by the mock-safe capability snapshot.",
+        safe_message=(
+            "Voice output provider is configured, but availability was not "
+            "probed by the mock-safe capability snapshot."
+        ),
         public_metadata=metadata,
     )
 
 
-def _missing_capability(name: str, reason_code: str, safe_message: str) -> CapabilityStatus:
-    return CapabilityStatus(
-        name=name,
-        status="unavailable",
-        supported=False,
-        configured=False,
-        available=False,
-        blocked=False,
-        reason_code=reason_code,
-        safe_message=safe_message,
-        public_metadata={"boundary": name},
+def _global_realtime_snapshot(
+    *,
+    voice_output: CapabilityStatus,
+) -> RealtimeCapabilitySnapshot:
+    mock_runtime = RuntimeCapabilityState(
+        configured=True,
+        runtime_available=True,
+        guarded=False,
+        fake_runtime=True,
+        real_runtime=False,
+        unavailable_reason=None,
+        public_metadata={
+            "snapshot_source": "global_public_boundary",
+            "provider_execution_performed": False,
+        },
+    )
+    voice_output_runtime = RuntimeCapabilityState(
+        configured=voice_output.configured,
+        runtime_available=voice_output.available,
+        guarded=voice_output.blocked,
+        fake_runtime=False,
+        real_runtime=voice_output.available,
+        unavailable_reason=(
+            None if voice_output.available else voice_output.reason_code
+        ),
+        public_metadata={
+            "snapshot_source": "global_voice_output_preflight",
+            "provider_execution_performed": False,
+        },
+    )
+
+    return RealtimeCapabilitySnapshot(
+        session_id=None,
+        snapshot_scope=CapabilitySnapshotScope.GLOBAL,
+        snapshot_generation=1,
+        text_generation=TextGenerationCapability(
+            runtime=mock_runtime,
+            streaming_supported=True,
+            cooperative_cancel_supported=True,
+            provider_hard_cancel_supported=False,
+            public_metadata={"boundary": "text_generation"},
+        ),
+        voice_input=RealtimeVoiceInputCapability(
+            runtime=mock_runtime,
+            audio_chunk_input_supported=False,
+            partial_transcript_supported=False,
+            final_transcript_supported=True,
+            input_abort_supported=False,
+            backpressure_supported=False,
+            accepted_audio_formats=(
+                "wav",
+                "m4a",
+                "mp3",
+                "webm",
+                "ogg",
+                "flac",
+                "pcm16",
+            ),
+            maximum_chunk_size=None,
+            maximum_duration=None,
+            public_metadata={
+                "boundary": "voice_input",
+                "whole_audio_source_supported": True,
+                "text_fallback_supported": True,
+            },
+        ),
+        voice_output=RealtimeVoiceOutputCapability(
+            runtime=voice_output_runtime,
+            streaming_audio_supported=False,
+            generation_cancel_supported=False,
+            provider_hard_cancel_supported=False,
+            pending_flush_supported=False,
+            active_audio_invalidation_supported=False,
+            audio_formats=(),
+            maximum_text_size=None,
+            public_metadata={
+                "boundary": "voice_output",
+                "host_playback_owned": True,
+            },
+        ),
+        motion=RealtimeMotionCapability(
+            runtime=mock_runtime,
+            request_cancel_supported=False,
+            completion_event_supported=True,
+            provider_neutral_intent_supported=True,
+            public_metadata={"boundary": "motion"},
+        ),
+        supports_text_chat=True,
+        supports_voice_input=True,
+        supports_voice_output=True,
+        supports_motion=True,
+        real_runtime_enabled=False,
+        hard_cancel_supported=False,
+        tts_queue_flush_supported=False,
+        public_metadata={
+            "boundary": "realtime_capabilities",
+            "snapshot_source": "global_public_boundaries",
+            "authoritative_builder": True,
+            "provider_execution_performed": False,
+            "session_wiring_adopted": False,
+        },
     )
 
 
