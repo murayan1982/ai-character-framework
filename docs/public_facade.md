@@ -1154,3 +1154,36 @@ next control: FW-RT6-1a Control B
 next control authorized: False
 ```
 <!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->
+
+<!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:BEGIN -->
+## FW-RT6-1a Control B — realtime identity adoption
+
+Framework-generated realtime sessions and turns now use the root-public
+`SessionId` and `TurnId` scalar types. Existing host applications may continue
+to pass legacy non-`fw_` string identifiers; those values remain strings. A
+valid serialized v6 identity is normalized to its public scalar type, while a
+wrong-kind or malformed value in the reserved `fw_` namespace is rejected.
+
+```text
+checkpoint: FW-RT6-1a Control B
+baseline head: 0b435e407a3fec018dce29b7446082948d1d2307
+status: IMPLEMENTED / AWAITING_REVIEW
+Framework-generated session identity: SessionId
+Framework-generated turn identity: TurnId
+legacy host session/turn strings: PRESERVED
+valid serialized v6 identities: NORMALIZED
+wrong-kind or malformed fw_* identity: REJECTED
+root-public names: 99 / UNCHANGED
+RealtimeEvent sequence/generation wiring: False
+terminal behavior changed: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1a Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+This compatibility path does not promote arbitrary provider request IDs to
+Framework-owned identities. Only Framework-generated IDs use the `fw_session_`
+and `fw_turn_` formats. Event sequencing, generation correlation, and terminal
+model changes remain later controls.
+<!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:END -->

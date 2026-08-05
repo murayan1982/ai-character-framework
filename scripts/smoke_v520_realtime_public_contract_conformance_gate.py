@@ -178,6 +178,8 @@ def _assert_event_and_turn_types(framework) -> None:
     _require(event.type == framework.RealtimeEventType.TURN_STARTED, "RealtimeEvent type mismatch")
     _require(event.state == framework.RealtimeState.LISTENING, "RealtimeEvent state mismatch")
     _require(event.previous_state == framework.RealtimeState.IDLE, "RealtimeEvent previous_state mismatch")
+    _require(type(event.turn_id) is str, "legacy RealtimeEvent turn_id should remain str")
+    _require(type(event.session_id) is str, "legacy RealtimeEvent session_id should remain str")
     _require(event.public_metadata["token"] == "<redacted>", "RealtimeEvent should redact secret-like metadata")
     _require("should-not-leak" not in repr(event), "RealtimeEvent repr should not leak secret-like metadata")
 
@@ -192,7 +194,8 @@ def _assert_event_and_turn_types(framework) -> None:
         session_id="session-1",
         public_metadata={"api_key": "should-not-leak"},
     )
-    _require(turn.turn_id, "RealtimeTurn should have turn_id")
+    _require(isinstance(turn.turn_id, framework.TurnId), "new RealtimeTurn should use TurnId")
+    _require(type(turn.session_id) is str, "legacy RealtimeTurn session_id should remain str")
     _require(turn.input_text == "hello", "RealtimeTurn should preserve input text")
     _require(turn.state == framework.RealtimeState.IDLE, "RealtimeTurn default state should be idle")
     _require(turn.public_metadata["api_key"] == "<redacted>", "RealtimeTurn should redact secret-like metadata")
@@ -230,6 +233,7 @@ def _assert_session_contract(framework) -> None:
 
     _require(isinstance(session.info, framework.RealtimeSessionInfo), "session.info should be RealtimeSessionInfo")
     _require(session.info.session_type == "realtime", "session.info session_type mismatch")
+    _require(isinstance(session.info.session_id, framework.SessionId), "new session should use SessionId")
     _require(session.info.state == framework.RealtimeState.IDLE, "new session info state should be idle")
     _require(session.state == framework.RealtimeState.IDLE, "new session state should be idle")
     _require(session.info.public_metadata["secret"] == "<redacted>", "session.info metadata should be redacted")
@@ -247,6 +251,7 @@ def _assert_session_contract(framework) -> None:
 
     result = session.run_turn(input_text="今日は眠いです。", public_metadata={"password": "should-not-leak"})
     _require(result.outcome == framework.RealtimeState.COMPLETED, "run_turn result outcome mismatch")
+    _require(isinstance(result.turn_id, framework.TurnId), "run_turn result should use TurnId")
     _require(result.input_text == "今日は眠いです。", "run_turn should preserve input text")
     _require(result.public_metadata["mock_runtime"], "run_turn should mark mock_runtime")
     _require(result.public_metadata["password"] == "<redacted>", "run_turn metadata should be redacted")
@@ -266,6 +271,8 @@ def _assert_session_contract(framework) -> None:
     ]
     _require(event_types == expected_order, "RealtimeSession event order mismatch")
     _require(all(event.session_id == session.info.session_id for event in events), "events should expose session_id")
+    _require(all(isinstance(event.session_id, framework.SessionId) for event in events), "generated events should use SessionId")
+    _require(all(event.turn_id is None or isinstance(event.turn_id, framework.TurnId) for event in events), "generated turn events should use TurnId")
     _require(all(event.boundary == "realtime" for event in events), "events should use realtime boundary")
 
     session.close()

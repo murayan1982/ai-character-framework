@@ -181,6 +181,7 @@ def _assert_interrupt_types(framework) -> None:
         public_metadata={"api_key": "should-not-leak", "screen": "daily"},
     )
     _require(request.scope == framework.InterruptScope.ALL, "user_barge_in request scope mismatch")
+    _require(type(request.turn_id) is str, "legacy interrupt turn_id should remain str")
     _require(request.reason == framework.InterruptReason.USER_BARGE_IN, "user_barge_in request reason mismatch")
     _require(request.flush_output, "user_barge_in should flush output")
     _require(request.cancel_tts_queue, "user_barge_in should cancel TTS queue")
@@ -201,6 +202,15 @@ def _assert_interrupt_types(framework) -> None:
 
     no_active = framework.InterruptResult.no_active_turn(request=request)
     _require(no_active.outcome == framework.InterruptOutcome.NO_ACTIVE_TURN, "no_active_turn outcome mismatch")
+    serialized_turn_id = str(framework.TurnId.new())
+    normalized = framework.InterruptRequest(turn_id=serialized_turn_id)
+    _require(isinstance(normalized.turn_id, framework.TurnId), "serialized TurnId should normalize")
+    try:
+        framework.InterruptRequest(turn_id=str(framework.SessionId.new()))
+    except ValueError:
+        pass
+    else:
+        raise ContractFailure("SessionId must be rejected as interrupt turn_id")
     _ok("public interrupt request/result types conform")
 
 

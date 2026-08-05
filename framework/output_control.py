@@ -12,6 +12,8 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from .identity import TurnId, normalize_turn_id
+
 
 _SECRET_KEY_FRAGMENTS = (
     "api_key",
@@ -102,7 +104,7 @@ class InterruptRequest:
 
     scope: InterruptScope | str = InterruptScope.CURRENT_TURN
     reason: InterruptReason | str = InterruptReason.HOST_APP_REQUEST
-    turn_id: str | None = None
+    turn_id: TurnId | str | None = None
     flush_output: bool = False
     cancel_tts_queue: bool = False
     cancel_llm_stream: bool = False
@@ -114,13 +116,14 @@ class InterruptRequest:
         reason = self.reason if isinstance(self.reason, InterruptReason) else InterruptReason(str(self.reason))
         object.__setattr__(self, "scope", scope)
         object.__setattr__(self, "reason", reason)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     @classmethod
     def user_barge_in(
         cls,
         *,
-        turn_id: str | None = None,
+        turn_id: TurnId | str | None = None,
         scope: InterruptScope | str = InterruptScope.ALL,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "InterruptRequest":
@@ -145,7 +148,7 @@ class InterruptResult:
     outcome: InterruptOutcome | str
     scope: InterruptScope | str = InterruptScope.CURRENT_TURN
     reason: InterruptReason | str = InterruptReason.HOST_APP_REQUEST
-    turn_id: str | None = None
+    turn_id: TurnId | str | None = None
     safe_message: str = ""
     retryable: bool = False
     provider_cancel_supported: bool = False
@@ -159,6 +162,7 @@ class InterruptResult:
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "scope", scope)
         object.__setattr__(self, "reason", reason)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     @property
@@ -255,7 +259,7 @@ class OutputFlushRequest:
     """Provider-neutral output flush request."""
 
     scope: InterruptScope | str = InterruptScope.TTS_QUEUE
-    turn_id: str | None = None
+    turn_id: TurnId | str | None = None
     stop_playback: bool = True
     clear_queued_audio: bool = True
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -263,6 +267,7 @@ class OutputFlushRequest:
     def __post_init__(self) -> None:
         scope = self.scope if isinstance(self.scope, InterruptScope) else InterruptScope(str(self.scope))
         object.__setattr__(self, "scope", scope)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -272,7 +277,7 @@ class OutputFlushResult:
 
     outcome: OutputFlushOutcome | str
     queue_state: TTSQueueState = field(default_factory=TTSQueueState)
-    turn_id: str | None = None
+    turn_id: TurnId | str | None = None
     safe_message: str = ""
     retryable: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -280,6 +285,7 @@ class OutputFlushResult:
     def __post_init__(self) -> None:
         outcome = self.outcome if isinstance(self.outcome, OutputFlushOutcome) else OutputFlushOutcome(str(self.outcome))
         object.__setattr__(self, "outcome", outcome)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     @property
@@ -423,7 +429,7 @@ class BargeInDecision:
         cls,
         policy: BargeInPolicy,
         *,
-        turn_id: str | None = None,
+        turn_id: TurnId | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "BargeInDecision":
         request = InterruptRequest.user_barge_in(

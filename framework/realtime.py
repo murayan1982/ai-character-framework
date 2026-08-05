@@ -11,7 +11,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import Any, Mapping
-from uuid import uuid4
+
+from .identity import SessionId, TurnId, normalize_session_id, normalize_turn_id
 
 
 _SECRET_KEY_FRAGMENTS = (
@@ -106,8 +107,8 @@ class RealtimeEvent:
     type: RealtimeEventType | str
     state: RealtimeState | str
     previous_state: RealtimeState | str | None = None
-    turn_id: str | None = None
-    session_id: str | None = None
+    turn_id: TurnId | str | None = None
+    session_id: SessionId | str | None = None
     boundary: str = "realtime"
     public_error_code: RealtimeErrorCode | str = RealtimeErrorCode.NONE
     safe_message: str = ""
@@ -129,6 +130,8 @@ class RealtimeEvent:
         object.__setattr__(self, "type", event_type)
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "previous_state", previous_state)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
+        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
@@ -140,8 +143,10 @@ class RealtimeEvent:
                 "type": self.type.value,
                 "state": self.state.value,
                 "previous_state": self.previous_state.value if self.previous_state else None,
-                "turn_id": self.turn_id,
-                "session_id": self.session_id,
+                "turn_id": str(self.turn_id) if self.turn_id is not None else None,
+                "session_id": (
+                    str(self.session_id) if self.session_id is not None else None
+                ),
                 "boundary": self.boundary,
                 "public_error_code": self.public_error_code.value,
                 "safe_message": self.safe_message,
@@ -155,15 +160,17 @@ class RealtimeEvent:
 class RealtimeTurn:
     """Provider-neutral public turn descriptor."""
 
-    turn_id: str = field(default_factory=lambda: uuid4().hex)
+    turn_id: TurnId | str = field(default_factory=TurnId.new)
     input_text: str = ""
     state: RealtimeState | str = RealtimeState.IDLE
-    session_id: str | None = None
+    session_id: SessionId | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         state = self.state if isinstance(self.state, RealtimeState) else RealtimeState(str(self.state))
         object.__setattr__(self, "state", state)
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
+        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -171,7 +178,7 @@ class RealtimeTurn:
 class RealtimeTurnResult:
     """Provider-neutral public realtime turn result."""
 
-    turn_id: str
+    turn_id: TurnId | str
     outcome: RealtimeState | str
     input_text: str = ""
     output_text: str = ""
@@ -191,6 +198,7 @@ class RealtimeTurnResult:
             if isinstance(self.public_error_code, RealtimeErrorCode)
             else RealtimeErrorCode(str(self.public_error_code))
         )
+        object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
@@ -212,7 +220,7 @@ class RealtimeTurnResult:
     def completed(
         cls,
         *,
-        turn_id: str,
+        turn_id: TurnId | str,
         input_text: str = "",
         output_text: str = "",
         public_metadata: Mapping[str, Any] | None = None,
@@ -229,7 +237,7 @@ class RealtimeTurnResult:
     def interrupted(
         cls,
         *,
-        turn_id: str,
+        turn_id: TurnId | str,
         safe_message: str = "Realtime turn was interrupted.",
         public_metadata: Mapping[str, Any] | None = None,
     ) -> "RealtimeTurnResult":
@@ -246,7 +254,7 @@ class RealtimeTurnResult:
     def failed(
         cls,
         *,
-        turn_id: str,
+        turn_id: TurnId | str,
         public_error_code: RealtimeErrorCode | str = RealtimeErrorCode.STAGE_FAILED,
         safe_message: str = "Realtime turn failed.",
         retryable: bool = False,
@@ -265,7 +273,7 @@ class RealtimeTurnResult:
     def closed(
         cls,
         *,
-        turn_id: str,
+        turn_id: TurnId | str,
         safe_message: str = "Realtime session is closed.",
     ) -> "RealtimeTurnResult":
         return cls(

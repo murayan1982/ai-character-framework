@@ -10,7 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping
-from uuid import uuid4
+
+from .identity import SessionId, TurnId
 
 from .output_control import (
     BargeInDecision,
@@ -46,7 +47,7 @@ class RealtimeSessionInfo:
 
     api_version: str = REALTIME_API_VERSION
     session_type: str = "realtime"
-    session_id: str = field(default_factory=lambda: uuid4().hex)
+    session_id: SessionId | str = field(default_factory=SessionId.new)
     state: RealtimeState | str = RealtimeState.IDLE
     supports_events: bool = True
     supports_run_turn: bool = True
@@ -85,14 +86,14 @@ class RealtimeSession:
         real_runtime_enabled: bool | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
-        self._session_id = uuid4().hex
+        self._session_id = SessionId.new()
         self._state = RealtimeState.IDLE
         self._closed = False
         self._callbacks: list[RealtimeEventCallback] = []
         self._real_runtime_enabled = bool(real_runtime_enabled)
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
-        self._active_turn_id: str | None = None
+        self._active_turn_id: TurnId | str | None = None
         self._info = RealtimeSessionInfo(
             session_id=self._session_id,
             state=self._state,
@@ -140,7 +141,7 @@ class RealtimeSession:
         event_type: RealtimeEventType,
         new_state: RealtimeState,
         *,
-        turn_id: str | None = None,
+        turn_id: TurnId | str | None = None,
         public_error_code: RealtimeErrorCode = RealtimeErrorCode.NONE,
         safe_message: str = "",
         retryable: bool = False,
@@ -426,7 +427,7 @@ class RealtimeSession:
     def decide_barge_in(
         self,
         *,
-        turn_id: str | None = None,
+        turn_id: TurnId | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> BargeInDecision:
         """Return a provider-neutral public barge-in decision."""

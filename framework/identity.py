@@ -109,6 +109,53 @@ class EventSequence(int):
         return int(self)
 
 
+_FRAMEWORK_ID_PREFIX = "fw_"
+
+
+def _normalize_compatible_id(
+    value: _OpaqueIdT | str | None,
+    *,
+    expected_type: type[_OpaqueIdT],
+    field_name: str,
+) -> _OpaqueIdT | str | None:
+    """Normalize v6 serialized IDs while preserving legacy host strings.
+
+    Values that use the reserved ``fw_`` namespace must validate as the
+    expected identity kind. Non-prefixed strings remain unchanged for v5 host
+    compatibility and are never reclassified as Framework-owned identities.
+    """
+
+    if value is None or isinstance(value, expected_type):
+        return value
+    if not isinstance(value, str):
+        raise TypeError(f"{field_name} must be a string or None")
+    if value.startswith(expected_type._prefix):
+        return expected_type.parse(value)
+    if value.startswith(_FRAMEWORK_ID_PREFIX) or value.strip().startswith(
+        _FRAMEWORK_ID_PREFIX
+    ):
+        raise ValueError(f"{field_name} contains an invalid Framework identity")
+    return value
+
+
+def normalize_session_id(
+    value: SessionId | str | None,
+) -> SessionId | str | None:
+    """Normalize a session ID without breaking legacy host strings."""
+
+    return _normalize_compatible_id(
+        value, expected_type=SessionId, field_name="session_id"
+    )
+
+
+def normalize_turn_id(value: TurnId | str | None) -> TurnId | str | None:
+    """Normalize a turn ID without breaking legacy host strings."""
+
+    return _normalize_compatible_id(
+        value, expected_type=TurnId, field_name="turn_id"
+    )
+
+
 __all__ = [
     "SessionId",
     "TurnId",
