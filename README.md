@@ -2498,3 +2498,39 @@ categories. Acceptance of those public categories does not claim that every
 provider-driven category is already emitted by a real runtime.
 <!-- FW-RT6-1c-E-REALTIME-EVENT-ACCEPTANCE:END -->
 
+<!-- FW-RT6-1d-D-CAPABILITY-ACCEPTANCE:BEGIN -->
+## v6.0.0 detailed capability snapshot aggregate acceptance
+
+FW-RT6-1d Controls A through C establish the immutable detailed capability
+models, a truthful global aggregation behind the v5.1 compatibility snapshot,
+and a session-scoped `RealtimeSession.capabilities` snapshot.
+
+Control D records aggregate acceptance only. It does not add real unified
+orchestration, provider execution, provider hard cancellation, TTS queue
+runtime, motion wiring inside `RealtimeSession`, or real STT composition.
+
+```text
+checkpoint: FW-RT6-1d Control D
+baseline head: 753748d463f800647b251c788d217a5c5adc4049
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+v5 compatibility schema: v5.1.capabilities / PRESERVED
+detailed schema: v6.realtime_capabilities
+global detailed snapshot: ACCEPTED
+session-scoped snapshot: ACCEPTED
+snapshot scope / generation: ACCEPTED
+configured / runtime_available / guarded separation: ACCEPTED
+fake runtime / real runtime separation: ACCEPTED
+cooperative cancel / provider hard cancel separation: ACCEPTED
+voice input current status accurate: True
+realtime current status accurate: True
+motion current status accurate: True
+unsupported overclaim: False
+real unified runtime: NOT_IMPLEMENTED
+motion wired into RealtimeSession: False
+provider/network/microphone/playback/VTS execution: False
+next checkpoint: FW-RT6-2a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1d-D-CAPABILITY-ACCEPTANCE:END -->

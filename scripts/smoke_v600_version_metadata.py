@@ -263,6 +263,10 @@ def check_docs() -> None:
             "FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN" in text,
             f"{relative_path} should record truthful global capability aggregation",
         )
+        _assert(
+            "FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN" in text,
+            f"{relative_path} should record session-scoped capability adoption",
+        )
     print("[OK] public docs distinguish source version from frozen API versions")
 
 
@@ -272,18 +276,18 @@ def main() -> None:
     check_runtime_values()
     check_docs()
 
-    print("v600_version_metadata_status: implemented-awaiting-review")
+    print("v600_version_metadata_status: accepted")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
     print("v600_root_public_name_count: 121")
     print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-and-capability-models-only")
-    print("v600_capability_truthfulness_changed: global-builder-replaced-session-adoption-pending")
+    print("v600_capability_truthfulness_changed: global-builder-and-session-adoption-accepted")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1d Control C")
-    print("v600_next_control_authorized: False")
-    print("[OK] central version metadata smoke passed with truthful global capability aggregation")
+    print("v600_next_checkpoint: FW-RT6-2a")
+    print("v600_next_checkpoint_authorized: False")
+    print("[OK] central version metadata smoke passed with accepted truthful global/session capability aggregation")
 
 
 if __name__ == "__main__":

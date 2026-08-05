@@ -281,6 +281,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN -->",
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
+            "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN -->",
+            "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->",
         ),
         PROJECT_ROOT / "docs" / "app_integration_contract.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
@@ -295,6 +297,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:BEGIN -->",
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
+            "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN -->",
+            "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->",
         ),
     }
     for path, markers in required_markers.items():
@@ -302,7 +306,7 @@ def _check_docs_and_status_markers() -> None:
         for marker in markers:
             _assert(marker in text, f"missing marker in {path.name}: {marker}")
 
-    print("[OK] public facade and app integration docs record Control B without public-name drift")
+    print("[OK] public facade and app integration docs record accepted Control C session adoption without public-name drift")
 
 
 def main() -> None:
@@ -311,7 +315,7 @@ def main() -> None:
     _check_lazy_names_resolve_without_provider_sdk_import()
     _check_docs_and_status_markers()
 
-    print("v600_public_api_manifest_status: implemented-awaiting-review")
+    print("v600_public_api_manifest_status: accepted")
     print("v600_public_api_manifest_name_count: 121")
     print("v600_framework_all_single_source: True")
     print("v600_provider_compatibility_exports_preserved: True")
@@ -320,9 +324,9 @@ def main() -> None:
     print("v600_runtime_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1d Control C")
-    print("v600_next_control_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with unchanged names and truthful global aggregation")
+    print("v600_next_checkpoint: FW-RT6-2a")
+    print("v600_next_checkpoint_authorized: False")
+    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted global/session capability adoption")
 
 
 if __name__ == "__main__":

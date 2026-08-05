@@ -380,3 +380,41 @@ boundary. This does not imply real STT/LLM/TTS/motion composition, provider
 partial/delta delivery, stale-result enforcement, or bounded queue behavior.
 <!-- FW-RT6-1c-E-GAP-RESOLUTION-SYNC:END -->
 
+<!-- FW-RT6-1d-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-1d detailed capability snapshot gap resolution sync
+
+This sync records the accepted public capability model, global aggregation, and
+session-scoped adoption while preserving the remaining real-runtime composition
+work.
+
+```text
+baseline head: 753748d463f800647b251c788d217a5c5adc4049
+G-06 stale global capability summary: RESOLVED
+G-06 global/session capability mismatch: RESOLVED FOR CURRENT PUBLIC BOUNDARIES
+G-06 configured/runtime_available/guarded separation: RESOLVED
+G-06 fake runtime/real runtime separation: RESOLVED
+G-06 cooperative cancel/provider hard cancel distinction: RESOLVED
+G-06 snapshot scope/generation: RESOLVED
+G-06 v5 summary compatibility fields: PRESERVED
+voice input current public status: ACCURATE
+realtime current public status: ACCURATE
+motion current public status: ACCURATE
+unsupported capability overclaim: False
+G-07 normal real STT session composition: UNRESOLVED / FW-RT6-7a+
+G-01 real unified turn orchestration: UNRESOLVED
+G-04 per-session terminal registry/exactly-once enforcement: UNRESOLVED
+G-05 automatic stale-result rejection: UNRESOLVED
+bounded event queue / overflow runtime: UNRESOLVED
+provider hard cancellation: UNRESOLVED
+motion wired into RealtimeSession: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+The global snapshot reports standalone mock-safe public boundaries. The session
+snapshot reports only the stages actually wired into the current
+`RealtimeSession`. A host request for real runtime remains intent metadata and
+does not become a runtime-availability claim.
+<!-- FW-RT6-1d-D-GAP-RESOLUTION-SYNC:END -->

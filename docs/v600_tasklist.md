@@ -747,17 +747,17 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `FrameworkCapabilities`のv5.1固定実装を置換する。
-- [ ] session-scoped `RealtimeCapabilitySnapshot`を追加する。
-- [ ] text generation capabilityを定義する。
-- [ ] voice input capabilityを定義する。
-- [ ] voice output capabilityを定義する。
-- [ ] motion capabilityを定義する。
-- [ ] configured/runtime_available/guardedを分離する。
-- [ ] fake runtime/real runtimeを分離する。
-- [ ] cooperative cancel/provider hard cancelを分離する。
-- [ ] snapshot generation/scopeを追加する。
-- [ ] v5 summary booleanをcompatibility fieldとして維持する。
+- [x] `FrameworkCapabilities`のv5.1固定実装を置換する。
+- [x] session-scoped `RealtimeCapabilitySnapshot`を追加する。
+- [x] text generation capabilityを定義する。
+- [x] voice input capabilityを定義する。
+- [x] voice output capabilityを定義する。
+- [x] motion capabilityを定義する。
+- [x] configured/runtime_available/guardedを分離する。
+- [x] fake runtime/real runtimeを分離する。
+- [x] cooperative cancel/provider hard cancelを分離する。
+- [x] snapshot generation/scopeを追加する。
+- [x] v5 summary booleanをcompatibility fieldとして維持する。
 
 **Acceptance:**
 
@@ -809,6 +809,39 @@ False
 partial completion observable:
 True
 ```
+
+
+<!-- FW-RT6-1d-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-1d Control D
+baseline head: 753748d463f800647b251c788d217a5c5adc4049
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A detailed capability models: ACCEPTED
+Control B truthful global aggregation: ACCEPTED
+Control C session-scoped snapshot adoption: ACCEPTED
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+v5 compatibility schema: v5.1.capabilities / PRESERVED
+detailed schema: v6.realtime_capabilities
+global detailed snapshot: ACCEPTED
+session-scoped snapshot: ACCEPTED
+snapshot scope / generation: ACCEPTED
+configured / runtime_available / guarded separation: ACCEPTED
+fake runtime / real runtime separation: ACCEPTED
+cooperative cancel / provider hard cancel separation: ACCEPTED
+voice input current status accurate: True
+realtime current status accurate: True
+motion current status accurate: True
+unsupported overclaim: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1d-D-ACCEPTANCE-SYNC:END -->
 
 ---
 
