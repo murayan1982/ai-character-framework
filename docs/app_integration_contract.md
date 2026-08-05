@@ -284,7 +284,7 @@ session = create_voice_output_session(
 
 result = session.create_output(
     VoiceOutputRequest(
-        text="今日は少し早めに休むとよさそうです。",
+        text="莉頑律縺ｯ蟆代＠譌ｩ繧√↓莨代・縺ｨ繧医＆縺昴≧縺ｧ縺吶・,
         voice_profile_id="gentle_mina_default",
         requested_audio_format="mp3",
         utterance_purpose="daily_advice",
@@ -678,7 +678,7 @@ next control authorized: False
 <!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->
 
 <!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:BEGIN -->
-## FW-RT6-1a Control B — realtime identity adoption
+## FW-RT6-1a Control B 窶・realtime identity adoption
 
 Framework-generated realtime sessions and turns now use the root-public
 `SessionId` and `TurnId` scalar types. Existing host applications may continue
@@ -711,7 +711,7 @@ model changes remain later controls.
 <!-- FW-RT6-1a-B-REALTIME-IDENTITY-ADOPTION:END -->
 
 <!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:BEGIN -->
-## FW-RT6-1a Control C — motion identity adoption
+## FW-RT6-1a Control C 窶・motion identity adoption
 
 Framework-generated `MotionSession` instances now use the root-public
 `SessionId` scalar. `MotionSessionInfo`, `MotionResult`, and callback mappings
@@ -746,7 +746,7 @@ deferred, and ordered event sequencing remains FW-RT6-1c.
 <!-- FW-RT6-1a-C-MOTION-IDENTITY-ADOPTION:END -->
 
 <!-- FW-RT6-1b-A-LIFECYCLE-MODELS:BEGIN -->
-## FW-RT6-1b Control A — public lifecycle primitives
+## FW-RT6-1b Control A 窶・public lifecycle primitives
 
 The root-public SDK now defines separate transient phase, terminal turn outcome,
 recovery action, and typed transition failure models:
@@ -780,7 +780,7 @@ commit / push: NOT_AUTHORIZED
 <!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->
 
 <!-- FW-RT6-1b-B-TURN-OUTCOME-ADOPTION:BEGIN -->
-## FW-RT6-1b Control B — turn outcome and recovery adoption
+## FW-RT6-1b Control B 窶・turn outcome and recovery adoption
 
 `RealtimeTurnResult` now normalizes every terminal result to the root-public
 `TurnOutcome` model and exposes one normalized `RecoveryAction`. Existing
@@ -790,7 +790,7 @@ transient states are rejected with `LifecycleTransitionError` code
 
 ```text
 checkpoint: FW-RT6-1b Control B
-baseline head: 3048984092bba58baf6c3841b53d58ec4c02b7fc
+baseline head: 6443e524d8bc4e32eb4d7e7ecba75e26244c9f10
 status: IMPLEMENTED / AWAITING_REVIEW
 RealtimeTurnResult canonical outcome: TurnOutcome
 RealtimeTurnResult recovery_action: RecoveryAction
