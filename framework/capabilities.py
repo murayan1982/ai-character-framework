@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Mapping
 
+from .identity import SessionId
 from .realtime_capabilities import (
     CapabilitySnapshotScope,
     RealtimeCapabilitySnapshot,
@@ -394,6 +395,126 @@ def _global_realtime_snapshot(
             "authoritative_builder": True,
             "provider_execution_performed": False,
             "session_wiring_adopted": False,
+        },
+    )
+
+
+
+def _session_realtime_snapshot(
+    *,
+    session_id: SessionId | str,
+    snapshot_generation: int = 1,
+    project_root: str | Path | None = None,
+    real_runtime_requested: bool = False,
+) -> RealtimeCapabilitySnapshot:
+    """Build one truthful session-scoped snapshot for RealtimeSession.
+
+    Control C reports the deterministic stages actually emitted by the current
+    mock-safe RealtimeSession. Standalone/global capability availability is not
+    promoted into session wiring, and a real-runtime request is not treated as
+    real runtime availability.
+    """
+
+    resolved_project_root = (
+        Path(project_root).resolve() if project_root is not None else None
+    )
+    mock_runtime = RuntimeCapabilityState(
+        configured=True,
+        runtime_available=True,
+        guarded=False,
+        fake_runtime=True,
+        real_runtime=False,
+        unavailable_reason=None,
+        public_metadata={
+            "snapshot_source": "realtime_session_mock_runtime",
+            "provider_execution_performed": False,
+        },
+    )
+    motion_runtime = RuntimeCapabilityState(
+        configured=False,
+        runtime_available=False,
+        guarded=False,
+        fake_runtime=False,
+        real_runtime=False,
+        unavailable_reason="not_wired_to_realtime_session",
+        public_metadata={
+            "snapshot_source": "realtime_session_motion_boundary",
+            "provider_execution_performed": False,
+        },
+    )
+
+    return RealtimeCapabilitySnapshot(
+        session_id=session_id,
+        snapshot_scope=CapabilitySnapshotScope.SESSION,
+        snapshot_generation=snapshot_generation,
+        text_generation=TextGenerationCapability(
+            runtime=mock_runtime,
+            streaming_supported=False,
+            cooperative_cancel_supported=False,
+            provider_hard_cancel_supported=False,
+            public_metadata={
+                "boundary": "text_generation",
+                "session_stage": "mock_response_completed",
+            },
+        ),
+        voice_input=RealtimeVoiceInputCapability(
+            runtime=mock_runtime,
+            audio_chunk_input_supported=False,
+            partial_transcript_supported=False,
+            final_transcript_supported=True,
+            input_abort_supported=False,
+            backpressure_supported=False,
+            accepted_audio_formats=(),
+            maximum_chunk_size=None,
+            maximum_duration=None,
+            public_metadata={
+                "boundary": "voice_input",
+                "session_stage": "mock_transcript_final",
+                "host_text_input_supported": True,
+            },
+        ),
+        voice_output=RealtimeVoiceOutputCapability(
+            runtime=mock_runtime,
+            streaming_audio_supported=False,
+            generation_cancel_supported=False,
+            provider_hard_cancel_supported=False,
+            pending_flush_supported=False,
+            active_audio_invalidation_supported=False,
+            audio_formats=(),
+            maximum_text_size=None,
+            public_metadata={
+                "boundary": "voice_output",
+                "session_stage": "mock_synthesis_completed",
+                "audio_artifact_delivery": False,
+                "host_playback_owned": True,
+            },
+        ),
+        motion=RealtimeMotionCapability(
+            runtime=motion_runtime,
+            request_cancel_supported=False,
+            completion_event_supported=False,
+            provider_neutral_intent_supported=False,
+            public_metadata={
+                "boundary": "motion",
+                "session_wiring": "not_adopted",
+            },
+        ),
+        supports_text_chat=True,
+        supports_voice_input=True,
+        supports_voice_output=True,
+        supports_motion=False,
+        real_runtime_enabled=False,
+        hard_cancel_supported=False,
+        tts_queue_flush_supported=False,
+        public_metadata={
+            "boundary": "realtime_capabilities",
+            "snapshot_source": "realtime_session",
+            "authoritative_builder": True,
+            "session_wiring_adopted": True,
+            "real_runtime_requested": bool(real_runtime_requested),
+            "real_runtime_available": False,
+            "project_root_provided": resolved_project_root is not None,
+            "provider_execution_performed": False,
         },
     )
 

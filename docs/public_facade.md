@@ -1505,3 +1505,51 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->
+
+<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN -->
+## FW-RT6-1d Control C — session-scoped capability adoption
+
+`RealtimeSession.capabilities` now returns one immutable
+`RealtimeCapabilitySnapshot` scoped to that Framework-owned session. The
+snapshot uses the session's public `SessionId`, starts at generation `1`, and
+remains stable for the current session lifetime because Control C adds no
+capability refresh or runtime rebinding operation.
+
+The snapshot reports the behavior of the current mock-safe `RealtimeSession`,
+not merely the existence of standalone public boundaries:
+
+```text
+text generation fake runtime: available
+response streaming from RealtimeSession: False
+cooperative/provider hard cancel: False / False
+voice input fake runtime: available
+partial transcript / audio chunk input: False / False
+final transcript event: True
+voice output fake synthesis stage: available
+streaming/cancel/pending flush/audio invalidation: False
+motion wired into RealtimeSession: False
+real unified runtime available: False
+```
+
+Passing `real_runtime_enabled=True` remains a host intent assertion only. The
+session records `real_runtime_requested=true` in public-safe metadata but does
+not claim that real unified orchestration is available or enabled.
+
+```text
+checkpoint: FW-RT6-1d Control C
+baseline head: 30166d7e6fdf4291d7ecd475b988bfd1492ae7a3
+Control C exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+create_realtime_session signature changed: False
+snapshot scope: session
+snapshot generation: 1 / stable
+snapshot session_id matches RealtimeSession: True
+FrameworkCapabilities global snapshot changed: False
+provider/network/microphone/playback/VTS execution: False
+terminal registry / stale rejection / queue runtime: DEFERRED
+next control: FW-RT6-1d Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->
+

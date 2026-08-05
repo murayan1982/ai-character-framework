@@ -12,6 +12,7 @@ from pathlib import Path
 import time
 from typing import Any, Callable, Mapping
 
+from .capabilities import _session_realtime_snapshot
 from .identity import EventSequence, GenerationId, SessionId, TurnId
 from .lifecycle import (
     LifecycleTransitionError,
@@ -36,6 +37,7 @@ from .output_control import (
 )
 from .version import REALTIME_API_VERSION
 
+from .realtime_capabilities import RealtimeCapabilitySnapshot
 from .realtime_event_payloads import (
     InterruptEventPayload,
     LifecycleEventPayload,
@@ -116,7 +118,14 @@ class RealtimeSession:
         self._callbacks: list[RealtimeEventCallback] = []
         self._legacy_callbacks: list[RealtimeEventCallback] = []
         self._next_event_sequence = EventSequence.first()
-        self._real_runtime_enabled = bool(real_runtime_enabled)
+        self._real_runtime_requested = bool(real_runtime_enabled)
+        self._capability_snapshot = _session_realtime_snapshot(
+            session_id=self._session_id,
+            snapshot_generation=1,
+            project_root=self._project_root,
+            real_runtime_requested=self._real_runtime_requested,
+        )
+        self._real_runtime_enabled = self._capability_snapshot.real_runtime_enabled
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
         self._active_turn_id: TurnId | str | None = None
@@ -128,6 +137,9 @@ class RealtimeSession:
             real_runtime_enabled=self._real_runtime_enabled,
             public_metadata={
                 "boundary": "realtime",
+                "capability_snapshot_scope": self._capability_snapshot.snapshot_scope.value,
+                "capability_snapshot_generation": self._capability_snapshot.snapshot_generation,
+                "real_runtime_requested": self._real_runtime_requested,
                 **dict(public_metadata or {}),
             },
         )
@@ -142,9 +154,18 @@ class RealtimeSession:
             public_metadata={
                 "boundary": "realtime",
                 "barge_in_policy": self._barge_in_policy.mode.value,
+                "capability_snapshot_scope": self._capability_snapshot.snapshot_scope.value,
+                "capability_snapshot_generation": self._capability_snapshot.snapshot_generation,
+                "real_runtime_requested": self._real_runtime_requested,
                 **dict(self._public_metadata),
             },
         )
+
+    @property
+    def capabilities(self) -> RealtimeCapabilitySnapshot:
+        """Return this session's immutable truthful capability snapshot."""
+
+        return self._capability_snapshot
 
     @property
     def state(self) -> RealtimeState:
