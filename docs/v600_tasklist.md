@@ -586,12 +586,12 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] transient phase enumを定義する。
-- [ ] terminal outcome enumを定義する。
-- [ ] `rejected`、`cancelled`、`interrupted`の意味を固定する。
-- [ ] `RecoveryAction`を定義する。
-- [ ] session stateとturn resultの混用を廃止する。
-- [ ] state transition matrixをdocs/testへ固定する。
+- [x] transient phase enumを定義する。
+- [x] terminal outcome enumを定義する。
+- [x] `rejected`、`cancelled`、`interrupted`の意味を固定する。
+- [x] `RecoveryAction`を定義する。
+- [x] session stateとturn resultの混用を廃止する。
+- [x] state transition matrixをdocs/testへ固定する。
 
 **Acceptance:**
 
@@ -604,7 +604,47 @@ typed failure
 
 terminal state regression:
 prohibited
+
+root-public count:
+104
+
+legacy RealtimeState compatibility:
+preserved
+
+exactly-once terminal registry:
+False / DEFERRED
 ```
+
+<!-- FW-RT6-1b-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-1b Control D
+baseline head: 8bc71a990762c8161d262bc7617a44e0dfb2c8e3
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A lifecycle primitives: ACCEPTED
+history baseline corrective: ACCEPTED
+Control B turn outcome/recovery adoption: ACCEPTED
+Control C RealtimeSession phase adoption: ACCEPTED
+Control D exact change surface: 4 files
+legacy root-public prefix: 99 names / SAME ORDER
+canonical root-public total: 104
+RealtimeTurnResult canonical outcome: TurnOutcome
+RealtimeTurnResult recovery_action: RecoveryAction
+RealtimeSession canonical phase: RealtimePhase | None
+legacy RealtimeState compatibility: PRESERVED
+invalid transition: TYPED FAILURE
+terminal state regression validation: ACCEPTED
+per-session terminal registry: DEFERRED
+exactly-once terminal enforcement: DEFERRED
+RealtimeEvent v6 fields: DEFERRED / FW-RT6-1c
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1b-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

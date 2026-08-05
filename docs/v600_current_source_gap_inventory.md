@@ -291,3 +291,46 @@ FW-RT6-1a resolves the common identity vocabulary and the Framework-generated
 Realtime/Motion adoption paths. It does not claim that Text, VoiceInput,
 VoiceOutput, and Motion already share one runtime-owned generation context.
 <!-- FW-RT6-1a-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-1b-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-1b lifecycle foundation gap resolution sync
+
+This sync records the accepted phase, terminal outcome, and recovery foundation
+while preserving the remaining ordered-event, exactly-once, stale-result,
+capability, and orchestration gaps.
+
+```text
+baseline head: 8bc71a990762c8161d262bc7617a44e0dfb2c8e3
+common RealtimePhase model: RESOLVED
+common TurnOutcome model: RESOLVED
+common RecoveryAction model: RESOLVED
+rejected/cancelled/interrupted semantics: RESOLVED
+RealtimeTurnResult canonical terminal outcome: RESOLVED
+RealtimeTurnResult normalized recovery action: RESOLVED
+RealtimeSession canonical phase: RESOLVED
+RealtimeSessionInfo canonical phase: RESOLVED
+RealtimeTurn canonical phase: RESOLVED
+phase transition matrix: RESOLVED
+invalid transition typed failure: RESOLVED
+terminal duplicate/regression validation primitive: RESOLVED
+G-04 per-session terminal registry: UNRESOLVED
+G-04 atomic first-terminal commit: UNRESOLVED
+G-04 duplicate terminal result/event suppression: UNRESOLVED
+G-04 exactly-once terminal enforcement: UNRESOLVED
+G-03 RealtimeEvent sequence: UNRESOLVED / FW-RT6-1c
+G-03 RealtimeEvent generation: UNRESOLVED / FW-RT6-1c
+G-03 RealtimeEvent terminal flag: UNRESOLVED / FW-RT6-1c
+G-03 typed payload union: UNRESOLVED / FW-RT6-1c
+G-05 stale-result rejection: UNRESOLVED
+G-06 capability truthfulness: UNRESOLVED / FW-RT6-1d
+G-01 real unified turn orchestration: UNRESOLVED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+The terminal transition validator establishes the meaning of first, duplicate,
+and regressive terminal attempts. It is not a per-session registry and does not
+provide atomic exactly-once result or event commitment.
+<!-- FW-RT6-1b-D-GAP-RESOLUTION-SYNC:END -->

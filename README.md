@@ -2402,3 +2402,49 @@ Legacy non-`fw_` host identifiers remain temporarily compatible. Reserved
 `fw_*` values are validated by kind, and provider/VTS request identifiers are
 not reclassified as Framework-owned session, turn, or generation identities.
 <!-- FW-RT6-1a-D-PUBLIC-IDENTITY-ACCEPTANCE:END -->
+
+<!-- FW-RT6-1b-D-LIFECYCLE-ACCEPTANCE:BEGIN -->
+## v6.0.0 public lifecycle foundation aggregate acceptance
+
+FW-RT6-1b Controls A through C establish separate transient phase, terminal
+turn outcome, normalized recovery action, and canonical RealtimeSession phase
+models. Control D records aggregate acceptance only; it does not add ordered v6
+event fields, a per-session terminal registry, duplicate suppression, stale
+result rejection, or real unified stage orchestration.
+
+```text
+checkpoint: FW-RT6-1b Control D
+baseline head: 8bc71a990762c8161d262bc7617a44e0dfb2c8e3
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A lifecycle primitives: ACCEPTED
+history baseline corrective: ACCEPTED
+Control B turn outcome/recovery adoption: ACCEPTED
+Control C RealtimeSession phase adoption: ACCEPTED
+legacy root-public prefix: 99 names / SAME ORDER
+canonical root-public total: 104
+transient phase / terminal outcome: SEPARATE
+RealtimeTurnResult canonical outcome: TurnOutcome
+RealtimeTurnResult recovery_action: RecoveryAction
+RealtimeSession canonical phase: RealtimePhase | None
+legacy RealtimeState compatibility: PRESERVED
+invalid transition: TYPED FAILURE
+terminal state regression: PROHIBITED BY VALIDATION PRIMITIVE
+per-session terminal registry: False
+atomic first-terminal commit: False
+duplicate terminal suppression runtime: False
+exactly-once terminal enforcement: False
+RealtimeEvent v6 fields added: False
+real unified orchestration: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-1c
+next checkpoint authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+`RealtimePhase` remains transient-only. `TurnOutcome` remains terminal-only.
+The validation primitive rejects duplicate or regressive terminal transitions,
+but no session-owned terminal registry or atomic exactly-once commit exists yet.
+Those runtime guarantees remain later work.
+<!-- FW-RT6-1b-D-LIFECYCLE-ACCEPTANCE:END -->
