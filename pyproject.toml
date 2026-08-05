@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-character-framework"
+dynamic = ["version"]
+description = "Provider-neutral SDK foundation for AI character applications."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-dotenv==1.2.2",
+]
+
+[project.optional-dependencies]
+llm-gemini = [
+    "google-genai==1.70.0",
+]
+llm-openai = [
+    "openai==2.31.0",
+]
+llm-xai = [
+    "openai==2.31.0",
+    "xai-sdk==1.11.0",
+]
+voice-input = [
+    "openai==2.31.0",
+    "SpeechRecognition==3.14.3",
+    "PyAudio==0.2.14",
+]
+voice-output = [
+    "elevenlabs==2.41.0",
+    "aiofiles==25.1.0",
+]
+motion = [
+    "pyvts==0.3.3",
+    "websockets==16.0",
+]
+full = [
+    "google-genai==1.70.0",
+    "openai==2.31.0",
+    "xai-sdk==1.11.0",
+    "elevenlabs==2.41.0",
+    "aiofiles==25.1.0",
+    "SpeechRecognition==3.14.3",
+    "PyAudio==0.2.14",
+    "pyvts==0.3.3",
+    "websockets==16.0",
+    "pydantic==2.12.5",
+]
+
+[project.urls]
+Repository = "https://github.com/murayan1982/ai-character-framework"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "framework.version.FRAMEWORK_SOURCE_VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "framework*",
+    "config*",
+    "llm*",
+    "registry*",
+    "presets",
+    "characters",
+]
+namespaces = false
+
+[tool.setuptools.package-data]
+presets = ["*.json"]
+characters = ["*/*.json", "*/*.txt"]

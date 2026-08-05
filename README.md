@@ -2266,3 +2266,31 @@ Remaining work is not reclassified as complete: installable packaging and
 resource-root resolution remain FW-RT6-0c, capability truthfulness remains
 FW-RT6-1d, and unified realtime orchestration remains later FW-RT6 work.
 <!-- FW-RT6-0b-D-PUBLIC-SDK-HYGIENE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-0c-A-PACKAGE-METADATA:BEGIN -->
+## v6.0.0 installable SDK package metadata
+
+FW-RT6-0c Control A adds `pyproject.toml` and resource-package markers for the
+future installable SDK. The distribution is named `ai-character-framework`;
+applications continue to import the provider-neutral API from `framework`.
+
+```text
+checkpoint: FW-RT6-0c Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+source development version: 6.0.0.dev0
+latest published release: 5.5.0
+canonical root-public names: 95
+core dependency: python-dotenv
+provider/runtime dependencies: OPTIONAL EXTRAS
+preset/character lookup behavior changed: False
+voice artifact path behavior changed: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next control: FW-RT6-0c Control B
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+See `docs/v600_installable_sdk_contract.md` for the package and dependency
+boundary. Resource-root behavior remains unchanged until Control B.
+<!-- FW-RT6-0c-A-PACKAGE-METADATA:END -->
