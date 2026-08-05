@@ -87,6 +87,7 @@ def check_central_module() -> None:
         LATEST_PUBLISHED_RELEASE,
         MOTION_API_VERSION,
         REALTIME_API_VERSION,
+        REALTIME_CAPABILITIES_SCHEMA_VERSION,
         TEXT_CHAT_API_VERSION,
         VOICE_INPUT_API_VERSION,
         VOICE_OUTPUT_BOUNDARY_VERSION,
@@ -105,6 +106,10 @@ def check_central_module() -> None:
     _assert(
         CAPABILITIES_SCHEMA_VERSION == "v5.1.capabilities",
         "capability schema version changed",
+    )
+    _assert(
+        REALTIME_CAPABILITIES_SCHEMA_VERSION == "v6.realtime_capabilities",
+        "detailed realtime capability schema version drift",
     )
     print("[OK] central version module preserves source and compatibility values")
 
@@ -137,12 +142,13 @@ def check_runtime_values() -> None:
     from framework.capabilities import get_capabilities
     from framework.facade import TextChatSessionInfo
     from framework.motion_session import MotionSessionInfo
+    from framework.realtime_capabilities import RealtimeCapabilitySnapshot
     from framework.realtime_session import RealtimeSessionInfo
     from framework.voice_input_session import VoiceInputSessionInfo
 
     _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
-    _assert(len(framework.__all__) == 114, "root-public name count drift")
+    _assert(len(framework.__all__) == 121, "root-public name count drift")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -160,7 +166,7 @@ def check_runtime_values() -> None:
         "public lifecycle position drift",
     )
     _assert(
-        tuple(framework.__all__[104:])
+        tuple(framework.__all__[104:114])
         == (
             "RealtimeEventPayloadKind",
             "LifecycleEventPayload",
@@ -174,6 +180,19 @@ def check_runtime_values() -> None:
             "RealtimeEventPayload",
         ),
         "typed realtime event payload suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[114:])
+        == (
+            "CapabilitySnapshotScope",
+            "RuntimeCapabilityState",
+            "TextGenerationCapability",
+            "RealtimeVoiceInputCapability",
+            "RealtimeVoiceOutputCapability",
+            "RealtimeMotionCapability",
+            "RealtimeCapabilitySnapshot",
+        ),
+        "detailed capability suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -198,6 +217,14 @@ def check_runtime_values() -> None:
         get_capabilities().schema_version == "v5.1.capabilities",
         "capability schema changed",
     )
+    _assert(
+        RealtimeCapabilitySnapshot(
+            session_id=None,
+            snapshot_scope="global",
+        ).schema_version
+        == "v6.realtime_capabilities",
+        "detailed realtime capability schema changed",
+    )
 
     imported = [name for name in FORBIDDEN_IMPORTS if name in sys.modules]
     _assert(not imported, f"version inspection imported forbidden modules: {imported}")
@@ -218,6 +245,10 @@ def check_docs() -> None:
             "6.0.0.dev0" in text and "5.5.0" in text,
             f"{relative_path} should distinguish source and published versions",
         )
+        _assert(
+            "FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN" in text,
+            f"{relative_path} should record detailed capability models",
+        )
     print("[OK] public docs distinguish source version from frozen API versions")
 
 
@@ -230,15 +261,15 @@ def main() -> None:
     print("v600_version_metadata_status: implemented-awaiting-review")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
-    print("v600_root_public_name_count: 114")
-    print("v600_public_api_values_changed: additive-identity-lifecycle-and-event-payloads-only")
-    print("v600_capability_truthfulness_changed: False")
+    print("v600_root_public_name_count: 121")
+    print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-and-capability-models-only")
+    print("v600_capability_truthfulness_changed: models-added-builder-not-replaced")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1c Control B")
+    print("v600_next_control: FW-RT6-1d Control B")
     print("v600_next_control_authorized: False")
-    print("[OK] central version metadata smoke passed with additive typed event payload models")
+    print("[OK] central version metadata smoke passed with additive detailed capability models")
 
 
 if __name__ == "__main__":

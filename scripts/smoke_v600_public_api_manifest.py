@@ -42,6 +42,7 @@ def _check_manifest_shape() -> None:
         PROVIDER_COMPAT_LAZY_EXPORT_MODULES,
         IDENTITY_PUBLIC_EXPORTS,
         LIFECYCLE_PUBLIC_EXPORTS,
+        REALTIME_CAPABILITY_PUBLIC_EXPORTS,
         REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
         PROVIDER_COMPAT_LAZY_EXPORTS,
         PUBLIC_API_GROUPS,
@@ -68,8 +69,8 @@ def _check_manifest_shape() -> None:
     )
     _assert(flattened == PUBLIC_API_NAMES, "public API groups must flatten exactly")
     _assert(
-        len(PUBLIC_API_NAMES) == 114,
-        "v6 typed event payload extension should expose 114 canonical names",
+        len(PUBLIC_API_NAMES) == 121,
+        "v6 detailed capability extension should expose 121 canonical names",
     )
     _assert(
         tuple(IDENTITY_PUBLIC_EXPORTS)
@@ -112,8 +113,25 @@ def _check_manifest_shape() -> None:
         "typed event payload public export group drift",
     )
     _assert(
-        PUBLIC_API_NAMES[104:] == tuple(REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS),
-        "typed event payload names must be appended after the accepted 104-name surface",
+        PUBLIC_API_NAMES[104:114] == tuple(REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS),
+        "typed event payload names must preserve their accepted appended position",
+    )
+    _assert(
+        tuple(REALTIME_CAPABILITY_PUBLIC_EXPORTS)
+        == (
+            "CapabilitySnapshotScope",
+            "RuntimeCapabilityState",
+            "TextGenerationCapability",
+            "RealtimeVoiceInputCapability",
+            "RealtimeVoiceOutputCapability",
+            "RealtimeMotionCapability",
+            "RealtimeCapabilitySnapshot",
+        ),
+        "detailed realtime capability public export group drift",
+    )
+    _assert(
+        PUBLIC_API_NAMES[114:] == tuple(REALTIME_CAPABILITY_PUBLIC_EXPORTS),
+        "detailed capability names must be appended after the accepted 114-name surface",
     )
 
     lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
@@ -138,7 +156,7 @@ def _check_manifest_shape() -> None:
         f"root import loaded forbidden provider/runtime modules: {imported_forbidden}",
     )
 
-    print("[OK] canonical manifest preserves the 104-name prefix and appends typed event payload models")
+    print("[OK] canonical manifest preserves the 114-name prefix and appends detailed capability models")
 
 
 def _check_init_source_has_one_manifest_assignment() -> None:
@@ -259,6 +277,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->",
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:BEGIN -->",
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->",
+            "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN -->",
+            "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
         ),
         PROJECT_ROOT / "docs" / "app_integration_contract.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
@@ -269,6 +289,8 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1b-A-LIFECYCLE-MODELS:END -->",
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:BEGIN -->",
             "<!-- FW-RT6-1c-A-TYPED-PAYLOADS:END -->",
+            "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN -->",
+            "<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->",
         ),
     }
     for path, markers in required_markers.items():
@@ -286,7 +308,7 @@ def main() -> None:
     _check_docs_and_status_markers()
 
     print("v600_public_api_manifest_status: implemented-awaiting-review")
-    print("v600_public_api_manifest_name_count: 114")
+    print("v600_public_api_manifest_name_count: 121")
     print("v600_framework_all_single_source: True")
     print("v600_provider_compatibility_exports_preserved: True")
     print("v600_provider_compatibility_exports_lazy: True")
@@ -294,9 +316,9 @@ def main() -> None:
     print("v600_runtime_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-1c Control B")
+    print("v600_next_control: FW-RT6-1d Control B")
     print("v600_next_control_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with typed event payload models")
+    print("[OK] canonical public API manifest smoke passed with detailed capability models")
 
 
 if __name__ == "__main__":

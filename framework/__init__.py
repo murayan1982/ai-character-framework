@@ -72,6 +72,15 @@ from .realtime import (
     RealtimeTurn,
     RealtimeTurnResult,
 )
+from .realtime_capabilities import (
+    CapabilitySnapshotScope,
+    RealtimeCapabilitySnapshot,
+    RealtimeMotionCapability,
+    RealtimeVoiceInputCapability,
+    RealtimeVoiceOutputCapability,
+    RuntimeCapabilityState,
+    TextGenerationCapability,
+)
 from .realtime_event_payloads import (
     AudioEventPayload,
     DiagnosticEventPayload,

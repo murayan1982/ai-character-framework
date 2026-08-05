@@ -113,6 +113,7 @@ def check_version_metadata() -> None:
         LATEST_PUBLISHED_RELEASE,
         MOTION_API_VERSION,
         REALTIME_API_VERSION,
+        REALTIME_CAPABILITIES_SCHEMA_VERSION,
         TEXT_CHAT_API_VERSION,
         VOICE_INPUT_API_VERSION,
         VOICE_OUTPUT_BOUNDARY_VERSION,
@@ -131,7 +132,7 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 114, "canonical public API count should be 114")
+    _assert(len(framework.__all__) == 121, "canonical public API count should be 121")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -149,7 +150,7 @@ def check_version_metadata() -> None:
         "public lifecycle position drift",
     )
     _assert(
-        tuple(framework.__all__[104:])
+        tuple(framework.__all__[104:114])
         == (
             "RealtimeEventPayloadKind",
             "LifecycleEventPayload",
@@ -163,6 +164,19 @@ def check_version_metadata() -> None:
             "RealtimeEventPayload",
         ),
         "typed event payload suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[114:])
+        == (
+            "CapabilitySnapshotScope",
+            "RuntimeCapabilityState",
+            "TextGenerationCapability",
+            "RealtimeVoiceInputCapability",
+            "RealtimeVoiceOutputCapability",
+            "RealtimeMotionCapability",
+            "RealtimeCapabilitySnapshot",
+        ),
+        "detailed capability suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -200,6 +214,10 @@ def check_version_metadata() -> None:
         == "v5.1.capabilities",
         "capability schema should remain v5.1.capabilities",
     )
+    _assert(
+        REALTIME_CAPABILITIES_SCHEMA_VERSION == "v6.realtime_capabilities",
+        "detailed realtime capability schema drift",
+    )
 
     _assert_no_forbidden_runtime_imports("central version metadata")
     print("[OK] app SDK source and public contract version metadata are centralized")
@@ -231,6 +249,7 @@ def check_resource_resolution_signature() -> None:
 
 def check_public_sdk_imports() -> None:
     from framework import (
+        CapabilitySnapshotScope,
         FacadeConfigError,
         FacadeError,
         FacadeProviderError,
@@ -238,14 +257,20 @@ def check_public_sdk_imports() -> None:
         GenerationId,
         LifecycleTransitionError,
         LifecycleTransitionErrorCode,
+        RealtimeCapabilitySnapshot,
+        RealtimeMotionCapability,
         RealtimePhase,
         RealtimeEventPayloadKind,
+        RealtimeVoiceInputCapability,
+        RealtimeVoiceOutputCapability,
+        RuntimeCapabilityState,
         TranscriptEventPayload,
         RecoveryAction,
         SessionId,
         TurnId,
         TurnOutcome,
         TextChatSession,
+        TextGenerationCapability,
         TextChatSessionEvent,
         TextChatSessionInfo,
         TextChatStateChange,
@@ -270,6 +295,24 @@ def check_public_sdk_imports() -> None:
     _assert(
         TranscriptEventPayload(text="hello", is_final=True).as_dict()["is_final"] is True,
         "TranscriptEventPayload should be root-public and public-safe",
+    )
+    fake_runtime = RuntimeCapabilityState(
+        configured=True,
+        runtime_available=True,
+        fake_runtime=True,
+        unavailable_reason=None,
+    )
+    capability_snapshot = RealtimeCapabilitySnapshot(
+        session_id=SessionId.new(),
+        snapshot_scope=CapabilitySnapshotScope.SESSION,
+        text_generation=TextGenerationCapability(runtime=fake_runtime),
+        voice_input=RealtimeVoiceInputCapability(runtime=fake_runtime),
+        voice_output=RealtimeVoiceOutputCapability(runtime=fake_runtime),
+        motion=RealtimeMotionCapability(runtime=fake_runtime),
+    )
+    _assert(
+        capability_snapshot.schema_version == "v6.realtime_capabilities",
+        "RealtimeCapabilitySnapshot should be root-public",
     )
     _assert(TurnOutcome.REJECTED.value == "rejected", "TurnOutcome should be root-public")
     _assert(RecoveryAction.RESET_TURN.value == "reset_turn", "RecoveryAction should be root-public")

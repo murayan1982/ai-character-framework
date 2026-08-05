@@ -997,3 +997,29 @@ provider/network/microphone/playback/VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1c-D-ORDERED-EVENT-ADOPTION:END -->
+
+<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:BEGIN -->
+## Detailed realtime capability model foundation
+
+FW-RT6-1d Control A appends seven immutable root-public models for truthful
+capability reporting. `RuntimeCapabilityState` separates configured, runtime
+availability, execution guard, fake runtime, real runtime, and a safe
+unavailable reason. Stage-specific capability models expose text generation,
+voice input, voice output, and motion details without provider objects.
+
+`RealtimeCapabilitySnapshot` supports global and session scope, requires a
+positive snapshot generation, and retains the existing v5 realtime summary
+booleans as compatibility fields. Session scope requires a public `session_id`.
+
+```text
+checkpoint: FW-RT6-1d Control A
+baseline head: 4709f0190f3779b83b8cb01a0cd67f6760ff8e35
+root-public prefix: 114 names / SAME ORDER
+canonical root-public total: 121
+new detailed schema: v6.realtime_capabilities
+frozen v5.1 capabilities schema changed: False
+FrameworkCapabilities builder changed: False
+RealtimeSession wiring changed: False
+provider/network/microphone/playback/VTS execution: False
+```
+<!-- FW-RT6-1d-A-DETAILED-CAPABILITY-MODELS:END -->
