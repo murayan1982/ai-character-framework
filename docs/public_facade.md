@@ -1166,7 +1166,7 @@ wrong-kind or malformed value in the reserved `fw_` namespace is rejected.
 
 ```text
 checkpoint: FW-RT6-1a Control B
-baseline head: faef0cf09dc965ce5069687cd021f00bbfebdc0f
+baseline head: 0b435e407a3fec018dce29b7446082948d1d2307
 status: IMPLEMENTED / AWAITING_REVIEW
 Framework-generated session identity: SessionId
 Framework-generated turn identity: TurnId
