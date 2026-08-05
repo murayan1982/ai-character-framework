@@ -258,3 +258,36 @@ G-14 is resolved for the installable public SDK boundary only. The legacy
 interactive runtime remains intentionally outside this checkpoint, and v6.0.0
 is not released by this sync.
 <!-- FW-RT6-0c-D-GAP-RESOLUTION-SYNC:END -->
+
+
+<!-- FW-RT6-1a-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-1a public identity gap resolution sync
+
+This sync records the accepted identity foundation while preserving the
+remaining all-stage correlation and realtime-ordering gaps.
+
+```text
+baseline head: 9d955955d4462006ed8aacc8e4c6e43ae487fb35
+G-02 common public identity primitives: RESOLVED
+G-02 Framework-generated Realtime SessionId: RESOLVED
+G-02 Framework-generated Realtime TurnId: RESOLVED
+G-02 Framework-generated Motion SessionId: RESOLVED
+G-02 provider ID / Framework ID separation: RESOLVED
+G-02 TextChat result correlation wiring: UNRESOLVED / LATER STAGE INTEGRATION
+G-02 VoiceInput result correlation wiring: UNRESOLVED / LATER STAGE INTEGRATION
+G-02 VoiceOutput result correlation wiring: UNRESOLVED / LATER STAGE INTEGRATION
+G-02 Motion turn/generation correlation: UNRESOLVED / LATER STAGE INTEGRATION
+stable unified generation runtime identity: UNRESOLVED
+all-stage shared correlation context: UNRESOLVED
+G-03 RealtimeEvent sequence: UNRESOLVED / FW-RT6-1c
+G-03 RealtimeEvent generation: UNRESOLVED / FW-RT6-1c
+G-03 typed payload / terminal flag: UNRESOLVED / FW-RT6-1c
+phase/outcome/recovery separation: UNRESOLVED / FW-RT6-1b
+capability truthfulness across modules: UNRESOLVED / FW-RT6-1d
+unified realtime orchestration: UNRESOLVED
+```
+
+FW-RT6-1a resolves the common identity vocabulary and the Framework-generated
+Realtime/Motion adoption paths. It does not claim that Text, VoiceInput,
+VoiceOutput, and Motion already share one runtime-owned generation context.
+<!-- FW-RT6-1a-D-GAP-RESOLUTION-SYNC:END -->

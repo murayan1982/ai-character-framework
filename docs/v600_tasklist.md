@@ -514,13 +514,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `SessionId`相当のopaque public typeを定義する。
-- [ ] `TurnId`相当を定義する。
-- [ ] `GenerationId`相当を定義する。
-- [ ] `EventSequence`相当を定義する。
-- [ ] ID生成/validation/serialization contractを定義する。
-- [ ] private/provider IDと混同しないことを明記する。
-- [ ] Text/VoiceInput/VoiceOutput/Motion resultへcorrelation contextを追加する方針を固定する。
+- [x] `SessionId`相当のopaque public typeを定義する。
+- [x] `TurnId`相当を定義する。
+- [x] `GenerationId`相当を定義する。
+- [x] `EventSequence`相当を定義する。
+- [x] ID生成/validation/serialization contractを定義する。
+- [x] private/provider IDと混同しないことを明記する。
+- [x] Text/VoiceInput/VoiceOutput/Motion resultへcorrelation contextを追加する方針を固定する。
 
 **Acceptance:**
 
@@ -531,7 +531,10 @@ True
 stable turn identity:
 True
 
-stable generation identity:
+stable generation identity primitive:
+True
+
+EventSequence primitive:
 True
 
 provider identifier exposed:
@@ -539,7 +542,41 @@ False
 
 root-public import:
 PASS
+
+root-public count:
+99
+
+all-stage runtime correlation wiring:
+False / DEFERRED
 ```
+
+
+<!-- FW-RT6-1a-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-1a Control D
+baseline head: 9d955955d4462006ed8aacc8e4c6e43ae487fb35
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A public identity primitives: ACCEPTED
+Control B Realtime identity adoption: ACCEPTED
+Control C Motion identity adoption: ACCEPTED
+Control D exact change surface: 4 files
+legacy root-public prefix: 95 names / SAME ORDER
+canonical root-public total: 99
+Framework-generated Realtime session/turn identities: TYPED
+Framework-generated Motion session identity: TYPED
+provider identifier exposed/promoted: False
+all-stage runtime result correlation: DEFERRED
+RealtimeEvent sequence/generation: DEFERRED / FW-RT6-1c
+phase/outcome/recovery models: DEFERRED / FW-RT6-1b
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1a-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

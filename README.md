@@ -2360,3 +2360,45 @@ Legacy `main.py` and legacy runtime CWD-relative paths, capability truthfulness,
 normal deterministic unit-test architecture, and unified realtime composition
 remain separate later work. This checkpoint does not reclassify them as done.
 <!-- FW-RT6-0c-D-INSTALLABLE-SDK-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-1a-D-PUBLIC-IDENTITY-ACCEPTANCE:BEGIN -->
+## v6.0.0 public identity foundation aggregate acceptance
+
+FW-RT6-1a Controls A through C establish provider-neutral scalar identities,
+Realtime session/turn adoption, and Motion session adoption. Control D records
+aggregate acceptance only; it does not add event ordering, generation wiring,
+terminal/recovery models, or unified realtime stage orchestration.
+
+```text
+checkpoint: FW-RT6-1a Control D
+baseline head: 9d955955d4462006ed8aacc8e4c6e43ae487fb35
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A public identity primitives: ACCEPTED
+Control B Realtime identity adoption: ACCEPTED
+Control C Motion identity adoption: ACCEPTED
+SessionId root-public: VERIFIED
+TurnId root-public: VERIFIED
+GenerationId root-public: VERIFIED
+EventSequence root-public: VERIFIED
+legacy root-public prefix: 95 names / SAME ORDER
+canonical root-public total: 99
+Framework-generated Realtime session/turn identities: TYPED
+Framework-generated Motion session identity: TYPED
+provider identifier promoted to Framework identity: False
+all-stage result correlation wiring completed: False
+RealtimeEvent sequence/generation wiring completed: False
+unified phase/outcome/recovery models completed: False
+unified realtime runtime implemented: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-1b
+next checkpoint authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+Legacy non-`fw_` host identifiers remain temporarily compatible. Reserved
+`fw_*` values are validated by kind, and provider/VTS request identifiers are
+not reclassified as Framework-owned session, turn, or generation identities.
+<!-- FW-RT6-1a-D-PUBLIC-IDENTITY-ACCEPTANCE:END -->
