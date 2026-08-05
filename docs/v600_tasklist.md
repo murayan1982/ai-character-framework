@@ -654,16 +654,16 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `RealtimeEvent`へsequenceを追加する。
-- [ ] generationを追加する。
-- [ ] terminal flagを追加する。
-- [ ] timestamp/monotonic timestamp方針を決める。
-- [ ] generic `public_metadata`だけに依存しないtyped payload unionを定義する。
-- [ ] transcript partial/finalを分離する。
-- [ ] response started/delta/completedを分離する。
-- [ ] synthesis/audio available/audio invalidatedを定義する。
-- [ ] stale dropped/event overflowを定義する。
-- [ ] v5 event mapping adapterを用意する。
+- [x] `RealtimeEvent`へsequenceを追加する。
+- [x] generationを追加する。
+- [x] terminal flagを追加する。
+- [x] timestamp/monotonic timestamp方針を決める。
+- [x] generic `public_metadata`だけに依存しないtyped payload unionを定義する。
+- [x] transcript partial/finalを分離する。
+- [x] response started/delta/completedを分離する。
+- [x] synthesis/audio available/audio invalidatedを定義する。
+- [x] stale dropped/event overflowを定義する。
+- [x] v5 event mapping adapterを用意する。
 
 **Acceptance:**
 
@@ -682,7 +682,60 @@ True
 
 typed payload:
 True
+
+root-public count:
+114
+
+legacy root-public prefix:
+104 names / SAME ORDER
+
+canonical completed-turn events:
+9
+
+legacy projected completed-turn events:
+8
+
+terminal registry / exactly-once enforcement:
+False / DEFERRED
 ```
+
+<!-- FW-RT6-1c-E-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-1c Control E
+baseline head: 80e5c550bbb994bc8dfc3340340691c881f0449d
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A typed payload models: ACCEPTED
+encoding-corrupt corrective: SUPERSEDED / PRESERVED IN HISTORY
+encoding repair: ACCEPTED
+Control B RealtimeEvent v6 envelope: ACCEPTED
+Control C explicit v5 adapter: ACCEPTED
+Control D ordered RealtimeSession adoption: ACCEPTED
+Control E exact change surface: 4 files
+legacy root-public prefix: 104 names / SAME ORDER
+canonical root-public total: 114
+canonical completed-turn events: 9
+legacy projected completed-turn events: 8
+EventSequence starts at 1: True
+EventSequence resets between turns: False
+GenerationId changes per admitted turn: True
+session-only generation: None
+rejected-before-admission generation: None
+typed payload by canonical runtime category: ACCEPTED
+automatic public timestamps: ACCEPTED
+authoritative ordering: EventSequence
+terminal registry / duplicate suppression: DEFERRED
+automatic stale-result rejection: DEFERRED
+bounded event queue / overflow runtime: DEFERRED
+provider partial transcript / response delta callbacks: DEFERRED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1d
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-1c-E-ACCEPTANCE-SYNC:END -->
 
 ---
 

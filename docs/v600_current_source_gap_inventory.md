@@ -334,3 +334,49 @@ The terminal transition validator establishes the meaning of first, duplicate,
 and regressive terminal attempts. It is not a per-session registry and does not
 provide atomic exactly-once result or event commitment.
 <!-- FW-RT6-1b-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-1c-E-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-1c ordered realtime event gap resolution sync
+
+This sync records the accepted public ordered-event foundation while preserving
+the remaining exactly-once, stale-result, queue, capability, and real-runtime
+gaps.
+
+```text
+baseline head: 80e5c550bbb994bc8dfc3340340691c881f0449d
+G-03 typed payload model vocabulary: RESOLVED
+G-03 canonical RealtimeEvent v6 envelope: RESOLVED
+G-03 RealtimeEvent sequence field: RESOLVED
+G-03 RealtimeEvent generation field: RESOLVED
+G-03 RealtimeEvent terminal flag: RESOLVED
+G-03 timestamp / monotonic timestamp fields: RESOLVED
+G-03 partial/final transcript public distinction: RESOLVED
+G-03 response started/delta/completed public distinction: RESOLVED
+G-03 synthesis/audio/stale/overflow public categories: RESOLVED
+G-03 explicit v5 event projection: RESOLVED
+G-03 RealtimeSession canonical ordered callback: RESOLVED
+G-03 RealtimeSession legacy mapped callback: RESOLVED
+G-03 session-lifetime EventSequence allocation: RESOLVED
+G-03 per-admitted-turn GenerationId allocation: RESOLVED
+all-stage shared correlation context: UNRESOLVED / LATER STAGE INTEGRATION
+provider partial transcript runtime callback: UNRESOLVED / LATER STAGE INTEGRATION
+provider response delta runtime callback: UNRESOLVED / LATER STAGE INTEGRATION
+G-04 per-session terminal registry: UNRESOLVED
+G-04 atomic first-terminal commit: UNRESOLVED
+G-04 duplicate terminal result/event suppression: UNRESOLVED
+G-04 exactly-once terminal enforcement: UNRESOLVED
+G-05 automatic stale-result rejection: UNRESOLVED
+bounded event queue / overflow runtime: UNRESOLVED
+G-06 capability truthfulness: UNRESOLVED / FW-RT6-1d
+G-01 real unified turn orchestration: UNRESOLVED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-1d
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+G-03 is resolved for the public model and mock-safe `RealtimeSession` emission
+boundary. This does not imply real STT/LLM/TTS/motion composition, provider
+partial/delta delivery, stale-result enforcement, or bounded queue behavior.
+<!-- FW-RT6-1c-E-GAP-RESOLUTION-SYNC:END -->
+

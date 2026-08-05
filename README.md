@@ -2448,3 +2448,53 @@ The validation primitive rejects duplicate or regressive terminal transitions,
 but no session-owned terminal registry or atomic exactly-once commit exists yet.
 Those runtime guarantees remain later work.
 <!-- FW-RT6-1b-D-LIFECYCLE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-1c-E-REALTIME-EVENT-ACCEPTANCE:BEGIN -->
+## v6.0.0 ordered realtime event foundation aggregate acceptance
+
+FW-RT6-1c Controls A through D establish provider-neutral typed payload models,
+the canonical v6 event envelope, the explicit lossy v5 adapter, and ordered
+`RealtimeSession` callback adoption. Control E records aggregate acceptance
+only; it does not add a terminal registry, duplicate suppression, automatic
+stale-result rejection, a bounded event queue, provider partial/delta callbacks,
+or real unified stage orchestration.
+
+```text
+checkpoint: FW-RT6-1c Control E
+baseline head: 80e5c550bbb994bc8dfc3340340691c881f0449d
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A typed payload models: ACCEPTED
+encoding-corrupt corrective: SUPERSEDED / PRESERVED IN HISTORY
+encoding repair: ACCEPTED
+Control B RealtimeEvent v6 envelope: ACCEPTED
+Control C explicit v5 adapter: ACCEPTED
+Control D ordered RealtimeSession adoption: ACCEPTED
+legacy root-public prefix: 104 names / SAME ORDER
+canonical root-public total: 114
+canonical completed-turn events: 9
+legacy projected completed-turn events: 8
+EventSequence session lifetime: ADOPTED
+EventSequence reset between turns: False
+GenerationId per admitted turn: ADOPTED
+generation for session-only/rejected-before-admission events: None
+typed payload by canonical runtime category: ADOPTED
+automatic timestamp and monotonic_timestamp: ADOPTED
+authoritative ordering: EventSequence
+terminal registry / duplicate suppression: DEFERRED
+automatic stale-result rejection: DEFERRED
+bounded event queue / overflow runtime: DEFERRED
+provider partial transcript / response delta callbacks: DEFERRED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-1d
+next checkpoint authorized: False
+commit / push: NOT_AUTHORIZED
+```
+
+The canonical event vocabulary includes partial/final transcript, response
+started/delta/completed, synthesis, audio, motion, stale-result, and overflow
+categories. Acceptance of those public categories does not claim that every
+provider-driven category is already emitted by a real runtime.
+<!-- FW-RT6-1c-E-REALTIME-EVENT-ACCEPTANCE:END -->
+
