@@ -1122,3 +1122,35 @@ Invalid resource names and missing resources return path-safe public errors.
 The default public voice-output artifact directory is the system temporary
 area under `ai-character-framework/voice_output`, not `./temp/voice_output`.
 <!-- FW-RT6-0c-B-RESOURCE-RESOLUTION:END -->
+
+<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:BEGIN -->
+## v6 provider-neutral public identity primitives
+
+FW-RT6-1a Control A adds four root-public serialization-friendly identity
+types:
+
+```text
+SessionId
+TurnId
+GenerationId
+EventSequence
+```
+
+The original 95 public names remain in the same order and the new names are
+appended, producing 99 canonical root-public names. Framework identities use
+kind-specific `fw_*` prefixes and never reuse provider request IDs, paths,
+credentials, model IDs, or transport identifiers.
+
+Result correlation fields are policy-locked but not yet wired in this control.
+Realtime adoption is Control B, Motion adoption is Control C, and ordered event
+sequence/generation fields remain FW-RT6-1c.
+
+```text
+checkpoint: FW-RT6-1a Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+runtime behavior changed: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-1a Control B
+next control authorized: False
+```
+<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->

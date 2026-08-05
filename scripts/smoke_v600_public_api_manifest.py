@@ -40,6 +40,7 @@ def _check_manifest_shape() -> None:
     import framework
     from framework.public_api import (
         PROVIDER_COMPAT_LAZY_EXPORT_MODULES,
+        IDENTITY_PUBLIC_EXPORTS,
         PROVIDER_COMPAT_LAZY_EXPORTS,
         PUBLIC_API_GROUPS,
         PUBLIC_API_NAMES,
@@ -64,7 +65,19 @@ def _check_manifest_shape() -> None:
         for name in group
     )
     _assert(flattened == PUBLIC_API_NAMES, "public API groups must flatten exactly")
-    _assert(len(PUBLIC_API_NAMES) == 95, "v5.5 compatibility surface should contain 95 names")
+    _assert(
+        len(PUBLIC_API_NAMES) == 99,
+        "v6 identity extension should expose 99 canonical names",
+    )
+    _assert(
+        tuple(IDENTITY_PUBLIC_EXPORTS)
+        == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
+        "identity public export group drift",
+    )
+    _assert(
+        PUBLIC_API_NAMES[-4:] == tuple(IDENTITY_PUBLIC_EXPORTS),
+        "identity names must remain appended after the v5.5-compatible prefix",
+    )
 
     lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
     missing_eager = sorted(
@@ -88,7 +101,7 @@ def _check_manifest_shape() -> None:
         f"root import loaded forbidden provider/runtime modules: {imported_forbidden}",
     )
 
-    print("[OK] canonical public API manifest exactly preserves the v5.5 surface")
+    print("[OK] canonical manifest preserves the v5.5 prefix and appends v6 identities")
 
 
 def _check_init_source_has_one_manifest_assignment() -> None:
@@ -203,10 +216,14 @@ def _check_docs_and_status_markers() -> None:
         PROJECT_ROOT / "docs" / "public_facade.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->",
+            "<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:BEGIN -->",
+            "<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->",
         ),
         PROJECT_ROOT / "docs" / "app_integration_contract.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:END -->",
+            "<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:BEGIN -->",
+            "<!-- FW-RT6-1a-A-PUBLIC-IDENTITY:END -->",
         ),
     }
     for path, markers in required_markers.items():
@@ -224,7 +241,7 @@ def main() -> None:
     _check_docs_and_status_markers()
 
     print("v600_public_api_manifest_status: implemented-awaiting-review")
-    print("v600_public_api_manifest_name_count: 95")
+    print("v600_public_api_manifest_name_count: 99")
     print("v600_framework_all_single_source: True")
     print("v600_provider_compatibility_exports_preserved: True")
     print("v600_provider_compatibility_exports_lazy: True")
@@ -232,9 +249,9 @@ def main() -> None:
     print("v600_runtime_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-0b Control B")
+    print("v600_next_control: FW-RT6-1a Control B")
     print("v600_next_control_authorized: False")
-    print("[OK] FW-RT6-0b Control A public API manifest smoke passed")
+    print("[OK] canonical public API manifest smoke passed with v6 identities")
 
 
 if __name__ == "__main__":

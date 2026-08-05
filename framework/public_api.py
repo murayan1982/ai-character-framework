@@ -146,6 +146,13 @@ MOTION_ADAPTER_EXECUTION_EXPORTS = (
     "resolve_motion_adapter_execution_config",
 )
 
+IDENTITY_PUBLIC_EXPORTS = (
+    "SessionId",
+    "TurnId",
+    "GenerationId",
+    "EventSequence",
+)
+
 PUBLIC_API_GROUPS = MappingProxyType(
     {
         "provider_compat_lazy": PROVIDER_COMPAT_LAZY_EXPORTS,
@@ -160,6 +167,7 @@ PUBLIC_API_GROUPS = MappingProxyType(
         "motion_models": MOTION_MODEL_EXPORTS,
         "motion_session": MOTION_SESSION_EXPORTS,
         "motion_adapter_execution": MOTION_ADAPTER_EXECUTION_EXPORTS,
+        "identity": IDENTITY_PUBLIC_EXPORTS,
     }
 )
 

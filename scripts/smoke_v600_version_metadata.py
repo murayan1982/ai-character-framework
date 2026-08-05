@@ -2,7 +2,7 @@
 
 This smoke is offline-safe. It verifies that source/development version
 metadata and frozen v4/v5 public contract versions are defined centrally
-without changing the 95-name wildcard API or importing provider/runtime
+while preserving the original 95-name prefix or importing provider/runtime
 implementations.
 """
 
@@ -142,7 +142,12 @@ def check_runtime_values() -> None:
 
     _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
-    _assert(len(framework.__all__) == 95, "root-public name count changed")
+    _assert(len(framework.__all__) == 99, "root-public name count drift")
+    _assert(
+        tuple(framework.__all__[-4:])
+        == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
+        "public identity suffix drift",
+    )
 
     text_info = TextChatSessionInfo(
         preset="text_chat",
@@ -169,7 +174,7 @@ def check_runtime_values() -> None:
 
     imported = [name for name in FORBIDDEN_IMPORTS if name in sys.modules]
     _assert(not imported, f"version inspection imported forbidden modules: {imported}")
-    print("[OK] runtime metadata values and root-public compatibility are unchanged")
+    print("[OK] runtime metadata values are unchanged and identity exports are additive")
 
 
 def check_docs() -> None:
@@ -198,15 +203,15 @@ def main() -> None:
     print("v600_version_metadata_status: implemented-awaiting-review")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
-    print("v600_root_public_name_count: 95")
-    print("v600_public_api_values_changed: False")
+    print("v600_root_public_name_count: 99")
+    print("v600_public_api_values_changed: additive-identity-only")
     print("v600_capability_truthfulness_changed: False")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_control: FW-RT6-0b Control D")
+    print("v600_next_control: FW-RT6-1a Control B")
     print("v600_next_control_authorized: False")
-    print("[OK] FW-RT6-0b Control C central version metadata smoke passed")
+    print("[OK] central version metadata smoke passed with additive v6 identities")
 
 
 if __name__ == "__main__":

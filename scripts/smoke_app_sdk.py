@@ -131,7 +131,12 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 95, "canonical public API count should remain 95")
+    _assert(len(framework.__all__) == 99, "canonical public API count should be 99")
+    _assert(
+        tuple(framework.__all__[-4:])
+        == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
+        "public identity suffix drift",
+    )
 
     text_info = TextChatSessionInfo(
         preset="text_chat",
@@ -202,6 +207,10 @@ def check_public_sdk_imports() -> None:
         FacadeConfigError,
         FacadeError,
         FacadeProviderError,
+        EventSequence,
+        GenerationId,
+        SessionId,
+        TurnId,
         TextChatSession,
         TextChatSessionEvent,
         TextChatSessionInfo,
@@ -215,6 +224,10 @@ def check_public_sdk_imports() -> None:
     )
 
     _assert(issubclass(FacadeConfigError, FacadeError), "config error should be public facade error")
+    _assert(SessionId.new().startswith("fw_session_"), "SessionId should be root-public")
+    _assert(TurnId.new().startswith("fw_turn_"), "TurnId should be root-public")
+    _assert(GenerationId.new().startswith("fw_generation_"), "GenerationId should be root-public")
+    _assert(EventSequence.first() == 1, "EventSequence should be root-public")
     _assert(issubclass(FacadeProviderError, FacadeError), "provider error should be public facade error")
     _assert(TextChatSession is not None, "TextChatSession should be importable")
     _assert(TextChatSessionInfo is not None, "TextChatSessionInfo should be importable")
