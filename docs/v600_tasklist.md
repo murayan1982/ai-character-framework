@@ -912,14 +912,14 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] per-session monotonic sequence generatorを追加する。
-- [ ] callback registration/unregistration tokenを追加する。
-- [ ] callback exceptionをruntime failureから隔離する。
-- [ ] bounded event historyを追加する。
-- [ ] slow subscriber policyを固定する。
-- [ ] overflow event/diagnosticsを追加する。
-- [ ] concurrent emission lockを追加する。
-- [ ] close後event rejectionを実装する。
+- [x] per-session monotonic sequence generatorを追加する。
+- [x] callback registration/unregistration tokenを追加する。
+- [x] callback exceptionをruntime failureから隔離する。
+- [x] bounded event historyを追加する。
+- [x] slow subscriber policyを固定する。
+- [x] overflow event/diagnosticsを追加する。
+- [x] concurrent emission lockを追加する。
+- [x] close後event rejectionを実装する。
 
 **Acceptance:**
 
@@ -936,6 +936,46 @@ False
 close後active event:
 False
 ```
+
+<!-- FW-RT6-2b-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-2b Control D
+baseline head: d12e562a0c0b0111386776d50286b1a4cbdf54d2
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A event-hub primitives: ACCEPTED
+Control B RealtimeSession hub adoption: ACCEPTED
+Control C close/concurrent-operation hardening: ACCEPTED
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeSession factory signature changed: False
+session-local sequence monotonic: PASS
+callback registration/unregistration token: ACCEPTED
+callback exception breaks turn: False
+bounded event history: ACCEPTED / LIMIT 64
+slow subscriber policy: SYNCHRONOUS SERIALIZED / RETAIN AND ACCOUNT
+silent overflow: False
+typed EVENT_OVERFLOW: ACCEPTED
+overflow v5 projection: None
+concurrent/reentrant event emission: SERIALIZED
+operation-level lock: RLock
+concurrent operation event groups interleave: False
+reentrant close deferred: True
+SESSION_CLOSED emitted once: True
+event hub sealed after close: True
+close後active event: False
+asynchronous subscriber queue: NOT CLAIMED
+terminal registry / exactly-once enforcement: DEFERRED / FW-RT6-2c
+generation stale-result rejection: DEFERRED / FW-RT6-2d
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2b-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

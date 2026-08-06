@@ -452,3 +452,46 @@ FW-RT6-2a completes the common utility, first-wave core consumer migration, and
 TextChat public-error correction. It does not claim repository-wide replacement
 of every legacy metadata helper or real provider/runtime execution.
 <!-- FW-RT6-2a-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-2b-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-2b realtime event-hub gap resolution sync
+
+This sync records the accepted event sequencing, subscriber-safety, bounded
+history, overflow, operation-order, and close-boundary behavior while preserving
+the terminal-registry, stale-result, real-runtime, and normal unit-test gaps.
+
+```text
+baseline head: d12e562a0c0b0111386776d50286b1a4cbdf54d2
+G-03 session-local monotonic event sequencing: RESOLVED
+G-03 callback registration/unregistration token: RESOLVED
+G-03 callback exception isolation: RESOLVED
+G-03 slow subscriber policy: RESOLVED / SYNCHRONOUS SERIALIZED RETAIN-AND-ACCOUNT
+G-03 bounded canonical event history: RESOLVED / LIMIT 64
+G-03 non-silent typed overflow diagnostics: RESOLVED
+G-03 EVENT_OVERFLOW legacy v5 projection: NONE / INTENTIONAL
+G-03 concurrent/reentrant event emission serialization: RESOLVED
+G-03 concurrent operation event-group serialization: RESOLVED
+G-03 close-boundary event rejection: RESOLVED
+SESSION_CLOSED exactly once: RESOLVED
+event hub sealed after close: RESOLVED
+post-close active event: False
+asynchronous per-subscriber delivery queue: NOT CLAIMED / NOT IMPLEMENTED
+background callback worker: False
+automatic subscriber timeout/eviction: False
+root-public names: 121 / UNCHANGED
+G-04 per-session terminal registry: UNRESOLVED / FW-RT6-2c
+G-04 atomic first-terminal commit: UNRESOLVED / FW-RT6-2c
+G-04 duplicate terminal suppression: UNRESOLVED / FW-RT6-2c
+G-05 generation stale-result rejection: UNRESOLVED / FW-RT6-2d
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+G-01 real unified turn orchestration: UNRESOLVED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+The bounded structure accepted here is canonical event history, not an
+asynchronous delivery queue. Synchronous serialized delivery is the fixed
+subscriber policy for this checkpoint.
+<!-- FW-RT6-2b-D-GAP-RESOLUTION-SYNC:END -->

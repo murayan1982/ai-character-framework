@@ -2572,3 +2572,57 @@ The common utility and migrated boundaries are accepted without claiming that
 every historical metadata-bearing path in the repository has already been
 rewritten. Further consumers must use the accepted utility as they are touched.
 <!-- FW-RT6-2a-D-PUBLIC-SAFETY-ACCEPTANCE:END -->
+
+<!-- FW-RT6-2b-D-EVENT-HUB-ACCEPTANCE:BEGIN -->
+## v6.0.0 realtime event hub aggregate acceptance
+
+FW-RT6-2b Controls A through C establish the internal event sequencer/subscriber
+hub, adopt it in `RealtimeSession`, connect typed overflow diagnostics, and seal
+event emission after the close boundary.
+
+Control D records aggregate acceptance only. It does not add a terminal
+registry, duplicate-terminal suppression, generation stale-result rejection,
+real provider orchestration, an asynchronous subscriber queue, or background
+callback workers.
+
+```text
+checkpoint: FW-RT6-2b Control D
+baseline head: d12e562a0c0b0111386776d50286b1a4cbdf54d2
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A event-hub primitives: ACCEPTED
+Control B RealtimeSession hub adoption: ACCEPTED
+Control C close/concurrent-operation hardening: ACCEPTED
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeSession factory signature changed: False
+session-local sequence monotonic: PASS
+callback registration/unregistration token: ACCEPTED
+callback exception breaks turn: False
+bounded event history: ACCEPTED / LIMIT 64
+slow subscriber policy: SYNCHRONOUS SERIALIZED / RETAIN AND ACCOUNT
+silent overflow: False
+typed EVENT_OVERFLOW: ACCEPTED
+overflow v5 projection: None
+concurrent/reentrant event emission: SERIALIZED
+operation-level lock: RLock
+concurrent operation event groups interleave: False
+reentrant close deferred: True
+SESSION_CLOSED emitted once: True
+event hub sealed after close: True
+close後active event: False
+asynchronous subscriber queue: NOT CLAIMED
+terminal registry / exactly-once enforcement: DEFERRED / FW-RT6-2c
+generation stale-result rejection: DEFERRED / FW-RT6-2d
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-2c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The accepted bounded structure is canonical event history. Delivery remains
+synchronous and serialized, so this checkpoint does not claim an asynchronous
+per-subscriber queue, timeout eviction, or background delivery worker.
+<!-- FW-RT6-2b-D-EVENT-HUB-ACCEPTANCE:END -->

@@ -289,7 +289,17 @@ def check_docs() -> None:
     for path, marker in aggregate_markers.items():
         _assert(marker in path.read_text(encoding="utf-8"), f"missing aggregate marker: {marker}")
 
-    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2a")
+    event_hub_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-2b-D-EVENT-HUB-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-2b-D-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-2b-D-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in event_hub_aggregate_markers.items():
+        _assert(marker in path.read_text(encoding="utf-8"), f"missing event-hub aggregate marker: {marker}")
+
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2b")
 
 
 def main() -> None:
@@ -310,9 +320,12 @@ def main() -> None:
     print("v600_public_safety_changed: recursive-sanitization-and-safe-error-adoption-accepted")
     print("v600_raw_exception_exposed: False")
     print("v600_private_path_exposed: False")
-    print("v600_next_checkpoint: FW-RT6-2b")
+    print("v600_realtime_event_hub_changed: event-hub-session-adoption-and-close-hardening-accepted")
+    print("v600_realtime_event_model_changed: False")
+    print("v600_realtime_session_factory_signature_changed: False")
+    print("v600_next_checkpoint: FW-RT6-2c")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2a public-safety adoption")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2b event-hub adoption")
 
 
 if __name__ == "__main__":
