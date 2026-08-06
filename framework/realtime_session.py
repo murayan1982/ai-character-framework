@@ -73,6 +73,12 @@ if TYPE_CHECKING:
         GenerationAdvanceReason,
         RealtimeStageCompletionEnvelope,
     )
+    from .realtime_stage import (
+        MotionStage,
+        TextGenerationStage,
+        VoiceInputStage,
+        VoiceOutputStage,
+    )
 
 
 RealtimeEventCallback = Callable[[RealtimeEvent], None]
@@ -86,6 +92,93 @@ _TURN_TERMINAL_EVENT_TYPES = frozenset(
         RealtimeEventType.TURN_REJECTED,
     }
 )
+
+
+def _validated_injected_stages(
+    *,
+    voice_input_stage: object | None,
+    text_generation_stage: object | None,
+    voice_output_stage: object | None,
+    motion_stage: object | None,
+) -> dict[str, object]:
+    """Return validated provider-neutral stage bindings without executing them.
+
+    The stable stage package is imported lazily only when at least one binding is
+    supplied. Ordinary ``import framework`` and no-stage session construction
+    therefore retain the accepted provider/runtime-safe import boundary.
+    """
+
+    supplied = (
+        voice_input_stage,
+        text_generation_stage,
+        voice_output_stage,
+        motion_stage,
+    )
+    if not any(stage is not None for stage in supplied):
+        return {}
+
+    from .realtime_stage import (
+        MotionStage,
+        RealtimeStageKind,
+        TextGenerationStage,
+        VoiceInputStage,
+        VoiceOutputStage,
+    )
+
+    specifications = (
+        ("voice_input_stage", voice_input_stage, VoiceInputStage, RealtimeStageKind.VOICE_INPUT),
+        (
+            "text_generation_stage",
+            text_generation_stage,
+            TextGenerationStage,
+            RealtimeStageKind.TEXT_GENERATION,
+        ),
+        (
+            "voice_output_stage",
+            voice_output_stage,
+            VoiceOutputStage,
+            RealtimeStageKind.VOICE_OUTPUT,
+        ),
+        ("motion_stage", motion_stage, MotionStage, RealtimeStageKind.MOTION),
+    )
+
+    bindings: dict[str, object] = {}
+    for argument_name, stage, protocol, expected_kind in specifications:
+        if stage is None:
+            continue
+        try:
+            conforms = isinstance(stage, protocol)
+        except Exception:
+            raise TypeError(
+                f"{argument_name} could not be validated against its public stage protocol"
+            ) from None
+        if not conforms:
+            raise TypeError(
+                f"{argument_name} must satisfy {protocol.__name__}"
+            )
+        try:
+            raw_kind = stage.stage_kind
+        except Exception:
+            raise TypeError(
+                f"{argument_name}.stage_kind could not be read safely"
+            ) from None
+        try:
+            stage_kind = (
+                raw_kind
+                if isinstance(raw_kind, RealtimeStageKind)
+                else RealtimeStageKind(str(raw_kind))
+            )
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"{argument_name}.stage_kind must be {expected_kind.value!r}"
+            ) from None
+        if stage_kind is not expected_kind:
+            raise ValueError(
+                f"{argument_name}.stage_kind must be {expected_kind.value!r}"
+            )
+        bindings[expected_kind.value] = stage
+
+    return bindings
 
 
 class _LateNonTerminalRejected(RuntimeError):
@@ -142,6 +235,10 @@ class RealtimeSession:
         project_root: str | Path | None = None,
         public_metadata: Mapping[str, Any] | None = None,
         real_runtime_enabled: bool | None = None,
+        voice_input_stage: VoiceInputStage | None = None,
+        text_generation_stage: TextGenerationStage | None = None,
+        voice_output_stage: VoiceOutputStage | None = None,
+        motion_stage: MotionStage | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
         self._session_id = SessionId.new()
@@ -156,6 +253,15 @@ class RealtimeSession:
         from .realtime_generation_gate import RealtimeGenerationGate
 
         self._generation_gate = RealtimeGenerationGate()
+        self._injected_stages = _validated_injected_stages(
+            voice_input_stage=voice_input_stage,
+            text_generation_stage=text_generation_stage,
+            voice_output_stage=voice_output_stage,
+            motion_stage=motion_stage,
+        )
+        self._injected_stages_closed = False
+        self._stage_close_count = 0
+        self._stage_close_error_count = 0
         self._real_runtime_requested = bool(real_runtime_enabled)
         self._capability_snapshot = _session_realtime_snapshot(
             session_id=self._session_id,
@@ -172,12 +278,15 @@ class RealtimeSession:
             session_id=self._session_id,
             state=self._state,
             phase=self._phase,
+            supports_motion="motion" in self._injected_stages,
             real_runtime_enabled=self._real_runtime_enabled,
             public_metadata={
                 "boundary": "realtime",
                 "capability_snapshot_scope": self._capability_snapshot.snapshot_scope.value,
                 "capability_snapshot_generation": self._capability_snapshot.snapshot_generation,
                 "real_runtime_requested": self._real_runtime_requested,
+                "injected_stage_count": len(self._injected_stages),
+                "injected_stage_kinds": tuple(self._injected_stages),
                 **dict(public_metadata or {}),
             },
         )
@@ -188,6 +297,7 @@ class RealtimeSession:
             session_id=self._session_id,
             state=self._state,
             phase=self._phase,
+            supports_motion="motion" in self._injected_stages,
             real_runtime_enabled=self._real_runtime_enabled,
             public_metadata={
                 "boundary": "realtime",
@@ -195,6 +305,8 @@ class RealtimeSession:
                 "capability_snapshot_scope": self._capability_snapshot.snapshot_scope.value,
                 "capability_snapshot_generation": self._capability_snapshot.snapshot_generation,
                 "real_runtime_requested": self._real_runtime_requested,
+                "injected_stage_count": len(self._injected_stages),
+                "injected_stage_kinds": tuple(self._injected_stages),
                 **dict(self._public_metadata),
             },
         )
@@ -204,6 +316,24 @@ class RealtimeSession:
         """Return this session's immutable truthful capability snapshot."""
 
         return self._capability_snapshot
+
+    @property
+    def injected_stage_kinds(self) -> tuple[str, ...]:
+        """Return canonical provider-neutral kinds for injected stages."""
+
+        return tuple(self._injected_stages)
+
+    @property
+    def stage_diagnostics(self) -> Mapping[str, int]:
+        """Return count-only lifecycle diagnostics for injected stages."""
+
+        return MappingProxyType(
+            {
+                "injected_stage_count": len(self._injected_stages),
+                "stage_close_count": self._stage_close_count,
+                "stage_close_error_count": self._stage_close_error_count,
+            }
+        )
 
     @property
     def state(self) -> RealtimeState:
@@ -1111,6 +1241,18 @@ class RealtimeSession:
                 safe_message="Realtime turn is already terminal.",
             )
 
+    def _close_injected_stages(self) -> None:
+        if self._injected_stages_closed:
+            return
+        self._injected_stages_closed = True
+        for stage in self._injected_stages.values():
+            try:
+                stage.close()
+            except Exception:
+                self._stage_close_error_count += 1
+            else:
+                self._stage_close_count += 1
+
     def close(self) -> None:
         with self._operation_lock:
             if self._closed or self._close_requested:
@@ -1129,6 +1271,7 @@ class RealtimeSession:
         self._active_turn_id = None
         self._active_generation_id = None
         self._phase = None
+        self._close_injected_stages()
         try:
             self._transition(
                 RealtimeEventType.SESSION_CLOSED,
@@ -1159,6 +1302,10 @@ def create_realtime_session(
     project_root: str | Path | None = None,
     public_metadata: Mapping[str, Any] | None = None,
     real_runtime_enabled: bool | None = None,
+    voice_input_stage: VoiceInputStage | None = None,
+    text_generation_stage: TextGenerationStage | None = None,
+    voice_output_stage: VoiceOutputStage | None = None,
+    motion_stage: MotionStage | None = None,
 ) -> RealtimeSession:
     """Create a mock-safe public realtime session.
 
@@ -1169,4 +1316,8 @@ def create_realtime_session(
         project_root=project_root,
         public_metadata=public_metadata,
         real_runtime_enabled=real_runtime_enabled,
+        voice_input_stage=voice_input_stage,
+        text_generation_stage=text_generation_stage,
+        voice_output_stage=voice_output_stage,
+        motion_stage=motion_stage,
     )

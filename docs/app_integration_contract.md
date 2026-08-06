@@ -2090,3 +2090,39 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:END -->
+
+
+<!-- FW-RT6-3a-B-STAGE-INJECTION:BEGIN -->
+## v6.0.0 app-facing realtime stage injection boundary
+
+Applications may pass provider-neutral stage implementations through the four
+new keyword-only `create_realtime_session(...)` slots defined by FW-RT6-3a
+Control B. The implementations must satisfy the corresponding stable protocol
+from `framework.realtime_stage`; provider clients, provider-specific cancellation
+handles, raw payloads, credentials, and private paths are not factory arguments.
+
+Construction validates protocol shape and stage identity only. It does not call
+`preflight()`, `capability()`, `start()`, or `cancel()`. The current mock
+`run_turn()` path also does not execute injected stages. Session close owns one
+best-effort `close()` attempt per injected stage and records failures only in
+count-only diagnostics.
+
+```text
+checkpoint: FW-RT6-3a Control B
+baseline head: af474e2ceec9988bec1b7e7fadfe2d4037774597
+status: IMPLEMENTED / AWAITING_REVIEW
+stage injection: PROVIDER-NEUTRAL
+fake stage injection: PASS
+factory signature change: ADDITIVE / KEYWORD-ONLY
+raw injected implementation exposure: False
+stage lifecycle execution during construction: False
+stage execution during current run_turn: False / DEFERRED
+root-public names: 121 / UNCHANGED
+provider SDK root import: False
+real provider execution: False
+real orchestration: False
+network / microphone / playback / real VTS execution: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-B-STAGE-INJECTION:END -->

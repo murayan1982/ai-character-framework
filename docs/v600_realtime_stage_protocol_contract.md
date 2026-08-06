@@ -170,3 +170,72 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:END -->
+
+
+<!-- FW-RT6-3a-B-STAGE-INJECTION:BEGIN -->
+## FW-RT6-3a Control B — provider-neutral RealtimeSession stage injection
+
+Control B adds four optional keyword-only stage bindings to both
+`RealtimeSession(...)` and `create_realtime_session(...)`:
+
+```text
+voice_input_stage
+text_generation_stage
+voice_output_stage
+motion_stage
+```
+
+Each supplied object must structurally satisfy its Control A protocol and expose
+the matching provider-neutral `RealtimeStageKind`. Validation does not call
+`preflight()`, `capability()`, `start()`, `cancel()`, or provider code. The stable
+stage package remains lazily imported: ordinary `import framework` and no-stage
+session construction do not load `framework.realtime_stage`.
+
+The session exposes only public-safe binding state:
+
+```text
+injected_stage_kinds
+stage_diagnostics:
+  injected_stage_count
+  stage_close_count
+  stage_close_error_count
+```
+
+Raw injected objects, provider clients, provider-specific handles, close
+exceptions, credentials, private paths, and raw payloads are not returned by
+these diagnostics. `RealtimeSession.close()` attempts each injected stage
+`close()` once. Close failures are suppressed from the public boundary and
+recorded only as a count so session close and event-hub sealing remain intact.
+
+Control B intentionally does not execute injected stages from `run_turn()`. The
+accepted mock lifecycle remains the active turn path, and capability aggregation
+still uses the existing session snapshot. Real/fake stage orchestration,
+`preflight()` composition, stage `start()` ordering, cancellation coordination,
+and generation-completion delivery remain separate controls.
+
+```text
+checkpoint: FW-RT6-3a Control B
+baseline head: af474e2ceec9988bec1b7e7fadfe2d4037774597
+baseline subject: feat/test: add realtime stage protocols
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 5 files
+factory change: ADDITIVE / KEYWORD-ONLY
+injection slots: voice_input / text_generation / voice_output / motion
+provider-neutral structural validation: True
+stage kind validation: True
+constructor lifecycle calls: 0
+run_turn injected stage starts: 0 / ORCHESTRATION DEFERRED
+session close stage close: ONCE PER INJECTED STAGE
+close exception exposure: False / COUNT-ONLY
+root-public names: 121 / UNCHANGED
+ordinary root import loads framework.realtime_stage: False
+provider SDK root import: False
+fake stage injection: PASS
+real unified orchestration: False
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-B-STAGE-INJECTION:END -->

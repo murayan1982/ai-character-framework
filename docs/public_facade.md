@@ -2534,3 +2534,43 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:END -->
+
+
+<!-- FW-RT6-3a-B-STAGE-INJECTION:BEGIN -->
+## v6.0.0 provider-neutral RealtimeSession stage injection
+
+FW-RT6-3a Control B extends `create_realtime_session(...)` with optional,
+keyword-only `voice_input_stage`, `text_generation_stage`,
+`voice_output_stage`, and `motion_stage` bindings. Supplied objects are checked
+against the stable `framework.realtime_stage` protocols and matching stage kind
+without calling provider or stage lifecycle methods during construction.
+
+The canonical 121-name root-public surface is unchanged. Ordinary root import
+and no-stage session creation still do not load `framework.realtime_stage` or a
+provider SDK. A session reports only canonical injected stage kinds and
+count-only stage close diagnostics; it does not expose raw implementation
+objects or close exceptions.
+
+Injected stages are not yet executed by `run_turn()`. Control B establishes the
+provider-neutral composition boundary and once-only close ownership while
+preserving the accepted mock turn path. Stage orchestration and capability
+composition remain deferred.
+
+```text
+checkpoint: FW-RT6-3a Control B
+baseline head: af474e2ceec9988bec1b7e7fadfe2d4037774597
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 5 files
+factory stage slots: 4 / KEYWORD-ONLY
+fake stage injection: PASS
+constructor stage execution: False
+run_turn injected stage execution: False
+session close owns stage close: True / ONCE
+root-public names: 121 / UNCHANGED
+provider SDK root import: False
+real orchestration: False
+provider / network / microphone / playback / real VTS execution: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-B-STAGE-INJECTION:END -->
