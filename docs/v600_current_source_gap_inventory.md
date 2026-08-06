@@ -587,3 +587,44 @@ G-05 is resolved for the accepted generation gate and the current central
 completion-ingress boundary. This does not imply that future real STT, LLM,
 TTS, or motion callbacks are already wired through that boundary.
 <!-- FW-RT6-2d-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-3a-C-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-3a realtime stage-protocol gap resolution sync
+
+This sync records the accepted provider-neutral stage vocabulary and injection
+boundary while preserving legacy adapter migration, real orchestration,
+deterministic fake-controller, and normal unit-test gaps.
+
+```text
+baseline head: 8db6a4ff1c9687b9e9d04b2f55a38611e27e0a5e
+G-15 stable provider-neutral stage package: RESOLVED
+G-15 VoiceInputStage protocol: RESOLVED
+G-15 TextGenerationStage protocol: RESOLVED
+G-15 VoiceOutputStage protocol: RESOLVED
+G-15 MotionStage protocol: RESOLVED
+G-15 common preflight/capability/start/cancel/close vocabulary: RESOLVED
+G-15 public session/turn/generation stage context: RESOLVED
+G-15 provider-specific public protocol objects: EXCLUDED / RESOLVED
+G-15 RealtimeSession provider-neutral injection boundary: RESOLVED
+G-15 fake stage injection: PASS
+G-15 real legacy runtime adapter migration: UNRESOLVED / LATER CHECKPOINT
+G-15 injected-stage run_turn execution: 0 / DEFERRED
+G-15 preflight/capability runtime composition: NOT EXECUTED / DEFERRED
+G-15 cancellation coordination across injected stages: UNRESOLVED
+G-01 real unified turn orchestration: UNRESOLVED
+G-16 deterministic fake runtime controller: UNRESOLVED / FW-RT6-3b
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+factory parameters: 7 / KEYWORD-ONLY
+root-public names: 121 / UNCHANGED
+provider SDK root import: False
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+FW-RT6-3a resolves the missing public composition boundary. It does not claim
+that legacy provider adapters have been migrated or that a real provider-driven
+turn is orchestrated by `RealtimeSession`.
+<!-- FW-RT6-3a-C-GAP-RESOLUTION-SYNC:END -->

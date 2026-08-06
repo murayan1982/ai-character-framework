@@ -325,7 +325,20 @@ def check_docs() -> None:
             f"missing generation-gate aggregate marker: {marker}",
         )
 
-    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2d")
+    stage_protocol_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-3a-C-STAGE-PROTOCOL-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-3a-C-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-3a-C-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in stage_protocol_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing stage-protocol aggregate marker: {marker}",
+        )
+
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-3a")
 
 
 def main() -> None:
@@ -356,10 +369,14 @@ def main() -> None:
     print("v600_realtime_generation_gate_public_reset_added: False")
     print("v600_realtime_generation_gate_runtime_source_changed_by_control_d: False")
     print("v600_realtime_event_model_changed: False")
-    print("v600_realtime_session_factory_signature_changed: False")
-    print("v600_next_checkpoint: FW-RT6-3a")
+    print("v600_realtime_stage_protocol_changed: protocols-and-provider-neutral-injection-accepted")
+    print("v600_realtime_stage_protocol_package: framework.realtime_stage")
+    print("v600_realtime_stage_fake_injection: PASS")
+    print("v600_realtime_stage_run_turn_execution: False / deferred")
+    print("v600_realtime_session_factory_signature_changed: additive-stage-injection-keyword-only")
+    print("v600_next_checkpoint: FW-RT6-3b")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2d generation gate")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3a stage protocols")
 
 
 if __name__ == "__main__":

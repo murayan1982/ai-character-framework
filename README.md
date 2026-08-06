@@ -2752,3 +2752,60 @@ The accepted stale boundary applies to completions entering through the current
 central `_apply_stage_completion(...)` ingress. It does not claim that every
 future real provider callback has already been connected to that ingress.
 <!-- FW-RT6-2d-D-GENERATION-GATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-3a-C-STAGE-PROTOCOL-ACCEPTANCE:BEGIN -->
+## v6.0.0 realtime stage-protocol aggregate acceptance
+
+FW-RT6-3a Control A establishes the explicitly stable provider-neutral package
+`framework.realtime_stage`, four stage protocols, and generation-bearing public
+stage context/result envelopes. Control B adds four optional keyword-only stage
+bindings to `RealtimeSession` and `create_realtime_session(...)`, validates fake
+implementations without provider execution, and gives session close once-only
+best-effort ownership of injected stage shutdown.
+
+Control C records aggregate acceptance only. It changes no runtime source and
+does not execute injected stages from the current mock `run_turn()` path. Real
+legacy adapter migration, capability/preflight composition, provider-driven stage
+ordering, cancellation coordination, and unified turn orchestration remain later
+work.
+
+```text
+checkpoint: FW-RT6-3a Control C
+baseline head: 8db6a4ff1c9687b9e9d04b2f55a38611e27e0a5e
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A provider-neutral stage protocols: ACCEPTED
+Control B RealtimeSession stage injection: ACCEPTED
+Control C exact change surface: 6 files
+runtime source changed: False
+stable public package: framework.realtime_stage
+stage protocol count: 4
+common lifecycle methods: preflight / capability / start / cancel / close
+stage context: session / turn / generation
+provider-specific public objects: False
+factory parameters: 7 / KEYWORD-ONLY
+stage injection: provider-neutral
+fake stage injection: PASS
+constructor stage lifecycle calls: 0
+current run_turn injected stage starts: 0 / DEFERRED
+session close stage ownership: ONCE PER INJECTED STAGE
+stage close exception exposure: False / COUNT-ONLY
+root-public names: 121 / UNCHANGED
+provider SDK root import: False
+real legacy adapter migration: UNRESOLVED / LATER CHECKPOINT
+preflight / capability runtime composition: NOT EXECUTED / DEFERRED
+real unified turn orchestration: UNRESOLVED
+FW-RT6-3b deterministic fake runtime controller: NOT IMPLEMENTED
+FW-RT6-3c normal unit-test layer: NOT IMPLEMENTED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-3b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The accepted injection boundary is a composition contract, not a claim that the
+legacy STT, LLM, TTS, or motion implementations already run behind
+`RealtimeSession`.
+<!-- FW-RT6-3a-C-STAGE-PROTOCOL-ACCEPTANCE:END -->

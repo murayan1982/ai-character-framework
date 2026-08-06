@@ -1142,13 +1142,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `VoiceInputStage` protocolを定義する。
-- [ ] `TextGenerationStage` protocolを定義する。
-- [ ] `VoiceOutputStage` protocolを定義する。
-- [ ] `MotionStage` protocolを定義する。
-- [ ] preflight/capability/start/cancel/close contractを統一する。
-- [ ] stage result envelopeへcontextを追加する。
-- [ ] provider-specific objectsをpublic protocolから除外する。
+- [x] `VoiceInputStage` protocolを定義する。
+- [x] `TextGenerationStage` protocolを定義する。
+- [x] `VoiceOutputStage` protocolを定義する。
+- [x] `MotionStage` protocolを定義する。
+- [x] preflight/capability/start/cancel/close contractを統一する。
+- [x] stage result envelopeへcontextを追加する。
+- [x] provider-specific objectsをpublic protocolから除外する。
 
 **Acceptance:**
 
@@ -1162,6 +1162,44 @@ PASS
 provider SDK root import:
 False
 ```
+
+
+<!-- FW-RT6-3a-C-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-3a Control C
+baseline head: 8db6a4ff1c9687b9e9d04b2f55a38611e27e0a5e
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A provider-neutral stage protocols: ACCEPTED
+Control B RealtimeSession stage injection: ACCEPTED
+Control C exact change surface: 6 files
+runtime source changed: False
+stable public package: framework.realtime_stage
+stage protocol count: 4
+common lifecycle methods: preflight / capability / start / cancel / close
+stage result context: session / turn / generation
+provider-specific public objects: False
+factory parameters: 7 / KEYWORD-ONLY
+stage injection: provider-neutral
+fake stage injection: PASS
+constructor stage lifecycle calls: 0
+current run_turn injected stage starts: 0 / DEFERRED
+session close stage ownership: ONCE PER INJECTED STAGE
+stage close exception exposure: False / COUNT-ONLY
+root-public names: 121 / UNCHANGED
+provider SDK root import: False
+real legacy adapter migration: UNRESOLVED / LATER CHECKPOINT
+preflight / capability runtime composition: NOT EXECUTED / DEFERRED
+real unified turn orchestration: UNRESOLVED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-C-ACCEPTANCE-SYNC:END -->
 
 ---
 

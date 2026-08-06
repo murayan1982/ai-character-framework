@@ -364,6 +364,19 @@ def _check_docs_and_status_markers() -> None:
             f"missing generation-gate aggregate marker: {marker}",
         )
 
+    stage_protocol_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-3a-C-STAGE-PROTOCOL-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-3a-C-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-3a-C-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in stage_protocol_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing stage-protocol aggregate marker: {marker}",
+        )
+
     for relative_path in (
         "docs/public_facade.md",
         "docs/app_integration_contract.md",
@@ -379,10 +392,12 @@ def _check_docs_and_status_markers() -> None:
             "FW-RT6-2d-A-GENERATION-GATE-PRIMITIVES:BEGIN",
             "FW-RT6-2d-B-REALTIME-SESSION-GENERATION-ADOPTION:BEGIN",
             "FW-RT6-2d-C-RACE-VTS-ALIGNMENT:BEGIN",
+            "FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:BEGIN",
+            "FW-RT6-3a-B-STAGE-INJECTION:BEGIN",
         ):
             _assert(marker in text, f"missing accepted runtime-safety control marker in {relative_path}: {marker}")
 
-    print("[OK] public docs and aggregate status record accepted FW-RT6-2d generation gate")
+    print("[OK] public docs and aggregate status record accepted FW-RT6-3a stage protocols")
 
 
 def main() -> None:
@@ -415,9 +430,16 @@ def main() -> None:
     print("v600_realtime_generation_gate_real_provider_paths_all_wired: False")
     print("v600_realtime_generation_gate_public_reset_added: False")
     print("v600_realtime_generation_gate_runtime_source_changed_by_control_d: False")
-    print("v600_next_checkpoint: FW-RT6-3a")
+    print("v600_realtime_stage_protocol_status: accepted")
+    print("v600_realtime_stage_protocol_package: framework.realtime_stage")
+    print("v600_realtime_stage_protocol_count: 4")
+    print("v600_realtime_stage_factory_parameters: 7 / keyword-only")
+    print("v600_realtime_stage_fake_injection: PASS")
+    print("v600_realtime_stage_run_turn_execution: False / deferred")
+    print("v600_realtime_stage_provider_sdk_root_import: False")
+    print("v600_next_checkpoint: FW-RT6-3b")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-2d generation gate")
+    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-3a stage protocols")
 
 
 if __name__ == "__main__":
