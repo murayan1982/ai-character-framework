@@ -1786,3 +1786,90 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2b-B-REALTIME-SESSION-HUB-ADOPTION:END -->
+
+<!-- FW-RT6-2b-C-CLOSE-CONCURRENCY-HARDENING:BEGIN -->
+## FW-RT6-2b Control C — close and operation-order hardening
+
+`RealtimeSession` now owns an operation-level reentrant lock around event-producing
+public operations. A concurrent operation waits for the current operation to
+finish, so its lifecycle-state writes and event groups do not interleave.
+
+A same-thread `close()` request raised from an event callback is deferred until
+the outer operation finishes. The admitted operation therefore completes its
+already-started event sequence before one `SESSION_CLOSED` event is emitted.
+
+```text
+serialized operations:
+emit_created
+run_turn
+interrupt
+flush_output
+decide_barge_in
+set_barge_in_policy
+close
+
+reentrant close during operation:
+deferred
+
+concurrent close during operation:
+waits for operation boundary
+
+SESSION_CLOSED event:
+emitted once
+
+hub seal:
+immediately after SESSION_CLOSED delivery
+
+callbacks retained after close:
+False
+```
+
+After close, public methods preserve typed result behavior without emitting any
+new active event:
+
+```text
+run_turn:
+RealtimeTurnResult.closed / no event
+
+interrupt:
+InterruptResult.already_closed / no event
+
+flush_output:
+OutputFlushResult.closed / no event
+
+decide_barge_in:
+rejected decision / no event
+
+emit_created:
+LifecycleTransitionError(SESSION_CLOSED) / no event
+
+set_barge_in_policy:
+LifecycleTransitionError(SESSION_CLOSED) / no event
+
+on_event / on_legacy_event:
+LifecycleTransitionError(SESSION_CLOSED)
+```
+
+The bounded history and typed overflow policy from Control B are unchanged.
+An overflow diagnostic accepted during the close operation is part of that
+operation; after `close()` returns, no event can be accepted.
+
+```text
+baseline head: ee896aad3c9f6d38521c3da08505e77f0c60c1c0
+Control C exact change surface: 7 files
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeSession factory signature changed: False
+operation-level lock: RLock
+reentrant close deferred: True
+concurrent operation groups interleave: False
+SESSION_CLOSED emitted once: True
+event hub closed after close: True
+close後active event: False
+terminal registry: DEFERRED / FW-RT6-2c
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2b Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2b-C-CLOSE-CONCURRENCY-HARDENING:END -->

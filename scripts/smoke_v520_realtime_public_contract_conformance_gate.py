@@ -367,15 +367,16 @@ def _assert_session_contract(framework) -> None:
     _require(session.info.phase is None, "closed session info should have no canonical phase")
     _require(events[-1].type == framework.RealtimeEventType.SESSION_CLOSED, "close should emit session.closed")
     _require(events[-1].generation_id is None, "session close generation should be None")
+    close_event_count = len(events)
+    close_legacy_event_count = len(legacy_events)
 
     closed_result = session.run_turn(input_text="after close")
     _require(closed_result.outcome == framework.RealtimeState.CLOSED, "closed session run_turn should return closed result")
     _require(type(closed_result.outcome) is framework.TurnOutcome, "closed run_turn result should use TurnOutcome")
     _require(closed_result.recovery_action is framework.RecoveryAction.NONE, "closed run_turn recovery mismatch")
     _require(closed_result.public_error_code == framework.RealtimeErrorCode.SESSION_CLOSED, "closed session error code mismatch")
-    _require(events[-1].type is framework.RealtimeEventType.TURN_REJECTED, "closed run_turn should emit canonical turn.rejected")
-    _require(events[-1].generation_id is None, "rejected-before-admission generation should be None")
-    _require(legacy_events[-1].type is framework.RealtimeEventType.TURN_FAILED, "closed run_turn should project legacy turn.failed")
+    _require(len(events) == close_event_count, "post-close event count should remain unchanged")
+    _require(len(legacy_events) == close_legacy_event_count, "post-close event count should remain unchanged for legacy callbacks")
 
     with framework.create_realtime_session() as managed:
         _require(not managed.is_closed, "managed session should be open in context")

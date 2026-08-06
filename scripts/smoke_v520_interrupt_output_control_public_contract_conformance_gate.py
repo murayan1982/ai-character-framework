@@ -384,10 +384,14 @@ def _assert_realtime_session_barge_in_and_closed(framework) -> None:
     session.close()
     _require(session.phase is None, "closed output-control session should have no canonical phase")
     _require(session.info.phase is None, "closed output-control session info should have no canonical phase")
+    close_event_count = len(events)
+    close_legacy_event_count = len(legacy_events)
     closed_interrupt = session.interrupt(framework.InterruptRequest.user_barge_in())
     _require(closed_interrupt.outcome == framework.InterruptOutcome.ALREADY_CLOSED, "closed interrupt should be already_closed")
     closed_flush = session.flush_output()
     _require(closed_flush.outcome == framework.OutputFlushOutcome.CLOSED, "closed flush should be closed")
+    _require(len(events) == close_event_count, "post-close event count should remain unchanged")
+    _require(len(legacy_events) == close_legacy_event_count, "post-close event count should remain unchanged for legacy callbacks")
     _ok("RealtimeSession barge-in and closed output-control behavior conforms")
 
 

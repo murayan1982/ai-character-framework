@@ -7,11 +7,13 @@ websocket, microphone, or provider SDK code.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import RLock
 import time
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Iterator, Mapping
 
 from .capabilities import _session_realtime_snapshot
 from .identity import EventSequence, GenerationId, SessionId, TurnId
@@ -118,6 +120,9 @@ class RealtimeSession:
         self._state = RealtimeState.IDLE
         self._phase: RealtimePhase | None = RealtimePhase.IDLE
         self._closed = False
+        self._close_requested = False
+        self._operation_lock = RLock()
+        self._operation_depth = 0
         self._event_hub = RealtimeEventHub[RealtimeEvent]()
         self._real_runtime_requested = bool(real_runtime_enabled)
         self._capability_snapshot = _session_realtime_snapshot(
@@ -207,20 +212,51 @@ class RealtimeSession:
             }
         )
 
+    def _session_closed_error(self) -> LifecycleTransitionError:
+        return LifecycleTransitionError(
+            LifecycleTransitionErrorCode.SESSION_CLOSED,
+            from_phase=self._phase,
+            to_phase=None,
+        )
+
+    @contextmanager
+    def _serialized_operation(self) -> Iterator[None]:
+        """Serialize one public event-producing operation and honor deferred close."""
+
+        with self._operation_lock:
+            self._operation_depth += 1
+            try:
+                yield
+            finally:
+                self._operation_depth -= 1
+                if (
+                    self._operation_depth == 0
+                    and self._close_requested
+                    and not self._closed
+                ):
+                    self._close_now()
+
     def on_event(self, callback: RealtimeEventCallback) -> str:
         """Register a canonical callback and return its opaque removal token."""
 
-        return str(self._event_hub.subscribe(callback))
+        with self._operation_lock:
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            return str(self._event_hub.subscribe(callback))
 
     def on_legacy_event(self, callback: RealtimeEventCallback) -> str:
         """Register a mapped v5 callback and return its opaque removal token."""
 
-        return str(self._event_hub.subscribe(callback, legacy=True))
+        with self._operation_lock:
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            return str(self._event_hub.subscribe(callback, legacy=True))
 
     def off_event(self, token: str) -> bool:
         """Remove a canonical or legacy callback token idempotently."""
 
-        return self._event_hub.unsubscribe(token)
+        with self._operation_lock:
+            return self._event_hub.unsubscribe(token)
 
     def _generation_for_event(
         self,
@@ -306,7 +342,10 @@ class RealtimeSession:
         safe_message: str = "",
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
+        _allow_closed_event: bool = False,
     ) -> RealtimeEvent:
+        if self._closed and not _allow_closed_event:
+            raise self._session_closed_error()
         if new_phase is not _PHASE_UNCHANGED:
             self._set_phase(new_phase)
         resolved_payload = _require_runtime_event_payload(event_type, payload)
@@ -363,6 +402,12 @@ class RealtimeSession:
     def emit_created(self) -> RealtimeEvent:
         """Emit a public session-created event."""
 
+        with self._serialized_operation():
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            return self._emit_created_serialized()
+
+    def _emit_created_serialized(self) -> RealtimeEvent:
         return self._transition(
             RealtimeEventType.SESSION_STARTED,
             RealtimeState.IDLE,
@@ -372,6 +417,20 @@ class RealtimeSession:
         )
 
     def run_turn(
+        self,
+        turn: RealtimeTurn | None = None,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> RealtimeTurnResult:
+        with self._serialized_operation():
+            return self._run_turn_serialized(
+                turn,
+                input_text=input_text,
+                public_metadata=public_metadata,
+            )
+
+    def _run_turn_serialized(
         self,
         turn: RealtimeTurn | None = None,
         *,
@@ -397,19 +456,7 @@ class RealtimeSession:
                 phase=turn.phase,
             )
 
-        if self._closed:
-            self._transition(
-                RealtimeEventType.TURN_REJECTED,
-                RealtimeState.CLOSED,
-                turn_id=turn.turn_id,
-                payload=LifecycleEventPayload(
-                    outcome=TurnOutcome.REJECTED,
-                    recovery_action=RecoveryAction.NONE,
-                    reason="session_closed",
-                ),
-                public_error_code=RealtimeErrorCode.SESSION_CLOSED,
-                safe_message="Realtime session is closed.",
-            )
+        if self._closed or self._close_requested:
             return RealtimeTurnResult.closed(turn_id=turn.turn_id)
 
         self._active_turn_id = turn.turn_id
@@ -521,6 +568,13 @@ class RealtimeSession:
         )
 
     def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
+        with self._serialized_operation():
+            return self._interrupt_serialized(request)
+
+    def _interrupt_serialized(
+        self,
+        request: InterruptRequest | None = None,
+    ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
         Real hard cancellation is not implemented yet. This method provides a
@@ -529,26 +583,8 @@ class RealtimeSession:
         """
 
         request = request or InterruptRequest()
-        if self._closed:
-            result = InterruptResult.already_closed(request=request)
-            self._transition(
-                RealtimeEventType.INTERRUPT_UNSUPPORTED,
-                RealtimeState.CLOSED,
-                turn_id=request.turn_id,
-                payload=InterruptEventPayload(
-                    scope=request.scope,
-                    outcome=result.outcome,
-                    reason=request.reason.value,
-                ),
-                public_error_code=RealtimeErrorCode.SESSION_CLOSED,
-                safe_message=result.safe_message,
-                public_metadata={
-                    "scope": request.scope.value,
-                    "reason": request.reason.value,
-                    "interrupt_outcome": result.outcome.value,
-                },
-            )
-            return result
+        if self._closed or self._close_requested:
+            return InterruptResult.already_closed(request=request)
 
         no_active_turn = self._active_turn_id is None and request.turn_id is None
         result = (
@@ -636,6 +672,13 @@ class RealtimeSession:
         return self.interrupt(request)
 
     def flush_output(self, request: OutputFlushRequest | None = None) -> OutputFlushResult:
+        with self._serialized_operation():
+            return self._flush_output_serialized(request)
+
+    def _flush_output_serialized(
+        self,
+        request: OutputFlushRequest | None = None,
+    ) -> OutputFlushResult:
         """Request a provider-neutral output flush.
 
         Real queue flush / playback stop is not implemented yet. Empty mock queue
@@ -643,20 +686,8 @@ class RealtimeSession:
         """
 
         request = request or OutputFlushRequest()
-        if self._closed:
-            result = OutputFlushResult.closed(request=request)
-            self._transition(
-                RealtimeEventType.OUTPUT_FLUSH_UNSUPPORTED,
-                RealtimeState.CLOSED,
-                turn_id=request.turn_id,
-                public_error_code=RealtimeErrorCode.SESSION_CLOSED,
-                safe_message=result.safe_message,
-                public_metadata={
-                    "flush_outcome": result.outcome.value,
-                    "scope": request.scope.value,
-                },
-            )
-            return result
+        if self._closed or self._close_requested:
+            return OutputFlushResult.closed(request=request)
 
         self._transition(
             RealtimeEventType.OUTPUT_FLUSH_REQUESTED,
@@ -701,12 +732,29 @@ class RealtimeSession:
     def set_barge_in_policy(self, policy: BargeInPolicy) -> BargeInPolicy:
         """Set the public barge-in policy for future host-app decisions."""
 
-        if not isinstance(policy, BargeInPolicy):
-            raise TypeError("policy must be a BargeInPolicy")
-        self._barge_in_policy = policy
-        return self._barge_in_policy
+        with self._serialized_operation():
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            if not isinstance(policy, BargeInPolicy):
+                raise TypeError("policy must be a BargeInPolicy")
+            self._barge_in_policy = policy
+            return self._barge_in_policy
 
     def decide_barge_in(
+        self,
+        *,
+        turn_id: TurnId | str | None = None,
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> BargeInDecision:
+        with self._serialized_operation():
+            if self._closed or self._close_requested:
+                return BargeInDecision.rejected(policy=self._barge_in_policy)
+            return self._decide_barge_in_serialized(
+                turn_id=turn_id,
+                public_metadata=public_metadata,
+            )
+
+    def _decide_barge_in_serialized(
         self,
         *,
         turn_id: TurnId | str | None = None,
@@ -773,22 +821,36 @@ class RealtimeSession:
         return decision
 
     def close(self) -> None:
+        with self._operation_lock:
+            if self._closed or self._close_requested:
+                return
+            if self._operation_depth > 0:
+                self._close_requested = True
+                return
+            self._close_now()
+
+    def _close_now(self) -> None:
         if self._closed:
             return
+        self._close_requested = False
         self._closed = True
         self._active_turn_id = None
         self._active_generation_id = None
-        self._set_phase(None)
-        self._transition(
-            RealtimeEventType.SESSION_CLOSED,
-            RealtimeState.CLOSED,
-            payload=LifecycleEventPayload(
-                outcome=TurnOutcome.CLOSED,
-                recovery_action=RecoveryAction.NONE,
-                reason="session_closed",
-            ),
-            public_metadata={"reason": "session_closed"},
-        )
+        self._phase = None
+        try:
+            self._transition(
+                RealtimeEventType.SESSION_CLOSED,
+                RealtimeState.CLOSED,
+                payload=LifecycleEventPayload(
+                    outcome=TurnOutcome.CLOSED,
+                    recovery_action=RecoveryAction.NONE,
+                    reason="session_closed",
+                ),
+                public_metadata={"reason": "session_closed"},
+                _allow_closed_event=True,
+            )
+        finally:
+            self._event_hub.close()
 
     def dispose(self) -> None:
         self.close()

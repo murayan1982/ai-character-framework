@@ -264,3 +264,105 @@ DEFERRED TO CONTROL C
 terminal registry:
 DEFERRED TO FW-RT6-2c
 ```
+
+## FW-RT6-2b Control C — close and concurrent-operation boundary
+
+Control C establishes an operation boundary around the existing mock-safe
+session methods. It does not add a worker thread, async event queue, provider
+operation, or terminal registry.
+
+### Operation serialization
+
+```text
+lock:
+threading.RLock
+
+operation event groups:
+serialized
+
+concurrent run_turn calls:
+executed one complete operation at a time
+
+concurrent close:
+waits for the active operation boundary
+
+callback reentrant close:
+deferred until the outer operation exits
+
+event callback delivery:
+synchronous / unchanged
+```
+
+The reentrant lock avoids callback deadlock. The deferred-close flag prevents a
+same-thread callback from sealing the hub in the middle of its outer turn,
+interrupt, flush, or barge-in event group.
+
+### Close sequence
+
+```text
+1:
+mark session closed
+
+2:
+clear active turn / generation and canonical phase
+
+3:
+emit exactly one SESSION_CLOSED event
+
+4:
+seal RealtimeEventHub
+
+5:
+clear callback registrations
+```
+
+During `SESSION_CLOSED` callback delivery the session already reports closed.
+Reentrant event-producing operations therefore return a closed/rejected result
+or raise the existing typed lifecycle error without emitting another event.
+
+### Post-close contract
+
+```text
+new callback registration:
+rejected
+
+event history:
+readable / immutable
+
+event diagnostics:
+readable / immutable
+
+old callback token removal:
+False after callback clearing
+
+run_turn result:
+closed
+
+interrupt result:
+already_closed
+
+flush result:
+closed
+
+barge-in decision:
+rejected
+
+post-close active event:
+False
+```
+
+No raw exception, callback object, provider payload, credential, transcript
+body, or private path is added to the public diagnostics.
+
+### Deferrals
+
+```text
+terminal exactly-once registry:
+FW-RT6-2c
+
+generation stale-result guard:
+FW-RT6-2d
+
+real provider orchestration:
+later runtime checkpoint
+```
