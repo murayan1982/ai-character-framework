@@ -2574,3 +2574,38 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3a-B-STAGE-INJECTION:END -->
+
+<!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:BEGIN -->
+## Deterministic fake runtime test-support package
+
+`framework.realtime_fake_runtime` is an explicit provider-neutral test-support
+package. It is not re-exported from `framework` root. Its deterministic
+controller uses integer ticks and insertion-order scheduling so the same fake
+race produces the same callback order and metadata-free trace signature on
+every run.
+
+The package supports stage pause/resume, artificial delay, late completion,
+duplicate terminal, cancellation timeout, and queue overflow injection. Public
+action and trace metadata pass through the Framework public-safety sanitizer;
+callbacks and raw exception values are never placed in trace records.
+
+Control A is standalone infrastructure. It does not invoke injected
+`RealtimeSession` stages, replace the current mock `run_turn()` path, or claim
+generation-gate/terminal-registry adoption. Control B remains separately
+authorized.
+
+```text
+checkpoint: FW-RT6-3b Control A
+explicit import: framework.realtime_fake_runtime
+root import loads fake runtime: False
+root-public names: 121 / UNCHANGED
+wall-clock sleep: False
+background scheduler thread: False
+provider SDK root import: False
+network / microphone / playback / real VTS execution: False
+race reproducible: True
+RealtimeSession orchestration changed: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:END -->

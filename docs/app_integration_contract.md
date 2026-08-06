@@ -2126,3 +2126,42 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3a-B-STAGE-INJECTION:END -->
+
+<!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:BEGIN -->
+## v6.0.0 deterministic fake realtime controller
+
+Test and validation code may explicitly import
+`framework.realtime_fake_runtime` to reproduce provider-free ordering and fault
+scenarios. The package provides an integer-tick fake clock/scheduler, stage
+pause/resume, artificial delay, late-completion injection, duplicate-terminal
+injection, cancellation-timeout injection, queue-overflow injection, and an
+exact deterministic trace assertion helper.
+
+The package is not imported by `framework` root and does not change the
+121-name root-public surface. It does not use wall-clock sleep, background
+threads, network access, provider SDKs, microphone input, playback, or real
+VTube Studio. Control A does not connect the controller to
+`RealtimeSession`, the generation gate, or the terminal registry; that adoption
+and aggregate acceptance remain deferred to separately authorized work.
+
+```text
+checkpoint: FW-RT6-3b Control A
+baseline head: dc02a13b98cb6fd7a8ff300366dac77b9b6f5873
+status: IMPLEMENTED / AWAITING_REVIEW
+explicit package: framework.realtime_fake_runtime
+fake clock / scheduler: True
+stage pause / resume: True
+artificial delay: True
+late completion injection: True
+duplicate terminal injection: True
+cancellation timeout injection: True
+queue overflow injection: True
+deterministic event trace assertion helper: True
+race reproducible: True
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+provider SDK / network / microphone / playback / real VTS execution: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:END -->
