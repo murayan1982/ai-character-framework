@@ -2686,3 +2686,69 @@ the currently wired mock `TURN_COMPLETED` session path. Other typed terminal
 outcomes remain available to later orchestration checkpoints but are not claimed
 as provider-driven runtime paths here.
 <!-- FW-RT6-2c-D-TERMINAL-REGISTRY-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-2d-D-GENERATION-GATE-ACCEPTANCE:BEGIN -->
+## v6.0.0 realtime generation-gate aggregate acceptance
+
+FW-RT6-2d Controls A through C establish the internal provider-neutral
+generation gate, adopt one central stage-completion ingress in
+`RealtimeSession`, and verify deterministic race behavior plus semantic
+alignment with the existing VTube Studio lifecycle-generation boundary.
+Control C corrective 1 preserves terminal-registry late-operation rejection
+inside a terminal callback after the active generation has been retired.
+
+Control D records aggregate acceptance only. It changes no runtime source and
+does not add real stage protocols, provider-driven orchestration, a public
+`RealtimeSession.reset()` method, single-active-turn lifecycle enforcement, or
+normal unit-test infrastructure.
+
+```text
+checkpoint: FW-RT6-2d Control D
+baseline head: aee53d77840f49450d9319a1ff5208cec7471757
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A generation-gate primitives: ACCEPTED
+Control B RealtimeSession generation-gate adoption: ACCEPTED
+Control C race / VTS alignment: ACCEPTED
+Control C corrective 1 terminal callback compatibility: ACCEPTED
+Control D initial candidate: ROLLED BACK / PRESERVED IN HISTORY
+Control D exact change surface: 6 files
+runtime source changed: False
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeTurnResult public model changed: False
+create_realtime_session signature changed: False
+generation / event / terminal diagnostics keys changed: False
+current generation registry: ACCEPTED
+central stage completion ingress: ACCEPTED
+old turn response delta delivered: False
+old TTS artifact delivered: False
+interrupt / cancel late audio delivered: False
+close-requested / post-close completion delivered: False
+open-session stale drop observable: True
+close-requested / post-close stale event emitted: False / COUNT-ONLY OBSERVABLE
+stale diagnostic legacy projection: None
+VTS source changed: False
+VTS alignment verification: IN-MEMORY FAKE / PASS
+terminal callback interrupt events: 0
+terminal callback cancel events: 0
+terminal callback state / phase / history mutation: False
+normal post-turn no-active interrupt: PRESERVED
+all real provider-driven stage paths wired: False / NOT CLAIMED
+public RealtimeSession reset method: NOT ADDED
+single-active-turn lifecycle enforcement: DEFERRED / LATER CHECKPOINT
+normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+real unified turn orchestration: UNRESOLVED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+v6.0.0 released: False
+next checkpoint: FW-RT6-3a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The accepted stale boundary applies to completions entering through the current
+central `_apply_stage_completion(...)` ingress. It does not claim that every
+future real provider callback has already been connected to that ingress.
+<!-- FW-RT6-2d-D-GENERATION-GATE-ACCEPTANCE:END -->

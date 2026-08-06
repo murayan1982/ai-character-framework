@@ -312,7 +312,20 @@ def check_docs() -> None:
             f"missing terminal-registry aggregate marker: {marker}",
         )
 
-    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2c")
+    generation_gate_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-2d-D-GENERATION-GATE-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-2d-D-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-2d-D-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in generation_gate_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing generation-gate aggregate marker: {marker}",
+        )
+
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2d")
 
 
 def main() -> None:
@@ -337,12 +350,16 @@ def main() -> None:
     print("v600_realtime_terminal_registry_changed: terminal-registry-session-adoption-and-reentrant-concurrency-hardening-accepted")
     print("v600_realtime_terminal_current_verified_path: TURN_COMPLETED")
     print("v600_realtime_terminal_provider_paths_all_wired: False")
-    print("v600_realtime_terminal_generation_stale_rejection: deferred-FW-RT6-2d")
+    print("v600_realtime_terminal_generation_stale_rejection: accepted-current-central-ingress")
+    print("v600_realtime_generation_gate_changed: primitives-session-adoption-race-alignment-and-terminal-callback-corrective-accepted")
+    print("v600_realtime_generation_gate_real_provider_paths_all_wired: False")
+    print("v600_realtime_generation_gate_public_reset_added: False")
+    print("v600_realtime_generation_gate_runtime_source_changed_by_control_d: False")
     print("v600_realtime_event_model_changed: False")
     print("v600_realtime_session_factory_signature_changed: False")
-    print("v600_next_checkpoint: FW-RT6-2d")
+    print("v600_next_checkpoint: FW-RT6-3a")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2c terminal registry")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2d generation gate")
 
 
 if __name__ == "__main__":

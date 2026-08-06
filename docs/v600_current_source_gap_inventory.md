@@ -540,3 +540,50 @@ FW-RT6-2c closes G-04 for the accepted primitive and current mock completed-turn
 integration. It does not claim generation-based late completion rejection or
 provider-driven terminal orchestration.
 <!-- FW-RT6-2c-D-GAP-RESOLUTION-SYNC:END -->
+
+
+<!-- FW-RT6-2d-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-2d realtime generation-gate gap resolution sync
+
+This sync records the accepted provider-neutral generation freshness primitive,
+current `RealtimeSession` completion ingress, race behavior, and VTube Studio
+semantic alignment while preserving the stage-protocol, lifecycle,
+provider-composition, and normal unit-test gaps.
+
+```text
+baseline head: aee53d77840f49450d9319a1ff5208cec7471757
+G-05 current generation registry: RESOLVED
+G-05 generation retirement reason registry: RESOLVED
+G-05 stage completion generation envelope: RESOLVED
+G-05 central stale completion decision: RESOLVED
+G-05 typed stale drop reason: RESOLVED
+G-05 open-session STALE_RESULT_DROPPED observability: RESOLVED
+G-05 stale diagnostic v5 projection: NONE / INTENTIONAL
+G-05 close-requested stale event delivery: SUPPRESSED / COUNT-ONLY OBSERVABLE
+G-05 post-close stale event delivery: SUPPRESSED / COUNT-ONLY OBSERVABLE
+old response delta delivery through accepted ingress: False
+old TTS artifact delivery through accepted ingress: False
+interrupt / cancel late audio delivery through accepted ingress: False
+close-requested / post-close completion delivery through accepted ingress: False
+VTS lifecycle-generation semantic alignment: VERIFIED / IN-MEMORY FAKE
+VTS source changed by Control D: False
+terminal callback late interrupt / cancel events: 0
+terminal callback state / phase / history mutation: False
+normal post-turn no-active interrupt behavior: PRESERVED
+public RealtimeSession reset method: NOT ADDED
+all real provider-driven stage paths wired: False / NOT CLAIMED
+single-active-turn lifecycle enforcement: UNRESOLVED / LATER CHECKPOINT
+stage protocols and public stage context: UNRESOLVED / FW-RT6-3a
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+G-01 real unified turn orchestration: UNRESOLVED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+G-05 is resolved for the accepted generation gate and the current central
+completion-ingress boundary. This does not imply that future real STT, LLM,
+TTS, or motion callbacks are already wired through that boundary.
+<!-- FW-RT6-2d-D-GAP-RESOLUTION-SYNC:END -->
