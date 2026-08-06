@@ -2497,3 +2497,40 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2d-C-RACE-VTS-ALIGNMENT:END -->
+
+
+<!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:BEGIN -->
+## v6.0.0 provider-neutral realtime stage protocol foundation
+
+FW-RT6-3a Control A introduces `framework.realtime_stage` as an explicitly
+stable public package. It defines `RealtimeStageContext`,
+`RealtimeStageResultEnvelope`, the four provider-neutral stage kinds, and the
+`VoiceInputStage`, `TextGenerationStage`, `VoiceOutputStage`, and `MotionStage`
+protocols.
+
+Every stage exposes `preflight`, `capability`, `start`, `cancel`, and `close`
+without provider clients, raw provider payloads, provider cancel handles, private
+paths, or credentials in the public signatures. Stage results retain
+session/turn/generation correlation, and result values are omitted from envelope
+`repr`.
+
+Control A preserves the canonical 121-name root surface. The stage package is
+available through explicit stable public package import; `framework` root does
+not import it yet. RealtimeSession injection and factory changes are deferred to
+Control B and are not authorized by this checkpoint.
+
+```text
+checkpoint: FW-RT6-3a Control A
+baseline head: 6fe95075e1c9ae9e62150eb9844edfe9f004a8e2
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 5 files
+stable public package: framework.realtime_stage
+root-public names: 121 / UNCHANGED
+RealtimeSession injection: DEFERRED / Control B
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:END -->

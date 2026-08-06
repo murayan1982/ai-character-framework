@@ -2051,3 +2051,42 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2d-C-RACE-VTS-ALIGNMENT:END -->
+
+
+<!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:BEGIN -->
+## v6.0.0 stable realtime stage protocol package
+
+Host integration code may use the explicitly stable public package
+`framework.realtime_stage` for protocol typing and fake composition boundaries.
+The package provides provider-neutral stage context/result envelopes plus four
+stage protocols with one common lifecycle vocabulary:
+
+```text
+preflight
+capability
+start
+cancel
+close
+```
+
+The stage context carries `session_id`, `turn_id`, and `generation_id`. Requests,
+results, and capability snapshots are existing Framework public models; provider
+clients, raw payloads, provider-specific cancellation handles, credentials, and
+private paths are not public protocol inputs or outputs.
+
+Control A does not change `create_realtime_session`, does not inject or execute a
+stage, and does not add the stage names to the 121-name root-public surface.
+RealtimeSession injection remains deferred to Control B.
+
+```text
+checkpoint: FW-RT6-3a Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+stable public package: framework.realtime_stage
+root-public names: 121 / UNCHANGED
+RealtimeSession injection: DEFERRED / Control B
+real provider execution: False
+network / microphone / playback / real VTS execution: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3a-A-STAGE-PROTOCOL-FOUNDATION:END -->
