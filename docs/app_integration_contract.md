@@ -1134,3 +1134,37 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:END -->
+
+<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:BEGIN -->
+## FW-RT6-2a Control B — core public metadata consumer migration
+
+Five established private `_public_mapping` helpers now delegate to
+`framework.public_safety.public_mapping()`:
+
+```text
+framework/realtime.py
+framework/voice_input.py
+framework/motion.py
+framework/output_control.py
+framework/realtime_capabilities.py
+```
+
+The private helper names remain as compatibility wrappers. Their behavior is
+upgraded from shallow redaction/copying to recursive immutable sanitization.
+
+```text
+baseline head: b351cf74a5b20e55a4aede8746841c05a58bfbb9
+Control B exact change surface: 9 files
+root-public names: 121 / UNCHANGED
+core compatibility helpers delegated: 5
+nested credential redaction: PASS
+nested private path redaction: PASS
+raw exception retained: False
+TextChat raw error event correction: DEFERRED / Control C
+all repository metadata paths claimed migrated: False
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2a Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:END -->

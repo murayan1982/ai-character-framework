@@ -7,6 +7,7 @@ microphone, playback, or VTube Studio, or probe provider availability.
 """
 
 from __future__ import annotations
+from .public_safety import public_mapping as _recursive_public_mapping
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -26,7 +27,8 @@ class CapabilitySnapshotScope(str, Enum):
 
 
 def _public_mapping(value: Mapping[str, Any] | None) -> Mapping[str, Any]:
-    return MappingProxyType(dict(value or {}))
+    """Delegate to the common recursive public-safety utility."""
+    return _recursive_public_mapping(value)
 
 
 def _normalize_optional_reason(value: str | None) -> str | None:

@@ -6,6 +6,7 @@ SDK modules.
 """
 
 from __future__ import annotations
+from .public_safety import public_mapping as _recursive_public_mapping
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -28,20 +29,8 @@ _SECRET_KEY_FRAGMENTS = (
 
 
 def _public_mapping(values: Mapping[str, Any] | None) -> Mapping[str, Any]:
-    """Return a shallow immutable public-safe metadata mapping."""
-
-    if not values:
-        return MappingProxyType({})
-
-    safe: dict[str, Any] = {}
-    for key, value in values.items():
-        text_key = str(key)
-        lower_key = text_key.lower()
-        if any(fragment in lower_key for fragment in _SECRET_KEY_FRAGMENTS):
-            safe[text_key] = "<redacted>"
-        else:
-            safe[text_key] = value
-    return MappingProxyType(safe)
+    """Delegate to the common recursive public-safety utility."""
+    return _recursive_public_mapping(values)
 
 
 class MotionAdapterStatus(str, Enum):

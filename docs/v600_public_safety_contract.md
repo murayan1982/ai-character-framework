@@ -101,3 +101,24 @@ FW-RT6-2a Control D
 real provider execution:
 not authorized
 ```
+
+<!-- FW-RT6-2a-B-CONTRACT:BEGIN -->
+## Control B — core compatibility-helper migration
+
+Control B migrates the five core public-boundary `_public_mapping` helpers to
+the Control A recursive utility while preserving their private names and current
+internal imports.
+
+Protected dependent surfaces include realtime metadata, voice-input metadata,
+motion metadata, interrupt/output-control metadata, and detailed realtime
+capability metadata.
+
+```text
+private helper names: PRESERVED
+root-public names: 121 / UNCHANGED
+public factory signatures: UNCHANGED
+TextChat raw exception event: DEFERRED / Control C
+remaining inventory / aggregate acceptance: Control D
+provider/runtime execution: False
+```
+<!-- FW-RT6-2a-B-CONTRACT:END -->
