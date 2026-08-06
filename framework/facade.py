@@ -12,6 +12,11 @@ if TYPE_CHECKING:
     from config.loader import RuntimeConfig
 
 from framework.version import TEXT_CHAT_API_VERSION
+from framework.public_safety import (
+    PublicErrorClassification,
+    classify_public_exception,
+    public_mapping,
+)
 
 from framework.audio import (
     VoiceOutputRequest,
@@ -208,11 +213,12 @@ class TextChatSession:
         try:
             response = self.ask(message)
         except Exception as exc:  # noqa: BLE001 - public boundary converts to safe result
+            classification = _classify_text_chat_exception(exc)
             return TextChatResult.failed(
-                public_error_code=_text_chat_exception_to_public_error_code(exc),
-                safe_message=_text_chat_exception_to_safe_message(exc),
-                retryable=_text_chat_exception_is_retryable(exc),
-                public_metadata={"boundary": "text_chat"},
+                public_error_code=classification.public_error_code,
+                safe_message=classification.safe_message,
+                retryable=classification.retryable,
+                public_metadata=dict(classification.public_metadata),
             )
 
         text = _text_chat_response_to_text(response)
@@ -248,12 +254,10 @@ class TextChatSession:
                 self._emit_event("response_completed")
         except Exception as exc:
             self._set_state("error")
+            classification = _classify_text_chat_exception(exc)
             self._emit_event(
                 "error",
-                {
-                    "error": str(exc),
-                    "error_type": type(exc).__name__,
-                },
+                _text_chat_error_event_data(classification),
             )
             raise
         finally:
@@ -609,58 +613,94 @@ def _text_chat_response_to_text(response: object) -> str | None:
         return None
     return text
 
+_TEXT_CHAT_SAFE_MESSAGES = {
+    "configuration_missing": "Text chat configuration is missing or invalid.",
+    "authentication_required": "Text chat provider authentication is required.",
+    "rate_limited": "Text chat provider rate limit was reached.",
+    "request_cancelled": "Text chat request was cancelled or interrupted.",
+    "timeout": "Text chat request timed out.",
+    "unsupported_capability": "Text chat capability is not supported by this session.",
+    "session_closed": "Text chat session is closed.",
+    "invalid_request": "Text chat request is invalid.",
+    "provider_request_failed": "Text chat provider request failed.",
+    "provider_unavailable": "Text chat provider is unavailable.",
+    "unknown_error": "Text chat request failed.",
+}
+
+
+def _classify_text_chat_exception(exc: Exception) -> PublicErrorClassification:
+    """Classify one text-chat exception without exposing raw exception material."""
+
+    if isinstance(exc, FacadeConfigError):
+        return PublicErrorClassification(
+            public_error_code="configuration_missing",
+            safe_message=_TEXT_CHAT_SAFE_MESSAGES["configuration_missing"],
+            retryable=False,
+            public_metadata={
+                "boundary": "text_chat",
+                "error_category": "configuration",
+            },
+        )
+
+    if isinstance(exc, FacadeProviderError):
+        return PublicErrorClassification(
+            public_error_code="provider_request_failed",
+            safe_message=_TEXT_CHAT_SAFE_MESSAGES["provider_request_failed"],
+            retryable=True,
+            public_metadata={
+                "boundary": "text_chat",
+                "error_category": "provider_request",
+            },
+        )
+
+    base = classify_public_exception(
+        exc,
+        fallback_error_code="provider_request_failed",
+        fallback_safe_message=_TEXT_CHAT_SAFE_MESSAGES["provider_request_failed"],
+        fallback_retryable=True,
+    )
+    code = base.public_error_code
+    return PublicErrorClassification(
+        public_error_code=code,
+        safe_message=_TEXT_CHAT_SAFE_MESSAGES.get(
+            code,
+            _TEXT_CHAT_SAFE_MESSAGES["unknown_error"],
+        ),
+        retryable=base.retryable,
+        public_metadata={
+            "boundary": "text_chat",
+            **dict(base.public_metadata),
+        },
+    )
+
+
+def _text_chat_error_event_data(
+    classification: PublicErrorClassification,
+) -> dict[str, object]:
+    """Return the stable public TextChat error-event payload."""
+
+    metadata = public_mapping(classification.public_metadata)
+    return {
+        "public_error_code": classification.public_error_code,
+        "safe_message": classification.safe_message,
+        "retryable": classification.retryable,
+        "public_metadata": dict(metadata),
+    }
+
 
 def _text_chat_exception_to_public_error_code(exc: Exception) -> str:
-    """Map private/provider exceptions to provider-neutral public codes."""
+    """Compatibility helper backed by the common safe classifier."""
 
-    combined = f"{exc.__class__.__name__} {exc}".lower()
-    if "closed" in combined:
-        return "session_closed"
-    if "interrupt" in combined or "cancel" in combined:
-        return "request_cancelled"
-    if "timeout" in combined or "timed out" in combined:
-        return "timeout"
-    if "rate" in combined or "quota" in combined:
-        return "rate_limited"
-    if "auth" in combined or "api key" in combined or "apikey" in combined or "credential" in combined:
-        return "authentication_required"
-    if "config" in combined or "preset" in combined or "character" in combined or "missing" in combined:
-        return "configuration_missing"
-    if "unsupported" in combined:
-        return "unsupported_capability"
-    if "provider" in combined or "llm" in combined or "model" in combined:
-        return "provider_request_failed"
-    return "unknown_error"
+    return _classify_text_chat_exception(exc).public_error_code
 
 
 def _text_chat_exception_is_retryable(exc: Exception) -> bool:
-    """Return whether the provider-neutral error is likely retryable."""
+    """Compatibility helper backed by the common safe classifier."""
 
-    return _text_chat_exception_to_public_error_code(exc) in {
-        "provider_unavailable",
-        "provider_request_failed",
-        "rate_limited",
-        "timeout",
-        "request_cancelled",
-        "unknown_error",
-    }
+    return _classify_text_chat_exception(exc).retryable
 
 
 def _text_chat_exception_to_safe_message(exc: Exception) -> str:
-    """Return a safe public message without raw provider details."""
+    """Compatibility helper backed by the common safe classifier."""
 
-    code = _text_chat_exception_to_public_error_code(exc)
-    messages = {
-        "configuration_missing": "Text chat configuration is missing or invalid.",
-        "authentication_required": "Text chat provider authentication is required.",
-        "rate_limited": "Text chat provider rate limit was reached.",
-        "request_cancelled": "Text chat request was cancelled or interrupted.",
-        "timeout": "Text chat request timed out.",
-        "unsupported_capability": "Text chat capability is not supported by this session.",
-        "session_closed": "Text chat session is closed.",
-        "provider_request_failed": "Text chat provider request failed.",
-        "provider_unavailable": "Text chat provider is unavailable.",
-        "unknown_error": "Text chat request failed.",
-    }
-    return messages.get(code, "Text chat request failed.")
-
+    return _classify_text_chat_exception(exc).safe_message

@@ -122,3 +122,72 @@ remaining inventory / aggregate acceptance: Control D
 provider/runtime execution: False
 ```
 <!-- FW-RT6-2a-B-CONTRACT:END -->
+
+<!-- FW-RT6-2a-C-CONTRACT:BEGIN -->
+## Control C — TextChat error event and typed-result adoption
+
+Control C removes raw exception material from the public text-chat streaming
+event boundary and adopts the Control A safe classifier for both streaming
+events and typed results.
+
+### Public error event payload
+
+```text
+public_error_code:
+provider-neutral stable code
+
+safe_message:
+operation-specific message with no provider payload
+
+retryable:
+boolean retry hint
+
+public_metadata:
+recursively sanitized metadata
+```
+
+The previous `error` and `error_type` fields are removed from emitted error
+events. The `TextChatSessionEvent` public model itself remains unchanged.
+
+### Classification contract
+
+```text
+FacadeConfigError:
+configuration_missing
+
+FacadeProviderError:
+provider_request_failed
+
+TimeoutError:
+timeout
+
+InterruptedError:
+request_cancelled
+
+PermissionError:
+authentication_required
+
+ConnectionError:
+provider_unavailable
+
+TypeError / ValueError:
+invalid_request
+
+other exception raised by LLM turn:
+provider_request_failed
+```
+
+Classification never calls `str(error)` or `repr(error)` and never emits the
+exception class name. The original exception is still re-raised by
+`ask_stream()` for compatibility.
+
+### Deferrals
+
+```text
+aggregate tasklist / gap acceptance:
+Control D
+
+event sequencing / subscriber isolation:
+FW-RT6-2b
+```
+<!-- FW-RT6-2a-C-CONTRACT:END -->

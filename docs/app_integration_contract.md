@@ -1168,3 +1168,41 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:END -->
+
+<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:BEGIN -->
+## FW-RT6-2a Control C — TextChat public error safety
+
+`TextChatSession.ask_stream()` preserves its existing exception re-raise behavior,
+but its public `error` event no longer contains a raw exception string or
+exception class name.
+
+The event now exposes only:
+
+```text
+public_error_code
+safe_message
+retryable
+public_metadata
+```
+
+`TextChatSession.ask_result()` and the streaming error event use the same
+provider-neutral classification helper. Classification is based on known
+exception types and the text-chat operation context; it does not inspect
+`str(error)`, `repr(error)`, provider payloads, or exception class names.
+
+```text
+baseline head: 4e1cf483f9e6568033e2b9b00e6bb7d3b0d404f9
+Control C exact change surface: 5 files
+root-public names: 121 / UNCHANGED
+TextChatSessionEvent public type: UNCHANGED
+ask_stream exception re-raise: PRESERVED
+raw exception string in error event: False
+exception class name in error event: False
+ask_result safe classifier adoption: True
+streaming event safe classifier adoption: True
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2a Control D
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:END -->
