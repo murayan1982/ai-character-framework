@@ -1281,15 +1281,15 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] `tests/`へunit test構成を追加する。
-- [ ] test runnerを選定する。
-- [ ] identity/model testsを追加する。
-- [ ] transition testsを追加する。
-- [ ] terminal registry testsを追加する。
-- [ ] generation/stale testsを追加する。
-- [ ] subscriber testsを追加する。
-- [ ] fake runtime testsを追加する。
-- [ ] smoke scriptはaggregate/release gateとして維持する。
+- [x] `tests/`へunit test構成を追加する。
+- [x] test runnerを選定する。
+- [x] identity/model testsを追加する。
+- [x] transition testsを追加する。
+- [x] terminal registry testsを追加する。
+- [x] generation/stale testsを追加する。
+- [x] subscriber testsを追加する。
+- [x] fake runtime testsを追加する。
+- [x] smoke scriptはaggregate/release gateとして維持する。
 
 **Acceptance:**
 
@@ -1303,6 +1303,42 @@ True
 full unit suite:
 PASS
 ```
+
+<!-- FW-RT6-3c-C-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-3c Control C
+baseline head: e368a3db3e1ae6160d6a3c3f01929eb6f256c57a
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A unit-test foundation: ACCEPTED
+Control B runtime primitive coverage: ACCEPTED
+Control C exact change surface: 6 files
+accepted task count: 9
+tests directory non-empty: True
+selected runner: unittest
+identity/model tests: 12
+transition tests: 7
+terminal registry tests: 5
+generation/stale tests: 6
+subscriber/event-hub tests: 7
+deterministic fake-runtime tests: 8
+full discovered unit tests: 45
+unit tests network-free: True
+full unit suite: PASS
+existing smoke/check scripts retained as aggregate/release gates: True
+production runtime source changed: False
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub projection into deterministic fake trace: DEFERRED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-4a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3c-C-ACCEPTANCE-SYNC:END -->
 
 ---
 

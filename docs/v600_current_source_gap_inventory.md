@@ -671,3 +671,45 @@ FW-RT6-3b resolves deterministic provider-free race reproduction. It does not
 claim normal unit-test placement, real provider execution, or production stage
 orchestration.
 <!-- FW-RT6-3b-C-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-3c-C-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-3c normal runtime unit-test gap resolution sync
+
+This sync records the accepted normal `tests/` architecture and its provider-free
+coverage while preserving production orchestration, real adapters, event-hub
+trace projection, and release work as later checkpoints.
+
+```text
+baseline head: e368a3db3e1ae6160d6a3c3f01929eb6f256c57a
+Control A unit-test foundation: ACCEPTED
+Control B runtime primitive coverage: ACCEPTED
+G-16 non-empty normal tests directory: RESOLVED
+G-16 stdlib unittest runner: RESOLVED
+G-16 identity/model unit tests: RESOLVED
+G-16 lifecycle transition unit tests: RESOLVED
+G-16 terminal registry unit tests: RESOLVED
+G-16 generation/stale-completion unit tests: RESOLVED
+G-16 subscriber/event-hub unit tests: RESOLVED
+G-16 deterministic fake-runtime unit tests: RESOLVED
+G-16 smoke/check separation as aggregate/release gates: RESOLVED
+G-16 normal deterministic unit-test architecture: RESOLVED
+G-16 tests directory non-empty: True
+G-16 unit tests network-free: True
+G-16 full unit suite: 45 / PASS
+G-16 event-hub trace projection: UNRESOLVED / LATER CHECKPOINT
+G-15 real legacy runtime adapter migration: UNRESOLVED / LATER CHECKPOINT
+G-01 real unified turn orchestration: UNRESOLVED
+production runtime source changed: False
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-4a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+FW-RT6-3c resolves the missing fast normal unit-test layer. It does not claim
+that real provider adapters are composed or that `RealtimeSession.run_turn()`
+executes the unified production stage chain.
+<!-- FW-RT6-3c-C-GAP-RESOLUTION-SYNC:END -->

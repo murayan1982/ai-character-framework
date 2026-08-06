@@ -2860,3 +2860,52 @@ next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-C-FAKE-RUNTIME-ACCEPTANCE:END -->
+
+<!-- FW-RT6-3c-C-RUNTIME-UNIT-TEST-ACCEPTANCE:BEGIN -->
+## v6.0.0 normal runtime unit-test aggregate acceptance
+
+FW-RT6-3c establishes a non-empty normal `tests/` layer using the Python
+standard-library `unittest` runner. Control A covers identity/models and
+lifecycle transitions. Control B covers terminal ownership, generation and
+stale-completion admission, subscriber/event-hub behavior, and the deterministic
+fake runtime including its actual generation-gate and terminal-registry harness.
+
+The 45-test suite is provider-free and network-free. Existing smoke/check
+scripts remain aggregate, compatibility, and release gates rather than being
+replaced by the normal unit-test layer. Control C records aggregate acceptance
+only and changes no production runtime source.
+
+```text
+checkpoint: FW-RT6-3c Control C
+baseline head: e368a3db3e1ae6160d6a3c3f01929eb6f256c57a
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A unit-test foundation: ACCEPTED
+Control B runtime primitive coverage: ACCEPTED
+Control C exact change surface: 6 files
+tests directory non-empty: True
+selected runner: unittest
+identity/model tests: 12
+transition tests: 7
+terminal registry tests: 5
+generation/stale tests: 6
+subscriber/event-hub tests: 7
+deterministic fake-runtime tests: 8
+full discovered unit tests: 45
+unit tests network-free: True
+full unit suite: PASS
+existing smoke/check scripts retained as aggregate/release gates: True
+production runtime source changed: False
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub projection into deterministic fake trace: DEFERRED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-4a
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-3c accepts a fast provider-neutral regression layer. It does not claim
+real provider execution, production stage orchestration, or release readiness.
+<!-- FW-RT6-3c-C-RUNTIME-UNIT-TEST-ACCEPTANCE:END -->

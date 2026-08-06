@@ -351,6 +351,19 @@ def check_docs() -> None:
             f"missing fake-runtime aggregate marker: {marker}",
         )
 
+    runtime_unit_test_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-3c-C-RUNTIME-UNIT-TEST-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-3c-C-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-3c-C-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in runtime_unit_test_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing runtime-unit-test aggregate marker: {marker}",
+        )
+
     for relative_path in (
         "docs/public_facade.md",
         "docs/app_integration_contract.md",
@@ -362,7 +375,7 @@ def check_docs() -> None:
         ):
             _assert(marker in text, f"missing fake-runtime control marker in {relative_path}: {marker}")
 
-    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-3b")
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-3c")
 
 
 def main() -> None:
@@ -407,9 +420,14 @@ def main() -> None:
     print("v600_realtime_fake_runtime_race_reproducible: True")
     print("v600_realtime_fake_runtime_session_orchestration_changed: False")
     print("v600_realtime_fake_runtime_event_hub_trace_projection: False / deferred")
-    print("v600_next_checkpoint: FW-RT6-3c")
+    print("v600_runtime_unit_test_status: accepted")
+    print("v600_runtime_unit_test_runner: unittest")
+    print("v600_runtime_unit_test_count: 45")
+    print("v600_runtime_unit_tests_network_free: True")
+    print("v600_runtime_unit_test_smoke_separation: accepted")
+    print("v600_next_checkpoint: FW-RT6-4a")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3b deterministic fake runtime")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3c normal runtime unit tests")
 
 
 if __name__ == "__main__":
