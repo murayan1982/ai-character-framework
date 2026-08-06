@@ -365,3 +365,98 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2d-C-RACE-VTS-ALIGNMENT:END -->
+
+<!-- FW-RT6-2d-C1-TERMINAL-CALLBACK-COMPATIBILITY:BEGIN -->
+## FW-RT6-2d Control C corrective 1 — terminal callback compatibility
+
+Control C corrective 1 fixes one compatibility regression introduced by
+RealtimeSession generation-gate adoption. The first terminal commit correctly
+retires the active generation before terminal callback delivery. During that
+callback, however, the session still owns the terminal turn through
+`_active_turn_id`.
+
+The interrupt path previously resolved the current turn only from the generation
+gate. Because the generation was already retired, reentrant `interrupt()` and
+`cancel_current_turn()` incorrectly lost the terminal turn identity and emitted
+ordinary no-active interrupt events instead of passing through terminal-registry
+late-operation rejection.
+
+The corrective resolves the turn in this order:
+
+```text
+generation gate current turn
+or
+currently executing session turn
+```
+
+This preserves both boundaries:
+
+```text
+terminal callback reentry:
+terminal turn identity retained
+late interrupt/cancel rejected
+typed NO_ACTIVE_TURN result retained
+state/phase/history/event count unchanged
+
+normal operation after run_turn returns:
+generation turn absent
+session active turn absent
+ordinary no-active interrupt behavior retained
+```
+
+```text
+checkpoint:
+FW-RT6-2d Control C corrective 1
+
+baseline head:
+7e26f3663f1a0121280dea57114fdfbf79b751dc
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact change surface:
+3 files
+
+runtime correction:
+framework/realtime_session.py / current-turn fallback only
+
+root-public names:
+121 / unchanged
+
+RealtimeEvent public model changed:
+False
+
+RealtimeTurnResult public model changed:
+False
+
+create_realtime_session signature changed:
+False
+
+generation diagnostics keys changed:
+False
+
+event diagnostics keys changed:
+False
+
+terminal diagnostics keys changed:
+False
+
+FW-RT6-2c aggregate terminal acceptance:
+REGRESSION VERIFIED
+
+FW-RT6-2d Controls A/B/C:
+REGRESSION VERIFIED
+
+provider/network/microphone/playback/VTS execution:
+False
+
+Control D candidate:
+ROLLED BACK
+
+Control D:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-2d-C1-TERMINAL-CALLBACK-COMPATIBILITY:END -->

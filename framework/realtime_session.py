@@ -842,7 +842,10 @@ class RealtimeSession:
         if self._closed or self._close_requested:
             return InterruptResult.already_closed(request=request)
 
-        current_turn_id = self._generation_gate.current_turn_id
+        current_turn_id = (
+            self._generation_gate.current_turn_id
+            or self._active_turn_id
+        )
         no_active_turn = current_turn_id is None and request.turn_id is None
         result = (
             InterruptResult.no_active_turn(request=request)
