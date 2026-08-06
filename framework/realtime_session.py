@@ -13,7 +13,7 @@ from pathlib import Path
 from threading import RLock
 import time
 from types import MappingProxyType
-from typing import Any, Callable, Iterator, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Mapping
 
 from .capabilities import _session_realtime_snapshot
 from .identity import EventSequence, GenerationId, SessionId, TurnId
@@ -66,6 +66,13 @@ from .realtime import (
     _public_mapping,
     _require_runtime_event_payload,
 )
+
+if TYPE_CHECKING:
+    from .realtime_generation_gate import (
+        GenerationAdmissionDecision,
+        GenerationAdvanceReason,
+        RealtimeStageCompletionEnvelope,
+    )
 
 
 RealtimeEventCallback = Callable[[RealtimeEvent], None]
@@ -146,6 +153,9 @@ class RealtimeSession:
         self._operation_depth = 0
         self._event_hub = RealtimeEventHub[RealtimeEvent]()
         self._terminal_registry = RealtimeTerminalRegistry[RealtimeTurnResult]()
+        from .realtime_generation_gate import RealtimeGenerationGate
+
+        self._generation_gate = RealtimeGenerationGate()
         self._real_runtime_requested = bool(real_runtime_enabled)
         self._capability_snapshot = _session_realtime_snapshot(
             session_id=self._session_id,
@@ -259,6 +269,118 @@ class RealtimeSession:
             }
         )
 
+    @property
+    def generation_diagnostics(self) -> Mapping[str, int]:
+        """Return immutable count-only generation freshness diagnostics."""
+
+        return self._generation_gate.diagnostics
+
+    def _start_turn_generation(
+        self,
+        turn_id: TurnId | str,
+    ) -> GenerationId:
+        """Start and retain one gate-owned generation for an admitted turn."""
+
+        generation_id = self._generation_gate.start_generation(turn_id)
+        current_turn_id = self._generation_gate.current_turn_id
+        if current_turn_id is None:
+            raise AssertionError("started generation must retain its turn")
+        self._active_turn_id = current_turn_id
+        self._active_generation_id = generation_id
+        return generation_id
+
+    def _advance_generation(
+        self,
+        reason: GenerationAdvanceReason | str,
+        *,
+        turn_id: TurnId | str | None = None,
+    ) -> GenerationId | None:
+        """Retire the current generation only when the optional turn matches."""
+
+        current_turn_id = self._generation_gate.current_turn_id
+        if current_turn_id is None:
+            return None
+        if turn_id is not None and turn_id != current_turn_id:
+            return None
+        return self._generation_gate.advance(reason)
+
+    def _emit_stale_completion_diagnostic(
+        self,
+        decision: GenerationAdmissionDecision[Any],
+    ) -> RealtimeEvent:
+        """Emit one state-neutral canonical diagnostic for a stale completion."""
+
+        if decision.accepted or decision.stale_reason is None:
+            raise ValueError("stale completion diagnostic requires a rejection")
+
+        envelope = decision.envelope
+        state = self._state
+        phase = self._phase
+        metadata: dict[str, Any] = {"boundary": "realtime"}
+        if decision.retired_by is not None:
+            metadata["retired_by"] = decision.retired_by.value
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=RealtimeEventType.STALE_RESULT_DROPPED,
+                state=state,
+                previous_state=state,
+                turn_id=envelope.turn_id,
+                session_id=self._session_id,
+                boundary="realtime",
+                safe_message="Stale realtime stage completion was dropped.",
+                public_metadata=metadata,
+                sequence=sequence,
+                generation_id=envelope.generation_id,
+                phase=phase,
+                payload=DiagnosticEventPayload(
+                    code="stale_stage_completion",
+                    drop_reason=decision.stale_reason.value,
+                ),
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        def overflow_event_factory(
+            sequence: EventSequence,
+            dropped_sequence: EventSequence | None,
+            overflow_count: int,
+        ) -> RealtimeEvent:
+            return self._build_event_overflow(
+                sequence=sequence,
+                dropped_sequence=dropped_sequence,
+                overflow_count=overflow_count,
+                state=state,
+                turn_id=envelope.turn_id,
+                generation_id=envelope.generation_id,
+                phase=phase,
+            )
+
+        return self._event_hub.emit(
+            event_factory,
+            legacy_projector=lambda emitted: emitted.to_v5(),
+            overflow_event_factory=overflow_event_factory,
+        )
+
+    def _apply_stage_completion(
+        self,
+        envelope: RealtimeStageCompletionEnvelope[Any],
+        *,
+        deliver: Callable[[Any], None],
+    ) -> GenerationAdmissionDecision[Any]:
+        """Atomically admit and apply one current stage completion."""
+
+        if not callable(deliver):
+            raise TypeError("deliver must be callable")
+
+        with self._serialized_operation():
+            decision = self._generation_gate.admit_completion(envelope)
+            if decision.accepted:
+                deliver(envelope.value)
+            elif not self._closed and not self._close_requested:
+                self._emit_stale_completion_diagnostic(decision)
+            return decision
+
     def _session_closed_error(self) -> LifecycleTransitionError:
         return LifecycleTransitionError(
             LifecycleTransitionErrorCode.SESSION_CLOSED,
@@ -309,6 +431,10 @@ class RealtimeSession:
             )
         )
         if decision.accepted:
+            self._advance_generation(
+                "turn_terminal",
+                turn_id=result.turn_id,
+            )
             self._transition(
                 event_type,
                 new_state,
@@ -579,8 +705,7 @@ class RealtimeSession:
         if existing_terminal is not None:
             return existing_terminal
 
-        self._active_turn_id = turn.turn_id
-        self._active_generation_id = GenerationId.new()
+        self._start_turn_generation(turn.turn_id)
         transcript_text = turn.input_text or input_text
 
         try:
@@ -695,11 +820,16 @@ class RealtimeSession:
 
     def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
         with self._serialized_operation():
-            return self._interrupt_serialized(request)
+            return self._interrupt_serialized(
+                request,
+                advance_reason="interrupt",
+            )
 
     def _interrupt_serialized(
         self,
         request: InterruptRequest | None = None,
+        *,
+        advance_reason: GenerationAdvanceReason | str = "interrupt",
     ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
@@ -712,13 +842,18 @@ class RealtimeSession:
         if self._closed or self._close_requested:
             return InterruptResult.already_closed(request=request)
 
-        no_active_turn = self._active_turn_id is None and request.turn_id is None
+        current_turn_id = self._generation_gate.current_turn_id
+        no_active_turn = current_turn_id is None and request.turn_id is None
         result = (
             InterruptResult.no_active_turn(request=request)
             if no_active_turn
             else InterruptResult.not_implemented(request=request)
         )
-        resolved_turn_id = request.turn_id or self._active_turn_id
+        resolved_turn_id = request.turn_id or current_turn_id
+        self._advance_generation(
+            advance_reason,
+            turn_id=resolved_turn_id,
+        )
 
         try:
             self._transition(
@@ -800,12 +935,15 @@ class RealtimeSession:
             request = InterruptRequest(
                 scope=InterruptScope.CURRENT_TURN,
                 reason=reason,
-                turn_id=self._active_turn_id,
+                turn_id=self._generation_gate.current_turn_id,
                 cancel_llm_stream=True,
                 cancel_tts_queue=True,
                 public_metadata=public_metadata or {},
             )
-            return self._interrupt_serialized(request)
+            return self._interrupt_serialized(
+                request,
+                advance_reason="cancel",
+            )
 
     def flush_output(self, request: OutputFlushRequest | None = None) -> OutputFlushResult:
         with self._serialized_operation():
@@ -974,6 +1112,7 @@ class RealtimeSession:
         with self._operation_lock:
             if self._closed or self._close_requested:
                 return
+            self._advance_generation("session_closed")
             if self._operation_depth > 0:
                 self._close_requested = True
                 return

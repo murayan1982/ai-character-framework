@@ -16,23 +16,23 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-EXPECTED_BASELINE = "498e27ec264b0120f1f94a859cff6462bdfc7acd"
-EXPECTED_BASELINE_PARENT = "8393c82a312af73f0b18db106b6e32c959f251a2"
-EXPECTED_BASELINE_SUBJECT = "docs/test: accept realtime terminal registry"
+EXPECTED_BASELINE = "e3f5ce7088596e1f2ceaa3c504a16b35c47863b8"
+EXPECTED_BASELINE_PARENT = "498e27ec264b0120f1f94a859cff6462bdfc7acd"
+EXPECTED_BASELINE_SUBJECT = "feat/test: add realtime generation gate primitives"
 EXPECTED_BASELINE_SURFACE = {
-    "README.md",
-    "docs/v600_current_source_gap_inventory.md",
-    "docs/v600_tasklist.md",
-    "scripts/check_v600_realtime_terminal_registry_acceptance.py",
-    "scripts/smoke_v600_public_api_manifest.py",
-    "scripts/smoke_v600_version_metadata.py",
-}
-EXPECTED_SURFACE = {
     "docs/app_integration_contract.md",
     "docs/public_facade.md",
     "docs/v600_realtime_generation_gate_contract.md",
     "framework/realtime_generation_gate.py",
     "scripts/smoke_v600_realtime_generation_gate_primitives.py",
+}
+EXPECTED_SURFACE = {
+    "docs/app_integration_contract.md",
+    "docs/public_facade.md",
+    "docs/v600_realtime_generation_gate_contract.md",
+    "framework/realtime_session.py",
+    "scripts/smoke_v600_realtime_generation_gate_primitives.py",
+    "scripts/smoke_v600_realtime_generation_gate_session_adoption.py",
 }
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "elevenlabs",
@@ -107,13 +107,13 @@ def check_repository_contract() -> None:
     )
     _assert(
         _commit_surface(EXPECTED_BASELINE) == EXPECTED_BASELINE_SURFACE,
-        "accepted Control D surface drift",
+        "accepted Control A surface drift",
     )
     _assert(
         _changed_paths() == EXPECTED_SURFACE,
-        f"unexpected Control A surface: {sorted(_changed_paths())}",
+        f"unexpected Control B surface: {sorted(_changed_paths())}",
     )
-    print("[OK] accepted FW-RT6-2c baseline and exact five-file Control A surface conform")
+    print("[OK] accepted Control A baseline and exact six-file Control B surface conform")
 
 
 def check_root_public_compatibility() -> None:
@@ -488,14 +488,28 @@ def check_docs_and_scope() -> None:
                 f"generation contract missing {phrase}: {relative}",
             )
 
+    session_source = (
+        PROJECT_ROOT / "framework" / "realtime_session.py"
+    ).read_text(encoding="utf-8")
     _assert(
-        "RealtimeGenerationGate"
-        not in (PROJECT_ROOT / "framework" / "realtime_session.py").read_text(
-            encoding="utf-8"
-        ),
-        "Control A changed session adoption before Control B",
+        "_generation_gate" in session_source,
+        "Control B session generation ownership is missing",
     )
-    print("[OK] docs record primitive-only scope and defer RealtimeSession adoption")
+    _assert(
+        "_apply_stage_completion" in session_source,
+        "Control B central completion ingress is missing",
+    )
+    for relative in (
+        "docs/app_integration_contract.md",
+        "docs/public_facade.md",
+        "docs/v600_realtime_generation_gate_contract.md",
+    ):
+        text = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
+        _assert(
+            "FW-RT6-2d-B-REALTIME-SESSION-GENERATION-ADOPTION:BEGIN" in text,
+            f"Control B adoption marker missing: {relative}",
+        )
+    print("[OK] Control A primitives remain documented under Control B adoption")
 
 
 def check_import_safety() -> None:
@@ -519,8 +533,8 @@ def main() -> None:
     check_docs_and_scope()
     check_import_safety()
 
-    print("v600_rt6_2d_control_a_status: implemented-awaiting-review")
-    print("v600_rt6_2d_control_a_exact_change_surface_count: 5")
+    print("v600_rt6_2d_control_a_status: accepted-control-b-regression")
+    print("v600_rt6_2d_control_a_exact_change_surface_count: 6")
     print("v600_rt6_2d_control_a_generation_gate_internal: True")
     print("v600_rt6_2d_control_a_root_public_names: 121 / unchanged")
     print("v600_rt6_2d_control_a_generation_start_fresh: True")
@@ -530,12 +544,12 @@ def main() -> None:
     print("v600_rt6_2d_control_a_unknown_completion_rejected: True")
     print("v600_rt6_2d_control_a_turn_mismatch_rejected: True")
     print("v600_rt6_2d_control_a_generation_diagnostics_immutable: True")
-    print("v600_rt6_2d_control_a_session_adoption: deferred-Control-B")
-    print("v600_rt6_2d_control_a_stale_diagnostic_event: deferred-Control-B")
+    print("v600_rt6_2d_control_a_session_adoption: implemented-Control-B")
+    print("v600_rt6_2d_control_a_stale_diagnostic_event: implemented-Control-B")
     print("v600_rt6_2d_control_a_vts_alignment: deferred-Control-C")
     print("v600_rt6_2d_control_a_provider_network_microphone_playback_vts_execution: False")
-    print("v600_rt6_2d_control_b_authorized: False")
-    print("[OK] FW-RT6-2d Control A generation gate primitives conform")
+    print("v600_rt6_2d_control_b_authorized: True")
+    print("[OK] FW-RT6-2d Control A primitives conform under Control B adoption")
 
 
 if __name__ == "__main__":
