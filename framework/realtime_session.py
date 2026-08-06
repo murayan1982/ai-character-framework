@@ -42,6 +42,10 @@ from .version import REALTIME_API_VERSION
 
 from .realtime_capabilities import RealtimeCapabilitySnapshot
 from .realtime_event_hub import RealtimeEventHub
+from .realtime_terminal_registry import (
+    RealtimeTerminalRegistry,
+    TerminalCommitDecision,
+)
 from .realtime_event_payloads import (
     DiagnosticEventPayload,
     InterruptEventPayload,
@@ -124,6 +128,7 @@ class RealtimeSession:
         self._operation_lock = RLock()
         self._operation_depth = 0
         self._event_hub = RealtimeEventHub[RealtimeEvent]()
+        self._terminal_registry = RealtimeTerminalRegistry[RealtimeTurnResult]()
         self._real_runtime_requested = bool(real_runtime_enabled)
         self._capability_snapshot = _session_realtime_snapshot(
             session_id=self._session_id,
@@ -212,12 +217,95 @@ class RealtimeSession:
             }
         )
 
+    @property
+    def terminal_results(self) -> tuple[RealtimeTurnResult, ...]:
+        """Return first-terminal results in atomic commit order."""
+
+        return tuple(
+            record.result
+            for record in self._terminal_registry.records
+            if record.result is not None
+        )
+
+    @property
+    def terminal_diagnostics(self) -> Mapping[str, int]:
+        """Return immutable count-only terminal registry diagnostics."""
+
+        diagnostics = self._terminal_registry.diagnostics
+        return MappingProxyType(
+            {
+                "terminal_commit_count": diagnostics.terminal_commit_count,
+                "duplicate_terminal_count": diagnostics.duplicate_terminal_count,
+                "terminal_regression_count": diagnostics.terminal_regression_count,
+                "late_non_terminal_count": diagnostics.late_non_terminal_count,
+                "registry_size": diagnostics.registry_size,
+            }
+        )
+
     def _session_closed_error(self) -> LifecycleTransitionError:
         return LifecycleTransitionError(
             LifecycleTransitionErrorCode.SESSION_CLOSED,
             from_phase=self._phase,
             to_phase=None,
         )
+
+    def _duplicate_terminal_result(
+        self,
+        turn_id: TurnId | str,
+    ) -> RealtimeTurnResult | None:
+        """Return and account for an already committed terminal result."""
+
+        existing = self._terminal_registry.get(turn_id)
+        if existing is None:
+            return None
+        decision = self._terminal_registry.commit(
+            turn_id,
+            existing.outcome,
+            recovery_action=existing.recovery_action,
+            reason=existing.reason,
+            result=existing.result,
+        )
+        if decision.accepted:
+            raise AssertionError("existing terminal record was recommitted")
+        result = decision.record.result
+        if result is None:
+            raise AssertionError("session terminal record must retain its result")
+        return result
+
+    def _commit_terminal_result(
+        self,
+        result: RealtimeTurnResult,
+        *,
+        event_type: RealtimeEventType,
+        new_state: RealtimeState,
+        reason: str,
+    ) -> RealtimeTurnResult:
+        """Commit one terminal result and let only the first owner emit."""
+
+        decision: TerminalCommitDecision[RealtimeTurnResult] = (
+            self._terminal_registry.commit(
+                result.turn_id,
+                result.outcome,
+                recovery_action=result.recovery_action,
+                reason=reason,
+                result=result,
+            )
+        )
+        if decision.accepted:
+            self._transition(
+                event_type,
+                new_state,
+                turn_id=result.turn_id,
+                payload=LifecycleEventPayload(
+                    outcome=decision.record.outcome,
+                    recovery_action=decision.record.recovery_action,
+                    reason=decision.record.reason,
+                ),
+            )
+        committed = decision.record.result
+        if committed is None:
+            raise AssertionError("session terminal record must retain its result")
+        return committed
 
     @contextmanager
     def _serialized_operation(self) -> Iterator[None]:
@@ -459,6 +547,10 @@ class RealtimeSession:
         if self._closed or self._close_requested:
             return RealtimeTurnResult.closed(turn_id=turn.turn_id)
 
+        existing_terminal = self._duplicate_terminal_result(turn.turn_id)
+        if existing_terminal is not None:
+            return existing_terminal
+
         self._active_turn_id = turn.turn_id
         self._active_generation_id = GenerationId.new()
         transcript_text = turn.input_text or input_text
@@ -522,25 +614,7 @@ class RealtimeSession:
             payload=SynthesisEventPayload(request_state="completed"),
             public_metadata={"mock_stage": "voice_output"},
         )
-        self._transition(
-            RealtimeEventType.TURN_COMPLETED,
-            RealtimeState.COMPLETED,
-            turn_id=turn.turn_id,
-            payload=LifecycleEventPayload(
-                outcome=TurnOutcome.COMPLETED,
-                recovery_action=RecoveryAction.NONE,
-                reason="mock_turn_completed",
-            ),
-        )
-
-        self._active_turn_id = None
-        self._active_generation_id = None
-        # A completed turn returns the session to idle for the next host-app
-        # interaction, without emitting another event.
-        self._set_phase(RealtimePhase.IDLE)
-        self._state = RealtimeState.IDLE
-
-        return RealtimeTurnResult.completed(
+        result = RealtimeTurnResult.completed(
             turn_id=turn.turn_id,
             input_text=turn.input_text or input_text,
             output_text="",
@@ -550,6 +624,21 @@ class RealtimeSession:
                 **dict(public_metadata or {}),
             },
         )
+        committed_result = self._commit_terminal_result(
+            result,
+            event_type=RealtimeEventType.TURN_COMPLETED,
+            new_state=RealtimeState.COMPLETED,
+            reason="mock_turn_completed",
+        )
+
+        self._active_turn_id = None
+        self._active_generation_id = None
+        # A completed turn returns the session to idle for the next host-app
+        # interaction, without emitting another event.
+        self._set_phase(RealtimePhase.IDLE)
+        self._state = RealtimeState.IDLE
+
+        return committed_result
 
     def get_tts_queue_state(self) -> TTSQueueState:
         """Return a mock-safe public TTS queue snapshot."""

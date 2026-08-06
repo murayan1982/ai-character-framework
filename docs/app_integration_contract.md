@@ -1501,3 +1501,107 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2c-A-TERMINAL-REGISTRY-PRIMITIVES:END -->
+
+<!-- FW-RT6-2c-B-REALTIME-SESSION-TERMINAL-ADOPTION:BEGIN -->
+## FW-RT6-2c Control B — RealtimeSession terminal-registry adoption
+
+`RealtimeSession` now owns one internal `RealtimeTerminalRegistry` and routes its
+current mock `TURN_COMPLETED` event/result path through one first-terminal
+commit boundary.
+
+```text
+registry scope:
+one RealtimeSession
+
+current session-owned terminal path:
+TURN_COMPLETED
+
+terminal ownership commit:
+before terminal event delivery
+
+terminal callback observes committed result:
+True
+
+same turn_id run_turn retry:
+returns first committed result
+
+same turn_id retry emits lifecycle events:
+False
+
+same turn_id retry terminal event:
+False
+
+first terminal event count per turn:
+1
+
+first terminal result replaced:
+False
+```
+
+The accepted result is stored before the terminal event is delivered. Because
+callback delivery is synchronous, a `TURN_COMPLETED` callback can read
+`terminal_results` and `terminal_diagnostics` and observe the committed record.
+
+New public `RealtimeSession` read-only surfaces:
+
+```text
+terminal_results:
+tuple[RealtimeTurnResult, ...]
+
+terminal_diagnostics:
+Mapping[str, int]
+```
+
+`terminal_results` contains the stored first-terminal results in commit order.
+`terminal_diagnostics` contains count-only registry diagnostics:
+
+```text
+terminal_commit_count
+duplicate_terminal_count
+terminal_regression_count
+late_non_terminal_count
+registry_size
+```
+
+No internal registry class or record class is exported from the Framework root.
+`RealtimeEvent`, `RealtimeTurnResult`, and the session factory signature remain
+unchanged.
+
+```text
+root-public names:
+121 / unchanged
+
+RealtimeEvent public model changed:
+False
+
+RealtimeTurnResult public model changed:
+False
+
+create_realtime_session signature changed:
+False
+
+event_diagnostics keys changed:
+False
+
+terminal reason/result retained:
+True
+
+duplicate terminal event suppression:
+ADOPTED FOR CURRENT SESSION TERMINAL PATH
+
+reentrant late non-terminal rejection:
+DEFERRED / FW-RT6-2c Control C
+
+multi-thread session integration race:
+DEFERRED / FW-RT6-2c Control C
+
+generation stale-result rejection:
+DEFERRED / FW-RT6-2d
+
+provider/network/microphone/playback/VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-2c-B-REALTIME-SESSION-TERMINAL-ADOPTION:END -->

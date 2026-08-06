@@ -162,3 +162,120 @@ Control C
 generation stale-result rejection:
 FW-RT6-2d
 ```
+
+## Control B — RealtimeSession adoption
+
+Control B composes the accepted internal registry into `RealtimeSession`
+without exporting registry types from the Framework root.
+
+### Session-owned registry
+
+Each session constructs exactly one:
+
+```text
+RealtimeTerminalRegistry[RealtimeTurnResult]
+```
+
+The registry survives until the session object is discarded. Session close does
+not erase terminal results or diagnostics; both remain readable after close.
+
+### Public read-only surfaces
+
+```python
+session.terminal_results
+session.terminal_diagnostics
+```
+
+`terminal_results` is an immutable tuple containing first-terminal
+`RealtimeTurnResult` objects in commit order.
+
+`terminal_diagnostics` is an immutable mapping with exactly these keys:
+
+```text
+terminal_commit_count
+duplicate_terminal_count
+terminal_regression_count
+late_non_terminal_count
+registry_size
+```
+
+The existing `event_diagnostics` mapping remains unchanged.
+
+### Terminal event/result ordering
+
+The current mock `run_turn(...)` completion path follows this order:
+
+```text
+1. construct RealtimeTurnResult.completed
+2. atomically commit result/outcome/recovery/reason to terminal registry
+3. if accepted, emit one TURN_COMPLETED event
+4. clear active turn/generation
+5. restore session idle phase/state
+6. return the committed result object
+```
+
+During step 3 callback delivery, steps 1 and 2 are already complete. A callback
+therefore observes the result in `terminal_results` and
+`terminal_commit_count == 1`.
+
+Only the accepted first-terminal decision emits the terminal event. A
+suppressed decision returns the first stored result and emits no second
+terminal event.
+
+### Sequential duplicate turn ID
+
+When `run_turn(...)` receives a turn ID that already has a terminal record:
+
+```text
+non-terminal stage events:
+not emitted
+
+terminal event:
+not emitted
+
+returned object:
+first committed RealtimeTurnResult
+
+duplicate_terminal_count:
+incremented
+```
+
+Changed input text or metadata on the retry does not replace the first result,
+reason, recovery action, or terminal record.
+
+### Current-path boundary
+
+Control B adopts exactly-once ownership for the terminal path currently emitted
+by the mock session:
+
+```text
+TURN_COMPLETED
+```
+
+The generic private commit helper accepts any `RealtimeTurnResult` and terminal
+event type so later failure, rejection, cancellation, and interruption paths can
+use the same boundary as they are wired.
+
+Control B does not claim that provider-driven or not-yet-implemented terminal
+paths already execute.
+
+### Deferrals
+
+A callback can reenter the session because the accepted operation lock is an
+`RLock`. Guarding every non-terminal transition against a terminal committed by
+a nested/reentrant operation, and deterministic multi-thread integration-race
+tests, remain Control C.
+
+```text
+reentrant late non-terminal hardening:
+Control C
+
+multi-thread session integration race:
+Control C
+
+generation stale-result rejection:
+FW-RT6-2d
+
+aggregate task/gap acceptance:
+Control D
+```
