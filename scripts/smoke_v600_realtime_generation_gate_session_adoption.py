@@ -17,23 +17,24 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-EXPECTED_BASELINE = "e3f5ce7088596e1f2ceaa3c504a16b35c47863b8"
-EXPECTED_BASELINE_PARENT = "498e27ec264b0120f1f94a859cff6462bdfc7acd"
-EXPECTED_BASELINE_SUBJECT = "feat/test: add realtime generation gate primitives"
+EXPECTED_BASELINE = "56ca83965f288d0c591a3969c45cb92b820a380a"
+EXPECTED_BASELINE_PARENT = "e3f5ce7088596e1f2ceaa3c504a16b35c47863b8"
+EXPECTED_BASELINE_SUBJECT = "refactor/test: adopt realtime generation gate"
 EXPECTED_BASELINE_SURFACE = {
-    "docs/app_integration_contract.md",
-    "docs/public_facade.md",
-    "docs/v600_realtime_generation_gate_contract.md",
-    "framework/realtime_generation_gate.py",
-    "scripts/smoke_v600_realtime_generation_gate_primitives.py",
-}
-EXPECTED_SURFACE = {
     "docs/app_integration_contract.md",
     "docs/public_facade.md",
     "docs/v600_realtime_generation_gate_contract.md",
     "framework/realtime_session.py",
     "scripts/smoke_v600_realtime_generation_gate_primitives.py",
     "scripts/smoke_v600_realtime_generation_gate_session_adoption.py",
+}
+EXPECTED_SURFACE = {
+    "docs/app_integration_contract.md",
+    "docs/public_facade.md",
+    "docs/v600_realtime_generation_gate_contract.md",
+    "scripts/smoke_v600_realtime_generation_gate_primitives.py",
+    "scripts/smoke_v600_realtime_generation_gate_session_adoption.py",
+    "scripts/smoke_v600_realtime_generation_gate_race_alignment.py",
 }
 FORBIDDEN_IMPORT_FRAGMENTS = (
     "elevenlabs",
@@ -132,13 +133,13 @@ def check_repository_contract() -> None:
     )
     _assert(
         _commit_surface(EXPECTED_BASELINE) == EXPECTED_BASELINE_SURFACE,
-        "accepted Control A surface drift",
+        "accepted Control B surface drift",
     )
     _assert(
         _changed_paths() == EXPECTED_SURFACE,
-        f"unexpected Control B surface: {sorted(_changed_paths())}",
+        f"unexpected Control C surface: {sorted(_changed_paths())}",
     )
-    print("[OK] accepted Control A baseline and exact six-file Control B surface conform")
+    print("[OK] accepted Control B baseline and exact six-file docs/test-only Control C surface conform")
 
 
 def check_lazy_internal_adoption() -> tuple[Any, Any, Any]:
@@ -663,7 +664,10 @@ def check_docs_and_safety() -> None:
             "STALE_RESULT_DROPPED",
             "stale_stage_completion",
             "generation_diagnostics",
-            "Control C race and VTS alignment: NOT_AUTHORIZED",
+            "FW-RT6-2d-C-RACE-VTS-ALIGNMENT:BEGIN",
+            "completion application wins",
+            "generation advance wins",
+            "VTS lifecycle-generation alignment",
         ):
             _assert(phrase in normalized, f"Control B contract missing {phrase}: {relative}")
 
@@ -673,7 +677,7 @@ def check_docs_and_safety() -> None:
         if any(fragment in name.lower() for fragment in FORBIDDEN_IMPORT_FRAGMENTS)
     )
     _assert(not forbidden, f"forbidden provider/runtime imports loaded: {forbidden}")
-    print("[OK] Control B docs and provider/runtime safety conform")
+    print("[OK] Control B adoption remains documented through Control C alignment")
 
 
 def main() -> None:
@@ -709,7 +713,7 @@ def main() -> None:
     )
     check_docs_and_safety()
 
-    print("v600_rt6_2d_control_b_status: implemented-awaiting-review")
+    print("v600_rt6_2d_control_b_status: accepted-control-c-regression")
     print("v600_rt6_2d_control_b_exact_change_surface_count: 6")
     print("v600_rt6_2d_control_b_control_a_regression_updated: True")
     print("v600_rt6_2d_control_b_generation_gate_lazy_session_owned: True")
@@ -727,8 +731,8 @@ def main() -> None:
     print("v600_rt6_2d_control_b_factory_signature_changed: False")
     print("v600_rt6_2d_control_b_public_reset_added: False")
     print("v600_rt6_2d_control_b_provider_network_microphone_playback_vts_execution: False")
-    print("v600_rt6_2d_control_c_authorized: False")
-    print("[OK] FW-RT6-2d Control B RealtimeSession generation adoption conforms")
+    print("v600_rt6_2d_control_c_authorized: True")
+    print("[OK] FW-RT6-2d Control B session adoption conforms under Control C alignment")
 
 
 if __name__ == "__main__":

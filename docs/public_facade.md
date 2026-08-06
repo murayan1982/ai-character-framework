@@ -2409,3 +2409,91 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2d-B-REALTIME-SESSION-GENERATION-ADOPTION:END -->
+
+<!-- FW-RT6-2d-C-RACE-VTS-ALIGNMENT:BEGIN -->
+## FW-RT6-2d Control C — generation race and VTS alignment
+
+Control C is docs/test-only. The accepted Control B runtime source is unchanged.
+It verifies that stage-completion application and every generation-invalidating
+operation are linearized by the same reentrant session operation lock.
+
+```text
+exact change surface:
+6 files / docs-test-only
+
+runtime source changed:
+False
+
+root-public names:
+121 / unchanged
+```
+
+### Session race rule
+
+The operation that first owns the session operation lock wins.
+
+```text
+completion application wins:
+freshness accepted / deliver(value) completes before invalidation
+
+generation advance wins:
+completion stale / deliver(value) is never called
+```
+
+The rule is verified for interrupt, cancel, close, and new-turn replacement.
+First terminal commit retires the generation by `turn_terminal` before terminal
+callback delivery. A same-generation completion re-entered from the terminal
+callback is stale and cannot change the retained terminal result.
+
+Stale text-generation deltas, voice-output artifacts, and motion completions are
+not copied into their original delivery surfaces. Open-session drops emit one
+canonical v6-only `STALE_RESULT_DROPPED`; close-requested and post-close drops
+remain count-observable without post-close event emission.
+
+### VTube Studio alignment
+
+The existing VTube Studio transport source is not changed. Its operation-local
+`_lifecycle_generation` capture, post-await generation checks, and close-time
+generation increment implement the same semantic rule:
+
+```text
+operation completion before close generation advance:
+completion may be applied
+
+close generation advance before operation completion:
+late completion suppressed
+```
+
+Control C verifies source ordering and executes an injected in-memory async
+client. It does not import real `pyvts`, open a network connection, read private
+configuration, trigger a real hotkey, or execute real motion.
+
+```text
+checkpoint:
+FW-RT6-2d Control C
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+Control A:
+ACCEPTED / REGRESSION VERIFIED
+
+Control B:
+ACCEPTED / REGRESSION VERIFIED
+
+race linearization:
+VERIFIED
+
+VTS lifecycle-generation alignment:
+VERIFIED / SOURCE UNCHANGED
+
+Control D:
+NOT_AUTHORIZED
+
+provider/network/microphone/playback/VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-2d-C-RACE-VTS-ALIGNMENT:END -->
