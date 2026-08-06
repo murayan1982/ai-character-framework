@@ -2809,3 +2809,54 @@ The accepted injection boundary is a composition contract, not a claim that the
 legacy STT, LLM, TTS, or motion implementations already run behind
 `RealtimeSession`.
 <!-- FW-RT6-3a-C-STAGE-PROTOCOL-ACCEPTANCE:END -->
+
+<!-- FW-RT6-3b-C-FAKE-RUNTIME-ACCEPTANCE:BEGIN -->
+## v6.0.0 deterministic fake-runtime aggregate acceptance
+
+FW-RT6-3b Control A establishes the explicit provider-neutral
+`framework.realtime_fake_runtime` package, deterministic integer-tick
+clock/scheduler, stage pause/resume, artificial delay, late completion,
+duplicate terminal, cancellation timeout, queue overflow, and exact
+metadata-free trace assertions. Control B adds the explicit
+`DeterministicRealtimeRaceHarness`, which drives the accepted
+`RealtimeGenerationGate` and `RealtimeTerminalRegistry` without changing
+`RealtimeSession` orchestration.
+
+Control C records aggregate acceptance only. It changes no runtime source and
+does not add event-hub trace projection, normal `tests/` coverage, real provider
+adapters, or unified production turn orchestration.
+
+```text
+checkpoint: FW-RT6-3b Control C
+baseline head: 5a565afbb19e81f55d35e89486c2327a47d87ab5
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A deterministic fake runtime controller: ACCEPTED
+Control B generation-gate / terminal-registry adoption: ACCEPTED
+Control C exact change surface: 6 files
+runtime source changed: False
+explicit package: framework.realtime_fake_runtime
+deterministic controller: DeterministicFakeRuntimeController
+deterministic race harness: DeterministicRealtimeRaceHarness
+fake clock / scheduler: ACCEPTED
+stage pause / resume: ACCEPTED
+artificial delay: ACCEPTED
+late completion injection: ACCEPTED
+duplicate terminal injection: ACCEPTED
+cancellation timeout injection: ACCEPTED
+queue overflow injection: ACCEPTED
+deterministic event trace assertion helper: ACCEPTED
+actual generation gate adoption: True
+actual terminal registry adoption: True
+race reproducible: True
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+normal unit-test layer: DEFERRED / FW-RT6-3c
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-C-FAKE-RUNTIME-ACCEPTANCE:END -->

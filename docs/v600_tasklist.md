@@ -1209,14 +1209,14 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] fake clock/schedulerを追加する。
-- [ ] stage pause/resumeを追加する。
-- [ ] artificial delayを追加する。
-- [ ] late completion injectionを追加する。
-- [ ] duplicate terminal injectionを追加する。
-- [ ] cancellation timeout injectionを追加する。
-- [ ] queue overflow injectionを追加する。
-- [ ] deterministic event trace assertion helperを追加する。
+- [x] fake clock/schedulerを追加する。
+- [x] stage pause/resumeを追加する。
+- [x] artificial delayを追加する。
+- [x] late completion injectionを追加する。
+- [x] duplicate terminal injectionを追加する。
+- [x] cancellation timeout injectionを追加する。
+- [x] queue overflow injectionを追加する。
+- [x] deterministic event trace assertion helperを追加する。
 
 **Acceptance:**
 
@@ -1236,6 +1236,42 @@ False
 race reproducible:
 True
 ```
+
+
+<!-- FW-RT6-3b-C-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-3b Control C
+baseline head: 5a565afbb19e81f55d35e89486c2327a47d87ab5
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A deterministic fake runtime controller: ACCEPTED
+Control B generation-gate / terminal-registry adoption: ACCEPTED
+Control C exact change surface: 6 files
+runtime source changed: False
+explicit package: framework.realtime_fake_runtime
+deterministic controller: DeterministicFakeRuntimeController
+deterministic race harness: DeterministicRealtimeRaceHarness
+accepted task count: 8
+actual generation gate adoption: True
+actual terminal registry adoption: True
+race reproducible: True
+network: False
+provider SDK: False
+microphone: False
+playback: False
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+normal unit-test layer: DEFERRED / FW-RT6-3c
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-C-ACCEPTANCE-SYNC:END -->
 
 ---
 

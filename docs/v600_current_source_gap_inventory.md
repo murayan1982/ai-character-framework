@@ -628,3 +628,46 @@ FW-RT6-3a resolves the missing public composition boundary. It does not claim
 that legacy provider adapters have been migrated or that a real provider-driven
 turn is orchestrated by `RealtimeSession`.
 <!-- FW-RT6-3a-C-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-3b-C-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-3b deterministic fake-runtime gap resolution sync
+
+This sync records the accepted deterministic race/fault controller and its
+actual generation-gate/terminal-registry adoption while preserving event-hub
+trace projection, normal unit-test architecture, real adapters, and unified
+production orchestration as later work.
+
+```text
+baseline head: 5a565afbb19e81f55d35e89486c2327a47d87ab5
+Control A deterministic fake runtime controller: ACCEPTED
+Control B generation-gate / terminal-registry adoption: ACCEPTED
+G-16 deterministic fake runtime controller: RESOLVED
+G-16 fake clock / scheduler: RESOLVED
+G-16 stage pause / resume: RESOLVED
+G-16 artificial delay: RESOLVED
+G-16 late completion injection: RESOLVED
+G-16 duplicate terminal injection: RESOLVED
+G-16 cancellation timeout injection: RESOLVED
+G-16 queue overflow injection: RESOLVED
+G-16 deterministic event trace assertion helper: RESOLVED
+G-16 actual generation-gate deterministic adoption: RESOLVED
+G-16 actual terminal-registry deterministic adoption: RESOLVED
+G-16 race reproducible: True
+G-16 event-hub trace projection: UNRESOLVED / LATER CHECKPOINT
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+G-15 real legacy runtime adapter migration: UNRESOLVED / LATER CHECKPOINT
+G-01 real unified turn orchestration: UNRESOLVED
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-3c
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+FW-RT6-3b resolves deterministic provider-free race reproduction. It does not
+claim normal unit-test placement, real provider execution, or production stage
+orchestration.
+<!-- FW-RT6-3b-C-GAP-RESOLUTION-SYNC:END -->

@@ -338,7 +338,31 @@ def check_docs() -> None:
             f"missing stage-protocol aggregate marker: {marker}",
         )
 
-    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-3a")
+    fake_runtime_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-3b-C-FAKE-RUNTIME-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-3b-C-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-3b-C-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in fake_runtime_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing fake-runtime aggregate marker: {marker}",
+        )
+
+    for relative_path in (
+        "docs/public_facade.md",
+        "docs/app_integration_contract.md",
+    ):
+        text = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+        for marker in (
+            "FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:BEGIN",
+            "FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:BEGIN",
+        ):
+            _assert(marker in text, f"missing fake-runtime control marker in {relative_path}: {marker}")
+
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-3b")
 
 
 def main() -> None:
@@ -374,9 +398,18 @@ def main() -> None:
     print("v600_realtime_stage_fake_injection: PASS")
     print("v600_realtime_stage_run_turn_execution: False / deferred")
     print("v600_realtime_session_factory_signature_changed: additive-stage-injection-keyword-only")
-    print("v600_next_checkpoint: FW-RT6-3b")
+    print("v600_realtime_fake_runtime_status: accepted")
+    print("v600_realtime_fake_runtime_package: framework.realtime_fake_runtime")
+    print("v600_realtime_fake_runtime_controller: DeterministicFakeRuntimeController")
+    print("v600_realtime_fake_runtime_harness: DeterministicRealtimeRaceHarness")
+    print("v600_realtime_fake_runtime_generation_gate_adoption: True")
+    print("v600_realtime_fake_runtime_terminal_registry_adoption: True")
+    print("v600_realtime_fake_runtime_race_reproducible: True")
+    print("v600_realtime_fake_runtime_session_orchestration_changed: False")
+    print("v600_realtime_fake_runtime_event_hub_trace_projection: False / deferred")
+    print("v600_next_checkpoint: FW-RT6-3c")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3a stage protocols")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3b deterministic fake runtime")
 
 
 if __name__ == "__main__":
