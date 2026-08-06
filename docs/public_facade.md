@@ -1873,3 +1873,77 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2b-C-CLOSE-CONCURRENCY-HARDENING:END -->
+
+<!-- FW-RT6-2c-A-TERMINAL-REGISTRY-PRIMITIVES:BEGIN -->
+## FW-RT6-2c Control A — terminal registry primitive foundation
+
+Control A adds an internal provider-neutral terminal registry primitive. It is
+not exported from the Framework root and is not yet adopted by
+`RealtimeSession`.
+
+```text
+registry scope:
+one future RealtimeSession
+
+registry key:
+TurnId or compatible legacy turn string
+
+first terminal commit:
+accepted atomically
+
+same-outcome retry:
+duplicate_terminal / suppressed
+
+different-outcome retry:
+terminal_regression / suppressed
+
+late non-terminal admission:
+rejected after terminal commit
+
+terminal record:
+immutable
+
+terminal reason/result retention:
+internal record
+
+diagnostics:
+counts only
+
+duplicate/regression exception escapes caller:
+False
+
+multi-thread first-terminal winner:
+exactly one
+
+root-public names:
+121 / unchanged
+```
+
+The first accepted record retains normalized `TurnOutcome`,
+`RecoveryAction`, a reason string, and an optional typed result object. Later
+attempts never replace that record.
+
+The primitive uses the accepted `validate_terminal_transition(...)` semantics
+but converts duplicate/regressive attempts into immutable suppression decisions
+instead of raising through the runtime path.
+
+```text
+RealtimeSession adoption:
+DEFERRED / FW-RT6-2c Control B
+
+terminal event/result integration:
+DEFERRED / FW-RT6-2c Control B
+
+integration race and late-event hardening:
+DEFERRED / FW-RT6-2c Control C
+
+generation stale-result rejection:
+DEFERRED / FW-RT6-2d
+
+provider/network/microphone/playback/VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-2c-A-TERMINAL-REGISTRY-PRIMITIVES:END -->
