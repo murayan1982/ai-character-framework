@@ -2534,3 +2534,41 @@ next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-1d-D-CAPABILITY-ACCEPTANCE:END -->
+
+<!-- FW-RT6-2a-D-PUBLIC-SAFETY-ACCEPTANCE:BEGIN -->
+## v6.0.0 recursive public-safety aggregate acceptance
+
+FW-RT6-2a Controls A through C establish one recursive public-safe metadata
+utility, migrate five core compatibility helpers to that utility, and remove raw
+exception material from TextChat public error events.
+
+```text
+checkpoint: FW-RT6-2a Control D
+baseline head: 888d689fcf894fa7fa83eb6d0daa18b41f77726a
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A recursive public-safety primitives: ACCEPTED
+Control B core metadata consumer migration: ACCEPTED
+Control C TextChat public error safety: ACCEPTED
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+recursive mapping/list/tuple/dataclass sanitization: PASS
+secret-like key policy centralized: True
+core compatibility helpers delegated: 5
+nested credential redaction: PASS
+private path exposed: False
+raw exception exposed: False
+TextChat raw exception string exposed: False
+TextChat exception class name exposed: False
+ask_stream exception re-raise preserved: True
+all repository metadata paths claimed migrated: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The common utility and migrated boundaries are accepted without claiming that
+every historical metadata-bearing path in the repository has already been
+rewritten. Further consumers must use the accepted utility as they are touched.
+<!-- FW-RT6-2a-D-PUBLIC-SAFETY-ACCEPTANCE:END -->

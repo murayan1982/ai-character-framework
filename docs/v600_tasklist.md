@@ -853,13 +853,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] common redaction moduleを追加する。
-- [ ] mapping/list/tuple/dataclassのrecursive sanitizationを実装する。
-- [ ] secret-like key policyを一箇所へ固定する。
-- [ ] raw exception object/stringのpublic metadata投入を禁止する。
-- [ ] safe error classification helperを追加する。
-- [ ]既存 `_public_mapping` / `_redact_mapping`を段階的に置換する。
-- [ ] nested secret testを追加する。
+- [x] common redaction moduleを追加する。
+- [x] mapping/list/tuple/dataclassのrecursive sanitizationを実装する。
+- [x] secret-like key policyを一箇所へ固定する。
+- [x] raw exception object/stringのpublic metadata投入を禁止する。
+- [x] safe error classification helperを追加する。
+- [x]既存 `_public_mapping` / `_redact_mapping`を段階的に置換する。
+- [x] nested secret testを追加する。
 
 **Acceptance:**
 
@@ -873,6 +873,36 @@ False
 private path exposed:
 False
 ```
+
+<!-- FW-RT6-2a-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-2a Control D
+baseline head: 888d689fcf894fa7fa83eb6d0daa18b41f77726a
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A recursive public-safety primitives: ACCEPTED
+Control B core metadata consumer migration: ACCEPTED
+Control C TextChat public error safety: ACCEPTED
+Control D exact change surface: 6 files
+root-public names: 121 / UNCHANGED
+recursive mapping/list/tuple/dataclass sanitization: PASS
+secret-like key policy centralized: True
+core compatibility helpers delegated: 5
+nested credential redaction: PASS
+raw exception exposed: False
+private path exposed: False
+TextChat raw exception string exposed: False
+TextChat exception class name exposed: False
+ask_stream exception re-raise preserved: True
+all repository metadata paths claimed migrated: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2a-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

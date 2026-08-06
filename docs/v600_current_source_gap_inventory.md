@@ -418,3 +418,37 @@ snapshot reports only the stages actually wired into the current
 `RealtimeSession`. A host request for real runtime remains intent metadata and
 does not become a runtime-availability claim.
 <!-- FW-RT6-1d-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-2a-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-2a recursive public-safety gap resolution sync
+
+This sync records the accepted recursive public-safety foundation and the
+TextChat error-boundary correction while preserving remaining incremental
+consumer migration and unrelated runtime gaps.
+
+```text
+baseline head: 888d689fcf894fa7fa83eb6d0daa18b41f77726a
+G-12 TextChat raw exception string event exposure: RESOLVED
+G-12 TextChat exception class-name event exposure: RESOLVED
+G-12 shared safe classifier for ask_result / ask_stream: RESOLVED
+G-13 common recursive public-safety utility: RESOLVED
+G-13 centralized secret-like key policy: RESOLVED
+G-13 five core compatibility-helper implementations: DELEGATED / RESOLVED
+G-13 nested mapping/list/tuple/dataclass sanitization: RESOLVED
+G-13 all repository metadata consumers migrated: False / INCREMENTAL FOLLOW-UP
+nested credential redaction: PASS
+raw exception exposed by accepted boundaries: False
+private path exposed by accepted boundaries: False
+root-public names: 121 / UNCHANGED
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+G-01 real unified turn orchestration: UNRESOLVED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+FW-RT6-2a completes the common utility, first-wave core consumer migration, and
+TextChat public-error correction. It does not claim repository-wide replacement
+of every legacy metadata helper or real provider/runtime execution.
+<!-- FW-RT6-2a-D-GAP-RESOLUTION-SYNC:END -->

@@ -283,6 +283,12 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
             "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN -->",
             "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->",
+            "<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:BEGIN -->",
+            "<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:END -->",
+            "<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:BEGIN -->",
+            "<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:END -->",
+            "<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:BEGIN -->",
+            "<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:END -->",
         ),
         PROJECT_ROOT / "docs" / "app_integration_contract.md": (
             "<!-- FW-RT6-0b-A-PUBLIC-API-MANIFEST:BEGIN -->",
@@ -299,6 +305,12 @@ def _check_docs_and_status_markers() -> None:
             "<!-- FW-RT6-1d-B-GLOBAL-CAPABILITY-AGGREGATION:END -->",
             "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN -->",
             "<!-- FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:END -->",
+            "<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:BEGIN -->",
+            "<!-- FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:END -->",
+            "<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:BEGIN -->",
+            "<!-- FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:END -->",
+            "<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:BEGIN -->",
+            "<!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:END -->",
         ),
     }
     for path, markers in required_markers.items():
@@ -306,7 +318,17 @@ def _check_docs_and_status_markers() -> None:
         for marker in markers:
             _assert(marker in text, f"missing marker in {path.name}: {marker}")
 
-    print("[OK] public facade and app integration docs record accepted Control C session adoption without public-name drift")
+    aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-2a-D-PUBLIC-SAFETY-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-2a-D-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-2a-D-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in aggregate_markers.items():
+        _assert(marker in path.read_text(encoding="utf-8"), f"missing aggregate marker: {marker}")
+
+    print("[OK] public docs and aggregate status record accepted FW-RT6-2a safety adoption")
 
 
 def main() -> None:
@@ -324,9 +346,12 @@ def main() -> None:
     print("v600_runtime_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_checkpoint: FW-RT6-2a")
+    print("v600_public_safety_status: accepted")
+    print("v600_raw_exception_exposed: False")
+    print("v600_private_path_exposed: False")
+    print("v600_next_checkpoint: FW-RT6-2b")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted global/session capability adoption")
+    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-2a public-safety adoption")
 
 
 if __name__ == "__main__":

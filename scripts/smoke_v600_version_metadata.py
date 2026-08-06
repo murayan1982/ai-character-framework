@@ -267,7 +267,29 @@ def check_docs() -> None:
             "FW-RT6-1d-C-SESSION-CAPABILITY-ADOPTION:BEGIN" in text,
             f"{relative_path} should record session-scoped capability adoption",
         )
-    print("[OK] public docs distinguish source version from frozen API versions")
+        _assert(
+            "FW-RT6-2a-A-PUBLIC-SAFETY-PRIMITIVES:BEGIN" in text,
+            f"{relative_path} should record recursive public-safety primitives",
+        )
+        _assert(
+            "FW-RT6-2a-B-CORE-CONSUMER-MIGRATION:BEGIN" in text,
+            f"{relative_path} should record core consumer migration",
+        )
+        _assert(
+            "FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:BEGIN" in text,
+            f"{relative_path} should record TextChat error safety",
+        )
+    aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-2a-D-PUBLIC-SAFETY-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-2a-D-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-2a-D-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in aggregate_markers.items():
+        _assert(marker in path.read_text(encoding="utf-8"), f"missing aggregate marker: {marker}")
+
+    print("[OK] public docs and aggregate status preserve frozen versions and accept FW-RT6-2a")
 
 
 def main() -> None:
@@ -285,9 +307,12 @@ def main() -> None:
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
     print("v600_provider_execution: False")
-    print("v600_next_checkpoint: FW-RT6-2a")
+    print("v600_public_safety_changed: recursive-sanitization-and-safe-error-adoption-accepted")
+    print("v600_raw_exception_exposed: False")
+    print("v600_private_path_exposed: False")
+    print("v600_next_checkpoint: FW-RT6-2b")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with accepted truthful global/session capability aggregation")
+    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-2a public-safety adoption")
 
 
 if __name__ == "__main__":
