@@ -144,3 +144,123 @@ DEFERRED / later checkpoint
 provider/network/microphone/playback/VTS execution:
 False
 ```
+
+## FW-RT6-2b Control B — RealtimeSession adoption
+
+Control B adopts the accepted hub in the existing mock-safe
+`RealtimeSession`. It does not add root-public names or change the
+`RealtimeEvent`, `RealtimeSessionInfo`, or factory parameter contracts.
+
+### Callback registration
+
+```text
+on_event return:
+opaque str token
+
+on_legacy_event return:
+opaque str token
+
+unregistration:
+off_event(token)
+
+duplicate / unknown unregistration:
+False
+
+callback exception breaks turn:
+False
+```
+
+Existing applications that ignore the previous `None` return remain compatible.
+
+### Public history and diagnostics
+
+```text
+event_history:
+immutable tuple
+
+history limit:
+64
+
+event_diagnostics:
+immutable Mapping[str, int]
+
+diagnostic keys:
+emitted_event_count
+callback_error_count
+slow_callback_count
+history_overflow_count
+rejected_after_close_count
+subscriber_count
+history_limit
+```
+
+No callback object, exception, provider payload, credential, transcript body, or
+private filesystem path is included in event diagnostics.
+
+### Typed overflow adoption
+
+When history is already full, the hub drops the two oldest records to reserve
+space for the triggering event and its overflow diagnostic.
+
+```text
+trigger event:
+accepted first
+
+overflow event:
+accepted second
+
+overflow event type:
+RealtimeEventType.EVENT_OVERFLOW
+
+overflow payload:
+DiagnosticEventPayload
+
+payload code:
+event_history_overflow
+
+drop reason:
+bounded_history_capacity
+
+dropped_sequence:
+first sequence dropped for this overflow
+
+overflow_count:
+cumulative history records dropped
+
+legacy projection:
+None
+```
+
+The overflow event preserves the trigger event's session, turn, generation,
+phase, and state context without creating a second lifecycle transition.
+
+### Compatibility and deferrals
+
+```text
+root-public names:
+121 / UNCHANGED
+
+RealtimeEvent fields:
+UNCHANGED
+
+create_realtime_session parameters:
+UNCHANGED
+
+canonical completed-turn event order:
+UNCHANGED
+
+legacy completed-turn projection:
+UNCHANGED
+
+session close seals hub:
+False / DEFERRED TO CONTROL C
+
+post-close active event rejection:
+DEFERRED TO CONTROL C
+
+concurrent lifecycle-state mutation lock:
+DEFERRED TO CONTROL C
+
+terminal registry:
+DEFERRED TO FW-RT6-2c
+```

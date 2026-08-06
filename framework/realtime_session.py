@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import time
+from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
 from .capabilities import _session_realtime_snapshot
@@ -38,7 +39,9 @@ from .output_control import (
 from .version import REALTIME_API_VERSION
 
 from .realtime_capabilities import RealtimeCapabilitySnapshot
+from .realtime_event_hub import RealtimeEventHub
 from .realtime_event_payloads import (
+    DiagnosticEventPayload,
     InterruptEventPayload,
     LifecycleEventPayload,
     RealtimeEventPayload,
@@ -115,9 +118,7 @@ class RealtimeSession:
         self._state = RealtimeState.IDLE
         self._phase: RealtimePhase | None = RealtimePhase.IDLE
         self._closed = False
-        self._callbacks: list[RealtimeEventCallback] = []
-        self._legacy_callbacks: list[RealtimeEventCallback] = []
-        self._next_event_sequence = EventSequence.first()
+        self._event_hub = RealtimeEventHub[RealtimeEvent]()
         self._real_runtime_requested = bool(real_runtime_enabled)
         self._capability_snapshot = _session_realtime_snapshot(
             session_id=self._session_id,
@@ -183,24 +184,43 @@ class RealtimeSession:
     def barge_in_policy(self) -> BargeInPolicy:
         return self._barge_in_policy
 
-    def on_event(self, callback: RealtimeEventCallback) -> None:
-        """Register a canonical ordered realtime event callback."""
+    @property
+    def event_history(self) -> tuple[RealtimeEvent, ...]:
+        """Return the immutable bounded canonical event-history snapshot."""
 
-        if not callable(callback):
-            raise TypeError("callback must be callable")
-        self._callbacks.append(callback)
+        return self._event_hub.event_history
 
-    def on_legacy_event(self, callback: RealtimeEventCallback) -> None:
-        """Register a mapped v5 event callback for compatibility consumers."""
+    @property
+    def event_diagnostics(self) -> Mapping[str, int]:
+        """Return immutable public-safe event-hub counters."""
 
-        if not callable(callback):
-            raise TypeError("callback must be callable")
-        self._legacy_callbacks.append(callback)
+        diagnostics = self._event_hub.diagnostics
+        return MappingProxyType(
+            {
+                "emitted_event_count": diagnostics.emitted_event_count,
+                "callback_error_count": diagnostics.callback_error_count,
+                "slow_callback_count": diagnostics.slow_callback_count,
+                "history_overflow_count": diagnostics.history_overflow_count,
+                "rejected_after_close_count": diagnostics.rejected_after_close_count,
+                "subscriber_count": self._event_hub.subscriber_count,
+                "history_limit": self._event_hub.history_limit,
+            }
+        )
 
-    def _allocate_event_sequence(self) -> EventSequence:
-        sequence = self._next_event_sequence
-        self._next_event_sequence = sequence.next()
-        return sequence
+    def on_event(self, callback: RealtimeEventCallback) -> str:
+        """Register a canonical callback and return its opaque removal token."""
+
+        return str(self._event_hub.subscribe(callback))
+
+    def on_legacy_event(self, callback: RealtimeEventCallback) -> str:
+        """Register a mapped v5 callback and return its opaque removal token."""
+
+        return str(self._event_hub.subscribe(callback, legacy=True))
+
+    def off_event(self, token: str) -> bool:
+        """Remove a canonical or legacy callback token idempotently."""
+
+        return self._event_hub.unsubscribe(token)
 
     def _generation_for_event(
         self,
@@ -214,6 +234,44 @@ class RealtimeSession:
         ):
             return None
         return self._active_generation_id
+
+    def _build_event_overflow(
+        self,
+        *,
+        sequence: EventSequence,
+        dropped_sequence: EventSequence | None,
+        overflow_count: int,
+        state: RealtimeState,
+        turn_id: TurnId | str | None,
+        generation_id: GenerationId | None,
+        phase: RealtimePhase | None,
+    ) -> RealtimeEvent:
+        """Build one typed diagnostic without creating a lifecycle transition."""
+
+        return RealtimeEvent(
+            type=RealtimeEventType.EVENT_OVERFLOW,
+            state=state,
+            previous_state=state,
+            turn_id=turn_id,
+            session_id=self._session_id,
+            boundary="realtime",
+            safe_message="Realtime event history overflowed.",
+            public_metadata={
+                "boundary": "realtime",
+                "history_limit": self._event_hub.history_limit,
+            },
+            sequence=sequence,
+            generation_id=generation_id,
+            phase=phase,
+            payload=DiagnosticEventPayload(
+                code="event_history_overflow",
+                drop_reason="bounded_history_capacity",
+                dropped_sequence=dropped_sequence,
+                overflow_count=overflow_count,
+            ),
+            timestamp=time.time(),
+            monotonic_timestamp=time.monotonic(),
+        )
 
     def _set_phase(
         self,
@@ -254,34 +312,53 @@ class RealtimeSession:
         resolved_payload = _require_runtime_event_payload(event_type, payload)
         previous_state = self._state
         self._state = new_state
-        event = RealtimeEvent(
-            type=event_type,
-            state=new_state,
-            previous_state=previous_state,
-            turn_id=turn_id,
-            session_id=self._session_id,
-            boundary="realtime",
-            public_error_code=public_error_code,
-            safe_message=safe_message,
-            retryable=retryable,
-            public_metadata={
-                "boundary": "realtime",
-                **dict(public_metadata or {}),
-            },
-            sequence=self._allocate_event_sequence(),
-            generation_id=self._generation_for_event(turn_id),
-            phase=self._phase,
-            payload=resolved_payload,
-            timestamp=time.time(),
-            monotonic_timestamp=time.monotonic(),
+        generation_id = self._generation_for_event(turn_id)
+        phase = self._phase
+        metadata = {
+            "boundary": "realtime",
+            **dict(public_metadata or {}),
+        }
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=event_type,
+                state=new_state,
+                previous_state=previous_state,
+                turn_id=turn_id,
+                session_id=self._session_id,
+                boundary="realtime",
+                public_error_code=public_error_code,
+                safe_message=safe_message,
+                retryable=retryable,
+                public_metadata=metadata,
+                sequence=sequence,
+                generation_id=generation_id,
+                phase=phase,
+                payload=resolved_payload,
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        def overflow_event_factory(
+            sequence: EventSequence,
+            dropped_sequence: EventSequence | None,
+            overflow_count: int,
+        ) -> RealtimeEvent:
+            return self._build_event_overflow(
+                sequence=sequence,
+                dropped_sequence=dropped_sequence,
+                overflow_count=overflow_count,
+                state=new_state,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                phase=phase,
+            )
+
+        return self._event_hub.emit(
+            event_factory,
+            legacy_projector=lambda emitted: emitted.to_v5(),
+            overflow_event_factory=overflow_event_factory,
         )
-        for callback in list(self._callbacks):
-            callback(event)
-        legacy_event = event.to_v5()
-        if legacy_event is not None:
-            for callback in list(self._legacy_callbacks):
-                callback(legacy_event)
-        return event
 
     def emit_created(self) -> RealtimeEvent:
         """Emit a public session-created event."""

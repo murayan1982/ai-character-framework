@@ -1707,3 +1707,82 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2b-A-EVENT-HUB-PRIMITIVES:END -->
+
+<!-- FW-RT6-2b-B-REALTIME-SESSION-HUB-ADOPTION:BEGIN -->
+## FW-RT6-2b Control B — RealtimeSession event-hub adoption
+
+`RealtimeSession` now delegates canonical and legacy callback registration,
+session-lifetime sequence allocation, callback delivery, bounded history, and
+overflow accounting to the accepted Control A event hub.
+
+The existing callback methods remain source-compatible when their return values
+are ignored. They now return opaque string tokens:
+
+```text
+on_event(callback) -> str
+on_legacy_event(callback) -> str
+off_event(token) -> bool
+```
+
+`off_event()` removes either callback channel by token and is idempotent.
+
+The session exposes immutable snapshots:
+
+```text
+event_history:
+tuple[RealtimeEvent, ...]
+
+event_diagnostics:
+Mapping[str, int]
+```
+
+The fixed initial runtime policy is:
+
+```text
+history limit:
+64 events
+
+delivery:
+synchronous / serialized
+
+callback exception breaks turn:
+False
+
+slow callback:
+retained and counted
+
+overflow:
+typed RealtimeEventType.EVENT_OVERFLOW
+
+overflow payload:
+DiagnosticEventPayload
+
+overflow v5 projection:
+None
+```
+
+The event that fills an already-full history is accepted first. Its typed
+overflow diagnostic is then accepted with the next `EventSequence`. Both are
+included in canonical delivery and bounded history. The overflow event does not
+enter the legacy callback channel.
+
+```text
+baseline head: cee3f68ec3254a8d99a7f4c0e1f911deb1f3496f
+Control B exact change surface: 5 files
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeSession factory signature changed: False
+canonical completed-turn order changed: False
+legacy completed-turn order changed: False
+callback exception breaks turn: False
+bounded event history adopted: True
+typed EVENT_OVERFLOW adopted: True
+post-close active-event rejection: DEFERRED / Control C
+session lifecycle state lock hardening: DEFERRED / Control C
+terminal registry: DEFERRED / FW-RT6-2c
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2b Control C
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2b-B-REALTIME-SESSION-HUB-ADOPTION:END -->
