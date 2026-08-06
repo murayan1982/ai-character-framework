@@ -1652,3 +1652,58 @@ next control authorized: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2a-C-TEXT-CHAT-ERROR-SAFETY:END -->
+
+<!-- FW-RT6-2b-A-EVENT-HUB-PRIMITIVES:BEGIN -->
+## FW-RT6-2b Control A — realtime event-hub primitives
+
+Control A adds an internal provider-neutral event hub foundation. It does not
+change `RealtimeSession`, root-public names, current callback signatures, or
+runtime stage behavior.
+
+The primitive provides:
+
+```text
+session-local EventSequence allocation
+opaque callback registration token
+canonical / legacy callback channels
+callback exception isolation
+synchronous serialized delivery
+bounded event history
+slow subscriber accounting
+non-silent overflow factory and counters
+concurrent / reentrant emission serialization
+idempotent close and post-close rejection
+```
+
+The initial slow-subscriber policy is deterministic:
+
+```text
+delivery:
+synchronous and serialized
+
+automatic timeout:
+False
+
+automatic eviction:
+False
+
+exception escapes emitter:
+False
+
+slow callback:
+retained and counted
+```
+
+```text
+baseline head: 89c0ba7ccf150658c5bace612e68bce876db4223
+Control A exact change surface: 5 files
+root-public names: 121 / UNCHANGED
+RealtimeSession adoption: DEFERRED / Control B
+typed RealtimeEvent overflow adoption: DEFERRED / Control B
+close-path integration hardening: DEFERRED / Control C
+provider/network/microphone/playback/VTS execution: False
+next control: FW-RT6-2b Control B
+next control authorized: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2b-A-EVENT-HUB-PRIMITIVES:END -->
