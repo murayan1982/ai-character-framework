@@ -2165,3 +2165,39 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:END -->
+
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:BEGIN -->
+## v6.0.0 deterministic fake-runtime gate/terminal adoption
+
+Validation code may explicitly use
+`framework.realtime_fake_runtime.DeterministicRealtimeRaceHarness` to drive the
+accepted `RealtimeGenerationGate` and `RealtimeTerminalRegistry` with the
+deterministic fake controller. Late completion injection is classified by the
+actual generation gate, and duplicate terminal injection is classified by the
+actual terminal registry.
+
+This is provider-free test-support adoption. It does not execute injected
+`RealtimeSession` stages, replace the mock `run_turn()` path, emit fake trace
+records through the realtime event hub, or claim production orchestration.
+
+```text
+checkpoint: FW-RT6-3b Control B
+baseline head: c3999bd16b2d6104fc90d6282da9a60c84068875
+status: IMPLEMENTED / AWAITING_REVIEW
+explicit package: framework.realtime_fake_runtime
+deterministic race harness: DeterministicRealtimeRaceHarness
+RealtimeGenerationGate adoption: True
+RealtimeTerminalRegistry adoption: True
+late completion classified by actual gate: True
+duplicate terminal classified by actual registry: True
+race reproducible: True
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+provider SDK / network / microphone / playback / real VTS execution: False
+tasklist checkboxes changed: False
+aggregate FW-RT6-3b acceptance: DEFERRED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:END -->

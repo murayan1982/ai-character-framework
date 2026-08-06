@@ -17,10 +17,26 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 import heapq
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Generic, Mapping, Sequence, TypeVar
 
+from .identity import GenerationId, TurnId
+from .lifecycle import RecoveryAction, TurnOutcome
 from .public_safety import public_mapping, sanitize_public_value
+from .realtime_generation_gate import (
+    GenerationAdmissionDecision,
+    GenerationAdvanceReason,
+    RealtimeGenerationGate,
+    RealtimeStageCompletionEnvelope,
+    StaleCompletionReason,
+)
 from .realtime_stage import RealtimeStageKind
+from .realtime_terminal_registry import (
+    RealtimeTerminalRegistry,
+    TerminalCommitDecision,
+    TerminalCommitStatus,
+    TerminalRecord,
+    TerminalRegistryDiagnostics,
+)
 
 
 FakeRuntimeCallback = Callable[["FakeRuntimeAction"], None]
@@ -829,6 +845,357 @@ class DeterministicFakeRuntimeController:
         self._scheduler.close()
 
 
+# FW-RT6-3b-B-GATE-TERMINAL-ADOPTION
+# FW-RT6-3b Control B: deterministic adoption of the accepted generation gate
+# and terminal registry. This remains explicit test-support infrastructure and
+# does not change RealtimeSession orchestration.
+CompletionT = TypeVar("CompletionT")
+TerminalResultT = TypeVar("TerminalResultT")
+
+
+@dataclass(frozen=True, slots=True)
+class FakeGenerationAdmissionRecord(Generic[CompletionT]):
+    """One deterministic generation-gate decision caused by a fake action."""
+
+    action_id: str
+    tick: int
+    decision: GenerationAdmissionDecision[CompletionT] = field(repr=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.action_id, str) or not self.action_id.strip():
+            raise ValueError("action_id must be a non-empty string")
+        if not isinstance(self.decision, GenerationAdmissionDecision):
+            raise TypeError("decision must be a GenerationAdmissionDecision")
+        object.__setattr__(self, "action_id", self.action_id.strip())
+        object.__setattr__(self, "tick", _non_negative_tick(self.tick, name="tick"))
+
+    @property
+    def accepted(self) -> bool:
+        return self.decision.accepted
+
+    @property
+    def stale_reason(self) -> StaleCompletionReason | None:
+        return self.decision.stale_reason
+
+    @property
+    def retired_by(self) -> GenerationAdvanceReason | None:
+        return self.decision.retired_by
+
+
+@dataclass(frozen=True, slots=True)
+class FakeTerminalCommitRecord(Generic[TerminalResultT]):
+    """One deterministic terminal-registry decision caused by a fake action."""
+
+    action_id: str
+    tick: int
+    decision: TerminalCommitDecision[TerminalResultT] = field(repr=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.action_id, str) or not self.action_id.strip():
+            raise ValueError("action_id must be a non-empty string")
+        if not isinstance(self.decision, TerminalCommitDecision):
+            raise TypeError("decision must be a TerminalCommitDecision")
+        object.__setattr__(self, "action_id", self.action_id.strip())
+        object.__setattr__(self, "tick", _non_negative_tick(self.tick, name="tick"))
+
+    @property
+    def accepted(self) -> bool:
+        return self.decision.accepted
+
+    @property
+    def status(self) -> TerminalCommitStatus:
+        return self.decision.status
+
+
+class DeterministicRealtimeRaceHarness(Generic[CompletionT, TerminalResultT]):
+    """Drive real generation/terminal primitives with the deterministic controller.
+
+    The harness is provider-free and synchronous. It adopts the accepted
+    ``RealtimeGenerationGate`` and ``RealtimeTerminalRegistry`` as fake action
+    targets while leaving ``RealtimeSession`` and its production orchestration
+    unchanged.
+    """
+
+    def __init__(
+        self,
+        *,
+        initial_tick: int = 0,
+        max_queue_size: int = 1024,
+    ) -> None:
+        self._controller = DeterministicFakeRuntimeController(
+            initial_tick=initial_tick,
+            max_queue_size=max_queue_size,
+        )
+        self._generation_gate: RealtimeGenerationGate = RealtimeGenerationGate()
+        self._terminal_registry: RealtimeTerminalRegistry[TerminalResultT] = (
+            RealtimeTerminalRegistry()
+        )
+        self._generation_admissions: list[
+            FakeGenerationAdmissionRecord[CompletionT]
+        ] = []
+        self._terminal_commits: list[
+            FakeTerminalCommitRecord[TerminalResultT]
+        ] = []
+
+    @property
+    def controller(self) -> DeterministicFakeRuntimeController:
+        return self._controller
+
+    @property
+    def trace(self) -> tuple[FakeRuntimeTraceEvent, ...]:
+        return self._controller.trace
+
+    @property
+    def generation_admissions(
+        self,
+    ) -> tuple[FakeGenerationAdmissionRecord[CompletionT], ...]:
+        return tuple(self._generation_admissions)
+
+    @property
+    def terminal_commits(
+        self,
+    ) -> tuple[FakeTerminalCommitRecord[TerminalResultT], ...]:
+        return tuple(self._terminal_commits)
+
+    @property
+    def generation_diagnostics(self) -> Mapping[str, int]:
+        return self._generation_gate.diagnostics
+
+    @property
+    def terminal_diagnostics(self) -> TerminalRegistryDiagnostics:
+        return self._terminal_registry.diagnostics
+
+    @property
+    def terminal_records(self) -> tuple[TerminalRecord[TerminalResultT], ...]:
+        return self._terminal_registry.records
+
+    @property
+    def pending_count(self) -> int:
+        return self._controller.pending_count
+
+    @property
+    def closed(self) -> bool:
+        return self._controller.closed
+
+    def start_generation(self, turn_id: TurnId | str) -> GenerationId:
+        """Start one actual gate-owned generation for a deterministic scenario."""
+
+        return self._generation_gate.start_generation(turn_id)
+
+    def advance_generation(
+        self,
+        reason: GenerationAdvanceReason | str,
+    ) -> GenerationId | None:
+        """Retire the actual active generation using the accepted reason enum."""
+
+        return self._generation_gate.advance(reason)
+
+    def _completion_callback(
+        self,
+        envelope: RealtimeStageCompletionEnvelope[CompletionT],
+    ) -> FakeRuntimeCallback:
+        def callback(action: FakeRuntimeAction) -> None:
+            decision = self._generation_gate.admit_completion(envelope)
+            self._generation_admissions.append(
+                FakeGenerationAdmissionRecord(
+                    action_id=action.action_id,
+                    tick=self._controller.clock.now_tick,
+                    decision=decision,
+                )
+            )
+
+        return callback
+
+    def schedule_generation_completion(
+        self,
+        stage_kind: RealtimeStageKind | str,
+        *,
+        turn_id: TurnId | str,
+        generation_id: GenerationId | str,
+        value: CompletionT,
+        correlation_key: str,
+        delay_ticks: int = 0,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> FakeRuntimeAction:
+        """Schedule one ordinary completion against the actual generation gate."""
+
+        normalized_stage_kind = _stage_kind(stage_kind)
+        if normalized_stage_kind is None:
+            raise ValueError("stage_kind is required")
+        envelope = RealtimeStageCompletionEnvelope(
+            turn_id=turn_id,
+            generation_id=generation_id,
+            stage=normalized_stage_kind.value,
+            value=value,
+        )
+        return self._controller.schedule_stage_action(
+            stage_kind,
+            self._completion_callback(envelope),
+            delay_ticks=delay_ticks,
+            correlation_key=correlation_key,
+            public_metadata=public_metadata,
+        )
+
+    def inject_late_generation_completion(
+        self,
+        stage_kind: RealtimeStageKind | str,
+        *,
+        turn_id: TurnId | str,
+        generation_id: GenerationId | str,
+        value: CompletionT,
+        correlation_key: str,
+        delay_ticks: int = 0,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> FakeRuntimeAction:
+        """Inject one delayed completion and classify it with the actual gate."""
+
+        normalized_stage_kind = _stage_kind(stage_kind)
+        if normalized_stage_kind is None:
+            raise ValueError("stage_kind is required")
+        envelope = RealtimeStageCompletionEnvelope(
+            turn_id=turn_id,
+            generation_id=generation_id,
+            stage=normalized_stage_kind.value,
+            value=value,
+        )
+        return self._controller.inject_late_completion(
+            stage_kind,
+            self._completion_callback(envelope),
+            delay_ticks=delay_ticks,
+            correlation_key=correlation_key,
+            public_metadata=public_metadata,
+        )
+
+    def _terminal_callback(
+        self,
+        *,
+        turn_id: TurnId | str,
+        outcome: TurnOutcome | str,
+        recovery_action: RecoveryAction | str,
+        reason: str,
+        result: TerminalResultT | None,
+    ) -> FakeRuntimeCallback:
+        def callback(action: FakeRuntimeAction) -> None:
+            decision = self._terminal_registry.commit(
+                turn_id,
+                outcome,
+                recovery_action=recovery_action,
+                reason=reason,
+                result=result,
+            )
+            self._terminal_commits.append(
+                FakeTerminalCommitRecord(
+                    action_id=action.action_id,
+                    tick=self._controller.clock.now_tick,
+                    decision=decision,
+                )
+            )
+
+        return callback
+
+    def schedule_terminal(
+        self,
+        stage_kind: RealtimeStageKind | str,
+        *,
+        turn_id: TurnId | str,
+        outcome: TurnOutcome | str,
+        correlation_key: str,
+        recovery_action: RecoveryAction | str = RecoveryAction.NONE,
+        reason: str = "",
+        result: TerminalResultT | None = None,
+        delay_ticks: int = 0,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> FakeRuntimeAction:
+        """Schedule one terminal attempt against the actual terminal registry."""
+
+        return self._controller.scheduler.schedule(
+            self._terminal_callback(
+                turn_id=turn_id,
+                outcome=outcome,
+                recovery_action=recovery_action,
+                reason=reason,
+                result=result,
+            ),
+            delay_ticks=delay_ticks,
+            kind=FakeRuntimeActionKind.TERMINAL,
+            stage_kind=stage_kind,
+            correlation_key=correlation_key,
+            public_metadata=public_metadata,
+        )
+
+    def inject_duplicate_terminal(
+        self,
+        stage_kind: RealtimeStageKind | str,
+        *,
+        turn_id: TurnId | str,
+        outcome: TurnOutcome | str,
+        correlation_key: str,
+        recovery_action: RecoveryAction | str = RecoveryAction.NONE,
+        reason: str = "",
+        result: TerminalResultT | None = None,
+        copies: int = 2,
+        delay_ticks: int = 0,
+        interval_ticks: int = 0,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> tuple[FakeRuntimeAction, ...]:
+        """Inject duplicate terminal attempts into the actual terminal registry."""
+
+        return self._controller.inject_duplicate_terminal(
+            stage_kind,
+            self._terminal_callback(
+                turn_id=turn_id,
+                outcome=outcome,
+                recovery_action=recovery_action,
+                reason=reason,
+                result=result,
+            ),
+            correlation_key=correlation_key,
+            copies=copies,
+            delay_ticks=delay_ticks,
+            interval_ticks=interval_ticks,
+            public_metadata=public_metadata,
+        )
+
+    def pause_stage(self, stage_kind: RealtimeStageKind | str) -> bool:
+        return self._controller.pause_stage(stage_kind)
+
+    def resume_stage(self, stage_kind: RealtimeStageKind | str) -> bool:
+        return self._controller.resume_stage(stage_kind)
+
+    def advance_by(
+        self,
+        ticks: int,
+        *,
+        run_due: bool = True,
+    ) -> tuple[FakeRuntimeAction, ...]:
+        return self._controller.advance_by(ticks, run_due=run_due)
+
+    def run_next(self) -> FakeRuntimeAction | None:
+        return self._controller.run_next()
+
+    def run_due(
+        self,
+        *,
+        max_actions: int | None = None,
+    ) -> tuple[FakeRuntimeAction, ...]:
+        return self._controller.run_due(max_actions=max_actions)
+
+    def run_until_idle(
+        self,
+        *,
+        max_actions: int = 10000,
+    ) -> tuple[FakeRuntimeAction, ...]:
+        return self._controller.run_until_idle(max_actions=max_actions)
+
+    def trace_signature(self) -> tuple[str, ...]:
+        return self._controller.trace_signature()
+
+    def assert_trace(self, expected_signature: Sequence[str]) -> None:
+        self._controller.assert_trace(expected_signature)
+
+    def close(self) -> None:
+        self._controller.close()
+
 __all__ = [
     "FakeRuntimeActionKind",
     "FakeRuntimeTraceKind",
@@ -841,4 +1208,7 @@ __all__ = [
     "assert_deterministic_trace",
     "DeterministicFakeScheduler",
     "DeterministicFakeRuntimeController",
+    "FakeGenerationAdmissionRecord",
+    "FakeTerminalCommitRecord",
+    "DeterministicRealtimeRaceHarness",
 ]

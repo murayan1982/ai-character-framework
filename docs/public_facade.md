@@ -2609,3 +2609,34 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:END -->
+
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:BEGIN -->
+## Deterministic fake-runtime adoption harness
+
+`DeterministicRealtimeRaceHarness` is an explicit test-support object in
+`framework.realtime_fake_runtime`. It composes the deterministic scheduler with
+the accepted internal `RealtimeGenerationGate` and
+`RealtimeTerminalRegistry`, allowing tests to observe real stale-completion and
+duplicate-terminal decisions without provider execution.
+
+The harness and its decision records are not re-exported from `framework` root.
+They do not alter the 121-name root surface or the public
+`RealtimeSession` constructor. They do not provide a real provider adapter,
+background scheduler, event-hub trace stream, or unified production turn
+orchestrator.
+
+```text
+checkpoint: FW-RT6-3b Control B
+explicit import: framework.realtime_fake_runtime
+generation gate adoption: True
+terminal registry adoption: True
+late completion actual stale decision: True
+duplicate terminal actual first/duplicate decision: True
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+provider SDK / network / microphone / playback / real VTS execution: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:END -->

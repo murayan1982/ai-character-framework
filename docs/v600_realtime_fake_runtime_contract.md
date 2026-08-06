@@ -191,3 +191,131 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-A-DETERMINISTIC-FAKE-RUNTIME:END -->
+
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:BEGIN -->
+## FW-RT6-3b Control B — generation-gate and terminal-registry adoption
+
+Control B adds one deterministic adoption harness to the existing explicit
+test-support package:
+
+```text
+framework.realtime_fake_runtime.DeterministicRealtimeRaceHarness
+```
+
+The harness owns the already accepted provider-neutral primitives:
+
+```text
+RealtimeGenerationGate
+RealtimeTerminalRegistry
+DeterministicFakeRuntimeController
+```
+
+### Generation completion adoption
+
+`start_generation(...)` and `advance_generation(...)` delegate to the actual
+`RealtimeGenerationGate`. Ordinary and late completion helpers construct the
+accepted `RealtimeStageCompletionEnvelope` and submit it to
+`admit_completion(...)` only when the deterministic fake action executes.
+
+The harness retains immutable `FakeGenerationAdmissionRecord` values. The
+wrapped decision is excluded from the record representation, so stage completion
+values are not copied into deterministic trace signatures or assertion text.
+
+```text
+current completion accepted by actual gate: True
+retired completion rejected by actual gate: True
+retired completion reason: retired_generation
+generation retirement reason retained: True
+fake trace contains stage value: False
+```
+
+### Terminal adoption
+
+Single and duplicate terminal helpers submit terminal attempts to the actual
+`RealtimeTerminalRegistry`. Duplicate injection is not suppressed by the fake
+scheduler; each deterministic copy reaches the registry so the first attempt is
+classified as `first_terminal` and later attempts as `duplicate_terminal`.
+
+The harness retains immutable `FakeTerminalCommitRecord` values with the actual
+registry decision excluded from record representation.
+
+```text
+first terminal accepted by actual registry: True
+duplicate terminal accepted: False
+duplicate terminal classification: duplicate_terminal
+one retained terminal record: True
+fake trace contains terminal result: False
+```
+
+### Reproducibility
+
+The dedicated Control B smoke runs the same mixed race twice:
+
+```text
+current generation completion
+duplicate terminal attempts
+retired-generation late completion
+```
+
+The actual gate decisions, actual registry decisions, and metadata-free fake
+trace signature must be identical on both runs.
+
+```text
+race reproducible: True
+wall-clock sleep: False
+background thread: False
+network: False
+provider SDK: False
+microphone: False
+playback: False
+real VTS: False
+```
+
+### Preserved and deferred boundaries
+
+Control B adopts the actual freshness and terminal primitives only inside the
+explicit deterministic test harness.
+
+```text
+RealtimeSession source changed: False
+RealtimeSession orchestration changed: False
+RealtimeSession injected-stage execution changed: False
+generation gate production behavior changed: False
+terminal registry production behavior changed: False
+event-hub trace projection: DEFERRED
+fake trace public event projection: NOT IMPLEMENTED
+real provider adapters: NOT EXECUTED
+real unified turn orchestration: UNRESOLVED
+normal tests/ directory: DEFERRED / FW-RT6-3c
+tasklist checkboxes changed: False
+aggregate FW-RT6-3b acceptance: DEFERRED
+```
+
+### Control B status
+
+```text
+checkpoint: FW-RT6-3b Control B
+baseline head: c3999bd16b2d6104fc90d6282da9a60c84068875
+baseline subject: feat/test: add deterministic fake runtime controller
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 5 files
+explicit package: framework.realtime_fake_runtime
+new test-support exports: 3
+deterministic race harness: True
+RealtimeGenerationGate adoption: True
+RealtimeTerminalRegistry adoption: True
+late completion classified by actual gate: True
+duplicate terminal classified by actual registry: True
+race reproducible: True
+root-public names: 121 / UNCHANGED
+RealtimeSession orchestration changed: False
+event-hub trace projection: DEFERRED
+provider SDK / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+tasklist checkboxes changed: False
+aggregate FW-RT6-3b acceptance: DEFERRED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:END -->
