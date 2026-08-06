@@ -338,6 +338,19 @@ def _check_docs_and_status_markers() -> None:
     for path, marker in event_hub_aggregate_markers.items():
         _assert(marker in path.read_text(encoding="utf-8"), f"missing event-hub aggregate marker: {marker}")
 
+    terminal_registry_aggregate_markers = {
+        PROJECT_ROOT / "README.md": "FW-RT6-2c-D-TERMINAL-REGISTRY-ACCEPTANCE:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_tasklist.md": "FW-RT6-2c-D-ACCEPTANCE-SYNC:BEGIN",
+        PROJECT_ROOT / "docs" / "v600_current_source_gap_inventory.md": (
+            "FW-RT6-2c-D-GAP-RESOLUTION-SYNC:BEGIN"
+        ),
+    }
+    for path, marker in terminal_registry_aggregate_markers.items():
+        _assert(
+            marker in path.read_text(encoding="utf-8"),
+            f"missing terminal-registry aggregate marker: {marker}",
+        )
+
     for relative_path in (
         "docs/public_facade.md",
         "docs/app_integration_contract.md",
@@ -347,10 +360,13 @@ def _check_docs_and_status_markers() -> None:
             "FW-RT6-2b-A-EVENT-HUB-PRIMITIVES:BEGIN",
             "FW-RT6-2b-B-REALTIME-SESSION-HUB-ADOPTION:BEGIN",
             "FW-RT6-2b-C-CLOSE-CONCURRENCY-HARDENING:BEGIN",
+            "FW-RT6-2c-A-TERMINAL-REGISTRY-PRIMITIVES:BEGIN",
+            "FW-RT6-2c-B-REALTIME-SESSION-TERMINAL-ADOPTION:BEGIN",
+            "FW-RT6-2c-C-REENTRANT-LATE-NON-TERMINAL:BEGIN",
         ):
-            _assert(marker in text, f"missing event-hub control marker in {relative_path}: {marker}")
+            _assert(marker in text, f"missing accepted runtime-safety control marker in {relative_path}: {marker}")
 
-    print("[OK] public docs and aggregate status record accepted FW-RT6-2b event-hub adoption")
+    print("[OK] public docs and aggregate status record accepted FW-RT6-2c terminal registry")
 
 
 def main() -> None:
@@ -375,9 +391,13 @@ def main() -> None:
     print("v600_realtime_event_history_limit: 64")
     print("v600_realtime_event_overflow_silent: False")
     print("v600_post_close_active_event: False")
-    print("v600_next_checkpoint: FW-RT6-2c")
+    print("v600_realtime_terminal_registry_status: accepted")
+    print("v600_realtime_terminal_current_verified_path: TURN_COMPLETED")
+    print("v600_realtime_terminal_provider_paths_all_wired: False")
+    print("v600_realtime_terminal_generation_stale_rejection: deferred-FW-RT6-2d")
+    print("v600_next_checkpoint: FW-RT6-2d")
     print("v600_next_checkpoint_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-2b event-hub adoption")
+    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-2c terminal registry")
 
 
 if __name__ == "__main__":

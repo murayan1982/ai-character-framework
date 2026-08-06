@@ -985,13 +985,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] turn terminal registryを追加する。
-- [ ] first terminal commitをatomicにする。
-- [ ] duplicate terminalを抑止する。
-- [ ] late non-terminal eventを拒否する。
-- [ ] terminal reason/resultを保持する。
-- [ ] stale/duplicate diagnostic counterを追加する。
-- [ ] multi-thread race testを追加する。
+- [x] turn terminal registryを追加する。
+- [x] first terminal commitをatomicにする。
+- [x] duplicate terminalを抑止する。
+- [x] late non-terminal eventを拒否する。
+- [x] terminal reason/resultを保持する。
+- [x] stale/duplicate diagnostic counterを追加する。
+- [x] multi-thread race testを追加する。
 
 **Acceptance:**
 
@@ -1008,6 +1008,51 @@ PASS (rejected)
 race deterministic:
 PASS
 ```
+
+<!-- FW-RT6-2c-D-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-2c Control D
+baseline head: 8393c82a312af73f0b18db106b6e32c959f251a2
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A terminal registry primitives: ACCEPTED
+Control B RealtimeSession registry adoption: ACCEPTED
+Control C reentrant/concurrent terminal hardening: ACCEPTED
+Control D exact change surface: 6 files
+runtime source changed: False
+root-public names: 121 / UNCHANGED
+RealtimeEvent public model changed: False
+RealtimeTurnResult public model changed: False
+RealtimeSession factory signature changed: False
+event_diagnostics keys changed: False
+terminal_results: READ-ONLY / COMMIT ORDER
+terminal_diagnostics: IMMUTABLE / COUNT-ONLY
+terminal registry primitive supports terminal outcomes: True
+current verified RealtimeSession first-terminal path: TURN_COMPLETED
+all provider-driven terminal paths wired: False / NOT CLAIMED
+first terminal commit atomic: PASS
+one terminal event per current completed turn: PASS
+duplicate terminal suppression: PASS
+terminal regression rejection: PASS
+late non-terminal rejected before mutation: PASS
+terminal reason/result retained: PASS
+same-turn concurrent lifecycle groups: 1
+same-turn terminal events: 1
+same-turn terminal records: 1
+first committed result identity preserved: True
+terminal callback late events: 0
+different-turn operation groups serialized: PASS
+close contract preserved: PASS
+generation stale-result rejection: DEFERRED / FW-RT6-2d
+STALE_RESULT_DROPPED runtime use: False
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2d
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-2c-D-ACCEPTANCE-SYNC:END -->
 
 ---
 

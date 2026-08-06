@@ -495,3 +495,48 @@ The bounded structure accepted here is canonical event history, not an
 asynchronous delivery queue. Synchronous serialized delivery is the fixed
 subscriber policy for this checkpoint.
 <!-- FW-RT6-2b-D-GAP-RESOLUTION-SYNC:END -->
+
+<!-- FW-RT6-2c-D-GAP-RESOLUTION-SYNC:BEGIN -->
+## FW-RT6-2c realtime terminal-registry gap resolution sync
+
+This sync records the accepted exactly-once terminal primitive and current
+`RealtimeSession` integration while preserving generation stale-result,
+provider-driven orchestration, real-runtime, and normal unit-test gaps.
+
+```text
+baseline head: 8393c82a312af73f0b18db106b6e32c959f251a2
+G-04 per-session terminal registry: RESOLVED
+G-04 atomic first-terminal ownership: RESOLVED
+G-04 duplicate terminal suppression: RESOLVED
+G-04 terminal regression suppression: RESOLVED
+G-04 late non-terminal admission rejection: RESOLVED
+G-04 terminal reason/result retention: RESOLVED
+G-04 read-only result/diagnostic observability: RESOLVED
+G-04 same-turn concurrent integration race: RESOLVED
+G-04 reentrant post-terminal mutation rejection: RESOLVED
+current verified RealtimeSession first-terminal path: TURN_COMPLETED
+all provider-driven terminal paths wired: False / NOT CLAIMED
+one terminal event per current completed turn: PASS
+same-turn concurrent lifecycle groups: 1
+same-turn terminal events: 1
+same-turn terminal records: 1
+terminal callback late events: 0
+root-public names: 121 / UNCHANGED
+event_diagnostics keys changed: False
+G-05 generation stale-result rejection: UNRESOLVED / FW-RT6-2d
+STALE_RESULT_DROPPED runtime use: NOT IMPLEMENTED
+old response delta suppression: UNRESOLVED
+old TTS artifact suppression: UNRESOLVED
+close後provider completion suppression: UNRESOLVED
+G-16 normal deterministic unit-test architecture: UNRESOLVED / FW-RT6-3c
+G-01 real unified turn orchestration: UNRESOLVED
+provider/network/microphone/playback/VTS execution: False
+DRC repository accessed or changed: False
+next checkpoint: FW-RT6-2d
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+```
+
+FW-RT6-2c closes G-04 for the accepted primitive and current mock completed-turn
+integration. It does not claim generation-based late completion rejection or
+provider-driven terminal orchestration.
+<!-- FW-RT6-2c-D-GAP-RESOLUTION-SYNC:END -->
