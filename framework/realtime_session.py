@@ -70,6 +70,23 @@ from .realtime import (
 
 RealtimeEventCallback = Callable[[RealtimeEvent], None]
 _PHASE_UNCHANGED = object()
+_TURN_TERMINAL_EVENT_TYPES = frozenset(
+    {
+        RealtimeEventType.TURN_COMPLETED,
+        RealtimeEventType.TURN_INTERRUPTED,
+        RealtimeEventType.TURN_CANCELLED,
+        RealtimeEventType.TURN_FAILED,
+        RealtimeEventType.TURN_REJECTED,
+    }
+)
+
+
+class _LateNonTerminalRejected(RuntimeError):
+    """Internal control-flow signal for a terminal turn's late event attempt."""
+
+    def __init__(self, turn_id: TurnId | str) -> None:
+        self.turn_id = turn_id
+        super().__init__("late non-terminal realtime event rejected")
 
 
 @dataclass(frozen=True)
@@ -434,6 +451,13 @@ class RealtimeSession:
     ) -> RealtimeEvent:
         if self._closed and not _allow_closed_event:
             raise self._session_closed_error()
+        if (
+            turn_id is not None
+            and event_type is not RealtimeEventType.SESSION_CLOSED
+            and event_type not in _TURN_TERMINAL_EVENT_TYPES
+            and not self._terminal_registry.admit_non_terminal(turn_id)
+        ):
+            raise _LateNonTerminalRejected(turn_id)
         if new_phase is not _PHASE_UNCHANGED:
             self._set_phase(new_phase)
         resolved_payload = _require_runtime_event_payload(event_type, payload)
@@ -533,7 +557,11 @@ class RealtimeSession:
         """
 
         if turn is None:
-            turn = RealtimeTurn(input_text=input_text, session_id=self._session_id, public_metadata=public_metadata or {})
+            turn = RealtimeTurn(
+                input_text=input_text,
+                session_id=self._session_id,
+                public_metadata=public_metadata or {},
+            )
         elif turn.session_id is None:
             turn = RealtimeTurn(
                 turn_id=turn.turn_id,
@@ -554,82 +582,91 @@ class RealtimeSession:
         self._active_turn_id = turn.turn_id
         self._active_generation_id = GenerationId.new()
         transcript_text = turn.input_text or input_text
-        self._transition(
-            RealtimeEventType.TURN_STARTED,
-            RealtimeState.LISTENING,
-            turn_id=turn.turn_id,
-            new_phase=RealtimePhase.LISTENING,
-            payload=LifecycleEventPayload(reason="turn_admitted"),
-        )
-        self._transition(
-            RealtimeEventType.LISTENING_STARTED,
-            RealtimeState.LISTENING,
-            turn_id=turn.turn_id,
-            new_phase=RealtimePhase.LISTENING,
-            payload=LifecycleEventPayload(reason="listening_started"),
-        )
-        self._transition(
-            RealtimeEventType.LISTENING_COMPLETED,
-            RealtimeState.TRANSCRIBING,
-            turn_id=turn.turn_id,
-            new_phase=RealtimePhase.TRANSCRIBING,
-            payload=LifecycleEventPayload(reason="listening_completed"),
-            public_metadata={"mock_stage": "voice_input"},
-        )
-        self._transition(
-            RealtimeEventType.TRANSCRIPT_FINAL,
-            RealtimeState.TRANSCRIBING,
-            turn_id=turn.turn_id,
-            payload=TranscriptEventPayload(
-                text=transcript_text,
-                is_final=True,
-            ),
-            public_metadata={"mock_stage": "transcript"},
-        )
-        self._transition(
-            RealtimeEventType.RESPONSE_STARTED,
-            RealtimeState.THINKING,
-            turn_id=turn.turn_id,
-            new_phase=RealtimePhase.THINKING,
-            payload=ResponseEventPayload(text="", is_final=False),
-        )
-        self._transition(
-            RealtimeEventType.RESPONSE_COMPLETED,
-            RealtimeState.THINKING,
-            turn_id=turn.turn_id,
-            payload=ResponseEventPayload(text="", is_final=True),
-            public_metadata={"mock_stage": "text_chat"},
-        )
-        self._transition(
-            RealtimeEventType.SYNTHESIS_STARTED,
-            RealtimeState.SPEAKING,
-            turn_id=turn.turn_id,
-            new_phase=RealtimePhase.SPEAKING,
-            payload=SynthesisEventPayload(request_state="started"),
-        )
-        self._transition(
-            RealtimeEventType.SYNTHESIS_COMPLETED,
-            RealtimeState.COMPLETED,
-            turn_id=turn.turn_id,
-            payload=SynthesisEventPayload(request_state="completed"),
-            public_metadata={"mock_stage": "voice_output"},
-        )
-        result = RealtimeTurnResult.completed(
-            turn_id=turn.turn_id,
-            input_text=turn.input_text or input_text,
-            output_text="",
-            public_metadata={
-                "boundary": "realtime",
-                "mock_runtime": True,
-                **dict(public_metadata or {}),
-            },
-        )
-        committed_result = self._commit_terminal_result(
-            result,
-            event_type=RealtimeEventType.TURN_COMPLETED,
-            new_state=RealtimeState.COMPLETED,
-            reason="mock_turn_completed",
-        )
+
+        try:
+            self._transition(
+                RealtimeEventType.TURN_STARTED,
+                RealtimeState.LISTENING,
+                turn_id=turn.turn_id,
+                new_phase=RealtimePhase.LISTENING,
+                payload=LifecycleEventPayload(reason="turn_admitted"),
+            )
+            self._transition(
+                RealtimeEventType.LISTENING_STARTED,
+                RealtimeState.LISTENING,
+                turn_id=turn.turn_id,
+                new_phase=RealtimePhase.LISTENING,
+                payload=LifecycleEventPayload(reason="listening_started"),
+            )
+            self._transition(
+                RealtimeEventType.LISTENING_COMPLETED,
+                RealtimeState.TRANSCRIBING,
+                turn_id=turn.turn_id,
+                new_phase=RealtimePhase.TRANSCRIBING,
+                payload=LifecycleEventPayload(reason="listening_completed"),
+                public_metadata={"mock_stage": "voice_input"},
+            )
+            self._transition(
+                RealtimeEventType.TRANSCRIPT_FINAL,
+                RealtimeState.TRANSCRIBING,
+                turn_id=turn.turn_id,
+                payload=TranscriptEventPayload(
+                    text=transcript_text,
+                    is_final=True,
+                ),
+                public_metadata={"mock_stage": "transcript"},
+            )
+            self._transition(
+                RealtimeEventType.RESPONSE_STARTED,
+                RealtimeState.THINKING,
+                turn_id=turn.turn_id,
+                new_phase=RealtimePhase.THINKING,
+                payload=ResponseEventPayload(text="", is_final=False),
+            )
+            self._transition(
+                RealtimeEventType.RESPONSE_COMPLETED,
+                RealtimeState.THINKING,
+                turn_id=turn.turn_id,
+                payload=ResponseEventPayload(text="", is_final=True),
+                public_metadata={"mock_stage": "text_chat"},
+            )
+            self._transition(
+                RealtimeEventType.SYNTHESIS_STARTED,
+                RealtimeState.SPEAKING,
+                turn_id=turn.turn_id,
+                new_phase=RealtimePhase.SPEAKING,
+                payload=SynthesisEventPayload(request_state="started"),
+            )
+            self._transition(
+                RealtimeEventType.SYNTHESIS_COMPLETED,
+                RealtimeState.COMPLETED,
+                turn_id=turn.turn_id,
+                payload=SynthesisEventPayload(request_state="completed"),
+                public_metadata={"mock_stage": "voice_output"},
+            )
+            result = RealtimeTurnResult.completed(
+                turn_id=turn.turn_id,
+                input_text=turn.input_text or input_text,
+                output_text="",
+                public_metadata={
+                    "boundary": "realtime",
+                    "mock_runtime": True,
+                    **dict(public_metadata or {}),
+                },
+            )
+            committed_result = self._commit_terminal_result(
+                result,
+                event_type=RealtimeEventType.TURN_COMPLETED,
+                new_state=RealtimeState.COMPLETED,
+                reason="mock_turn_completed",
+            )
+        except _LateNonTerminalRejected as rejection:
+            existing = self._terminal_registry.get(rejection.turn_id)
+            if existing is None or existing.result is None:
+                raise AssertionError(
+                    "late non-terminal rejection must retain a terminal result"
+                )
+            return existing.result
 
         self._active_turn_id = None
         self._active_generation_id = None
@@ -681,25 +718,53 @@ class RealtimeSession:
             if no_active_turn
             else InterruptResult.not_implemented(request=request)
         )
-        self._transition(
-            RealtimeEventType.INTERRUPT_REQUESTED,
-            self._state,
-            turn_id=request.turn_id or self._active_turn_id,
-            payload=InterruptEventPayload(
-                scope=request.scope,
-                outcome=result.outcome,
-                reason=request.reason.value,
-            ),
-            public_metadata={
-                "scope": request.scope.value,
-                "reason": request.reason.value,
-            },
-        )
+        resolved_turn_id = request.turn_id or self._active_turn_id
 
-        if no_active_turn:
+        try:
+            self._transition(
+                RealtimeEventType.INTERRUPT_REQUESTED,
+                self._state,
+                turn_id=resolved_turn_id,
+                payload=InterruptEventPayload(
+                    scope=request.scope,
+                    outcome=result.outcome,
+                    reason=request.reason.value,
+                ),
+                public_metadata={
+                    "scope": request.scope.value,
+                    "reason": request.reason.value,
+                },
+            )
+
+            if no_active_turn:
+                self._transition(
+                    RealtimeEventType.INTERRUPT_UNSUPPORTED,
+                    self._state,
+                    payload=InterruptEventPayload(
+                        scope=request.scope,
+                        outcome=result.outcome,
+                        reason=request.reason.value,
+                    ),
+                    public_error_code=RealtimeErrorCode.UNSUPPORTED,
+                    safe_message=result.safe_message,
+                    public_metadata={
+                        "scope": request.scope.value,
+                        "reason": request.reason.value,
+                        "interrupt_outcome": result.outcome.value,
+                    },
+                )
+                return result
+
+            next_phase = (
+                RealtimePhase.RECOVERING
+                if self._active_turn_id is not None
+                else _PHASE_UNCHANGED
+            )
             self._transition(
                 RealtimeEventType.INTERRUPT_UNSUPPORTED,
-                self._state,
+                RealtimeState.INTERRUPTED,
+                turn_id=resolved_turn_id,
+                new_phase=next_phase,
                 payload=InterruptEventPayload(
                     scope=request.scope,
                     outcome=result.outcome,
@@ -713,31 +778,12 @@ class RealtimeSession:
                     "interrupt_outcome": result.outcome.value,
                 },
             )
-            return result
+        except _LateNonTerminalRejected:
+            return InterruptResult.no_active_turn(
+                request=request,
+                safe_message="Realtime turn is already terminal.",
+            )
 
-        next_phase = (
-            RealtimePhase.RECOVERING
-            if self._active_turn_id is not None
-            else _PHASE_UNCHANGED
-        )
-        self._transition(
-            RealtimeEventType.INTERRUPT_UNSUPPORTED,
-            RealtimeState.INTERRUPTED,
-            turn_id=request.turn_id or self._active_turn_id,
-            new_phase=next_phase,
-            payload=InterruptEventPayload(
-                scope=request.scope,
-                outcome=result.outcome,
-                reason=request.reason.value,
-            ),
-            public_error_code=RealtimeErrorCode.UNSUPPORTED,
-            safe_message=result.safe_message,
-            public_metadata={
-                "scope": request.scope.value,
-                "reason": request.reason.value,
-                "interrupt_outcome": result.outcome.value,
-            },
-        )
         self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
         return result
@@ -750,15 +796,16 @@ class RealtimeSession:
     ) -> InterruptResult:
         """Request cancellation of the current realtime turn."""
 
-        request = InterruptRequest(
-            scope=InterruptScope.CURRENT_TURN,
-            reason=reason,
-            turn_id=self._active_turn_id,
-            cancel_llm_stream=True,
-            cancel_tts_queue=True,
-            public_metadata=public_metadata or {},
-        )
-        return self.interrupt(request)
+        with self._serialized_operation():
+            request = InterruptRequest(
+                scope=InterruptScope.CURRENT_TURN,
+                reason=reason,
+                turn_id=self._active_turn_id,
+                cancel_llm_stream=True,
+                cancel_tts_queue=True,
+                public_metadata=public_metadata or {},
+            )
+            return self._interrupt_serialized(request)
 
     def flush_output(self, request: OutputFlushRequest | None = None) -> OutputFlushResult:
         with self._serialized_operation():
@@ -778,24 +825,40 @@ class RealtimeSession:
         if self._closed or self._close_requested:
             return OutputFlushResult.closed(request=request)
 
-        self._transition(
-            RealtimeEventType.OUTPUT_FLUSH_REQUESTED,
-            self._state,
-            turn_id=request.turn_id or self._active_turn_id,
-            public_metadata={
-                "scope": request.scope.value,
-                "stop_playback": request.stop_playback,
-                "clear_queued_audio": request.clear_queued_audio,
-            },
-        )
-
-        queue_state = self.get_tts_queue_state()
-        if queue_state.queued_count == 0 and not queue_state.is_playing:
-            result = OutputFlushResult.nothing_to_flush(request=request)
+        resolved_turn_id = request.turn_id or self._active_turn_id
+        try:
             self._transition(
-                RealtimeEventType.OUTPUT_FLUSH_COMPLETED,
+                RealtimeEventType.OUTPUT_FLUSH_REQUESTED,
                 self._state,
-                turn_id=request.turn_id or self._active_turn_id,
+                turn_id=resolved_turn_id,
+                public_metadata={
+                    "scope": request.scope.value,
+                    "stop_playback": request.stop_playback,
+                    "clear_queued_audio": request.clear_queued_audio,
+                },
+            )
+
+            queue_state = self.get_tts_queue_state()
+            if queue_state.queued_count == 0 and not queue_state.is_playing:
+                result = OutputFlushResult.nothing_to_flush(request=request)
+                self._transition(
+                    RealtimeEventType.OUTPUT_FLUSH_COMPLETED,
+                    self._state,
+                    turn_id=resolved_turn_id,
+                    safe_message=result.safe_message,
+                    public_metadata={
+                        "flush_outcome": result.outcome.value,
+                        "queued_count": queue_state.queued_count,
+                    },
+                )
+                return result
+
+            result = OutputFlushResult.not_implemented(request=request)
+            self._transition(
+                RealtimeEventType.OUTPUT_FLUSH_UNSUPPORTED,
+                self._state,
+                turn_id=resolved_turn_id,
+                public_error_code=RealtimeErrorCode.UNSUPPORTED,
                 safe_message=result.safe_message,
                 public_metadata={
                     "flush_outcome": result.outcome.value,
@@ -803,20 +866,11 @@ class RealtimeSession:
                 },
             )
             return result
-
-        result = OutputFlushResult.not_implemented(request=request)
-        self._transition(
-            RealtimeEventType.OUTPUT_FLUSH_UNSUPPORTED,
-            self._state,
-            turn_id=request.turn_id or self._active_turn_id,
-            public_error_code=RealtimeErrorCode.UNSUPPORTED,
-            safe_message=result.safe_message,
-            public_metadata={
-                "flush_outcome": result.outcome.value,
-                "queued_count": queue_state.queued_count,
-            },
-        )
-        return result
+        except _LateNonTerminalRejected:
+            return OutputFlushResult.nothing_to_flush(
+                request=request,
+                safe_message="Realtime turn is already terminal.",
+            )
 
     def set_barge_in_policy(self, policy: BargeInPolicy) -> BargeInPolicy:
         """Set the public barge-in policy for future host-app decisions."""
@@ -851,63 +905,70 @@ class RealtimeSession:
     ) -> BargeInDecision:
         """Return a provider-neutral public barge-in decision."""
 
-        self._transition(
-            RealtimeEventType.BARGE_IN_DETECTED,
-            self._state,
-            turn_id=turn_id or self._active_turn_id,
-            payload=InterruptEventPayload(
-                scope=InterruptScope.ALL,
-                outcome=(
-                    "unsupported"
-                    if self._barge_in_policy.mode is BargeInPolicyMode.DISABLED
-                    else "accepted"
-                ),
-                reason="barge_in_detected",
-            ),
-            public_metadata={
-                "policy_mode": self._barge_in_policy.mode.value,
-                **dict(public_metadata or {}),
-            },
-        )
-
-        if self._barge_in_policy.mode is BargeInPolicyMode.DISABLED:
-            decision = BargeInDecision.rejected(policy=self._barge_in_policy)
+        resolved_turn_id = turn_id or self._active_turn_id
+        try:
             self._transition(
-                RealtimeEventType.BARGE_IN_REJECTED,
+                RealtimeEventType.BARGE_IN_DETECTED,
                 self._state,
-                turn_id=turn_id or self._active_turn_id,
+                turn_id=resolved_turn_id,
                 payload=InterruptEventPayload(
                     scope=InterruptScope.ALL,
-                    outcome="unsupported",
-                    reason="barge_in_rejected",
+                    outcome=(
+                        "unsupported"
+                        if self._barge_in_policy.mode is BargeInPolicyMode.DISABLED
+                        else "accepted"
+                    ),
+                    reason="barge_in_detected",
+                ),
+                public_metadata={
+                    "policy_mode": self._barge_in_policy.mode.value,
+                    **dict(public_metadata or {}),
+                },
+            )
+
+            if self._barge_in_policy.mode is BargeInPolicyMode.DISABLED:
+                decision = BargeInDecision.rejected(policy=self._barge_in_policy)
+                self._transition(
+                    RealtimeEventType.BARGE_IN_REJECTED,
+                    self._state,
+                    turn_id=resolved_turn_id,
+                    payload=InterruptEventPayload(
+                        scope=InterruptScope.ALL,
+                        outcome="unsupported",
+                        reason="barge_in_rejected",
+                    ),
+                    safe_message=decision.safe_message,
+                    public_metadata={"policy_mode": self._barge_in_policy.mode.value},
+                )
+                return decision
+
+            decision = BargeInDecision.accepted_for_policy(
+                self._barge_in_policy,
+                turn_id=resolved_turn_id,
+                public_metadata=public_metadata or {},
+            )
+            self._transition(
+                RealtimeEventType.BARGE_IN_ACCEPTED,
+                self._state,
+                turn_id=resolved_turn_id,
+                payload=InterruptEventPayload(
+                    scope=InterruptScope.ALL,
+                    outcome="accepted",
+                    reason="barge_in_accepted",
                 ),
                 safe_message=decision.safe_message,
-                public_metadata={"policy_mode": self._barge_in_policy.mode.value},
+                public_metadata={
+                    "policy_mode": self._barge_in_policy.mode.value,
+                    "should_flush_queue": decision.should_flush_queue,
+                    "should_cancel_current_turn": decision.should_cancel_current_turn,
+                },
             )
             return decision
-
-        decision = BargeInDecision.accepted_for_policy(
-            self._barge_in_policy,
-            turn_id=turn_id or self._active_turn_id,
-            public_metadata=public_metadata or {},
-        )
-        self._transition(
-            RealtimeEventType.BARGE_IN_ACCEPTED,
-            self._state,
-            turn_id=turn_id or self._active_turn_id,
-            payload=InterruptEventPayload(
-                scope=InterruptScope.ALL,
-                outcome="accepted",
-                reason="barge_in_accepted",
-            ),
-            safe_message=decision.safe_message,
-            public_metadata={
-                "policy_mode": self._barge_in_policy.mode.value,
-                "should_flush_queue": decision.should_flush_queue,
-                "should_cancel_current_turn": decision.should_cancel_current_turn,
-            },
-        )
-        return decision
+        except _LateNonTerminalRejected:
+            return BargeInDecision.rejected(
+                policy=self._barge_in_policy,
+                safe_message="Realtime turn is already terminal.",
+            )
 
     def close(self) -> None:
         with self._operation_lock:

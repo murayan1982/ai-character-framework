@@ -1605,3 +1605,89 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-2c-B-REALTIME-SESSION-TERMINAL-ADOPTION:END -->
+
+<!-- FW-RT6-2c-C-REENTRANT-LATE-NON-TERMINAL:BEGIN -->
+## FW-RT6-2c Control C — reentrant late non-terminal rejection
+
+Control C applies the session terminal registry to every turn-scoped
+non-terminal transition before phase, state, sequence, history, or callback
+mutation.
+
+```text
+turn_id is None:
+not a turn-registry admission
+
+TURN_COMPLETED / TURN_INTERRUPTED / TURN_CANCELLED / TURN_FAILED / TURN_REJECTED:
+terminal path / not a non-terminal admission
+
+SESSION_CLOSED:
+session terminal / not classified as a turn terminal
+
+all other events with a turn_id:
+RealtimeTerminalRegistry.admit_non_terminal(turn_id) required
+```
+
+A rejected late transition stops the current public operation immediately. It
+emits no diagnostic event, allocates no sequence, adds no history entry, invokes
+no callback, and does not change session phase, state, active generation, or the
+first terminal record.
+
+```text
+late rejection diagnostics:
+terminal_diagnostics["late_non_terminal_count"] only
+
+STALE_RESULT_DROPPED:
+not used / deferred to FW-RT6-2d
+
+event_diagnostics keys:
+unchanged
+```
+
+Existing typed results are reused without adding a root-public type:
+
+```text
+late interrupt / cancel_current_turn:
+InterruptResult.no_active_turn
+
+late output flush:
+OutputFlushResult.nothing_to_flush
+
+late barge-in decision:
+BargeInDecision.rejected
+
+same terminal turn run_turn retry:
+first committed RealtimeTurnResult object
+```
+
+`cancel_current_turn()` now resolves the active turn while holding the accepted
+session operation lock. Concurrent same-session operations remain serialized.
+For concurrent `run_turn(...)` calls with one shared turn ID, exactly one full
+lifecycle group executes; all other callers return the first committed result
+without emitting a duplicate lifecycle group.
+
+```text
+root-public names:
+121 / unchanged
+
+RealtimeEvent public model changed:
+False
+
+RealtimeTurnResult public model changed:
+False
+
+create_realtime_session signature changed:
+False
+
+provider/network/microphone/playback/VTS execution:
+False
+
+generation stale-result rejection:
+DEFERRED / FW-RT6-2d
+
+aggregate tasklist/gap sync:
+DEFERRED / FW-RT6-2c Control D
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-2c-C-REENTRANT-LATE-NON-TERMINAL:END -->
