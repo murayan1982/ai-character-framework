@@ -28,6 +28,7 @@ class VoiceInputProviderStatus(str, Enum):
     PROVIDER_EXECUTION_NOT_ALLOWED = "provider_execution_not_allowed"
     UNSUPPORTED_PROVIDER = "unsupported_provider"
     REAL_STT_NOT_IMPLEMENTED = "real_stt_not_implemented"
+    REAL_STT_EXECUTOR_AVAILABLE = "real_stt_executor_available"
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,8 @@ class VoiceInputCapabilities:
     supports_voice_input_session: bool = True
     supports_text_fallback: bool = True
     supports_real_stt: bool = False
+    real_executor_available: bool = False
+    runtime_probe_performed: bool = False
     provider_status: VoiceInputProviderStatus = VoiceInputProviderStatus.DISABLED
     provider: str | None = None
     safe_message: str = "Real voice input is disabled."
@@ -227,13 +230,37 @@ def get_voice_input_capabilities(
             },
         )
 
+    if config.provider == "openai":
+        return VoiceInputCapabilities(
+            supports_real_stt=True,
+            real_executor_available=True,
+            runtime_probe_performed=False,
+            provider_status=VoiceInputProviderStatus.REAL_STT_EXECUTOR_AVAILABLE,
+            provider=config.provider,
+            safe_message=(
+                "OpenAI real STT executor is implemented; capability inspection "
+                "does not probe SDK, network, or provider runtime availability."
+            ),
+            retryable=False,
+            public_metadata={
+                "boundary": "voice_input",
+                "reason": "real_stt_executor_available",
+                "real_stt_executor_available": True,
+                "runtime_probe_performed": False,
+                "provider_execution_executed": False,
+            },
+        )
+
     return VoiceInputCapabilities(
         provider_status=VoiceInputProviderStatus.REAL_STT_NOT_IMPLEMENTED,
         provider=config.provider,
-        safe_message="Real voice input provider execution is configured but not implemented yet.",
+        safe_message="Real voice input provider execution is not implemented for this provider.",
         retryable=False,
         public_metadata={
             "boundary": "voice_input",
             "reason": "real_stt_not_implemented",
+            "real_stt_executor_available": False,
+            "runtime_probe_performed": False,
+            "provider_execution_executed": False,
         },
     )

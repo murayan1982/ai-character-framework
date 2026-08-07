@@ -102,6 +102,7 @@ def get_voice_input_provider_execution_status(
     if not isinstance(config, VoiceInputProviderExecutionConfig):
         raise TypeError("config must be VoiceInputProviderExecutionConfig")
 
+    executor_available = config.provider == "openai"
     metadata = {
         **_BASE_PUBLIC_METADATA,
         "provider_configured": str(config.provider_configured).lower(),
@@ -109,6 +110,8 @@ def get_voice_input_provider_execution_status(
         "provider_execution_allowed": str(
             config.allow_provider_execution
         ).lower(),
+        "real_stt_executor_available": str(executor_available).lower(),
+        "runtime_probe_performed": "false",
     }
 
     if not config.allow_provider_execution:
@@ -155,6 +158,22 @@ def get_voice_input_provider_execution_status(
             public_metadata=metadata,
         )
 
+    if executor_available:
+        return CapabilityStatus(
+            name="voice_input_provider_execution",
+            status="configured",
+            supported=True,
+            configured=True,
+            available=False,
+            blocked=False,
+            reason_code="real_stt_executor_available",
+            safe_message=(
+                "OpenAI real STT executor is implemented; this execution-free "
+                "status does not probe SDK, network, or provider runtime availability."
+            ),
+            public_metadata=metadata,
+        )
+
     return CapabilityStatus(
         name="voice_input_provider_execution",
         status="configured",
@@ -164,8 +183,8 @@ def get_voice_input_provider_execution_status(
         blocked=False,
         reason_code="provider_execution_not_implemented",
         safe_message=(
-            "Real STT provider execution is configured, but execution is not "
-            "implemented in REQ-1."
+            "Real STT provider execution is configured but is not implemented "
+            "for this provider."
         ),
         public_metadata=metadata,
     )

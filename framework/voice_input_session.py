@@ -1,7 +1,8 @@
-"""Public voice-input / STT session skeleton.
+"""Public voice-input / STT session boundary.
 
-This module provides the first mock-safe public voice-input session boundary.
-It intentionally does not execute real STT providers yet.
+The default path remains mock-safe. FW-RT6-7a Control A corrects real-STT
+implementation capability reporting and adds correlation/event scaffolding
+without selecting or executing a real provider by default.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceIn
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import RLock
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
@@ -21,6 +23,20 @@ from .voice_input import (
     VoiceInputResult,
     _public_mapping,
 )
+from .identity import (
+    EventSequence,
+    GenerationId,
+    SessionId,
+    TurnId,
+    normalize_session_id,
+)
+from .realtime import (
+    RealtimeErrorCode,
+    RealtimeEvent,
+    RealtimeEventType,
+    RealtimeState,
+)
+from .realtime_event_payloads import RealtimeEventPayload
 from .version import VOICE_INPUT_API_VERSION
 
 from .voice_input_capability import (
@@ -31,6 +47,16 @@ from .voice_input_capability import (
 
 
 VoiceInputCallback = Callable[[Mapping[str, Any]], None]
+VoiceInputRealtimeCallback = Callable[[RealtimeEvent], None]
+
+
+@dataclass(frozen=True, slots=True)
+class _VoiceInputTurnContext:
+    """Internal Framework-owned correlation context for one voice-input operation."""
+
+    session_id: SessionId
+    turn_id: TurnId
+    generation_id: GenerationId
 
 
 @dataclass(frozen=True)
@@ -39,6 +65,7 @@ class VoiceInputSessionInfo:
 
     api_version: str = VOICE_INPUT_API_VERSION
     session_type: str = "voice_input"
+    session_id: SessionId | str = field(default_factory=SessionId.new)
     provider: str | None = None
     language: str | None = None
     real_stt_enabled: bool = False
@@ -58,6 +85,7 @@ class VoiceInputSessionInfo:
             else VoiceInputProviderStatus(str(self.provider_status))
         )
         object.__setattr__(self, "provider_status", status)
+        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
@@ -80,6 +108,10 @@ class VoiceInputSession:
         public_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
+        self._session_id = SessionId.new()
+        self._next_realtime_event_sequence = EventSequence.first()
+        self._realtime_event_callbacks: list[VoiceInputRealtimeCallback] = []
+        self._realtime_event_lock = RLock()
         self._provider = provider
         self._language = language
         self._real_stt_enabled = bool(real_stt_enabled)
@@ -95,6 +127,7 @@ class VoiceInputSession:
             public_metadata=public_metadata,
         )
         self._info = VoiceInputSessionInfo(
+            session_id=self._session_id,
             provider=self._capabilities.provider or provider,
             language=language,
             real_stt_enabled=bool(real_stt_enabled),
@@ -117,8 +150,84 @@ class VoiceInputSession:
         return self._capabilities
 
     @property
+    def session_id(self) -> SessionId:
+        """Return the stable Framework correlation identity for this session."""
+
+        return self._session_id
+
+    @property
     def is_closed(self) -> bool:
         return self._closed
+
+    def on_realtime_event(
+        self,
+        callback: VoiceInputRealtimeCallback,
+    ) -> VoiceInputRealtimeCallback:
+        """Register an additive canonical v6 event callback and return it."""
+
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+        with self._realtime_event_lock:
+            self._realtime_event_callbacks.append(callback)
+        return callback
+
+    def _new_realtime_turn_context(self) -> _VoiceInputTurnContext:
+        """Allocate one Framework-owned turn/generation correlation context."""
+
+        return _VoiceInputTurnContext(
+            session_id=self._session_id,
+            turn_id=TurnId.new(),
+            generation_id=GenerationId.new(),
+        )
+
+    def _emit_realtime_event(
+        self,
+        event_type: RealtimeEventType,
+        *,
+        state: RealtimeState,
+        context: _VoiceInputTurnContext | None = None,
+        previous_state: RealtimeState | None = None,
+        payload: RealtimeEventPayload | None = None,
+        public_error_code: RealtimeErrorCode = RealtimeErrorCode.NONE,
+        safe_message: str = "",
+        retryable: bool = False,
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> RealtimeEvent:
+        """Emit one sequenced canonical event without changing legacy callbacks."""
+
+        if not isinstance(event_type, RealtimeEventType):
+            raise TypeError("event_type must be a RealtimeEventType")
+        if not isinstance(state, RealtimeState):
+            raise TypeError("state must be a RealtimeState")
+
+        with self._realtime_event_lock:
+            sequence = self._next_realtime_event_sequence
+            self._next_realtime_event_sequence = sequence.next()
+            callbacks = tuple(self._realtime_event_callbacks)
+
+        event = RealtimeEvent(
+            type=event_type,
+            state=state,
+            previous_state=previous_state,
+            session_id=self._session_id,
+            turn_id=context.turn_id if context is not None else None,
+            generation_id=(
+                context.generation_id if context is not None else None
+            ),
+            sequence=sequence,
+            payload=payload,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            retryable=retryable,
+            public_metadata={
+                "boundary": "voice_input",
+                **dict(public_metadata or {}),
+            },
+            boundary="voice_input",
+        )
+        for callback in callbacks:
+            callback(event)
+        return event
 
     def on_event(self, callback: VoiceInputCallback) -> None:
         """Register an app-facing provider-neutral event callback."""

@@ -2519,3 +2519,34 @@ The Framework may emit `AUDIO_INVALIDATED` after its accepted artifact lifecycle
 control invalidates a Framework-owned artifact. Apps must still separately stop
 already-buffered or already-downloaded host playback.
 <!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->
+
+<!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:BEGIN -->
+## FW-RT6-7a Control A — voice-input host integration correction
+
+Host applications may treat the OpenAI real-STT executor as an implemented
+Framework capability when the explicit public configuration guards pass. This
+does not mean the Framework has probed the optional SDK, network, credentials,
+or provider service during capability inspection.
+
+```text
+executor implementation available:
+True for OpenAI
+
+runtime probe performed:
+False
+
+provider execution performed:
+False
+```
+
+The public `VoiceInputSession` now exposes stable session identity and an
+additive canonical realtime-event callback scaffold. Turn/generation correlation
+is Framework-owned. Existing mapping callbacks remain compatible.
+
+Control A does not yet make the session choose a real provider automatically.
+The default host-audio path remains fake/mock-safe unless an adapter is supplied.
+Provider-neutral default fake/real composition is FW-RT6-7a Control B work.
+
+Applications must not construct provider-native clients or infer real runtime
+availability from executor implementation availability.
+<!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:END -->

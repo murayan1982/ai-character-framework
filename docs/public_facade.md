@@ -2930,3 +2930,41 @@ The legacy `tts.VoiceEngine` / `ffplay` player is deprecated internal
 compatibility. It remains usable by the legacy runtime during v6.0.0 but is not a
 v6 public playback API and is not a capability source.
 <!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->
+
+<!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:BEGIN -->
+## FW-RT6-7a Control A — voice-input capability correction and correlation scaffold
+
+The v5.4 OpenAI real-STT executor is already implemented and previously accepted.
+The legacy public voice-input capability must therefore no longer report OpenAI
+as `REAL_STT_NOT_IMPLEMENTED` after its explicit configuration guards pass.
+
+Control A distinguishes implementation availability from runtime/provider
+availability:
+
+```text
+OpenAI real executor implementation:
+available
+
+provider SDK/runtime availability probe:
+not performed
+
+network/provider execution:
+not performed
+
+microphone access:
+not performed
+```
+
+`VoiceInputSession` also gains a stable Framework `session_id`, internal
+turn/generation correlation allocation, and an additive canonical
+`on_realtime_event()` scaffold. Existing mapping callbacks and existing
+`VoiceInputResult` factories remain unchanged.
+
+`VoiceInputSessionInfo.api_version` continues to use the central
+`VOICE_INPUT_API_VERSION` constant. Its compatibility value remains `5.2.0` in
+this control.
+
+The normal public audio-transcription path still defaults to the mock-safe fake
+adapter in Control A. Provider-neutral automatic fake/real composition is
+deferred to FW-RT6-7a Control B.
+<!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:END -->
