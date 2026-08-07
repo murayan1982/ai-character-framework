@@ -408,3 +408,140 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->
+
+
+<!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6a Control C — aggregate acceptance
+
+### Baseline and scope
+
+```text
+baseline HEAD / origin/main:
+dd34b24faca398a070d1c50681b5e1809c260fb2
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+Control C:
+AUTHORIZED
+```
+
+Control C adds no runtime implementation. It reviews the accepted Control A+B
+voice-synthesis generation boundary as one aggregate and fixes the acceptance
+truth needed to close FW-RT6-6a without claiming later P0-5 work.
+
+### Aggregate identity and observability
+
+```text
+synthesis work identity:
+SynthesisWorkId / fw_synthesis_<32 lowercase hex>
+
+correlation identities:
+session / turn / generation / work
+
+active generation observable:
+True
+
+active generation public fields:
+context / work_id
+
+active generation thread-safe:
+True
+
+provider adapter receives Framework correlation IDs:
+False
+```
+
+The provider adapter continues to receive only `VoiceOutputRequest`. Framework
+correlation remains stage-owned. Active-generation observation therefore does not
+expose request text, provider/client/model/voice identifiers, provider payloads,
+artifact paths/references, or provider handles.
+
+### Aggregate capability truth
+
+`RealtimeVoiceOutputCapability` remains the sole capability source. The current
+accepted provider boundary has no verified active synthesis cancel handle, so the
+aggregate truth remains:
+
+```text
+generation_cancel_supported = False
+provider_hard_cancel_supported = False
+pending_flush_supported = False
+active_audio_invalidation_supported = False
+```
+
+`UNSUPPORTED` for a matching active-generation cancel is truthful Control B
+behavior; it must not be reinterpreted as `REQUESTED`, completed cancellation, or
+provider hard-cancel success.
+
+### Public surface and privacy acceptance
+
+```text
+framework.realtime_voice_output stable exports:
+7 / UNCHANGED
+
+framework root-public names:
+127 / UNCHANGED
+
+provider details public:
+False
+
+existing VoiceOutputSession behavior changed:
+False
+
+existing framework.realtime_stage.VoiceOutputStage changed:
+False
+```
+
+### Later P0-5 boundaries remain separate
+
+```text
+opaque artifact store / local-path correction:
+FW-RT6-6b
+
+bounded pending queue / pending clear:
+FW-RT6-6c
+
+active generation cancellation / artifact invalidation / future delivery suppression:
+FW-RT6-6d
+
+host playback coordination:
+FW-RT6-6e
+```
+
+Closing FW-RT6-6a does not authorize or claim any of those behaviors.
+
+### Control C acceptance candidate
+
+```text
+exact Control C delta:
+3 files
+
+FW-RT6-6a tasks:
+6 / 6 ACCEPTED-CANDIDATE
+
+generation identity:
+True / PASS expected
+
+active generation observable:
+True / PASS expected
+
+provider details public:
+False / PASS expected
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-6b / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:END -->

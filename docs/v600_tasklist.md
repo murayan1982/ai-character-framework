@@ -2533,12 +2533,12 @@ PASS
 
 **Tasks:**
 
-- [ ] provider-neutral synthesis work IDを追加する。
-- [ ] synthesis start/result/cancel protocolを定義する。
-- [ ] generation capabilityを定義する。
-- [ ] provider adapterをprotocolへ接続する。
-- [ ] active generation stateを観測可能にする。
-- [ ] provider hard cancel capabilityをtruthfulにする。
+- [x] provider-neutral synthesis work IDを追加する。
+- [x] synthesis start/result/cancel protocolを定義する。
+- [x] generation capabilityを定義する。
+- [x] provider adapterをprotocolへ接続する。
+- [x] active generation stateを観測可能にする。
+- [x] provider hard cancel capabilityをtruthfulにする。
 
 **Acceptance:**
 
@@ -3593,3 +3593,48 @@ six FW-RT6-6a task checkboxes only if the combined Control A+B contract remains
 truthful. Pending queue, artifact invalidation, generation-cancel execution, and
 host playback remain FW-RT6-6c/6d/6e boundaries.
 <!-- FW-RT6-6a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6a Control C — aggregate identity / observability / privacy acceptance
+
+```text
+checkpoint: FW-RT6-6a Control C
+baseline head: dd34b24faca398a070d1c50681b5e1809c260fb2
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C delta: 3 files
+Control A dedicated regression: PASS expected
+Control B dedicated regression: PASS expected
+full Framework unit suite: 290 / PASS expected
+generation identity: True / PASS expected
+active generation observable: True / PASS expected
+active generation thread-safe: True / PASS expected
+provider details public: False / PASS expected
+provider adapter receives Framework correlation IDs: False / PASS expected
+capability source: RealtimeVoiceOutputCapability
+generation_cancel_supported: False / truthful
+provider_hard_cancel_supported: False / truthful
+stable package exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6a tasks: 6 / 6 ACCEPTED-CANDIDATE
+pending queue changed: False
+artifact invalidation changed: False
+host playback ownership changed: False
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6b / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C closes the six FW-RT6-6a aggregate task checkboxes only as an
+acceptance candidate after the accepted Control A identity/protocol boundary and
+Control B provider-adoption/active-generation boundary are reviewed together.
+No new runtime behavior is introduced by Control C.
+
+Roadmap P0-5 remains split across later tasks: opaque artifact storage is
+FW-RT6-6b, bounded pending work is FW-RT6-6c, active cancellation / artifact
+invalidation / future-delivery suppression are FW-RT6-6d, and host playback
+coordination is FW-RT6-6e. None of those later capabilities are inferred from
+FW-RT6-6a acceptance.
+<!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:END -->
