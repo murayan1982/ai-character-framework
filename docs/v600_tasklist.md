@@ -4649,3 +4649,62 @@ provider-neutral fake/real composition is explicitly deferred to Control B.
 The six FW-RT6-7a aggregate tasks remain open. This sync authorizes only Control
 B exact contract review after the sync commit/push is remotely verified.
 <!-- FW-RT6-7a-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7a Control B — acceptance sync
+
+```text
+checkpoint: FW-RT6-7a Control B
+baseline head: 448e792a245aaffa99fefc8cf24726bfc71c623e
+implementation commit: 448e792a245aaffa99fefc8cf24726bfc71c623e
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 6 files
+Control B dedicated gate: PASS
+Control A source-only regression: PASS
+FW-RT6-6e regression subset: PASS
+full Framework unit suite: 290 / PASS
+default fake path: PASS
+explicit adapter precedence: PASS
+real STT silent fake fallback: False / PASS
+host constructs provider-specific adapter: False / PASS
+host constructs provider-specific factory: False / PASS
+host constructs provider-specific executor: False / PASS
+credential_env private value consumed by runtime: False / PASS
+provider-specific Framework modules lazy before executor seam: True / PASS
+actual OpenAI SDK imported by acceptance verification: False / PASS
+actual provider client created by acceptance verification: False / PASS
+network execution during acceptance verification: False / PASS
+microphone access during acceptance verification: False / PASS
+private auth value exposed: False / PASS
+VoiceInputResult changed: False / PASS
+FW-RT6-7b lifecycle adopted: False / PASS
+FW-RT6-7c result correlation adopted: False / PASS
+framework root-public names: 127 / UNCHANGED
+Corrective 1: ACCEPTED
+Corrective 2 + recovery: ACCEPTED
+FW-RT6-7a aggregate: NOT_COMPLETED
+FW-RT6-7a tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts provider-neutral default fake/real selection in
+`VoiceInputSession` while preserving explicit adapter precedence and the
+mock-safe default path.
+
+A real-STT request is not silently represented as a fake success. OpenAI real
+composition reuses the accepted v5.4 runtime chain internally and still requires
+the separate provider-execution, SDK-import, client-creation, and actual
+real-execution opt-ins plus an explicitly supplied private credential.
+`credential_env` remains capability/preflight input and its private value is not
+consumed by runtime composition.
+
+Control B does not adopt FW-RT6-7b lifecycle/stage semantics or FW-RT6-7c
+`VoiceInputResult` correlation semantics. The six FW-RT6-7a aggregate tasks
+remain open.
+
+This sync authorizes only FW-RT6-7a Control C aggregate exact contract review
+after the sync commit/push is remotely verified.
+<!-- FW-RT6-7a-B-ACCEPTANCE-SYNC:END -->
