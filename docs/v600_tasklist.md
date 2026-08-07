@@ -3895,3 +3895,55 @@ The next authorized activity is FW-RT6-6c exact contract review. FW-RT6-6c
 implementation remains separately gated until that review is completed and an
 implementation control is explicitly authorized.
 <!-- FW-RT6-6b-C-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6c Control A — bounded pending queue acceptance sync
+
+```text
+checkpoint: FW-RT6-6c Control A
+baseline head: 3bdd196c34d2ffd3eaa2dfc30cc39cf22aa34409
+implementation commit: b2b516afd1f5102047594e698f3ad9ebc011575c
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 5 files
+dedicated gate: PASS
+accepted FW-RT6-6b aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+stable package: framework.realtime_voice_output_queue
+stable package exports: 8
+bounded pending queue: True / PASS
+configurable max pending depth: True / PASS
+pending item correlation: session / turn / generation / work / PASS
+enqueue typed result: True / PASS
+silent drop: False / PASS
+pending clear: True / PASS
+active generation cancelled by pending clear: False / PASS
+overflow event: True / PASS
+provider pending_flush_supported changed: False
+generation cancel changed: False
+artifact invalidation changed: False
+host playback changed: False
+root-public names: 127 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6c aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts only the bounded pending-queue foundation. The seven
+FW-RT6-6c aggregate task checkboxes remain open until pending-to-active adoption
+and final aggregate acceptance are completed.
+
+Control B is authorized to compose the accepted pending queue with the accepted
+voice-synthesis stage boundary. Pending work must leave the queue before it
+becomes active, and the enqueue-time `SynthesisWorkId` must be preserved as the
+same active work identity rather than allocating a second unrelated work ID.
+The active generation remains stage-owned, pending clear must not alter active
+generation state, and provider adapters must continue to receive no Framework
+session, turn, generation, or synthesis-work identities.
+
+Generation cancellation, interrupt-driven artifact invalidation, future-delivery
+suppression, and provider cancel timeout remain FW-RT6-6d. Host playback
+coordination remains FW-RT6-6e. Control B is not authorized to claim those later
+P0-5 capabilities.
+<!-- FW-RT6-6c-A-ACCEPTANCE-SYNC:END -->
