@@ -2796,3 +2796,31 @@ root-public names: 127 / UNCHANGED
 Provider adapters continue to receive only `VoiceOutputRequest`; Framework
 session/turn/generation/work identities remain orchestration-owned.
 <!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->
+
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:BEGIN -->
+## v6 typed voice-synthesis cancellation result foundation
+
+Advanced Framework composition code using the explicitly stable
+`framework.realtime_voice_output` package can distinguish cancellation request,
+completion, timeout, provider hard-cancel truth, artifact invalidation, and
+future-delivery suppression in one public-safe typed result.
+
+Control A adds no new root-public name and does not change
+`VoiceSynthesisStage.cancel(...)` or the provider-adapter signature.
+
+```text
+checkpoint: FW-RT6-6d Control A
+baseline head: 3613056b798bd0a46ecee87a252ed5f36156a67d
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 6 files
+stable voice synthesis exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+active cancel execution: False / DEFERRED Control B
+provider hard cancel support changed: False
+artifact invalidation execution: False / DEFERRED Control B
+future-delivery suppression execution: False / DEFERRED Control B
+provider/network/microphone/playback/real VTS execution: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->

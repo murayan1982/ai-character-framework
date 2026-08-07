@@ -2393,3 +2393,33 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->
+
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:BEGIN -->
+## FW-RT6-6d Control A — app integration cancellation-result typing
+
+Host applications continue to use the existing root voice-output APIs. Advanced
+Framework integration code may explicitly inspect
+`framework.realtime_voice_output.VoiceSynthesisCancelResult` when composing the
+v6 realtime voice-output control boundary.
+
+The typed result now distinguishes cooperative request/completion, timeout,
+provider hard-cancel applied versus unsupported, artifact invalidation, and
+future-delivery suppression. These fields are truthful result vocabulary only in
+Control A; the current concrete stage still returns `UNSUPPORTED` for a matching
+active synthesis cancel.
+
+```text
+checkpoint: FW-RT6-6d Control A
+baseline head: 3613056b798bd0a46ecee87a252ed5f36156a67d
+root-public names: 127 / UNCHANGED
+VoiceSynthesisStage signature changed: False
+provider adapter signature changed: False
+active cancel execution: False
+provider hard cancel capability changed: False
+artifact invalidation execution: False
+future delivery suppression execution: False
+host playback changed: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->

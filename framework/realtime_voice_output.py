@@ -148,6 +148,8 @@ class VoiceSynthesisCancelOutcome(str, Enum):
     """Typed result classification for one active-generation cancel request."""
 
     REQUESTED = "requested"
+    COMPLETED = "completed"
+    TIMED_OUT = "timed_out"
     NO_ACTIVE_GENERATION = "no_active_generation"
     WORK_MISMATCH = "work_mismatch"
     ALREADY_TERMINAL = "already_terminal"
@@ -164,7 +166,11 @@ class VoiceSynthesisCancelResult:
     context: RealtimeStageContext
     work_id: SynthesisWorkId | str | None = None
     cooperative_cancel_requested: bool = False
+    cooperative_cancel_completed: bool = False
     provider_hard_cancel_applied: bool = False
+    provider_hard_cancel_unsupported: bool = False
+    artifact_invalidated: bool = False
+    future_delivery_suppressed: bool = False
     safe_message: str = ""
     retryable: bool = False
     public_metadata: Mapping[str, object] = field(default_factory=dict)
@@ -186,9 +192,14 @@ class VoiceSynthesisCancelResult:
         if not isinstance(safe_message, str):
             raise TypeError("safe_message must normalize to public-safe text")
 
-        cooperative = bool(self.cooperative_cancel_requested)
-        hard_cancel = bool(self.provider_hard_cancel_applied)
+        cooperative_requested = bool(self.cooperative_cancel_requested)
+        cooperative_completed = bool(self.cooperative_cancel_completed)
+        hard_cancel_applied = bool(self.provider_hard_cancel_applied)
+        hard_cancel_unsupported = bool(self.provider_hard_cancel_unsupported)
+        artifact_invalidated = bool(self.artifact_invalidated)
+        future_delivery_suppressed = bool(self.future_delivery_suppressed)
         retryable = bool(self.retryable)
+
         non_cancel_outcomes = {
             VoiceSynthesisCancelOutcome.NO_ACTIVE_GENERATION,
             VoiceSynthesisCancelOutcome.WORK_MISMATCH,
@@ -196,19 +207,87 @@ class VoiceSynthesisCancelResult:
             VoiceSynthesisCancelOutcome.UNSUPPORTED,
             VoiceSynthesisCancelOutcome.ALREADY_CLOSED,
         }
-        if outcome in non_cancel_outcomes and (cooperative or hard_cancel):
-            raise ValueError(
-                "non-cancel outcome must not claim cooperative or provider hard cancel"
+        effect_claimed = any(
+            (
+                cooperative_requested,
+                cooperative_completed,
+                hard_cancel_applied,
+                hard_cancel_unsupported,
+                artifact_invalidated,
+                future_delivery_suppressed,
             )
-        if hard_cancel and not cooperative:
+        )
+        if outcome in non_cancel_outcomes and effect_claimed:
             raise ValueError(
-                "provider_hard_cancel_applied requires cooperative_cancel_requested"
+                "non-cancel outcome must not claim cancellation or suppression effects"
+            )
+
+        if outcome is VoiceSynthesisCancelOutcome.REQUESTED and (
+            not cooperative_requested or cooperative_completed
+        ):
+            raise ValueError(
+                "REQUESTED requires cooperative request without completed cancellation"
+            )
+        if outcome is VoiceSynthesisCancelOutcome.COMPLETED and (
+            not cooperative_requested or not cooperative_completed
+        ):
+            raise ValueError(
+                "COMPLETED requires requested and completed cooperative cancellation"
+            )
+        if outcome is VoiceSynthesisCancelOutcome.TIMED_OUT and (
+            not cooperative_requested or cooperative_completed
+        ):
+            raise ValueError(
+                "TIMED_OUT requires requested but incomplete cooperative cancellation"
+            )
+
+        if cooperative_completed and not cooperative_requested:
+            raise ValueError(
+                "cooperative_cancel_completed requires cooperative_cancel_requested"
+            )
+        if hard_cancel_applied and hard_cancel_unsupported:
+            raise ValueError(
+                "provider hard cancel cannot be both applied and unsupported"
+            )
+        if (
+            hard_cancel_applied or hard_cancel_unsupported
+        ) and not cooperative_requested:
+            raise ValueError(
+                "provider hard-cancel result requires cooperative_cancel_requested"
+            )
+        if artifact_invalidated and not future_delivery_suppressed:
+            raise ValueError(
+                "artifact_invalidated requires future_delivery_suppressed"
             )
 
         object.__setattr__(self, "outcome", outcome)
+        object.__setattr__(
+            self,
+            "cooperative_cancel_requested",
+            cooperative_requested,
+        )
+        object.__setattr__(
+            self,
+            "cooperative_cancel_completed",
+            cooperative_completed,
+        )
+        object.__setattr__(
+            self,
+            "provider_hard_cancel_applied",
+            hard_cancel_applied,
+        )
+        object.__setattr__(
+            self,
+            "provider_hard_cancel_unsupported",
+            hard_cancel_unsupported,
+        )
+        object.__setattr__(self, "artifact_invalidated", artifact_invalidated)
+        object.__setattr__(
+            self,
+            "future_delivery_suppressed",
+            future_delivery_suppressed,
+        )
         object.__setattr__(self, "work_id", work_id)
-        object.__setattr__(self, "cooperative_cancel_requested", cooperative)
-        object.__setattr__(self, "provider_hard_cancel_applied", hard_cancel)
         object.__setattr__(self, "safe_message", safe_message)
         object.__setattr__(self, "retryable", retryable)
         object.__setattr__(self, "public_metadata", public_mapping(self.public_metadata))

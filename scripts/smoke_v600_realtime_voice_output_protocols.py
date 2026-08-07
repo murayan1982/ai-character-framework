@@ -197,6 +197,8 @@ def check_models() -> None:
     _assert(
         tuple(item.name for item in VoiceSynthesisCancelOutcome) == (
             "REQUESTED",
+            "COMPLETED",
+            "TIMED_OUT",
             "NO_ACTIVE_GENERATION",
             "WORK_MISMATCH",
             "ALREADY_TERMINAL",
@@ -212,7 +214,11 @@ def check_models() -> None:
             "context",
             "work_id",
             "cooperative_cancel_requested",
+            "cooperative_cancel_completed",
             "provider_hard_cancel_applied",
+            "provider_hard_cancel_unsupported",
+            "artifact_invalidated",
+            "future_delivery_suppressed",
             "safe_message",
             "retryable",
             "public_metadata",
@@ -227,7 +233,11 @@ def check_models() -> None:
         public_metadata={"api_key": "private-secret", "reason": "safe"},
     )
     _assert(cancel.cooperative_cancel_requested, "cooperative cancel request lost")
+    _assert(not cancel.cooperative_cancel_completed, "requested cancel claimed completion")
     _assert(not cancel.provider_hard_cancel_applied, "cooperative cancel implied provider hard cancel")
+    _assert(not cancel.provider_hard_cancel_unsupported, "requested cancel implied provider hard-cancel unsupported")
+    _assert(not cancel.artifact_invalidated, "requested cancel implied artifact invalidation")
+    _assert(not cancel.future_delivery_suppressed, "requested cancel implied future suppression")
     _assert("private-secret" not in repr(dict(cancel.public_metadata)), "cancel metadata leaked secret")
     print("[OK] synthesis identity/result/active/cancel models conform")
 

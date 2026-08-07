@@ -1546,3 +1546,105 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:BEGIN -->
+## FW-RT6-6d Control A — typed voice-synthesis cancellation result foundation
+
+Control A extends the accepted `framework.realtime_voice_output` cancellation
+vocabulary only. It does not execute active cancellation, change the provider
+adapter protocol, invalidate an artifact, suppress delivery, alter
+`RealtimeSession`, or change the pending queue.
+
+```text
+baseline HEAD / origin/main:
+3613056b798bd0a46ecee87a252ed5f36156a67d
+
+exact Control A surface:
+6 files
+
+VoiceSynthesisCancelOutcome additions:
+COMPLETED
+TIMED_OUT
+
+VoiceSynthesisCancelResult additions:
+cooperative_cancel_completed
+provider_hard_cancel_unsupported
+artifact_invalidated
+future_delivery_suppressed
+
+stable framework.realtime_voice_output exports:
+7 / UNCHANGED
+
+root-public names:
+127 / UNCHANGED
+```
+
+### Result invariants
+
+```text
+REQUESTED:
+cooperative_cancel_requested = True
+cooperative_cancel_completed = False
+
+COMPLETED:
+cooperative_cancel_requested = True
+cooperative_cancel_completed = True
+
+TIMED_OUT:
+cooperative_cancel_requested = True
+cooperative_cancel_completed = False
+
+provider_hard_cancel_applied XOR provider_hard_cancel_unsupported:
+enforced when either is claimed
+
+provider hard-cancel result without cooperative request:
+invalid
+
+artifact_invalidated = True:
+future_delivery_suppressed = True / REQUIRED
+
+non-cancel outcomes:
+must not claim cancellation, invalidation, or suppression effects
+```
+
+The current concrete synthesis stage remains unchanged in behavior. A matching
+active cancel still returns `UNSUPPORTED`; current provider adapters still report
+`generation_cancel_supported=False` and
+`provider_hard_cancel_supported=False`. Control A therefore establishes result
+vocabulary without claiming provider cancellation capability.
+
+```text
+active synthesis cancellation execution:
+False
+
+provider cancel timeout execution:
+False
+
+provider hard cancel execution:
+False
+
+artifact invalidation execution:
+False
+
+future delivery suppression execution:
+False
+
+RealtimeSession changed:
+False
+
+pending queue changed:
+False
+
+FW-RT6-6d tasklist:
+0 / 7 CLOSED
+
+Control B:
+NOT_AUTHORIZED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->
