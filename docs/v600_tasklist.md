@@ -4178,3 +4178,66 @@ hard cancel must remain reported as unsupported rather than inferred from a
 cooperative Framework cancellation. Host playback coordination remains
 FW-RT6-6e and is not authorized by this acceptance.
 <!-- FW-RT6-6d-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6d-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6d Control B — cancellation / invalidation runtime adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-6d Control B
+baseline head: 5e26f29847a357225a29c724c6014aa15ff1c83d
+implementation commit: 32c78a4a7b437f11fb41638a08a7b5138bcd01cc
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 6 files
+dedicated gate: PASS
+Control A typed cancel-result foundation: PASS
+accepted FW-RT6-6a/6b/6c regressions: PASS
+full Framework unit suite: 290 / PASS
+active cooperative cancel: PASS
+bounded cancel timeout: PASS
+provider hard cancel applied: False / TRUTHFUL
+provider hard cancel unsupported: True / PASS
+completed artifact invalidation: PASS
+invalidated artifact playable: False / PASS
+future delivery suppression: PASS
+late artifact stale guard: existing RealtimeGenerationGate / PASS
+new freshness registry: False / PASS
+duplicate cancel: IDEMPOTENT / PASS
+duplicate flush: IDEMPOTENT / PASS
+pending clear vs active cancel: DISTINGUISHED / PASS
+provider capability changed: False
+RealtimeSession changed: False
+host playback changed: False
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+root-public names: 127 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6d aggregate: NOT_COMPLETED
+FW-RT6-6d tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C: AUTHORIZED
+Control C implementation: NOT_STARTED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the Framework-owned runtime cancellation / invalidation
+reference composition. Active synthesis cancellation is cooperative and installs
+a one-way future-delivery suppression barrier before the bounded completion wait.
+Current provider transport hard cancel remains truthfully unsupported and is not
+inferred from Framework-cooperative cancellation.
+
+Completed Framework-owned generation-bound artifacts can be invalidated and
+become non-playable. Late synthesis completion reuses the existing
+`RealtimeGenerationGate` freshness decision rather than introducing a second
+registry. Pending clear remains distinct from active cancellation, and duplicate
+cancel / flush behavior is idempotent.
+
+The seven FW-RT6-6d aggregate task checkboxes remain open. Control C is
+authorized for aggregate acceptance only: review accepted Control A+B together,
+run the dedicated FW-RT6-6d aggregate gate and regressions, and close the seven
+aggregate task checkboxes only if that aggregate review passes. Control C must
+not add new runtime behavior.
+
+Host playback coordination and physical playback stop remain FW-RT6-6e.
+Guarded real-runtime composition remains separately gated by the later roadmap.
+<!-- FW-RT6-6d-B-ACCEPTANCE-SYNC:END -->
