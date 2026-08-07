@@ -1840,3 +1840,118 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->
+
+<!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6d Control C — generation cancel / artifact invalidation aggregate acceptance
+
+Control C is aggregate acceptance only. It adds no new runtime implementation
+beyond the accepted Control A typed cancellation-result vocabulary and Control B
+Framework-owned cooperative cancellation/invalidation reference composition.
+
+```text
+baseline HEAD / origin/main:
+663a23b4485a96a75e5a3dfb1ab70c15517e0fc2
+
+exact Control C delta:
+3 files
+
+runtime Python modified by Control C:
+False
+
+active synthesis cooperative cancel:
+PASS expected
+
+provider cancel timeout:
+BOUNDED / PASS expected
+
+provider hard cancel applied:
+False / TRUTHFUL expected
+
+provider hard cancel unsupported:
+True / PASS expected
+
+completed artifact invalidation:
+PASS expected
+
+invalidated artifact playable:
+False expected
+
+future delivery suppression:
+PASS expected
+
+late artifact stale guard:
+existing RealtimeGenerationGate / PASS expected
+
+new freshness registry:
+False expected
+
+duplicate cancel / flush:
+IDEMPOTENT / PASS expected
+
+pending clear vs active cancel:
+DISTINGUISHED / PASS expected
+
+stable framework.realtime_voice_output exports:
+7 / UNCHANGED
+
+stable framework.voice_artifacts exports:
+4 / UNCHANGED
+
+stable framework.realtime_voice_output_queue exports:
+8 / UNCHANGED
+
+root-public names:
+127 / UNCHANGED
+
+FW-RT6-6d tasks:
+7 / 7 ACCEPTED-CANDIDATE
+
+FW-RT6-6d aggregate:
+IMPLEMENTED / AWAITING_REVIEW
+
+next checkpoint:
+FW-RT6-6e / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+
+### Aggregate semantics
+
+Framework-cooperative cancellation remains distinct from provider hard cancel.
+The current provider adapter capability source is unchanged and must continue to
+report provider hard cancel as unsupported. No transport-level hard-cancel
+success is inferred from Framework cancellation completion.
+
+A cancellation request establishes a one-way future-delivery suppression barrier.
+If a synchronous provider call quiesces inside the configured wait, the typed
+result may complete; if it exceeds the bounded wait, the result is timed out
+without removing the suppression barrier. A late provider result must therefore
+not regain an audio handoff.
+
+Completed Framework-owned generation-bound artifacts may be invalidated and
+become non-playable. Late completion freshness remains owned by the existing
+`RealtimeGenerationGate`; no second freshness registry is introduced.
+
+Pending queue clear remains pending-only and must not claim active cancellation.
+The internal aggregate controller may return both pending clear and active cancel
+results as distinct facts. Duplicate cancel and duplicate flush are idempotent.
+
+### Deferred boundary
+
+```text
+provider capability source changed:
+False
+
+RealtimeSession real-runtime orchestration changed:
+False
+
+host playback coordination / physical playback stop:
+DEFERRED / FW-RT6-6e
+
+provider/network/microphone/playback/real VTS execution:
+False
+```
+
+FW-RT6-6e is not authorized by this Control C candidate.
+<!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:END -->

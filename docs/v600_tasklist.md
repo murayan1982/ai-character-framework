@@ -2620,13 +2620,13 @@ False
 
 **Tasks:**
 
-- [ ] active synthesis cooperative cancelを実装する。
-- [ ] provider cancel timeoutを実装する。
-- [ ] provider hard cancel resultを記録する。
-- [ ] completed artifact invalidationを実装する。
-- [ ] future delivery suppressionを実装する。
-- [ ] late artifactをstale guardで拒否する。
-- [ ] duplicate flush/cancelをidempotentにする。
+- [x] active synthesis cooperative cancelを実装する。
+- [x] provider cancel timeoutを実装する。
+- [x] provider hard cancel resultを記録する。
+- [x] completed artifact invalidationを実装する。
+- [x] future delivery suppressionを実装する。
+- [x] late artifactをstale guardで拒否する。
+- [x] duplicate flush/cancelをidempotentにする。
 
 **Acceptance:**
 
@@ -4241,3 +4241,67 @@ not add new runtime behavior.
 Host playback coordination and physical playback stop remain FW-RT6-6e.
 Guarded real-runtime composition remains separately gated by the later roadmap.
 <!-- FW-RT6-6d-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6d Control C — generation cancel / artifact invalidation aggregate acceptance
+
+```text
+checkpoint: FW-RT6-6d Control C
+baseline head: 663a23b4485a96a75e5a3dfb1ab70c15517e0fc2
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C delta: 3 files
+aggregate gate: PASS expected
+Control A typed-result regression: PASS expected
+Control B runtime cancellation regression: PASS expected
+FW-RT6-6a synthesis-generation regression: PASS expected
+FW-RT6-6b artifact-store regression: PASS expected
+FW-RT6-6c bounded-queue regression: PASS expected
+full Framework unit suite: 290 / PASS expected
+active synthesis cooperative cancel: PASS expected
+provider cancel timeout: BOUNDED / PASS expected
+provider hard cancel applied: False / TRUTHFUL expected
+provider hard cancel unsupported: True / PASS expected
+completed artifact invalidation: PASS expected
+invalidated artifact playable: False expected
+future delivery suppression: PASS expected
+late artifact stale guard: existing RealtimeGenerationGate / PASS expected
+new freshness registry: False expected
+duplicate cancel: IDEMPOTENT / PASS expected
+duplicate flush: IDEMPOTENT / PASS expected
+pending clear vs active cancel: DISTINGUISHED / PASS expected
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+root-public names: 127 / UNCHANGED
+Control C runtime implementation changed: False
+provider capability source changed: False
+RealtimeSession changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6d tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-6d aggregate: IMPLEMENTED / AWAITING_REVIEW
+next checkpoint: FW-RT6-6e / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C introduces no new runtime behavior. It closes the seven FW-RT6-6d
+aggregate task checkboxes only as an acceptance candidate after the accepted
+Control A typed-result foundation and Control B cancellation/invalidation runtime
+adoption are reviewed together.
+
+The aggregate preserves the distinction between Framework-cooperative synthesis
+cancellation and provider transport hard cancel. Current provider hard cancel
+remains truthfully unsupported. Cancellation installs a one-way future-delivery
+barrier; completed or late generation-bound Framework artifacts become
+non-playable when invalidated, and late completion reuses the existing
+`RealtimeGenerationGate` freshness source.
+
+Pending clear remains separate from active cancellation. Duplicate cancel and
+flush converge idempotently. Host playback coordination and physical playback
+stop remain FW-RT6-6e; this aggregate does not claim host playback success.
+
+FW-RT6-6e is not authorized by this candidate. Its exact contract review remains
+separately gated after FW-RT6-6d aggregate acceptance and source-of-truth sync.
+<!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:END -->
