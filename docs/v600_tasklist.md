@@ -3838,3 +3838,60 @@ active synthesis cancellation / interrupt-driven artifact invalidation /
 future-delivery suppression remain FW-RT6-6d, and host playback coordination
 remains FW-RT6-6e.
 <!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6b-C-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6b Control C — aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-6b Control C
+implementation commit: 90374b3522d4b5ea590c3a581d20ec36e2a5db7c
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control C surface: 3 files
+aggregate gate: PASS
+Control B regression: PASS
+artifact-result contract regression: PASS
+FW-RT6-6a aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+VoiceArtifactStore protocol: PASS
+opaque artifact ID: PASS
+internal path / public ref separation: PASS
+resolve / open / delete / expire: PASS
+generated exactly-one audio handoff: PASS
+real provider local-path handoff: False / PASS
+lifecycle generation / artifact validity association: PASS
+expired/deleted artifact playable: False / PASS
+interrupt-driven artifact invalidation: DEFERRED / FW-RT6-6d
+provider adapter receives Framework correlation IDs: False / PASS
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6b tasks: 7 / 7 ACCEPTED
+FW-RT6-6b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+pending queue changed: False
+generation cancel / interrupt invalidation changed: False
+host playback changed: False
+later P0-5 capabilities inferred: False
+roadmap P0-5 changed: False
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6c
+FW-RT6-6c exact contract review: AUTHORIZED
+FW-RT6-6c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-6b is accepted as the opaque voice-artifact storage and handoff
+boundary. Public voice-output results no longer expose real-provider local
+filesystem paths; generated artifact handoff uses opaque `VoiceArtifactRef`,
+store lifecycle and validity are explicit, and lifecycle generation association
+occurs on the Framework synthesis-stage side without passing Framework
+correlation identities into provider adapters.
+
+This acceptance does not claim bounded pending work, active synthesis
+cancellation, interrupt-driven artifact invalidation, future-delivery
+suppression, or host playback coordination. Those remain separately gated by
+FW-RT6-6c, FW-RT6-6d, and FW-RT6-6e.
+
+The next authorized activity is FW-RT6-6c exact contract review. FW-RT6-6c
+implementation remains separately gated until that review is completed and an
+implementation control is explicitly authorized.
+<!-- FW-RT6-6b-C-ACCEPTANCE-SYNC:END -->
