@@ -2709,3 +2709,42 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->
+
+<!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:BEGIN -->
+## v6 opaque voice artifact store foundation
+
+FW-RT6-6b Control A adds the explicitly stable package
+`framework.voice_artifacts` without changing the root-public facade.
+
+```text
+root-public names: 127 / UNCHANGED
+stable package: framework.voice_artifacts
+opaque artifact ID: fw_voice_artifact_<32 lowercase hex>
+```
+
+The package defines the Framework-owned `VoiceArtifactStore` contract and
+public-safe artifact lifecycle records. Local storage paths stay private to the
+store implementation. `VoiceArtifactRef` remains the app-facing handoff type;
+callers must not interpret its artifact ID as a path or provider value.
+
+Store lifecycle operations are provider-neutral:
+
+```text
+store
+resolve
+open
+delete
+expire
+bind_generation
+```
+
+Only valid artifacts may be opened. Expired or deleted artifacts are not
+playable through the Framework store boundary. Generation binding is performed
+by Framework orchestration after provider synthesis and does not add
+`GenerationId` to the provider-adapter request contract.
+
+Control A is foundation-only. Real provider adoption and removal of the legacy
+`str(artifact_path)` result remain Control B; URL/artifact-result enforcement is
+completed there. Pending synthesis work, active cancellation/invalidation, and
+host playback are separate later controls.
+<!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:END -->

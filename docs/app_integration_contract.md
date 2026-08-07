@@ -2278,3 +2278,47 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->
+
+<!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:BEGIN -->
+## FW-RT6-6b Control A — opaque voice artifact store foundation
+
+Voice output artifact storage now has an explicitly stable provider-neutral
+package:
+
+```text
+framework.voice_artifacts
+```
+
+Control A does not re-export the package from the `framework` root.
+
+```text
+root-public names: 127 / UNCHANGED
+```
+
+The stable package defines `VoiceArtifactId`, `VoiceArtifactState`,
+`VoiceArtifactRecord`, and `VoiceArtifactStore`. Framework-owned artifact IDs use
+only this opaque format:
+
+```text
+fw_voice_artifact_<32 lowercase hex>
+```
+
+Host applications must treat `VoiceArtifactRef.artifact_id` as an opaque value.
+It is not a local path, `file://` URL, provider object, provider identifier, or
+storage implementation key that callers may parse.
+
+`VoiceArtifactStore` separates internal storage from the public reference and
+fixes provider-neutral `store`, `resolve`, `open`, `delete`, `expire`, and
+`bind_generation` operations. `open()` is valid only while the artifact record is
+`valid`; expired and deleted artifacts are not playable through the store.
+
+Provider adapters still receive only `VoiceOutputRequest`. They do not receive
+session, turn, generation, or synthesis-work identities. Generation association
+is a Framework orchestration operation through `bind_generation()` and does not
+change the accepted FW-RT6-6a provider-adapter protocol.
+
+Control A does not yet replace the current real-provider local-path handoff.
+Provider adoption and `str(artifact_path)` removal remain FW-RT6-6b Control B.
+Pending queue behavior, active generation cancellation/invalidation, and host
+playback remain FW-RT6-6c/6d/6e.
+<!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:END -->

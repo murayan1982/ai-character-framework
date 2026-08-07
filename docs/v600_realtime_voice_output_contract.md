@@ -545,3 +545,220 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6b-A-ARTIFACT-STORE-PROTOCOL:BEGIN -->
+## FW-RT6-6b Control A — opaque artifact store protocol
+
+### Baseline and authorization
+
+```text
+baseline HEAD / origin/main:
+5318f89aeb524f91f7c388816058bb0e8a3e2fc0
+
+FW-RT6-6a:
+COMPLETED / VERIFIED / ACCEPTED / CLOSED
+
+FW-RT6-6b exact contract review:
+COMPLETED
+
+Control A:
+AUTHORIZED
+```
+
+### Stable explicit package
+
+Control A adds one explicitly stable package:
+
+```text
+framework.voice_artifacts
+```
+
+It is not imported or re-exported by the `framework` root in Control A.
+
+```text
+root-public names:
+127 / UNCHANGED
+```
+
+The exact stable package exports are:
+
+```text
+VoiceArtifactId
+VoiceArtifactState
+VoiceArtifactRecord
+VoiceArtifactStore
+```
+
+The concrete local file-backed reference implementation remains Framework
+internal and is not part of the stable package export list.
+
+### Opaque artifact identity
+
+`VoiceArtifactId` is a Framework-owned provider-neutral scalar.
+
+```text
+format:
+fw_voice_artifact_<32 lowercase hex>
+
+filesystem path embedded:
+False
+
+provider/client/model/voice identity embedded:
+False
+
+URL embedded:
+False
+```
+
+`VoiceArtifactRef.artifact_id` may carry the serialized opaque ID, but callers
+must not parse it as a path, storage location, provider object, or provider
+identifier.
+
+### Store protocol
+
+`VoiceArtifactStore` fixes the following provider-neutral operations:
+
+```text
+store
+resolve / open / delete / expire
+bind_generation
+```
+
+`store()` accepts bytes or streamed bytes and returns `VoiceArtifactRef`. The
+store implementation owns any internal directory/path and does not return that
+path through the stable package.
+
+`resolve()` returns a public-safe `VoiceArtifactRecord` containing only:
+
+```text
+ref
+state
+generation_id
+```
+
+No filesystem path or provider handle is present in the record.
+
+### Artifact validity
+
+`VoiceArtifactState` is exactly:
+
+```text
+VALID
+EXPIRED
+DELETED
+```
+
+Only `VALID` records are playable through `open()`.
+
+```text
+expired artifact -> open:
+not playable
+
+deleted artifact -> open:
+not playable
+
+unknown artifact -> resolve:
+None
+```
+
+Expiration is a store-lifecycle primitive only. Interrupt-driven artifact
+invalidation and future-delivery suppression remain FW-RT6-6d.
+
+### Lifecycle generation association
+
+The store may bind a valid artifact to one `GenerationId` after synthesis.
+Binding the same generation is idempotent; rebinding the same artifact to a
+different generation is rejected.
+
+The accepted FW-RT6-6a provider-adapter boundary remains unchanged:
+
+```text
+provider adapter receives session ID:
+False
+
+provider adapter receives turn ID:
+False
+
+provider adapter receives GenerationId:
+False
+
+provider adapter receives SynthesisWorkId:
+False
+```
+
+A provider adapter stores provider-produced bytes and receives only an opaque
+`VoiceArtifactRef`. Framework synthesis/runtime orchestration owns generation
+binding after the provider result returns.
+
+### Deferred Control B adoption
+
+Control A intentionally leaves the current real-provider adapter unchanged.
+Therefore the known legacy path handoff still exists until Control B:
+
+```text
+real provider audio_artifact_ref=str(artifact_path):
+EXISTING / NOT ACCEPTED AS 6b FINAL
+
+Control B responsibility:
+replace direct path handoff with VoiceArtifactStore + VoiceArtifactRef
+```
+
+Control B also owns enforcing the generated-result exactly-one-handoff boundary
+at the real provider/result integration point.
+
+### Later P0-5 boundaries remain separate
+
+```text
+bounded pending queue / pending clear:
+FW-RT6-6c
+
+active generation cancellation / interrupt-driven artifact invalidation / future delivery suppression:
+FW-RT6-6d
+
+host playback coordination:
+FW-RT6-6e
+```
+
+### Control A status
+
+```text
+checkpoint:
+FW-RT6-6b Control A
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact change surface:
+5 files
+
+stable package:
+framework.voice_artifacts
+
+opaque artifact ID:
+fw_voice_artifact_<32 lowercase hex>
+
+store lifecycle:
+resolve / open / delete / expire
+
+generation binding primitive:
+True
+
+provider adapter receives GenerationId:
+False
+
+real provider path leak corrected:
+False / DEFERRED CONTROL B
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6b-A-ARTIFACT-STORE-PROTOCOL:END -->
