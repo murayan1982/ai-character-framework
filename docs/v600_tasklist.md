@@ -4757,3 +4757,62 @@ remain FW-RT6-7c.
 
 This candidate does not authorize commit/push or any FW-RT6-7b/7c work.
 <!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-7a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7a — voice-input capability/composition final acceptance sync
+
+```text
+checkpoint: FW-RT6-7a final acceptance
+baseline head: 582a5ac87a6e8cc011c2d0e481a17cb9fd30d3f8
+Control A implementation: 3c6053c7082c728a58ad35b626cecb30005440fc
+Control A acceptance sync: 20792e4292fa9b62e44d9b117e9b87f3199c01bf
+Control B implementation: 448e792a245aaffa99fefc8cf24726bfc71c623e
+Control B acceptance sync: 49558876e9301cddb85830b062a9ef56eeb6cb1e
+Control C aggregate implementation: 582a5ac87a6e8cc011c2d0e481a17cb9fd30d3f8
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+full Framework unit suite: 290 / PASS
+root-public names: 127 / UNCHANGED
+runtime source changed by Control C: False
+OpenAI real STT status truthful: True / PASS
+VoiceInputSessionInfo.api_version central connection: PASS
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+stable VoiceInputSession session_id: PASS
+turn/generation correlation scaffold: PASS
+canonical realtime-event callback scaffold: PASS
+host constructs provider-specific adapter/factory/executor: False / PASS
+default fake path: PASS
+explicit adapter precedence: PASS
+real request silent fake fallback: False / PASS
+credential_env private value consumed by runtime: False / PASS
+runtime/provider availability probe performed: False / PASS
+provider/network/audio/microphone execution: False / PASS
+private credential exposed: False / PASS
+VoiceInputResult changed: False / PASS
+FW-RT6-7b lifecycle/stage semantics adopted: False / PASS
+FW-RT6-7c result correlation adopted: False / PASS
+FW-RT6-7a tasks: 6 / 6 ACCEPTED
+FW-RT6-7a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+FW-RT6-7b exact contract review: AUTHORIZED
+FW-RT6-7b implementation: NOT_AUTHORIZED
+FW-RT6-7c: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-7a is accepted as the truthful public voice-input capability and
+provider-neutral composition boundary. OpenAI executor implementation
+availability remains distinct from runtime/provider availability, and a normal
+host flow does not construct provider-specific Framework objects.
+
+The no-real-STT default remains mock-safe. Real intent with a closed guard
+returns a typed unavailable result and never a fake success. Private credential
+values remain explicit runtime inputs and are not sourced from `credential_env`
+or exposed through public metadata, events or results.
+
+This sync closes FW-RT6-7a only. It authorizes FW-RT6-7b exact contract review,
+not FW-RT6-7b implementation. FW-RT6-7c remains unauthorized.
+<!-- FW-RT6-7a-FINAL-ACCEPTANCE-SYNC:END -->
