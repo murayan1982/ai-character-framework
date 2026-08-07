@@ -4816,3 +4816,58 @@ or exposed through public metadata, events or results.
 This sync closes FW-RT6-7a only. It authorizes FW-RT6-7b exact contract review,
 not FW-RT6-7b implementation. FW-RT6-7c remains unauthorized.
 <!-- FW-RT6-7a-FINAL-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7b Control A — lifecycle/privacy foundation acceptance sync
+
+```text
+checkpoint: FW-RT6-7b Control A
+baseline head: 2feb3150d2850e320b7bd723791a4e5b00d51ac6
+implementation commit: 2feb3150d2850e320b7bd723791a4e5b00d51ac6
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 6 files
+dedicated gate: PASS
+focused lifecycle/privacy tests: 6 / PASS
+full Framework unit suite: 296 / PASS
+accepted FW-RT6-7a regression: PASS
+event order: preflight/start/completed/transcript-final / PASS
+typed lifecycle payloads: PASS
+typed final transcript: PASS
+stable session/turn/generation event correlation: PASS
+FILE_PATH value exposed to public event: False / PASS
+raw audio retained by session: False / PASS
+adapter exception private detail exposed: False / PASS
+default fake path: PASS
+explicit adapter path: PASS
+real provider composition seam: PRESERVED / PASS
+legacy mapping callbacks changed: False / PASS
+VoiceInputResult changed: False / PASS
+input abort implemented: False / DEFERRED_TO_CONTROL_B
+generation-gate admission implemented: False / DEFERRED_TO_CONTROL_B
+late transcript rejection implemented: False / DEFERRED_TO_CONTROL_B
+FW-RT6-7c result correlation adopted: False / PASS
+provider/network/audio/microphone execution: False / PASS
+framework root-public names: 127 / UNCHANGED
+FW-RT6-7b aggregate: NOT_COMPLETED
+FW-RT6-7b tasklist: 0 / 7 CLOSED
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-7c: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the additive voice-input lifecycle and audio-privacy
+foundation only. Each host-owned audio request receives one Framework-owned
+turn/generation context and emits typed preflight, listening and final
+transcript events without changing the existing `VoiceInputResult` contract.
+
+The host `FILE_PATH` value and raw audio remain outside public events and
+session retention. Input abort, generation-gate admission and late-transcript
+rejection remain Control B work, so all seven FW-RT6-7b aggregate tasks remain
+open.
+
+This sync authorizes only Control B exact contract review after the sync
+commit/push is remotely verified. It does not authorize Control B
+implementation or any FW-RT6-7c work.
+<!-- FW-RT6-7b-A-ACCEPTANCE-SYNC:END -->
