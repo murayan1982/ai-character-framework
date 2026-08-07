@@ -4123,3 +4123,58 @@ The next authorized activity is FW-RT6-6d exact contract review. FW-RT6-6d
 implementation remains separately gated until that review is completed and an
 implementation control is explicitly authorized.
 <!-- FW-RT6-6c-C-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6d-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6d Control A — typed cancel-result foundation acceptance sync
+
+```text
+checkpoint: FW-RT6-6d Control A
+baseline head: 3613056b798bd0a46ecee87a252ed5f36156a67d
+implementation commit: 0bd5d10d0f00f86db5a534b721ee05b1b3c8e22c
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 6 files
+dedicated gate: PASS
+accepted FW-RT6-6a regression: PASS
+accepted FW-RT6-6c regression: PASS
+full Framework unit suite: 290 / PASS
+typed cancel outcomes: REQUESTED / COMPLETED / TIMED_OUT / PASS
+cooperative cancel completion fact: TYPED / PASS
+provider hard cancel applied/unsupported: DISTINGUISHED / PASS
+artifact invalidation result fact: TYPED / PASS
+future delivery suppression result fact: TYPED / PASS
+active cancel execution changed: False
+provider cancel timeout execution changed: False
+provider hard cancel execution changed: False
+artifact invalidation execution changed: False
+future delivery suppression execution changed: False
+RealtimeSession changed: False
+pending queue changed: False
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6d aggregate: NOT_COMPLETED
+FW-RT6-6d tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B: AUTHORIZED
+Control B implementation: NOT_STARTED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts only the typed voice-synthesis cancellation-result foundation.
+It adds truthful result vocabulary for cooperative request/completion, timeout,
+provider hard-cancel applied versus unsupported, artifact invalidation, and
+future-delivery suppression without claiming that any of those runtime effects
+are executed by the current synthesis stage.
+
+The seven FW-RT6-6d aggregate task checkboxes remain open. Control B is
+authorized to implement the runtime adoption boundary: active synthesis
+cooperative cancellation, bounded cancellation completion/timeout handling,
+truthful provider hard-cancel result recording, completed-artifact invalidation,
+future-delivery suppression, stale late-artifact rejection through the existing
+generation gate, and idempotent duplicate cancel/flush behavior.
+
+Current provider capability truth remains authoritative. Unsupported provider
+hard cancel must remain reported as unsupported rather than inferred from a
+cooperative Framework cancellation. Host playback coordination remains
+FW-RT6-6e and is not authorized by this acceptance.
+<!-- FW-RT6-6d-A-ACCEPTANCE-SYNC:END -->
