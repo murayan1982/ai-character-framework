@@ -4597,3 +4597,55 @@ source.
 This sync closes FW-RT6-6e only. It authorizes FW-RT6-7a exact contract review,
 not FW-RT6-7a implementation.
 <!-- FW-RT6-6e-FINAL-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7a Control A — acceptance sync
+
+```text
+checkpoint: FW-RT6-7a Control A
+baseline head: 3c6053c7082c728a58ad35b626cecb30005440fc
+implementation commit: 3c6053c7082c728a58ad35b626cecb30005440fc
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 6 files
+dedicated gate: PASS
+FW-RT6-6e regression subset: PASS
+full Framework unit suite: 290 / PASS
+OpenAI real executor implementation available: True / PASS
+OpenAI stale REAL_STT_NOT_IMPLEMENTED removed: True / PASS
+OpenAI supports_real_stt: True / PASS
+runtime/provider availability probe performed: False / PASS
+provider execution performed: False / PASS
+network execution performed: False / PASS
+audio read performed by Control A verification: False / PASS
+microphone access performed: False / PASS
+VoiceInputSessionInfo.api_version central connection: PASS
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+stable VoiceInputSession session_id: PASS
+turn/generation correlation scaffold: PASS
+canonical realtime-event scaffold: PASS
+legacy mapping callbacks changed: False / PASS
+VoiceInputResult changed: False / PASS
+default fake path: PRESERVED / PASS
+provider-neutral automatic fake/real composition: DEFERRED_TO_CONTROL_B
+framework root-public names: 127 / UNCHANGED
+FW-RT6-7a aggregate: NOT_COMPLETED
+FW-RT6-7a tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the capability correction and correlation/event foundation only.
+
+For OpenAI, the Framework now truthfully reports that a real STT executor
+implementation exists after the explicit public configuration guards pass.
+Capability inspection still does not probe the optional SDK, network, provider
+service, private credential value, or actual provider runtime.
+
+The public voice-input default remains mock-safe in Control A. Automatic
+provider-neutral fake/real composition is explicitly deferred to Control B.
+
+The six FW-RT6-7a aggregate tasks remain open. This sync authorizes only Control
+B exact contract review after the sync commit/push is remotely verified.
+<!-- FW-RT6-7a-A-ACCEPTANCE-SYNC:END -->
