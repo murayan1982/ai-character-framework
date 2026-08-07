@@ -3947,3 +3947,57 @@ suppression, and provider cancel timeout remain FW-RT6-6d. Host playback
 coordination remains FW-RT6-6e. Control B is not authorized to claim those later
 P0-5 capabilities.
 <!-- FW-RT6-6c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-6c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6c Control B — pending-to-active handoff acceptance sync
+
+```text
+checkpoint: FW-RT6-6c Control B
+baseline head: 820056ff897e7bfdcfa20c3f7d4b14df0633c3b1
+implementation commit: ae456c2f8ed4ed27c835907ab5f71f495cd5c395
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 7 files
+dedicated gate: PASS
+accepted Control A regression: PASS
+accepted FW-RT6-6a active-stage regression: PASS
+full Framework unit suite: 290 / PASS
+same enqueue/active/result SynthesisWorkId: PRESERVED / PASS
+pending state owner: pending queue / PASS
+active state owner: synthesis stage / PASS
+same work simultaneously pending and active: False / PASS
+closed/busy stage claim mutates pending FIFO: False / PASS
+provider failure silently requeues claimed work: False / PASS
+pending clear changes active generation: False / PASS
+provider adapter receives Framework correlation IDs: False / PASS
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+provider pending_flush_supported changed: False
+generation cancel changed: False
+artifact invalidation changed: False
+future-delivery suppression changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6c aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the pending-to-active ownership transition only. The accepted
+bounded queue retains pending ownership, the accepted synthesis stage retains
+active ownership, and one enqueue-time `SynthesisWorkId` is preserved through
+claim, active observation, and the result envelope without a second work-ID
+allocation.
+
+The seven FW-RT6-6c aggregate task checkboxes remain open until Control C reviews
+Control A+B together and closes the bounded-queue aggregate. Control C is
+therefore authorized as aggregate acceptance work; it is not authorized to add
+new runtime capability beyond the accepted Control A+B surface.
+
+Generation cancellation, provider cancel timeout, interrupt-driven artifact
+invalidation, and future-delivery suppression remain FW-RT6-6d. Host playback
+coordination remains FW-RT6-6e. No later P0-5 capability is inferred by this
+acceptance sync.
+<!-- FW-RT6-6c-B-ACCEPTANCE-SYNC:END -->
