@@ -2824,3 +2824,43 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->
+
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:BEGIN -->
+## v6 cooperative voice-synthesis cancellation and invalidation adoption
+
+The stable `framework.realtime_voice_output`, `framework.voice_artifacts`, and
+`framework.realtime_voice_output_queue` export sets remain unchanged. Control B
+adds only an internal reference composition for Framework-owned cancellation and
+does not add names to the root facade.
+
+Framework cooperative cancellation installs a one-way future-delivery barrier
+before waiting for the synchronous provider call to quiesce. The bounded wait
+returns typed `COMPLETED` or `TIMED_OUT`; current provider hard cancel remains
+truthfully unsupported. A provider result that arrives after cancellation is
+converted to a non-audio result, and a Framework-owned generation-bound artifact
+is invalidated before it can be opened again.
+
+The concrete file artifact store gains an additive `INVALIDATED` lifecycle state
+and generation invalidation operation. The stable `VoiceArtifactStore` protocol
+is not expanded in this control, preserving previously accepted structural
+implementations.
+
+Late synthesis completion may be composed with the accepted internal
+`RealtimeGenerationGate`. Retired generation completion is suppressed rather
+than copied into the audio handoff surface. No second freshness registry is
+introduced.
+
+```text
+checkpoint: FW-RT6-6d Control B
+baseline head: 5e26f29847a357225a29c724c6014aa15ff1c83d
+root-public names: 127 / UNCHANGED
+framework.realtime_voice_output exports: 7 / UNCHANGED
+framework.voice_artifacts exports: 4 / UNCHANGED
+framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+RealtimeSession changed: False
+provider adapter changed: False
+host playback changed: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->

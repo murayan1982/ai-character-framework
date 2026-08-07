@@ -2423,3 +2423,47 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->
+
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:BEGIN -->
+## FW-RT6-6d Control B — cooperative voice-output cancellation adoption
+
+FW-RT6-6d Control B adopts the accepted typed cancellation vocabulary in one
+Framework-owned reference control boundary. Host applications remain on the
+existing root APIs; the new cancelable reference stage and output controller are
+internal implementation helpers and are not added to the 127-name root surface.
+
+The reference boundary keeps provider cancellation truth separate from
+Framework-cooperative suppression:
+
+```text
+active cooperative cancel: IMPLEMENTED
+bounded completion wait: IMPLEMENTED
+provider hard cancel applied: False
+provider hard cancel unsupported: True
+completed FW artifact invalidation: IMPLEMENTED
+late/future audio handoff after cancel: SUPPRESSED
+late completion freshness: existing RealtimeGenerationGate
+pending clear vs active cancel: DISTINCT
+host playback stop: NOT_IMPLEMENTED / FW-RT6-6e
+```
+
+The provider adapter protocol remains correlation-free and unchanged. Current
+provider capabilities continue to report provider hard cancel as unsupported.
+`RealtimeSession` real-runtime orchestration remains unchanged; guarded real TTS
+composition is still later roadmap work.
+
+```text
+checkpoint: FW-RT6-6d Control B
+baseline head: 5e26f29847a357225a29c724c6014aa15ff1c83d
+status: IMPLEMENTED / AWAITING_REVIEW
+exact change surface: 6 files
+root-public names: 127 / UNCHANGED
+stable voice exports: 7 / UNCHANGED
+stable artifact exports: 4 / UNCHANGED
+stable queue exports: 8 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6d tasks: 0 / 7 CLOSED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->

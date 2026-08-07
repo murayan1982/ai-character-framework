@@ -63,6 +63,7 @@ class VoiceArtifactState(str, Enum):
     """Public-safe lifecycle state for a FW-owned voice artifact."""
 
     VALID = "valid"
+    INVALIDATED = "invalidated"
     EXPIRED = "expired"
     DELETED = "deleted"
 
@@ -266,6 +267,38 @@ class FileVoiceArtifactStore:
                 return False
             stored.record = replace(stored.record, state=VoiceArtifactState.EXPIRED)
             return True
+
+    def invalidate_generation(
+        self,
+        generation_id: GenerationId | str,
+    ) -> tuple[VoiceArtifactRecord, ...]:
+        """Invalidate all valid artifacts bound to one lifecycle generation.
+
+        This is a concrete FW-RT6-6d reference-store extension and is
+        intentionally not added to the stable ``VoiceArtifactStore`` protocol.
+        Repeated invalidation is idempotent and returns only records that
+        transitioned from ``VALID`` to ``INVALIDATED`` in this call.
+        """
+
+        normalized_generation = (
+            generation_id
+            if isinstance(generation_id, GenerationId)
+            else GenerationId.parse(generation_id)
+        )
+        invalidated: list[VoiceArtifactRecord] = []
+        with self._lock:
+            for stored in self._records.values():
+                record = stored.record
+                if (
+                    record.generation_id == normalized_generation
+                    and record.state is VoiceArtifactState.VALID
+                ):
+                    stored.record = replace(
+                        record,
+                        state=VoiceArtifactState.INVALIDATED,
+                    )
+                    invalidated.append(stored.record)
+        return tuple(invalidated)
 
     def bind_generation(
         self,

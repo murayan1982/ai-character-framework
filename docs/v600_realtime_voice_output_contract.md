@@ -1648,3 +1648,195 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-A-TYPED-CANCEL-RESULT:END -->
+
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:BEGIN -->
+## FW-RT6-6d Control B — cooperative cancellation / invalidation runtime adoption
+
+Control B adopts the accepted Control A result vocabulary in an internal
+Framework reference composition. It does not change the stable synthesis-stage
+protocol, provider-adapter protocol, pending-queue protocol, root facade, or
+`RealtimeSession` real-runtime orchestration.
+
+```text
+baseline HEAD / origin/main:
+5e26f29847a357225a29c724c6014aa15ff1c83d
+
+exact Control B surface:
+6 files
+
+active cooperative cancellation:
+IMPLEMENTED
+
+provider cancel timeout:
+BOUNDED / IMPLEMENTED
+
+provider hard cancel:
+UNSUPPORTED / TRUTHFUL
+
+completed artifact invalidation:
+IMPLEMENTED
+
+future delivery suppression:
+IMPLEMENTED
+
+late artifact freshness source:
+RealtimeGenerationGate
+
+duplicate cancel / flush:
+IDEMPOTENT / PASS expected
+
+pending clear vs active cancel:
+DISTINGUISHED
+
+FW-RT6-6d tasks:
+0 / 7 CLOSED
+
+Control C:
+NOT_AUTHORIZED
+```
+
+### Concrete cancellation semantics
+
+`CancelableProviderNeutralVoiceSynthesisStage` is an internal subclass of the
+accepted concrete `ProviderNeutralVoiceSynthesisStage`. The accepted stable
+`VoiceSynthesisStage.cancel(context, work_id=None)` signature is unchanged.
+
+For one matching active synthesis work item:
+
+```text
+cancel request accepted:
+cooperative_cancel_requested = True
+
+provider call quiesces before configured timeout:
+outcome = COMPLETED
+cooperative_cancel_completed = True
+
+provider call still active at timeout:
+outcome = TIMED_OUT
+cooperative_cancel_completed = False
+
+provider_hard_cancel_applied:
+False
+
+provider_hard_cancel_unsupported:
+True
+
+future_delivery_suppressed:
+True
+```
+
+The cancellation barrier is one-way for that work item. A timed-out provider may
+continue internally, but when it eventually returns its audio result is converted
+to a non-audio `VoiceOutputResult` before leaving the stage. Provider transport
+completion is therefore not confused with host delivery permission.
+
+Duplicate cancel for the same work returns the already established typed cancel
+result. A later work item receives a fresh cancellation state.
+
+### Artifact invalidation
+
+`VoiceArtifactState.INVALIDATED` is additive. The stable
+`framework.voice_artifacts.__all__` list remains four names and the stable
+`VoiceArtifactStore` protocol is unchanged. The concrete
+`FileVoiceArtifactStore.invalidate_generation(generation_id)` invalidates every
+currently `VALID` artifact bound to that lifecycle generation and returns the
+invalidated records.
+
+```text
+VALID -> INVALIDATED:
+allowed by concrete generation invalidation
+
+INVALIDATED playable:
+False
+
+duplicate generation invalidation:
+empty result / idempotent
+
+raw local path exposed:
+False
+```
+
+A cancelable synthesis stage reports active-audio invalidation capability only
+when its supplied artifact store actually implements the concrete
+`invalidate_generation` operation.
+
+### Existing generation-gate stale guard
+
+When supplied with the accepted internal `RealtimeGenerationGate`, the cancelable
+reference stage wraps the synthesis result in the existing
+`RealtimeStageCompletionEnvelope` and calls the gate's atomic
+`admit_completion(...)` decision.
+
+```text
+current matching generation:
+completion may retain audio handoff
+
+retired / unknown / turn-mismatched generation:
+audio handoff suppressed
+bound artifact invalidated
+new freshness registry created:
+False
+```
+
+This control does not alter `RealtimeGenerationGate`.
+
+### Pending clear / active cancel composition
+
+`VoiceSynthesisOutputController.flush(...)` is internal reference composition.
+Its typed aggregate retains the pending clear result separately from the active
+cancel result. Clearing pending work therefore never claims active cancellation.
+
+```text
+pending clear:
+VoiceSynthesisPendingClearResult
+
+active cancel:
+VoiceSynthesisCancelResult | None
+
+duplicate flush with no pending/active/invalidation effect:
+idempotent no-op
+
+provider pending_flush_supported changed:
+False
+```
+
+### Deferred boundary
+
+```text
+RealtimeSession real TTS orchestration changed:
+False
+
+provider adapter protocol changed:
+False
+
+provider capability source changed:
+False
+
+host playback coordination / physical playback stop:
+DEFERRED / FW-RT6-6e
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+root-public names:
+127 / UNCHANGED
+
+framework.realtime_voice_output exports:
+7 / UNCHANGED
+
+framework.voice_artifacts exports:
+4 / UNCHANGED
+
+framework.realtime_voice_output_queue exports:
+8 / UNCHANGED
+
+FW-RT6-6d aggregate:
+NOT_COMPLETED
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->
