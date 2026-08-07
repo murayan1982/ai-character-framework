@@ -1413,3 +1413,136 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->
+
+<!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6c Control C — bounded voice-output queue aggregate acceptance
+
+### Accepted combined boundary
+
+Control C performs no runtime implementation. It reviews the accepted Control A
+bounded pending-queue foundation and Control B pending-to-active stage handoff as
+one FW-RT6-6c contract and closes the seven aggregate task items as an acceptance
+candidate.
+
+```text
+baseline HEAD / origin/main:
+647191b7b939587c9977279dd446e16e90bfb4b3
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+exact Control C delta:
+3 files
+```
+
+### Aggregate invariants
+
+```text
+bounded pending queue:
+True
+
+max_pending_depth:
+CONFIGURABLE / >= 1
+
+pending item correlation:
+session / turn / generation / SynthesisWorkId
+
+enqueue result:
+typed ACCEPTED / REJECTED_FULL
+
+silent overflow drop:
+False
+
+overflow event:
+typed VoiceSynthesisQueueEventType.OVERFLOW
+
+pending clear:
+typed / exact context or all pending
+
+active generation owner:
+synthesis stage
+
+pending state owner:
+pending queue
+
+same work simultaneously pending and active:
+False
+
+enqueue work ID == active work ID == result work ID:
+True
+
+closed/busy stage claim mutates pending FIFO:
+False
+
+provider execution failure silently requeues claimed work:
+False
+
+pending clear changes active generation:
+False
+
+provider adapter receives Framework correlation IDs:
+False
+```
+
+The stable queue protocol remains pending-only, and the stable synthesis-stage
+protocol remains active-only. The concrete reference composition does not add
+`handoff_next()` to `VoiceSynthesisPendingQueue` and does not add a handoff
+`work_id` argument to `VoiceSynthesisStage.start()`.
+
+### Deferred P0-5 boundaries
+
+```text
+active synthesis cooperative cancellation:
+DEFERRED FW-RT6-6d
+
+provider cancel timeout / hard-cancel result:
+DEFERRED FW-RT6-6d
+
+interrupt-driven artifact invalidation:
+DEFERRED FW-RT6-6d
+
+future-delivery suppression / stale late artifact guard:
+DEFERRED FW-RT6-6d
+
+host playback coordination / physical stop:
+DEFERRED FW-RT6-6e
+```
+
+Clearing pending work is not active synthesis cancellation. Provider capability
+flags remain truthful and unchanged; Framework queue ownership is not reported as
+provider-side pending flush support.
+
+### Control C status
+
+```text
+checkpoint:
+FW-RT6-6c Control C
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-RT6-6c tasks:
+7 / 7 ACCEPTED-CANDIDATE
+
+stable framework.realtime_voice_output_queue exports:
+8 / UNCHANGED
+
+stable framework.realtime_voice_output exports:
+7 / UNCHANGED
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-6d / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:END -->

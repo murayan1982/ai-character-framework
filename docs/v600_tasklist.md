@@ -2590,13 +2590,13 @@ not playable
 
 **Tasks:**
 
-- [ ] pending synthesis queueを実装する。
-- [ ] bounded depthを設定可能にする。
-- [ ] queue itemへsession/turn/generation/work IDを付与する。
-- [ ] enqueue accepted/rejected resultをtypedにする。
-- [ ] pending clearを実装する。
-- [ ] active generationとpending queueを別状態にする。
-- [ ] overflow eventを追加する。
+- [x] pending synthesis queueを実装する。
+- [x] bounded depthを設定可能にする。
+- [x] queue itemへsession/turn/generation/work IDを付与する。
+- [x] enqueue accepted/rejected resultをtypedにする。
+- [x] pending clearを実装する。
+- [x] active generationとpending queueを別状態にする。
+- [x] overflow eventを追加する。
 
 **Acceptance:**
 
@@ -4001,3 +4001,62 @@ invalidation, and future-delivery suppression remain FW-RT6-6d. Host playback
 coordination remains FW-RT6-6e. No later P0-5 capability is inferred by this
 acceptance sync.
 <!-- FW-RT6-6c-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6c Control C — bounded voice-output queue aggregate acceptance
+
+```text
+checkpoint: FW-RT6-6c Control C
+baseline head: 647191b7b939587c9977279dd446e16e90bfb4b3
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C delta: 3 files
+Control A queue regression: PASS expected
+Control B handoff regression: PASS expected
+FW-RT6-6a active-stage regression: PASS expected
+FW-RT6-6b artifact-store aggregate regression: PASS expected
+full Framework unit suite: 290 / PASS expected
+bounded pending queue: PASS expected
+configurable max pending depth: PASS expected
+pending item correlation: session / turn / generation / work / PASS expected
+enqueue typed accepted/rejected result: PASS expected
+silent overflow drop: False expected
+overflow event: PASS expected
+pending clear: PASS expected
+pending / active ownership separation: PASS expected
+same enqueue/active/result SynthesisWorkId: PRESERVED expected
+same work simultaneously pending and active: False expected
+closed/busy stage claim mutates pending FIFO: False expected
+provider failure silently requeues claimed work: False expected
+pending clear changes active generation: False expected
+active cancel overclaim: False expected
+provider adapter receives Framework correlation IDs: False expected
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6c tasks: 7 / 7 ACCEPTED-CANDIDATE
+provider pending_flush_supported changed: False
+generation cancel changed: False
+artifact invalidation changed: False
+future-delivery suppression changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6d / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C closes the seven FW-RT6-6c aggregate task checkboxes only as an
+acceptance candidate after the accepted Control A bounded queue and Control B
+pending-to-active handoff are reviewed together. No new runtime behavior is
+introduced by Control C.
+
+The accepted aggregate distinguishes queue-owned pending clear from stage-owned
+active synthesis. The enqueue-time `SynthesisWorkId` remains the same identity
+when work becomes active and when the synthesis result envelope is returned.
+
+Active synthesis cancellation, provider cancel timeout, provider hard-cancel
+result, interrupt-driven artifact invalidation, future-delivery suppression, and
+late-artifact stale rejection remain FW-RT6-6d. Host playback coordination
+remains FW-RT6-6e. No later P0-5 capability is inferred by this aggregate.
+<!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:END -->
