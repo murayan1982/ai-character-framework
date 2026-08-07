@@ -3638,3 +3638,48 @@ invalidation / future-delivery suppression are FW-RT6-6d, and host playback
 coordination is FW-RT6-6e. None of those later capabilities are inferred from
 FW-RT6-6a acceptance.
 <!-- FW-RT6-6a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-6a-C-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6a Control C — aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-6a Control C
+implementation commit: ee5ce2007856fa27f16ff4edfe17a1106a789e94
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control C surface: 3 files
+aggregate gate: PASS
+Control A regression: PASS
+Control B regression: PASS
+full Framework unit suite: 290 / PASS
+generation identity: True / PASS
+active generation observable: True / PASS
+active generation thread-safe: True / PASS
+provider details public: False / PASS
+provider adapter receives Framework correlation IDs: False / PASS
+capability source: RealtimeVoiceOutputCapability
+generation_cancel_supported: False / TRUTHFUL
+provider_hard_cancel_supported: False / TRUTHFUL
+stable package exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6a tasks: 6 / 6 ACCEPTED
+FW-RT6-6a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+later P0-5 capabilities inferred: False
+roadmap P0-5 changed: False
+next checkpoint: FW-RT6-6b
+FW-RT6-6b exact contract review: AUTHORIZED
+FW-RT6-6b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-6a is accepted as the provider-neutral voice-output generation protocol
+boundary. This acceptance closes only generation identity, provider-adapter
+adoption, active-generation observability, privacy, and truthful capability
+reporting. It does not claim opaque artifact storage, pending-queue behavior,
+active synthesis cancellation, artifact invalidation, future-delivery
+suppression, or host playback control.
+
+The next authorized activity is FW-RT6-6b exact contract review. FW-RT6-6b
+implementation remains separately gated until that review is completed and an
+implementation control is explicitly authorized.
+<!-- FW-RT6-6a-C-ACCEPTANCE-SYNC:END -->
