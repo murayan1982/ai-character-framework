@@ -3683,3 +3683,50 @@ The next authorized activity is FW-RT6-6b exact contract review. FW-RT6-6b
 implementation remains separately gated until that review is completed and an
 implementation control is explicitly authorized.
 <!-- FW-RT6-6a-C-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-6b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6b Control A — opaque artifact store acceptance sync
+
+```text
+checkpoint: FW-RT6-6b Control A
+baseline head: 5318f89aeb524f91f7c388816058bb0e8a3e2fc0
+implementation commit: d01cb6bd168b8b542d7cf7dc8f0c396d28aeb937
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 5 files
+dedicated gate: PASS
+existing artifact-result compatibility: PASS
+FW-RT6-6a aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+stable package: framework.voice_artifacts
+stable package exports: 4
+opaque artifact ID: fw_voice_artifact_<32 lowercase hex>
+store lifecycle: resolve / open / delete / expire
+generation binding primitive: True
+provider adapter receives GenerationId: False
+root-public names: 127 / UNCHANGED
+real provider path leak corrected: False / CONTROL B
+pending queue changed: False
+generation cancel / invalidation changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6b aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the provider-neutral artifact-store foundation only. The seven
+FW-RT6-6b aggregate task checkboxes remain open until provider adoption and final
+aggregate acceptance are completed.
+
+Control B is authorized to replace the real-provider `str(artifact_path)` handoff
+with `VoiceArtifactStore` / `VoiceArtifactRef`, enforce the exactly-one generated
+audio handoff boundary, and bind returned artifact references to lifecycle
+generation at the Framework synthesis-stage side. Provider adapters must continue
+to receive no Framework session, turn, generation, or synthesis-work identities.
+
+The roadmap P0-5 split is unchanged. Bounded pending work remains FW-RT6-6c,
+active cancellation / interrupt-driven artifact invalidation / future-delivery
+suppression remain FW-RT6-6d, and host playback remains FW-RT6-6e.
+<!-- FW-RT6-6b-A-ACCEPTANCE-SYNC:END -->
