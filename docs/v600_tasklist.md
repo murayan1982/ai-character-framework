@@ -4060,3 +4060,66 @@ result, interrupt-driven artifact invalidation, future-delivery suppression, and
 late-artifact stale rejection remain FW-RT6-6d. Host playback coordination
 remains FW-RT6-6e. No later P0-5 capability is inferred by this aggregate.
 <!-- FW-RT6-6c-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6c-C-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6c Control C — aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-6c Control C
+implementation commit: d6bd0e82f4f21526208fd23bb64f13cce201ed11
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control C surface: 3 files
+aggregate gate: PASS
+Control A queue regression: PASS
+Control B handoff regression: PASS
+FW-RT6-6a active-stage regression: PASS
+FW-RT6-6b artifact-store aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+bounded pending queue: PASS
+configurable max pending depth: PASS
+pending item correlation: session / turn / generation / work / PASS
+enqueue typed accepted/rejected result: PASS
+silent overflow drop: False / PASS
+overflow event: PASS
+pending clear: PASS
+pending / active ownership separation: PASS
+same enqueue/active/result SynthesisWorkId: PRESERVED / PASS
+same work simultaneously pending and active: False / PASS
+closed/busy stage claim mutates pending FIFO: False / PASS
+provider failure silently requeues claimed work: False / PASS
+pending clear changes active generation: False / PASS
+active cancel overclaim: False / PASS
+provider adapter receives Framework correlation IDs: False / PASS
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6c tasks: 7 / 7 ACCEPTED
+FW-RT6-6c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+provider pending_flush_supported changed: False
+generation cancel changed: False
+artifact invalidation changed: False
+future-delivery suppression changed: False
+host playback changed: False
+later P0-5 capabilities inferred: False
+roadmap P0-5 changed: False
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6d
+FW-RT6-6d exact contract review: AUTHORIZED
+FW-RT6-6d implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-6c is accepted as the bounded voice-output work-queue boundary.
+Framework-owned pending work is bounded and non-silent on overflow, pending and
+active synthesis ownership are distinct, and the enqueue-time `SynthesisWorkId`
+is preserved through pending-to-active handoff and the result envelope.
+
+This acceptance does not claim active synthesis cancellation, provider cancel
+timeout or hard-cancel completion, interrupt-driven artifact invalidation,
+future-delivery suppression, or late-artifact stale rejection; those remain
+FW-RT6-6d. Host playback coordination remains FW-RT6-6e.
+
+The next authorized activity is FW-RT6-6d exact contract review. FW-RT6-6d
+implementation remains separately gated until that review is completed and an
+implementation control is explicitly authorized.
+<!-- FW-RT6-6c-C-ACCEPTANCE-SYNC:END -->
