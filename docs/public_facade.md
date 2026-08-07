@@ -3011,3 +3011,42 @@ separate later work. Control B does not add transcript lifecycle events, stale
 generation enforcement, input abort, or correlation fields to
 `VoiceInputResult`.
 <!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:END -->
+
+<!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7a Control C — aggregate capability/composition acceptance
+
+The accepted public voice-input boundary now truthfully combines the Control A
+capability/correlation foundation with the Control B provider-neutral default
+composition:
+
+```text
+OpenAI real executor implementation available:
+True
+
+runtime/provider availability implied:
+False
+
+normal host flow constructs provider-specific Framework objects:
+False
+
+default/no-real-STT path:
+mock-safe fake
+
+real intent with a closed guard:
+typed unavailable / never fake success
+```
+
+`VoiceInputSessionInfo.api_version` remains connected to
+`VOICE_INPUT_API_VERSION` with compatibility value `5.2.0`. Session identity
+and the canonical realtime-event callback scaffold are additive; the existing
+mapping callback and `VoiceInputResult` shape remain compatible.
+
+Private credentials are explicit runtime inputs. They are not sourced from
+`credential_env`, copied into public metadata/events/results, or touched by
+capability inspection. Provider-specific Framework modules remain lazy until
+every explicit real-runtime gate has passed.
+
+This aggregate does not add FW-RT6-7b stage lifecycle/transcript emission,
+input abort or stale-generation rejection. It also does not add FW-RT6-7c
+correlation fields to `VoiceInputResult`. Control C changes no runtime source.
+<!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:END -->

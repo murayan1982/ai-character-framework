@@ -2675,12 +2675,12 @@ False
 
 **Tasks:**
 
-- [ ] `VoiceInputProviderStatus.REAL_STT_NOT_IMPLEMENTED`の現状を再評価する。
-- [ ] OpenAI real executor availabilityをcapabilityへ反映する。
-- [ ] `VoiceInputSessionInfo.api_version`を中央versionへ接続する。
-- [ ] session ID/turn/generationを追加する。
-- [ ] typed lifecycle eventへ移行する。
-- [ ] default fake/real factory selectionをprovider-neutralにする。
+- [x] `VoiceInputProviderStatus.REAL_STT_NOT_IMPLEMENTED`の現状を再評価する。
+- [x] OpenAI real executor availabilityをcapabilityへ反映する。
+- [x] `VoiceInputSessionInfo.api_version`を中央versionへ接続する。
+- [x] session ID/turn/generationを追加する。
+- [x] typed lifecycle eventへ移行する。
+- [x] default fake/real factory selectionをprovider-neutralにする。
 
 **Acceptance:**
 
@@ -4708,3 +4708,52 @@ remain open.
 This sync authorizes only FW-RT6-7a Control C aggregate exact contract review
 after the sync commit/push is remotely verified.
 <!-- FW-RT6-7a-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7a Control C — aggregate capability/composition acceptance
+
+```text
+checkpoint: FW-RT6-7a Control C
+baseline head: 49558876e9301cddb85830b062a9ef56eeb6cb1e
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 3 files
+Control A source-only regression: PASS expected
+Control B runtime/source regression: PASS expected
+full Framework unit suite: 290 / PASS expected
+OpenAI real STT status truthful: True / PASS expected
+host constructs provider-specific adapter/factory/executor: False / PASS expected
+default fake path: PASS expected
+explicit adapter precedence: PASS expected
+real request silent fake fallback: False / PASS expected
+credential_env private value consumed by runtime: False / PASS expected
+runtime/provider availability probe performed: False / PASS expected
+provider execution performed: False / PASS expected
+network execution performed: False / PASS expected
+audio read performed: False / PASS expected
+microphone access performed: False / PASS expected
+VoiceInputResult changed: False / PASS expected
+FW-RT6-7b lifecycle/stage semantics adopted: False / PASS expected
+FW-RT6-7c result correlation adopted: False / PASS expected
+runtime source changed by Control C: False / PASS expected
+framework root-public names: 127 / UNCHANGED expected
+FW-RT6-7a tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-7b: NOT_AUTHORIZED
+FW-RT6-7c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C introduces no runtime behavior. It accepts the six FW-RT6-7a tasks
+only after reviewing the accepted Control A capability/correlation foundation
+and Control B provider-neutral composition together.
+
+The accepted typed lifecycle scope is the additive canonical realtime-event
+callback and Framework-owned session/turn/generation scaffold. Preflight,
+start, completed, failed and transcript lifecycle emission, input abort, late
+generation rejection and path-safe payload work remain FW-RT6-7b.
+`VoiceInputResult` correlation and the final v5 callback compatibility bridge
+remain FW-RT6-7c.
+
+This candidate does not authorize commit/push or any FW-RT6-7b/7c work.
+<!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:END -->
