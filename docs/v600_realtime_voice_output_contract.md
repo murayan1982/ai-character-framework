@@ -2346,3 +2346,136 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->
+
+<!-- FW-RT6-6e-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6e Control C — host playback boundary aggregate acceptance
+
+### Baseline
+
+```text
+baseline HEAD / origin/main:
+eefa693ff3453e43d4341270bf92d780f370a477
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+Control C:
+AUTHORIZED / IMPLEMENTED-CANDIDATE
+```
+
+Control C adds no runtime behavior. It reviews the accepted typed foundation and
+runtime coordination adoption together and closes the six FW-RT6-6e aggregate
+tasks only as an acceptance candidate.
+
+### Accepted aggregate contract
+
+```text
+FW-owned vs host-owned playback:
+typed capability / PASS
+
+current public voice-output ownership:
+host / PASS
+
+playback_stop_requested_to_host:
+canonical event + RealtimeSession emission / PASS
+
+host acknowledgement:
+optional / PASS
+
+host stop request implies physical stop:
+False / PASS
+
+host acknowledgement implies physical stop:
+False / PASS
+
+artifact invalidation emitted:
+AUDIO_INVALIDATED / PASS
+
+artifact invalidation implies physical stop:
+False / PASS
+
+legacy VoiceEngine / ffplay:
+deprecated_internal_compatibility / PASS
+
+legacy ffplay root-public:
+False / PASS
+
+legacy local player v6.0.0 removal:
+False
+
+legacy removal policy:
+future major only with migration notice
+
+FW-owned physical playback execution:
+False
+```
+
+The Framework never promotes a host-owned playback stop request, host
+acknowledgement, or artifact invalidation into a confirmed physical playback stop
+result.
+
+### Regression boundary
+
+Control C reuses accepted Control A/B runtime/model checks directly rather than
+re-running historical docs assertions that intentionally described the earlier
+`0 / 6 CLOSED` checkpoint.
+
+The aggregate also preserves the accepted FW-RT6-6d distinction:
+
+```text
+artifact invalidation:
+Framework-owned lifecycle fact
+
+host physical playback stop:
+separate host-owned coordination fact
+
+provider hard cancel:
+not inferred
+
+new artifact/freshness registry:
+not introduced
+```
+
+### Aggregate status
+
+```text
+exact Control C surface:
+3 files
+
+runtime source changed:
+False
+
+provider capability runtime source changed:
+False
+
+RealtimeSession runtime source changed:
+False
+
+legacy VoiceEngine runtime source changed:
+False
+
+root-public names:
+127 / UNCHANGED
+
+FW-RT6-6e tasks:
+6 / 6 ACCEPTED-CANDIDATE
+
+FW-RT6-6e aggregate:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-RT6-7a tasks:
+0 / 6 CLOSED
+
+next checkpoint:
+FW-RT6-7a / NOT_AUTHORIZED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6e-C-AGGREGATE-ACCEPTANCE:END -->

@@ -2647,12 +2647,12 @@ safe
 
 **Tasks:**
 
-- [ ] FW-owned playbackとhost-owned playbackをcapabilityで分離する。
-- [ ] `playback_stop_requested_to_host` eventを定義する。
-- [ ] host acknowledgementを任意contractとして定義する。
-- [ ] host停止未確認をFW停止成功と表現しない。
-- [ ] legacy `VoiceEngine`/ffplay pathをinternal compatibilityへ隔離する。
-- [ ] legacy local playerのdeprecation方針を決める。
+- [x] FW-owned playbackとhost-owned playbackをcapabilityで分離する。
+- [x] `playback_stop_requested_to_host` eventを定義する。
+- [x] host acknowledgementを任意contractとして定義する。
+- [x] host停止未確認をFW停止成功と表現しない。
+- [x] legacy `VoiceEngine`/ffplay pathをinternal compatibilityへ隔離する。
+- [x] legacy local playerのdeprecation方針を決める。
 
 **Acceptance:**
 
@@ -4478,3 +4478,65 @@ dedicated aggregate gate and regressions, and close the six aggregate task
 checkboxes only if the aggregate review passes. Control C must not add new
 runtime behavior.
 <!-- FW-RT6-6e-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6e-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6e Control C — host playback boundary aggregate acceptance
+
+```text
+checkpoint: FW-RT6-6e Control C
+baseline head: eefa693ff3453e43d4341270bf92d780f370a477
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 3 files
+aggregate gate: PASS expected
+Control A model/event/stable-boundary regression: PASS expected
+Control B runtime coordination regression: PASS expected
+FW-RT6-6d cancellation/invalidation boundary: PRESERVED expected
+full Framework unit suite: 290 / PASS expected
+FW-owned vs host-owned playback: TYPED / PASS expected
+current public playback ownership: host / PASS expected
+host stop request event/runtime: PASS expected
+host acknowledgement: OPTIONAL / PASS expected
+post-terminal host acknowledgement: PASS expected
+duplicate host acknowledgement: IDEMPOTENT / PASS expected
+empty mock NOTHING_TO_FLUSH behavior: PRESERVED / PASS expected
+artifact invalidation emitted: AUDIO_INVALIDATED / PASS expected
+host playback physical stop claimed: False expected
+host stop request implies physical stop: False expected
+host stop acknowledgement implies physical stop: False expected
+artifact invalidation implies physical stop: False expected
+legacy VoiceEngine / ffplay root-public: False expected
+legacy local player status: deprecated_internal_compatibility expected
+legacy v6.0.0 removal: False expected
+legacy removal policy: future major only with migration notice expected
+root-public names: 127 / UNCHANGED
+runtime source changed: False
+provider capability runtime source changed: False
+RealtimeSession runtime source changed: False
+legacy VoiceEngine runtime source changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6e tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-6e aggregate: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-7a tasks: 0 / 6 CLOSED
+next checkpoint: FW-RT6-7a / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C introduces no new runtime behavior. The six FW-RT6-6e task checkboxes
+are closed only as an aggregate acceptance candidate after the accepted Control A
+typed playback-ownership/event foundation and Control B host-playback runtime
+coordination are reviewed together.
+
+Host-owned playback remains physically controlled by the host. A Framework
+stop-request event, optional host acknowledgement, and Framework artifact
+invalidation are separate coordination/lifecycle facts and never imply confirmed
+speaker or media-engine stop.
+
+The legacy `tts.VoiceEngine` / `ffplay` path remains deprecated internal
+compatibility for v6.0.0, remains outside the Framework root-public API, and is
+not the v6 playback capability source. Removal is deferred to a future major
+version with migration notice.
+
+FW-RT6-7a remains unopened and unauthorized by this candidate.
+<!-- FW-RT6-6e-C-AGGREGATE-ACCEPTANCE:END -->
