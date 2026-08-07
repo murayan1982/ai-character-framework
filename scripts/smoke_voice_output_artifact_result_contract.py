@@ -247,18 +247,24 @@ def check_configured_provider_guarded_result_has_no_audio_handoff() -> None:
 
 
 def check_generated_public_handoff_contract() -> None:
-    from framework import VoiceOutputResult
+    from framework import VoiceArtifactRef, VoiceOutputResult
 
+    artifact_ref = VoiceArtifactRef.from_id(
+        "fw_voice_artifact_" + ("a" * 32),
+        audio_format="mp3",
+        content_type="audio/mpeg",
+        public_metadata={"ownership": "framework"},
+    )
     artifact_result = VoiceOutputResult(
         request_state="generated",
         audio_ready=True,
         audio_format="mp3",
-        audio_artifact_ref="artifact://voice-output/demo.mp3",
+        audio_artifact_ref=artifact_ref,
         message="Generated for contract smoke only.",
         public_metadata={
             "boundary": "voice_output",
             "provider_details_exposed": "false",
-            "artifact_kind": "file",
+            "artifact_kind": "audio",
         },
     )
     _assert_generated_handoff(
@@ -281,25 +287,47 @@ def check_generated_public_handoff_contract() -> None:
     )
     _assert_generated_handoff(url_result, "synthetic generated URL result", "audio_url")
 
-    invalid_multiple = VoiceOutputResult(
-        request_state="generated",
-        audio_ready=True,
-        audio_format="mp3",
-        audio_url="https://example.invalid/fw/audio/demo.mp3",
-        audio_artifact_ref="artifact://voice-output/demo.mp3",
-        public_metadata={"provider_details_exposed": "false"},
-    )
-    _assert(
-        invalid_multiple.audio_handoff_kind == "multiple",
-        "results with both handoffs should be classified as multiple",
-    )
-    _assert(
-        not invalid_multiple.has_audio_handoff,
-        "current v5 contract treats multiple handoffs as invalid",
-    )
+    try:
+        VoiceOutputResult(
+            request_state="generated",
+            audio_ready=True,
+            audio_format="mp3",
+            audio_url="https://example.invalid/fw/audio/demo.mp3",
+            audio_artifact_ref=artifact_ref,
+            public_metadata={"provider_details_exposed": "false"},
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("results with both handoffs must be rejected")
+
+    try:
+        VoiceOutputResult(
+            request_state="generated",
+            audio_ready=True,
+            audio_format="mp3",
+            public_metadata={"provider_details_exposed": "false"},
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("generated results without a handoff must be rejected")
+
+    try:
+        VoiceOutputResult(
+            request_state="generated",
+            audio_ready=True,
+            audio_format="mp3",
+            audio_artifact_ref=r"C:\private\voice-output.mp3",
+            public_metadata={"provider_details_exposed": "false"},
+        )
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("raw local-path string artifact refs must be rejected")
 
     _assert_no_forbidden_imports("synthetic generated handoff contract")
-    print("[OK] voice output generated result handoff contract is explicit")
+    print("[OK] voice output generated result handoff contract is explicit and enforced")
 
 
 def check_contract_documented() -> None:

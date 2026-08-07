@@ -39,7 +39,7 @@ Host apps must not treat `unavailable`, `skipped`, `rejected`, or `failed` as pl
 The public handoff fields are:
 
 - `audio_url`: a Web-app-consumable URL when FW can host, sign, or otherwise expose audio safely.
-- `audio_artifact_ref`: an opaque FW-owned artifact reference when FW generated audio but does not expose a public URL.
+- `audio_artifact_ref`: an opaque FW-owned `VoiceArtifactRef` when FW generated audio but does not expose a public URL. Raw strings and filesystem paths are not valid artifact handoffs.
 
 Current v5.0.0 behavior primarily supports `audio_artifact_ref` for explicit configured real runs. `audio_url` remains a public contract field for future Web-friendly artifact hosting.
 
@@ -73,7 +73,7 @@ audio_handoff_kind: audio_url or audio_artifact_ref
 has_audio_handoff: True
 ```
 
-A result with both `audio_url` and `audio_artifact_ref` set is considered invalid for current v5.0.0 app integration. FW may change this in a later version, but DRC should currently expect exactly one handoff for generated audio.
+A generated result with both `audio_url` and `audio_artifact_ref`, or with neither handoff, is rejected by the public result contract. A generated result therefore has exactly one public handoff.
 
 ## Host app handling
 
@@ -92,7 +92,7 @@ else:
     treat_as_contract_error()
 ```
 
-Do not parse `audio_artifact_ref` as a provider payload or commit it as evidence. It is a FW-owned handoff reference and may contain private local paths during manual configured runs.
+Do not parse `audio_artifact_ref` as a provider payload or storage location. It is a FW-owned `VoiceArtifactRef`; its `artifact_id` must never contain a local/private filesystem path, provider object, provider identifier, or provider payload.
 
 ## DRC evidence boundary
 
@@ -122,3 +122,27 @@ python scripts/smoke_voice_output_artifact_result_contract.py
 ```
 
 This smoke check verifies that public result fields and helper properties follow the artifact handoff contract without provider credentials or real TTS execution. The separate `smoke_voice_output_real_provider_execution_guard.py` check verifies that configured providers still return a non-playable skipped result unless the FW execution guard is explicitly opened.
+
+## v6 opaque artifact-store adoption
+
+FW-RT6-6b removes the legacy configured-provider local-path handoff. Real
+provider bytes are stored behind `framework.voice_artifacts`, and public results
+receive only `VoiceArtifactRef` or an app-consumable `audio_url`.
+
+```text
+raw local path in VoiceOutputResult:
+False
+
+audio_artifact_ref type:
+VoiceArtifactRef | None
+
+generated handoff:
+exactly one public handoff
+
+provider details public:
+False
+```
+
+The Framework synthesis stage may bind an opaque artifact reference to its
+lifecycle `GenerationId` after provider synthesis returns. Generation identity is
+not passed into the provider adapter.

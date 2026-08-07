@@ -762,3 +762,140 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6b-A-ARTIFACT-STORE-PROTOCOL:END -->
+
+<!-- FW-RT6-6b-B-PROVIDER-ARTIFACT-ADOPTION:BEGIN -->
+## FW-RT6-6b Control B — provider artifact-store adoption
+
+### Baseline and authorization
+
+```text
+baseline HEAD / origin/main:
+d9f4a562728ba1c63b82c83f4ff5826cf900f9b0
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+Control B:
+AUTHORIZED
+```
+
+Control B connects the accepted `framework.voice_artifacts` foundation to the
+existing real voice-output adapter and the provider-neutral synthesis stage. It
+does not add a new root-public name or change the accepted seven-name
+`framework.realtime_voice_output` export list.
+
+### Real provider handoff correction
+
+The ElevenLabs adapter no longer creates a public result from
+`str(artifact_path)`. Provider-produced bytes are streamed into a
+Framework-owned `VoiceArtifactStore`, which returns a `VoiceArtifactRef`.
+
+```text
+real provider local path in VoiceOutputResult:
+False
+
+provider result artifact type:
+VoiceArtifactRef
+
+opaque artifact ID:
+fw_voice_artifact_<32 lowercase hex>
+
+provider adapter receives Framework correlation IDs:
+False
+```
+
+The adapter still receives only `VoiceOutputRequest`. Session, turn, lifecycle
+generation, and synthesis-work identity remain outside the provider protocol.
+
+### Generated result invariant
+
+`VoiceOutputResult.audio_artifact_ref` is now an opaque `VoiceArtifactRef | None`;
+a raw string/path is not an accepted artifact handoff. Generated results require
+exactly one public handoff:
+
+```text
+audio_url XOR audio_artifact_ref:
+REQUIRED
+
+generated + both handoffs:
+REJECTED
+
+generated + no handoff:
+REJECTED
+
+non-generated + playable handoff:
+REJECTED
+```
+
+This removes the legacy state where a local path could be stored in
+`audio_artifact_ref` while retaining the existing URL handoff branch.
+
+### Stage-side generation binding
+
+`ProviderNeutralVoiceSynthesisStage` may be composed with the same
+`VoiceArtifactStore` used by a provider adapter. When synthesis returns an
+artifact reference, the stage binds that opaque artifact to
+`RealtimeStageContext.generation_id` after the provider call returns.
+
+Generation identity is therefore not passed into the provider adapter. The
+accepted FW-RT6-6a correlation-free provider protocol remains unchanged.
+
+### Deferred boundaries
+
+```text
+bounded pending work / pending clear:
+FW-RT6-6c
+
+interrupt-driven artifact invalidation / future-delivery suppression:
+FW-RT6-6d
+
+active synthesis cancellation / provider hard cancel:
+FW-RT6-6d
+
+host playback coordination / physical stop:
+FW-RT6-6e
+```
+
+Control B does not infer any of those capabilities from successful artifact
+storage or generation binding.
+
+### Control B status
+
+```text
+checkpoint:
+FW-RT6-6b Control B
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact change surface:
+7 files
+
+real provider path leak corrected:
+True
+
+raw local path in VoiceOutputResult:
+False
+
+exactly one generated audio handoff:
+ENFORCED
+
+stage-side generation binding:
+True
+
+provider adapter receives Framework IDs:
+False
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6b-B-PROVIDER-ARTIFACT-ADOPTION:END -->

@@ -27,6 +27,7 @@ from .identity import GenerationId, SessionId, TurnId
 from .public_safety import public_mapping, sanitize_public_value
 from .realtime_capabilities import RealtimeVoiceOutputCapability
 from .realtime_stage import RealtimeStageContext
+from .voice_artifacts import VoiceArtifactStore
 
 
 _SYNTHESIS_WORK_ID_PATTERN = re.compile(r"^fw_synthesis_[0-9a-f]{32}$")
@@ -289,9 +290,14 @@ class ProviderNeutralVoiceSynthesisStage:
     pending work, artifact invalidation, or host playback control.
     """
 
-    __slots__ = ("_adapter", "_capability", "_lock", "_closed", "_active_generation")
+    __slots__ = ("_adapter", "_artifact_store", "_capability", "_lock", "_closed", "_active_generation")
 
-    def __init__(self, adapter: VoiceSynthesisProviderAdapter) -> None:
+    def __init__(
+        self,
+        adapter: VoiceSynthesisProviderAdapter,
+        *,
+        artifact_store: VoiceArtifactStore | None = None,
+    ) -> None:
         if not isinstance(adapter, VoiceSynthesisProviderAdapter):
             raise TypeError(
                 "adapter must implement the VoiceSynthesisProviderAdapter protocol"
@@ -307,7 +313,12 @@ class ProviderNeutralVoiceSynthesisStage:
             raise ValueError(
                 "Control B stage does not adopt provider hard-cancel support"
             )
+        if artifact_store is not None and not isinstance(
+            artifact_store, VoiceArtifactStore
+        ):
+            raise TypeError("artifact_store must implement VoiceArtifactStore")
         self._adapter = adapter
+        self._artifact_store = artifact_store
         self._capability = capability
         self._lock = threading.RLock()
         self._closed = False
@@ -356,6 +367,7 @@ class ProviderNeutralVoiceSynthesisStage:
             result = self._adapter.synthesize(request)
             if not isinstance(result, VoiceOutputResult):
                 raise TypeError("adapter synthesize result must be VoiceOutputResult")
+            self._bind_result_artifact(context=context, result=result)
             return VoiceSynthesisResultEnvelope(
                 context=context,
                 work_id=work_id,
@@ -426,6 +438,24 @@ class ProviderNeutralVoiceSynthesisStage:
 
         with self._lock:
             self._closed = True
+
+    def _bind_result_artifact(
+        self,
+        *,
+        context: RealtimeStageContext,
+        result: VoiceOutputResult,
+    ) -> None:
+        artifact_ref = result.audio_artifact_ref
+        if artifact_ref is None:
+            return
+        store = self._artifact_store
+        if store is None:
+            raise RuntimeError(
+                "Voice artifact store is required to bind an artifact result."
+            )
+        record = store.bind_generation(artifact_ref, context.generation_id)
+        if record.ref != artifact_ref:
+            raise RuntimeError("Voice artifact store returned a mismatched reference.")
 
     def _validated_capability(self) -> RealtimeVoiceOutputCapability:
         return self._capability

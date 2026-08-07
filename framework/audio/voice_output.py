@@ -128,9 +128,36 @@ class VoiceOutputResult:
     audio_ready: bool = False
     audio_format: str | None = None
     audio_url: str | None = None
-    audio_artifact_ref: VoiceArtifactRef | str | None = None
+    audio_artifact_ref: VoiceArtifactRef | None = None
     message: str = ""
     public_metadata: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.audio_artifact_ref is not None and not isinstance(
+            self.audio_artifact_ref, VoiceArtifactRef
+        ):
+            raise TypeError(
+                "VoiceOutputResult.audio_artifact_ref must be a VoiceArtifactRef or None"
+            )
+
+        has_url = bool(self.audio_url)
+        has_artifact_ref = self.audio_artifact_ref is not None
+        handoff_count = int(has_url) + int(has_artifact_ref)
+
+        if self.request_state == "generated":
+            if not self.audio_ready:
+                raise ValueError("generated voice output must be audio-ready")
+            if handoff_count != 1:
+                raise ValueError(
+                    "generated voice output must expose exactly one audio handoff"
+                )
+        else:
+            if self.audio_ready:
+                raise ValueError("non-generated voice output must not be audio-ready")
+            if handoff_count:
+                raise ValueError(
+                    "non-generated voice output must not expose an audio handoff"
+                )
 
     @property
     def has_audio_handoff(self) -> bool:
