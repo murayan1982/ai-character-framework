@@ -3730,3 +3730,59 @@ The roadmap P0-5 split is unchanged. Bounded pending work remains FW-RT6-6c,
 active cancellation / interrupt-driven artifact invalidation / future-delivery
 suppression remain FW-RT6-6d, and host playback remains FW-RT6-6e.
 <!-- FW-RT6-6b-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6b Control B — provider artifact-store adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-6b Control B
+baseline head: d9f4a562728ba1c63b82c83f4ff5826cf900f9b0
+implementation commit: 0719880b0caab9c69038b50d000f17a128d5d062
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 7 files
+dedicated gate: PASS
+accepted Control A package/store foundation regression: PASS
+artifact-result contract: PASS
+FW-RT6-6a aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+real provider path leak corrected: True
+provider result artifact type: VoiceArtifactRef
+generated exactly-one audio handoff: ENFORCED
+raw local path in VoiceOutputResult: False
+stage-side lifecycle generation binding: True
+provider adapter receives Framework correlation IDs: False
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+pending queue changed: False
+generation cancel / artifact invalidation changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6b aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the real-provider opaque artifact handoff correction and the
+Framework synthesis-stage generation-binding boundary. Real provider output no
+longer exposes `str(artifact_path)` through `VoiceOutputResult`; generated
+artifact handoff uses `VoiceArtifactRef`, and generated results enforce exactly
+one public audio handoff.
+
+The accepted FW-RT6-6a provider protocol remains correlation-free. Session,
+turn, lifecycle-generation, and synthesis-work identities are not passed into
+provider adapters. Lifecycle `GenerationId` binding occurs only after provider
+synthesis returns, on the Framework synthesis-stage side.
+
+The seven FW-RT6-6b aggregate task checkboxes remain open. Control C is
+authorized for aggregate acceptance only: review accepted Control A+B together,
+run the dedicated FW-RT6-6b aggregate gate and regressions, and close the seven
+aggregate task checkboxes only if that aggregate review passes. Control C must
+not add provider runtime behavior.
+
+The roadmap P0-5 split is unchanged. Bounded pending work remains FW-RT6-6c;
+active synthesis cancellation, interrupt-driven artifact invalidation, and
+future-delivery suppression remain FW-RT6-6d; host playback coordination remains
+FW-RT6-6e.
+<!-- FW-RT6-6b-B-ACCEPTANCE-SYNC:END -->
