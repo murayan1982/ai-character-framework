@@ -132,7 +132,7 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 124, "canonical public API count should be 124")
+    _assert(len(framework.__all__) == 127, "canonical public API count should be 127")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -179,13 +179,22 @@ def check_version_metadata() -> None:
         "detailed capability suffix drift",
     )
     _assert(
-        tuple(framework.__all__[121:])
+        tuple(framework.__all__[121:124])
         == (
             "RealtimeSessionConfig",
             "RealtimeSessionConstructionStatus",
             "RealtimeSessionConstructionResult",
         ),
         "realtime session construction suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[124:125]) == ("RealtimeTurnStartResult",),
+        "realtime turn-start suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[125:])
+        == ("RealtimeExecutionErrorCode", "RealtimeExecutionError"),
+        "realtime execution suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -410,7 +419,7 @@ def check_event_models() -> None:
 
 
 def check_session_methods() -> None:
-    from framework import TextChatSession
+    from framework import RealtimeSession, TextChatSession
 
     _assert(hasattr(TextChatSession, "ask"), "SDK session should expose ask()")
     _assert(hasattr(TextChatSession, "ask_stream"), "SDK session should expose ask_stream()")
@@ -420,6 +429,18 @@ def check_session_methods() -> None:
     _assert(
         hasattr(TextChatSession, "on_state_change"),
         "SDK session should expose on_state_change()",
+    )
+    _assert(
+        hasattr(RealtimeSession, "run_turn_async"),
+        "realtime SDK should expose run_turn_async()",
+    )
+    _assert(
+        hasattr(RealtimeSession, "run_turn_blocking"),
+        "realtime SDK should expose run_turn_blocking()",
+    )
+    _assert(
+        hasattr(RealtimeSession, "run_turn"),
+        "realtime SDK should preserve legacy run_turn()",
     )
 
     print("[OK] app SDK session methods are available")

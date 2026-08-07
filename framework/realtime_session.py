@@ -7,6 +7,7 @@ websocket, microphone, or provider SDK code.
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,6 +48,8 @@ from .realtime_session_config import (
     RealtimeSessionConstructionStatus,
 )
 from .realtime_event_hub import RealtimeEventHub
+from .realtime_execution import RealtimeExecutionError, RealtimeExecutionErrorCode
+from .realtime_execution_bridge import _RealtimeExecutionBridge
 from .realtime_terminal_registry import (
     RealtimeTerminalRegistry,
     TerminalCommitDecision,
@@ -67,6 +70,7 @@ from .realtime import (
     RealtimeState,
     RealtimeTurn,
     RealtimeTurnResult,
+    RealtimeTurnStartResult,
     _normalize_realtime_phase,
     _public_mapping,
     _require_runtime_event_payload,
@@ -378,6 +382,18 @@ class RealtimeSessionInfo:
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
 
+@dataclass(frozen=True, slots=True)
+class _ActiveTurnContext:
+    """Internal immutable identity for one explicitly admitted turn."""
+
+    turn: RealtimeTurn
+    generation_id: GenerationId
+
+    @property
+    def turn_id(self) -> TurnId | str:
+        return self.turn.turn_id
+
+
 class RealtimeSession:
     """Mock-safe public realtime session skeleton.
 
@@ -421,6 +437,9 @@ class RealtimeSession:
         self._close_requested = False
         self._operation_lock = RLock()
         self._operation_depth = 0
+        self._execution_bridge = _RealtimeExecutionBridge(
+            thread_name=f"framework-realtime-{self._session_id}",
+        )
         self._event_hub = RealtimeEventHub[RealtimeEvent]()
         self._terminal_registry = RealtimeTerminalRegistry[RealtimeTurnResult]()
         from .realtime_generation_gate import RealtimeGenerationGate
@@ -451,6 +470,8 @@ class RealtimeSession:
         )
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
+        self._turn_admission_lock = RLock()
+        self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
         self._active_generation_id: GenerationId | None = None
         self._info = RealtimeSessionInfo(
@@ -609,6 +630,39 @@ class RealtimeSession:
         """Return immutable count-only generation freshness diagnostics."""
 
         return self._generation_gate.diagnostics
+
+    def _bind_active_turn_context(
+        self,
+        turn: RealtimeTurn,
+        generation_id: GenerationId,
+    ) -> _ActiveTurnContext:
+        """Bind one explicitly admitted turn without replacing another turn."""
+
+        context = _ActiveTurnContext(turn=turn, generation_id=generation_id)
+        self._active_turn_context = context
+        self._active_turn_id = context.turn_id
+        self._active_generation_id = context.generation_id
+        return context
+
+    def _clear_active_turn_context(self) -> None:
+        """Clear explicit and compatibility active-turn identity mirrors."""
+
+        self._active_turn_context = None
+        self._active_turn_id = None
+        self._active_generation_id = None
+
+    def _active_turn_identity(
+        self,
+    ) -> tuple[TurnId | str | None, GenerationId | None]:
+        """Return current active identity without allocating or retiring work."""
+
+        context = self._active_turn_context
+        if context is not None:
+            return context.turn_id, context.generation_id
+        return (
+            self._generation_gate.current_turn_id or self._active_turn_id,
+            self._generation_gate.current_generation_id or self._active_generation_id,
+        )
 
     def _start_turn_generation(
         self,
@@ -795,20 +849,26 @@ class RealtimeSession:
 
     @contextmanager
     def _serialized_operation(self) -> Iterator[None]:
-        """Serialize one public event-producing operation and honor deferred close."""
+        """Serialize one operation and shut the runtime down only after unlock."""
 
-        with self._operation_lock:
-            self._operation_depth += 1
-            try:
-                yield
-            finally:
-                self._operation_depth -= 1
-                if (
-                    self._operation_depth == 0
-                    and self._close_requested
-                    and not self._closed
-                ):
-                    self._close_now()
+        should_shutdown_bridge = False
+        try:
+            with self._operation_lock:
+                self._operation_depth += 1
+                try:
+                    yield
+                finally:
+                    self._operation_depth -= 1
+                    if (
+                        self._operation_depth == 0
+                        and self._close_requested
+                        and not self._closed
+                    ):
+                        self._close_now()
+                        should_shutdown_bridge = True
+        finally:
+            if should_shutdown_bridge:
+                self._execution_bridge.shutdown()
 
     def on_event(self, callback: RealtimeEventCallback) -> str:
         """Register a canonical callback and return its opaque removal token."""
@@ -1044,6 +1104,8 @@ class RealtimeSession:
             retryable=retryable,
             recovery_action=RecoveryAction.REUSE_SESSION,
             public_metadata=metadata,
+            session_id=self._session_id,
+            generation_id=None,
         )
         committed_result = self._commit_terminal_result(
             result,
@@ -1055,11 +1117,477 @@ class RealtimeSession:
             retryable=retryable,
             public_metadata=metadata,
         )
-        self._active_turn_id = None
-        self._active_generation_id = None
+        self._clear_active_turn_context()
         self._phase = RealtimePhase.IDLE
         self._state = RealtimeState.IDLE
         return committed_result
+
+    def _normalize_turn_start_request(
+        self,
+        turn: RealtimeTurn | None,
+        *,
+        input_text: str,
+        public_metadata: Mapping[str, Any] | None,
+    ) -> RealtimeTurn:
+        """Bind one public start request to this session without executing it."""
+
+        if turn is None:
+            return RealtimeTurn(
+                input_text=input_text,
+                session_id=self._session_id,
+                public_metadata=public_metadata or {},
+            )
+        if turn.session_id is None:
+            return RealtimeTurn(
+                turn_id=turn.turn_id,
+                input_text=turn.input_text,
+                state=turn.state,
+                session_id=self._session_id,
+                public_metadata=turn.public_metadata,
+                phase=turn.phase,
+            )
+        return turn
+
+    def _commit_state_neutral_start_rejection(
+        self,
+        turn: RealtimeTurn,
+        *,
+        public_error_code: RealtimeErrorCode,
+        safe_message: str,
+        reason: str,
+        retryable: bool = False,
+    ) -> RealtimeTurnResult:
+        """Commit one rejected start without mutating the active session lifecycle."""
+
+        metadata = {
+            "boundary": "realtime_turn_start",
+            "reason": reason,
+            "active_turn_preserved": True,
+            "generation_allocated": False,
+            "automatic_previous_turn_replacement": False,
+        }
+        result = RealtimeTurnResult(
+            turn_id=turn.turn_id,
+            outcome=TurnOutcome.REJECTED,
+            input_text=turn.input_text,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            retryable=retryable,
+            recovery_action=RecoveryAction.REUSE_SESSION,
+            public_metadata=metadata,
+            session_id=self._session_id,
+            generation_id=None,
+        )
+        decision = self._terminal_registry.commit(
+            result.turn_id,
+            result.outcome,
+            recovery_action=result.recovery_action,
+            reason=reason,
+            result=result,
+        )
+        committed = decision.record.result
+        if committed is None:
+            raise AssertionError("start rejection terminal record must retain its result")
+        if not decision.accepted:
+            return committed
+
+        state = self._state
+        phase = self._phase
+        payload = LifecycleEventPayload(
+            outcome=TurnOutcome.REJECTED,
+            recovery_action=RecoveryAction.REUSE_SESSION,
+            reason=reason,
+        )
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=RealtimeEventType.TURN_REJECTED,
+                state=state,
+                previous_state=state,
+                turn_id=turn.turn_id,
+                session_id=self._session_id,
+                boundary="realtime",
+                public_error_code=public_error_code,
+                safe_message=safe_message,
+                retryable=retryable,
+                public_metadata=metadata,
+                sequence=sequence,
+                generation_id=None,
+                phase=phase,
+                payload=payload,
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        def overflow_event_factory(
+            sequence: EventSequence,
+            dropped_sequence: EventSequence | None,
+            overflow_count: int,
+        ) -> RealtimeEvent:
+            return self._build_event_overflow(
+                sequence=sequence,
+                dropped_sequence=dropped_sequence,
+                overflow_count=overflow_count,
+                state=state,
+                turn_id=turn.turn_id,
+                generation_id=None,
+                phase=phase,
+            )
+
+        self._event_hub.emit(
+            event_factory,
+            legacy_projector=lambda emitted: emitted.to_v5(),
+            overflow_event_factory=overflow_event_factory,
+        )
+        return committed
+
+    def _rejected_turn_start_result(
+        self,
+        turn: RealtimeTurn,
+        *,
+        public_error_code: RealtimeErrorCode,
+        safe_message: str,
+        reason: str,
+        retryable: bool = False,
+    ) -> RealtimeTurnStartResult:
+        terminal = self._commit_state_neutral_start_rejection(
+            turn,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            reason=reason,
+            retryable=retryable,
+        )
+        phase = self._phase or RealtimePhase.IDLE
+        return RealtimeTurnStartResult(
+            accepted=False,
+            session_id=self._session_id,
+            turn_id=turn.turn_id,
+            generation_id=None,
+            phase=phase,
+            terminal_result=terminal,
+            public_metadata={
+                "boundary": "realtime_turn_start",
+                "reason": reason,
+            },
+        )
+
+    def _closed_turn_start_result(
+        self,
+        turn: RealtimeTurn,
+    ) -> RealtimeTurnStartResult:
+        """Return a typed closed-session admission result without emitting events."""
+
+        terminal = RealtimeTurnResult(
+            turn_id=turn.turn_id,
+            outcome=TurnOutcome.REJECTED,
+            input_text=turn.input_text,
+            public_error_code=RealtimeErrorCode.SESSION_CLOSED,
+            safe_message="Realtime session is closed.",
+            retryable=False,
+            recovery_action=RecoveryAction.REUSE_SESSION,
+            public_metadata={
+                "boundary": "realtime_turn_start",
+                "reason": "session_closed",
+                "terminal_committed": False,
+            },
+            session_id=self._session_id,
+            generation_id=None,
+        )
+        return RealtimeTurnStartResult(
+            accepted=False,
+            session_id=self._session_id,
+            turn_id=turn.turn_id,
+            generation_id=None,
+            phase=RealtimePhase.IDLE,
+            terminal_result=terminal,
+            public_metadata={
+                "boundary": "realtime_turn_start",
+                "reason": "session_closed",
+            },
+        )
+
+    def start_turn(
+        self,
+        turn: RealtimeTurn | None = None,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> RealtimeTurnStartResult:
+        """Atomically admit one explicit turn without executing its stages."""
+
+        turn = self._normalize_turn_start_request(
+            turn,
+            input_text=input_text,
+            public_metadata=public_metadata,
+        )
+
+        with self._turn_admission_lock:
+            if self._closed or self._close_requested:
+                return self._closed_turn_start_result(turn)
+
+            if turn.session_id != self._session_id:
+                return self._rejected_turn_start_result(
+                    turn,
+                    public_error_code=RealtimeErrorCode.INVALID_REQUEST,
+                    safe_message="Realtime turn belongs to a different session.",
+                    reason="turn_session_mismatch",
+                )
+
+            existing_terminal = self._terminal_registry.get(turn.turn_id)
+            if existing_terminal is not None:
+                existing_result = existing_terminal.result
+                if (
+                    existing_result is not None
+                    and existing_result.outcome is TurnOutcome.REJECTED
+                ):
+                    return RealtimeTurnStartResult(
+                        accepted=False,
+                        session_id=self._session_id,
+                        turn_id=turn.turn_id,
+                        generation_id=None,
+                        phase=self._phase or RealtimePhase.IDLE,
+                        terminal_result=existing_result,
+                        public_metadata={
+                            "boundary": "realtime_turn_start",
+                            "reason": existing_terminal.reason,
+                            "duplicate_terminal": True,
+                        },
+                    )
+                raise ValueError("turn_id already owns a non-rejected terminal result")
+
+            active_turn_id, active_generation_id = self._active_turn_identity()
+            if active_turn_id is not None:
+                if turn.turn_id == active_turn_id and active_generation_id is not None:
+                    return RealtimeTurnStartResult(
+                        accepted=True,
+                        session_id=self._session_id,
+                        turn_id=turn.turn_id,
+                        generation_id=active_generation_id,
+                        phase=self._phase or RealtimePhase.LISTENING,
+                        public_metadata={
+                            "boundary": "realtime_turn_start",
+                            "idempotent": True,
+                        },
+                    )
+                return self._rejected_turn_start_result(
+                    turn,
+                    public_error_code=RealtimeErrorCode.REJECTED,
+                    safe_message="Another realtime turn is already active.",
+                    reason="active_turn_exists",
+                )
+
+            if self._real_runtime_requested:
+                terminal = self._reject_unexecutable_real_runtime_turn(turn)
+                return RealtimeTurnStartResult(
+                    accepted=False,
+                    session_id=self._session_id,
+                    turn_id=turn.turn_id,
+                    generation_id=None,
+                    phase=self._phase or RealtimePhase.IDLE,
+                    terminal_result=terminal,
+                    public_metadata={
+                        "boundary": "realtime_turn_start",
+                        "reason": terminal.public_metadata.get(
+                            "reason",
+                            "real_runtime_not_executable",
+                        ),
+                    },
+                )
+
+            generation_id = self._generation_gate.start_generation(turn.turn_id)
+            context = self._bind_active_turn_context(turn, generation_id)
+            try:
+                self._transition(
+                    RealtimeEventType.TURN_STARTED,
+                    RealtimeState.LISTENING,
+                    turn_id=context.turn_id,
+                    new_phase=RealtimePhase.LISTENING,
+                    payload=LifecycleEventPayload(reason="turn_admitted"),
+                    public_metadata={
+                        "boundary": "realtime_turn_start",
+                        "explicit_start": True,
+                    },
+                )
+            except Exception:
+                self._advance_generation("reset", turn_id=context.turn_id)
+                self._clear_active_turn_context()
+                raise
+
+            return RealtimeTurnStartResult(
+                accepted=True,
+                session_id=self._session_id,
+                turn_id=context.turn_id,
+                generation_id=context.generation_id,
+                phase=self._phase or RealtimePhase.LISTENING,
+                public_metadata={
+                    "boundary": "realtime_turn_start",
+                    "explicit_start": True,
+                    "automatic_previous_turn_replacement": False,
+                },
+            )
+
+    def _prepare_turn_execution(
+        self,
+        turn: RealtimeTurn | None = None,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> tuple[RealtimeTurn, GenerationId | None, RealtimeTurnResult | None]:
+        """Synchronously reserve one turn before runtime-loop execution."""
+
+        normalized_turn = self._normalize_turn_start_request(
+            turn,
+            input_text=input_text,
+            public_metadata=public_metadata,
+        )
+
+        if self._closed or self._close_requested:
+            return (
+                normalized_turn,
+                None,
+                RealtimeTurnResult.closed(
+                    turn_id=normalized_turn.turn_id,
+                    session_id=self._session_id,
+                ),
+            )
+
+        if normalized_turn.session_id == self._session_id:
+            existing_terminal = self._duplicate_terminal_result(
+                normalized_turn.turn_id
+            )
+            if existing_terminal is not None:
+                return normalized_turn, None, existing_terminal
+
+        start_result = self.start_turn(normalized_turn)
+        if not start_result.accepted:
+            terminal = start_result.terminal_result
+            if terminal is None:
+                raise AssertionError(
+                    "rejected turn admission must retain a terminal result"
+                )
+            return normalized_turn, None, terminal
+
+        generation_id = start_result.generation_id
+        if generation_id is None:
+            raise AssertionError(
+                "accepted turn admission must retain a generation identity"
+            )
+
+        return normalized_turn, generation_id, None
+
+    async def _run_admitted_turn_async(
+        self,
+        turn: RealtimeTurn,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+        admitted_generation_id: GenerationId,
+    ) -> RealtimeTurnResult:
+        """Execute one admitted turn on the session-owned runtime loop."""
+
+        with self._serialized_operation():
+            existing_terminal = self._duplicate_terminal_result(turn.turn_id)
+            if existing_terminal is not None:
+                return existing_terminal
+
+            active_turn_id, active_generation_id = self._active_turn_identity()
+            if (
+                active_turn_id != turn.turn_id
+                or active_generation_id != admitted_generation_id
+            ):
+                existing = self._terminal_registry.get(turn.turn_id)
+                if existing is not None and existing.result is not None:
+                    return existing.result
+                raise RuntimeError(
+                    "accepted realtime turn lost its active admission context"
+                )
+
+            return self._run_turn_serialized(
+                turn,
+                input_text=input_text,
+                public_metadata=public_metadata,
+                admitted_generation_id=admitted_generation_id,
+            )
+
+    def _raise_if_blocking_turn_execution_forbidden(self) -> None:
+        """Reject blocking turn execution from event-loop/runtime threads."""
+
+        if self._execution_bridge.is_runtime_thread():
+            raise RealtimeExecutionError(
+                RealtimeExecutionErrorCode.BLOCKING_CALL_FROM_RUNTIME_THREAD
+            )
+
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return
+
+        raise RealtimeExecutionError(
+            RealtimeExecutionErrorCode.BLOCKING_CALL_IN_ACTIVE_EVENT_LOOP
+        )
+
+    async def run_turn_async(
+        self,
+        turn: RealtimeTurn | None = None,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> RealtimeTurnResult:
+        """Admit one turn and await execution on the persistent runtime loop."""
+
+        normalized_turn, generation_id, terminal = self._prepare_turn_execution(
+            turn,
+            input_text=input_text,
+            public_metadata=public_metadata,
+        )
+        if terminal is not None:
+            return terminal
+        if generation_id is None:
+            raise AssertionError(
+                "accepted async turn execution must retain a generation identity"
+            )
+
+        future = self._execution_bridge.submit(
+            self._run_admitted_turn_async(
+                normalized_turn,
+                input_text=input_text,
+                public_metadata=public_metadata,
+                admitted_generation_id=generation_id,
+            )
+        )
+        return await asyncio.shield(asyncio.wrap_future(future))
+
+    def run_turn_blocking(
+        self,
+        turn: RealtimeTurn | None = None,
+        *,
+        input_text: str = "",
+        public_metadata: Mapping[str, Any] | None = None,
+    ) -> RealtimeTurnResult:
+        """Blocking compatibility wrapper for one realtime turn."""
+
+        self._raise_if_blocking_turn_execution_forbidden()
+
+        normalized_turn, generation_id, terminal = self._prepare_turn_execution(
+            turn,
+            input_text=input_text,
+            public_metadata=public_metadata,
+        )
+        if terminal is not None:
+            return terminal
+        if generation_id is None:
+            raise AssertionError(
+                "accepted blocking turn execution must retain a generation identity"
+            )
+
+        return self._execution_bridge.run(
+            self._run_admitted_turn_async(
+                normalized_turn,
+                input_text=input_text,
+                public_metadata=public_metadata,
+                admitted_generation_id=generation_id,
+            )
+        )
 
     def run_turn(
         self,
@@ -1068,64 +1596,28 @@ class RealtimeSession:
         input_text: str = "",
         public_metadata: Mapping[str, Any] | None = None,
     ) -> RealtimeTurnResult:
-        with self._serialized_operation():
-            return self._run_turn_serialized(
-                turn,
-                input_text=input_text,
-                public_metadata=public_metadata,
-            )
+        """Legacy blocking compatibility alias for ``run_turn_blocking``."""
+
+        return self.run_turn_blocking(
+            turn,
+            input_text=input_text,
+            public_metadata=public_metadata,
+        )
 
     def _run_turn_serialized(
         self,
-        turn: RealtimeTurn | None = None,
+        turn: RealtimeTurn,
         *,
         input_text: str = "",
         public_metadata: Mapping[str, Any] | None = None,
+        admitted_generation_id: GenerationId,
     ) -> RealtimeTurnResult:
-        """Run a mock-safe public realtime turn.
+        """Execute one already-admitted deterministic mock realtime turn."""
 
-        This skeleton intentionally does not execute real STT, LLM, TTS, or
-        motion stages. It emits stable public lifecycle events and returns a
-        completed provider-neutral result.
-        """
-
-        if turn is None:
-            turn = RealtimeTurn(
-                input_text=input_text,
-                session_id=self._session_id,
-                public_metadata=public_metadata or {},
-            )
-        elif turn.session_id is None:
-            turn = RealtimeTurn(
-                turn_id=turn.turn_id,
-                input_text=turn.input_text,
-                state=turn.state,
-                session_id=self._session_id,
-                public_metadata=turn.public_metadata,
-                phase=turn.phase,
-            )
-
-        if self._closed or self._close_requested:
-            return RealtimeTurnResult.closed(turn_id=turn.turn_id)
-
-        existing_terminal = self._duplicate_terminal_result(turn.turn_id)
-        if existing_terminal is not None:
-            return existing_terminal
-
-        if self._real_runtime_requested:
-            return self._reject_unexecutable_real_runtime_turn(turn)
-
-        self._start_turn_generation(turn.turn_id)
         transcript_text = turn.input_text or input_text
+        committed_result: RealtimeTurnResult
 
         try:
-            self._transition(
-                RealtimeEventType.TURN_STARTED,
-                RealtimeState.LISTENING,
-                turn_id=turn.turn_id,
-                new_phase=RealtimePhase.LISTENING,
-                payload=LifecycleEventPayload(reason="turn_admitted"),
-            )
             self._transition(
                 RealtimeEventType.LISTENING_STARTED,
                 RealtimeState.LISTENING,
@@ -1188,6 +1680,8 @@ class RealtimeSession:
                     "mock_runtime": True,
                     **dict(public_metadata or {}),
                 },
+                session_id=self._session_id,
+                generation_id=admitted_generation_id,
             )
             committed_result = self._commit_terminal_result(
                 result,
@@ -1201,14 +1695,21 @@ class RealtimeSession:
                 raise AssertionError(
                     "late non-terminal rejection must retain a terminal result"
                 )
-            return existing.result
+            committed_result = existing.result
 
-        self._active_turn_id = None
-        self._active_generation_id = None
-        # A completed turn returns the session to idle for the next host-app
-        # interaction, without emitting another event.
-        self._set_phase(RealtimePhase.IDLE)
-        self._state = RealtimeState.IDLE
+        with self._turn_admission_lock:
+            context = self._active_turn_context
+            if (
+                context is not None
+                and context.turn_id == turn.turn_id
+                and context.generation_id == admitted_generation_id
+            ):
+                self._clear_active_turn_context()
+
+        if not self._closed and not self._close_requested:
+            if self._phase is not RealtimePhase.IDLE:
+                self._set_phase(RealtimePhase.IDLE)
+            self._state = RealtimeState.IDLE
 
         return committed_result
 
@@ -1534,6 +2035,7 @@ class RealtimeSession:
                 self._stage_close_count += 1
 
     def close(self) -> None:
+        should_shutdown_bridge = False
         with self._operation_lock:
             if self._closed or self._close_requested:
                 return
@@ -1542,14 +2044,17 @@ class RealtimeSession:
                 self._close_requested = True
                 return
             self._close_now()
+            should_shutdown_bridge = True
+
+        if should_shutdown_bridge:
+            self._execution_bridge.shutdown()
 
     def _close_now(self) -> None:
         if self._closed:
             return
         self._close_requested = False
         self._closed = True
-        self._active_turn_id = None
-        self._active_generation_id = None
+        self._clear_active_turn_context()
         self._phase = None
         self._close_injected_stages()
         try:

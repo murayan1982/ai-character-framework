@@ -1405,6 +1405,49 @@ commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-4a-C-ACCEPTANCE-SYNC:END -->
 
+
+<!-- FW-RT6-4a-D-CLOSURE-SYNC:BEGIN -->
+## FW-RT6-4a closure sync
+
+```text
+checkpoint:
+FW-RT6-4a
+
+implementation commit:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+commit subject:
+feat: implement realtime session construction
+
+status:
+COMPLETED / VERIFIED / COMMITTED / PUSHED / ACCEPTED / CLOSED
+
+aggregate tasks:
+7 / 7 ACCEPTED
+
+focused construction tests before publish:
+35 / PASS
+
+full unit suite before publish:
+80 / PASS
+
+real-request mock fallback:
+False
+
+real provider execution:
+False
+
+next checkpoint:
+FW-RT6-4b
+
+next checkpoint status:
+EXACT_CONTRACT_REVIEW COMPLETED / CONTROL A AUTHORIZED
+```
+
+This closure record supersedes only the checkpoint status. The earlier Control
+A/B/C sections remain historical records of their pre-publish states.
+<!-- FW-RT6-4a-D-CLOSURE-SYNC:END -->
+
 ---
 
 ## FW-RT6-4b — Single-active-turn lifecycle
@@ -1413,13 +1456,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] explicit turn start APIを追加する。
-- [ ] active turn contextを追加する。
-- [ ] active中new turnをtyped rejectionする。
-- [ ] turn phase transitionを検証する。
-- [ ] normal completionをterminal registryへcommitする。
-- [ ] resultへsession/turn/generationを含める。
-- [ ] completion後sessionをidle/reusableへ戻す。
+- [x] explicit turn start APIを追加する。
+- [x] active turn contextを追加する。
+- [x] active中new turnをtyped rejectionする。
+- [x] turn phase transitionを検証する。
+- [x] normal completionをterminal registryへcommitする。
+- [x] resultへsession/turn/generationを含める。
+- [x] completion後sessionをidle/reusableへ戻す。
 
 **Acceptance:**
 
@@ -1436,6 +1479,208 @@ exactly one terminal
 session reusable:
 True
 ```
+
+
+<!-- FW-RT6-4b-A-TURN-START-MODELS:BEGIN -->
+**Control A status:**
+
+```text
+checkpoint:
+FW-RT6-4b Control A
+
+baseline HEAD / origin/main:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+public model:
+RealtimeTurnStartResult
+
+RealtimeTurnResult additive identity:
+session_id / generation_id
+
+root-public names:
+125
+
+start_turn runtime adoption:
+DEFERRED / Control B
+
+active-turn context:
+DEFERRED / Control B
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4b-A-TURN-START-MODELS:END -->
+
+
+<!-- FW-RT6-4b-B-TURN-START-ADOPTION:BEGIN -->
+**Control B status:**
+
+```text
+checkpoint:
+FW-RT6-4b Control B
+
+baseline HEAD / origin/main:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+Control A:
+ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+explicit start API:
+RealtimeSession.start_turn()
+
+structured active-turn context:
+IMPLEMENTED
+
+active new-turn rejection:
+typed / state-neutral
+
+active new-turn rejection reason:
+active_turn_exists
+
+automatic previous-turn replacement on explicit admission:
+False
+
+active-generation retirement on rejected start:
+0
+
+root-public names:
+125 / UNCHANGED FROM CONTROL A
+
+run_turn unified adoption:
+DEFERRED / Control C
+
+normal terminal identity population:
+DEFERRED / Control C
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4b-B-TURN-START-ADOPTION:END -->
+
+<!-- FW-RT6-4b-C-TURN-LIFECYCLE-ACCEPTANCE:BEGIN -->
+**Control C / aggregate acceptance status:**
+
+```text
+checkpoint:
+FW-RT6-4b Control C
+
+baseline HEAD / origin/main:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+Control A:
+ACCEPTED
+
+Control B:
+ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+run_turn explicit admission adoption:
+PASS
+
+normal result identity:
+session_id / turn_id / generation_id / PASS
+
+normal terminal registry commit:
+exactly one
+
+active context after completion:
+cleared
+
+session after completion:
+IDLE / reusable
+
+active new-turn rejection:
+typed / state-neutral / no replacement
+
+aggregate tasks:
+7 / 7 ACCEPTED-CANDIDATE
+
+focused Control A+B+C tests:
+36 / PASS expected
+
+full unit suite:
+116 / PASS expected
+
+root-public names:
+125
+
+next checkpoint:
+FW-RT6-4c / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4b-C-TURN-LIFECYCLE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-4b-D-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-4b aggregate acceptance sync
+
+```text
+checkpoint:
+FW-RT6-4b
+
+status:
+COMPLETED / VERIFIED / ACCEPTED
+
+accepted combined surface:
+16 files
+
+focused Control A+B+C tests:
+36 / PASS
+
+full unit suite at acceptance:
+116 / PASS
+
+single active turn:
+PASS
+
+new turn while active:
+typed / state-neutral rejection
+
+normal terminal:
+exactly one
+
+session reusable:
+True
+
+active generation replacement:
+0
+
+root-public names at FW-RT6-4b acceptance:
+125
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-4c
+
+next checkpoint status:
+EXACT_CONTRACT_REVIEW COMPLETED / CONTROL A AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+
+This acceptance sync supersedes only the aggregate checkpoint status. Earlier
+Control A/B/C status blocks remain historical records of their pre-acceptance
+states.
+<!-- FW-RT6-4b-D-ACCEPTANCE-SYNC:END -->
 
 ---
 
@@ -1458,12 +1703,12 @@ sync public API + persistent async bridge
 
 **Tasks:**
 
-- [ ] async-first internal runtimeかsync-first runtimeかをexact reviewで決定する。
-- [ ] host event loop上で安全なpublic APIを定義する。
-- [ ] blocking compatibility wrapperの範囲を決める。
-- [ ] callback thread/context guaranteeを文書化する。
-- [ ] cancel/closeのthread safetyを定義する。
-- [ ] deadlock/reentrancy testsを追加する。
+- [x] async-first internal runtimeかsync-first runtimeかをexact reviewで決定する。
+- [x] host event loop上で安全なpublic APIを定義する。
+- [x] blocking compatibility wrapperの範囲を決める。
+- [x] callback thread/context guaranteeを文書化する。
+- [x] cancel/closeのthread safetyを定義する。
+- [x] deadlock/reentrancy testsを追加する。
 
 **Recommended direction:**
 
@@ -1491,6 +1736,225 @@ per-call event loop creation:
 False
 ```
 
+
+<!-- FW-RT6-4c-A-EXECUTION-MODELS-BRIDGE:BEGIN -->
+**Control A status:**
+
+```text
+checkpoint:
+FW-RT6-4c Control A
+
+baseline HEAD / origin/main:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+FW-RT6-4b:
+COMPLETED / VERIFIED / ACCEPTED
+
+exact contract review:
+COMPLETED
+
+execution decision:
+ASYNC-FIRST
+
+public primary turn API:
+async / Control B adoption pending
+
+blocking compatibility:
+explicit wrapper + legacy run_turn / Control B adoption pending
+
+public execution errors:
+RealtimeExecutionErrorCode / RealtimeExecutionError
+
+root-public names:
+127
+
+persistent internal event loop bridge:
+IMPLEMENTED / session adoption deferred
+
+per-call asyncio.run:
+False
+
+per-stage event loop creation:
+False
+
+callback context / close safety:
+DEFERRED / Control C
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4c-A-EXECUTION-MODELS-BRIDGE:END -->
+
+
+<!-- FW-RT6-4c-B-SESSION-EXECUTION-ADOPTION:BEGIN -->
+**Control B status:**
+
+```text
+checkpoint:
+FW-RT6-4c Control B
+
+Control A:
+ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control B delta:
+9 files
+
+combined working-tree surface:
+24 files
+
+focused Control A+B tests:
+26 / PASS expected
+
+full unit suite:
+142 / PASS expected
+
+public primary turn API:
+run_turn_async / IMPLEMENTED
+
+blocking compatibility:
+run_turn_blocking + legacy run_turn delegation / IMPLEMENTED
+
+host event-loop blocking call:
+typed rejection
+
+runtime-thread blocking call:
+typed rejection
+
+session-owned persistent bridge:
+IMPLEMENTED / LAZY / REUSED
+
+admission before runtime queue:
+True
+
+callback context / close safety:
+DEFERRED / Control C
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4c-B-SESSION-EXECUTION-ADOPTION:END -->
+
+<!-- FW-RT6-4c-C-CALLBACK-CLOSE-ACCEPTANCE:BEGIN -->
+**Control C status:**
+
+```text
+checkpoint:
+FW-RT6-4c Control C
+
+Control A:
+ACCEPTED
+
+Control B:
+ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control C delta:
+8 files
+
+combined working-tree surface:
+26 files
+
+callback turn execution context:
+session runtime worker thread
+
+direct synchronous control callback context:
+caller thread
+
+runtime callback -> blocking turn API:
+TYPED_REJECTION / BLOCKING_CALL_FROM_RUNTIME_THREAD
+
+runtime callback -> cancel_current_turn:
+REENTRANT / DEADLOCK FALSE
+
+runtime callback -> close:
+DEFERRED UNTIL OUTERMOST OPERATION EXIT / DEADLOCK FALSE
+
+bridge shutdown while operation depth > 0:
+False
+
+runtime self-join:
+False
+
+close before runtime start:
+does not start runtime
+
+close after runtime start:
+worker / loop stopped
+
+worker / loop leak after final close:
+False
+
+close idempotent:
+True
+
+focused Control A+B+C tests:
+36 / PASS expected
+
+full unit suite:
+152 / PASS expected
+
+FW-RT6-4c tasks:
+6 / 6 ACCEPTED-CANDIDATE
+
+next checkpoint:
+FW-RT6-5a / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4c-C-CALLBACK-CLOSE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-4c-D-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-4c post-acceptance source-of-truth sync
+
+This additive block records operator acceptance without rewriting the historical
+Control A/B/C pre-acceptance checkpoints above.
+
+```text
+checkpoint:
+FW-RT6-4c aggregate acceptance
+
+status:
+COMPLETED / VERIFIED / ACCEPTED
+
+combined working-tree surface:
+26 files
+
+focused Control A+B+C tests:
+36 / PASS
+
+full unit suite at acceptance:
+152 / PASS
+
+FW-RT6-4c tasks:
+6 / 6 ACCEPTED
+
+deadlock:
+False
+
+worker / loop leak after final close:
+False
+
+next checkpoint:
+FW-RT6-5a exact contract review completed / Control A authorized
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-4c-D-ACCEPTANCE-SYNC:END -->
+
 ---
 
 ## FW-RT6-5a — Cancelable text-generation protocol
@@ -1499,12 +1963,12 @@ False
 
 **Tasks:**
 
-- [ ] stream handle/protocolを定義する。
-- [ ] cooperative cancellation tokenを追加する。
-- [ ] stream close/dispose contractを追加する。
-- [ ] response delta envelopeへturn/generationを付与する。
-- [ ] completion/interrupt時のconversation history commit ruleを固定する。
-- [ ] provider hard-cancel capabilityを報告する。
+- [x] stream handle/protocolを定義する。
+- [x] cooperative cancellation tokenを追加する。
+- [x] stream close/dispose contractを追加する。
+- [x] response delta envelopeへturn/generationを付与する。
+- [x] completion/interrupt時のconversation history commit ruleを固定する。
+- [x] provider hard-cancel capabilityを報告する。
 
 **Acceptance:**
 
@@ -1519,19 +1983,239 @@ interrupted partial output committed as complete:
 False
 ```
 
+<!-- FW-RT6-5a-A-MODEL-TOKEN-CONTRACT:BEGIN -->
+**Control A status:**
+
+```text
+checkpoint:
+FW-RT6-5a Control A
+
+FW-RT6-4c:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control A delta:
+9 files
+
+combined working-tree surface:
+30 files
+
+stable explicit package:
+framework.realtime_text_generation
+
+cooperative cancellation token:
+THREAD-SAFE / IDEMPOTENT / FIRST-REASON-WINS
+
+delta identity:
+session / turn / generation / delta_index
+
+typed close-result vocabulary:
+DEFINED
+
+conversation history transaction rule:
+FIXED / IMPLEMENTATION DEFERRED TO CONTROL B
+
+provider hard-cancel source of truth:
+TextGenerationCapability.provider_hard_cancel_supported
+
+root-public names:
+127 / UNCHANGED
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5a-A-MODEL-TOKEN-CONTRACT:END -->
+
+
+<!-- FW-RT6-5a-B-STREAM-HISTORY-CONTRACT:BEGIN -->
+**Control A acceptance / Control B status:**
+
+```text
+checkpoint:
+FW-RT6-5a Control B
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control B delta:
+7 files
+
+combined working-tree surface:
+32 files
+
+stream protocol:
+TextGenerationStream / PASS
+
+provider-neutral reference handle:
+ProviderNeutralTextGenerationStream / PASS
+
+cancel after first delta:
+future delivered deltas = 0 / PASS
+
+cancel during in-flight source pull:
+returned source delta delivered = False / PASS
+
+source cleanup:
+at most once / PASS
+
+close / dispose:
+typed / idempotent / PASS
+
+normal completed history:
+user + full assistant pair / exactly once / PASS
+
+cancel / close / source failure history commit:
+False / PASS
+
+provider hard-cancel overclaim:
+False
+
+root-public names:
+127 / UNCHANGED
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+
+Aggregate FW-RT6-5a tasks remain unchecked until Control C completes the
+additive stage protocol and aggregate acceptance gate.
+<!-- FW-RT6-5a-B-STREAM-HISTORY-CONTRACT:END -->
+
+
+<!-- FW-RT6-5a-C-STAGE-ACCEPTANCE:BEGIN -->
+**Control B acceptance / Control C aggregate status:**
+
+```text
+checkpoint:
+FW-RT6-5a Control C
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control C delta:
+7 files
+
+combined working-tree surface:
+34 files
+
+CancelableTextGenerationStage:
+ADDITIVE / PASS
+
+existing TextGenerationStage:
+UNCHANGED / COMPATIBLE / PASS
+
+framework.realtime_stage exports:
+7 / UNCHANGED
+
+root-public names:
+127 / UNCHANGED
+
+cancel future delivered deltas:
+0 / PASS
+
+source cleanup:
+at most once / PASS
+
+close / dispose:
+typed / idempotent / PASS
+
+normal completed history:
+user + full assistant pair / exactly once / PASS
+
+interrupted / cancelled / failed partial history commit:
+False / PASS
+
+provider hard-cancel capability source:
+TextGenerationCapability.provider_hard_cancel_supported / PASS
+
+provider hard-cancel overclaim:
+False
+
+FW-RT6-5a tasks:
+6 / 6 ACCEPTED-CANDIDATE
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-5b / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5a-C-STAGE-ACCEPTANCE:END -->
+
+
+---
+
+
+
+<!-- FW-RT6-5a-D-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-5a post-acceptance source-of-truth sync
+
+```text
+checkpoint:
+FW-RT6-5a aggregate acceptance
+
+status:
+COMPLETED / VERIFIED / ACCEPTED
+
+combined working-tree surface:
+34 files
+
+focused Control A+B+C tests:
+41 / PASS
+
+full unit suite at acceptance:
+193 / PASS
+
+FW-RT6-5a tasks:
+6 / 6 ACCEPTED
+
+next checkpoint:
+FW-RT6-5b exact contract review completed / Control A authorized
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5a-D-ACCEPTANCE-SYNC:END -->
+
 ---
 
 ## FW-RT6-5b — LLM provider adapters
 
 **Tasks:**
 
-- [ ] OpenAI adapterをcancel-aware protocolへ接続する。
-- [ ] Gemini adapterを接続する。
-- [ ] xAI adapterを接続する。
-- [ ] fallback adapterへcancelを伝播する。
-- [ ] router adapterへcancelを伝播する。
-- [ ] provider exceptionをsafe classificationへ変換する。
-- [ ] provider hard cancel未対応をtruthfulに返す。
+- [x] OpenAI adapterをcancel-aware protocolへ接続する。
+- [x] Gemini adapterを接続する。
+- [x] xAI adapterを接続する。
+- [x] fallback adapterへcancelを伝播する。
+- [x] router adapterへcancelを伝播する。
+- [x] provider exceptionをsafe classificationへ変換する。
+- [x] provider hard cancel未対応をtruthfulに返す。
 
 **Acceptance:**
 
@@ -1552,6 +2236,264 @@ raw provider exception public:
 False
 ```
 
+
+<!-- FW-RT6-5b-A-OPENAI-XAI-ADAPTERS:BEGIN -->
+**Control A status:**
+
+```text
+checkpoint:
+FW-RT6-5b Control A
+
+FW-RT6-5a:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control A delta:
+9 files
+
+combined working-tree surface:
+38 files
+
+OpenAI adapter:
+OpenAITextGenerationAdapter / PASS expected
+
+xAI adapter:
+XAITextGenerationAdapter / PASS expected
+
+transactional committed history:
+Framework-owned / normal completion exactly once
+
+cancel / source failure / early close history mutation:
+0
+
+provider safe exception:
+TextGenerationProviderError
+
+raw provider exception public:
+False
+
+provider hard-cancel source:
+TextGenerationCapability.provider_hard_cancel_supported
+
+OpenAI / xAI provider hard cancel:
+False / truthful
+
+root-public names:
+127 / UNCHANGED
+
+Gemini / fallback / router:
+DEFERRED / Control B
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+
+Aggregate FW-RT6-5b tasks remain unchecked until later Controls complete the
+Gemini, fallback/router, and aggregate acceptance work.
+<!-- FW-RT6-5b-A-OPENAI-XAI-ADAPTERS:END -->
+
+<!-- FW-RT6-5b-A-ACCEPTANCE-SYNC:BEGIN -->
+**Control A acceptance sync:**
+
+```text
+checkpoint:
+FW-RT6-5b Control A
+
+status:
+COMPLETED / VERIFIED / ACCEPTED
+
+exact Control A delta:
+9 files
+
+combined working-tree surface:
+38 files
+
+focused tests:
+20 / PASS
+
+full unit suite at acceptance:
+213 / PASS
+
+next:
+FW-RT6-5b Control B authorized
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5b-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-5b-B-GEMINI-FALLBACK-ROUTER:BEGIN -->
+**Control B status:**
+
+```text
+checkpoint:
+FW-RT6-5b Control B
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control B delta:
+6 files
+
+combined working-tree surface:
+40 files
+
+Gemini adapter:
+GeminiTextGenerationAdapter / PASS expected
+
+Gemini provider-owned mutable chat dependency:
+False
+
+Gemini transactional history:
+Framework-owned / normal completion exactly once
+
+fallback adapter:
+FallbackTextGenerationAdapter / PASS expected
+
+fallback before first delivered delta:
+allowed
+
+fallback after first delivered delta:
+False
+
+fallback after cancellation:
+False
+
+router adapter:
+RouterTextGenerationAdapter / PASS expected
+
+router route selection:
+once per stream
+
+context / cancellation token propagation:
+same object / PASS expected
+
+provider hard-cancel source:
+TextGenerationCapability.provider_hard_cancel_supported
+
+Gemini / fallback / router hard-cancel overclaim:
+False
+
+root-public names:
+127 / UNCHANGED
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+
+Aggregate FW-RT6-5b tasks remain unchecked until Control C completes fake-provider
+aggregate acceptance and source-of-truth task sync.
+<!-- FW-RT6-5b-B-GEMINI-FALLBACK-ROUTER:END -->
+
+
+
+<!-- FW-RT6-5b-B-ACCEPTANCE-SYNC:BEGIN -->
+**Control B acceptance sync:**
+
+```text
+checkpoint:
+FW-RT6-5b Control B
+
+status:
+COMPLETED / VERIFIED / ACCEPTED
+
+exact Control B delta:
+6 files
+
+combined working-tree surface:
+40 files
+
+focused Control A+B provider-adapter tests:
+41 / PASS
+
+full unit suite at acceptance:
+234 / PASS
+
+next:
+FW-RT6-5b Control C authorized
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5b-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-5b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+**Control C status:**
+
+```text
+checkpoint:
+FW-RT6-5b Control C
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact Control C delta:
+6 files
+
+combined working-tree surface:
+42 files
+
+OpenAI fake stream:
+PASS expected
+
+Gemini fake stream:
+PASS expected
+
+xAI fake stream:
+PASS expected
+
+fallback cancellation:
+PASS expected
+
+router cancellation:
+PASS expected
+
+raw provider exception public:
+False expected
+
+provider hard-cancel source:
+TextGenerationCapability.provider_hard_cancel_supported
+
+provider hard-cancel overclaim:
+False expected
+
+root-public names:
+127 / UNCHANGED
+
+provider / network / microphone / playback / real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-5c / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-5b-C-AGGREGATE-ACCEPTANCE:END -->
+
 ---
 
 ## FW-RT6-5c — TextChatSession compatibility adapter
@@ -1560,12 +2502,12 @@ False
 
 **Tasks:**
 
-- [ ] `TextChatSession`へsession IDを付与する。
-- [ ] ask/ask_streamをturn contextへ関連付ける。
-- [ ] interruptをv6 control resultへbridgeする。
-- [ ] old boolean return compatibilityを維持する方法を決める。
-- [ ] raw exception eventを削除する。
-- [ ] v4/v5 event adapterを追加する。
+- [x] `TextChatSession`へsession IDを付与する。
+- [x] ask/ask_streamをturn contextへ関連付ける。
+- [x] interruptをv6 control resultへbridgeする。
+- [x] old boolean return compatibilityを維持する方法を決める。
+- [x] raw exception eventを削除する。
+- [x] v4/v5 event adapterを追加する。
 
 **Acceptance:**
 
@@ -2468,3 +3410,105 @@ FW-RT6-0c remains a separate authorization boundary for installable SDK and
 resource resolution. Capability truthfulness and unified realtime composition
 remain later tasklist work and are not completed by this sync.
 <!-- FW-RT6-0b-D-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-5b-C-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-5b aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-5b Control C
+status: COMPLETED / VERIFIED / ACCEPTED
+accepted combined surface: 42 files
+focused: 51 / PASS
+full: 244 / PASS
+tasks: 7 / 7 ACCEPTED
+root-public: 127 / UNCHANGED
+next checkpoint: FW-RT6-5c Control A authorized
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-5b-C-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-5c-A-IDENTITY-EVENT-SCAFFOLD:BEGIN -->
+## FW-RT6-5c Control A — TextChatSession identity/event scaffold
+
+```text
+status: COMPLETED / VERIFIED / ACCEPTED
+exact Control A delta: 7 files
+combined working-tree surface: 46 files
+TextChatSession stable SessionId: PASS expected
+internal TurnId / GenerationId context: PASS expected
+session-local canonical EventSequence: PASS expected
+on_realtime_event(): additive / PASS expected
+ask/ask_stream canonical adoption: DEFERRED / CONTROL B
+interrupt typed result bridge: DEFERRED / CONTROL C
+TextChatSessionInfo: UNCHANGED
+legacy ask/ask_stream/interrupt/events: UNCHANGED
+root-public names: 127 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+Control B: AUTHORIZED / IMPLEMENTED IN NEXT CONTROL
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-5c-A-IDENTITY-EVENT-SCAFFOLD:END -->
+
+
+<!-- FW-RT6-5c-B-CANONICAL-ADOPTION:BEGIN -->
+## FW-RT6-5c Control B — ask/ask_stream canonical adoption
+
+```text
+status: COMPLETED / VERIFIED / ACCEPTED
+exact Control B delta: 7 files
+combined working-tree surface: 48 files
+Control A: COMPLETED / VERIFIED / ACCEPTED
+ask/ask_stream turn context adoption: PASS expected
+canonical normal order: TURN_STARTED -> RESPONSE_STARTED -> DELTA* -> RESPONSE_COMPLETED -> TURN_COMPLETED
+canonical interrupt terminal: TURN_INTERRUPTED / EXACTLY_ONCE expected
+canonical failure terminal: TURN_FAILED / EXACTLY_ONCE expected
+legacy TextChatSessionEvent type/data: UNCHANGED expected
+legacy state transitions: UNCHANGED expected
+raw exception event exposure: False expected
+ask_stream exception re-raise: PRESERVED expected
+interrupt_result(): DEFERRED / CONTROL C
+legacy interrupt(): BOOL_TRUE / UNCHANGED
+TextChatSessionInfo: UNCHANGED / api_version 4.0
+root-public names: 127 / UNCHANGED
+focused Control A+B: 32 / PASS expected
+full: 276 / PASS expected
+provider/network/microphone/playback/real VTS execution: False
+Control C: AUTHORIZED / IMPLEMENTED IN NEXT CONTROL
+commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-5c aggregate six task checkboxes are closed by Control C aggregate acceptance.
+<!-- FW-RT6-5c-B-CANONICAL-ADOPTION:END -->
+
+<!-- FW-RT6-5c-C-INTERRUPT-AGGREGATE:BEGIN -->
+## FW-RT6-5c Control C — typed interrupt bridge / aggregate acceptance
+
+```text
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C delta: 9 files
+combined working-tree surface: 50 files
+Control A: COMPLETED / VERIFIED / ACCEPTED
+Control B: COMPLETED / VERIFIED / ACCEPTED
+interrupt_result() active: ACCEPTED / PASS expected
+interrupt_result() idle: NO_ACTIVE_TURN / PASS expected
+interrupt_result() closed: ALREADY_CLOSED / PASS expected
+legacy interrupt(): BOOL_TRUE / UNCHANGED expected
+canonical INTERRUPT_REQUESTED: EXACTLY_ONCE / PASS expected
+legacy interrupt_requested event: UNCHANGED expected
+provider hard cancel overclaim: False expected
+queue flush overclaim: False expected
+existing RealtimeEvent.to_v5()/as_v5_dict(): REUSED / PASS expected
+raw exception event exposure: False expected
+ask/ask_stream compatibility: PASS expected
+TextChatSessionInfo: UNCHANGED / api_version 4.0
+root-public names: 127 / UNCHANGED
+focused Control A+B+C: 46 / PASS expected
+full: 290 / PASS expected
+tasks: 6 / 6 ACCEPTED-CANDIDATE
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6a / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-5c-C-INTERRUPT-AGGREGATE:END -->

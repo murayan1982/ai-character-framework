@@ -350,3 +350,45 @@ next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-4a-C-RUNTIME-GUARD-ACCEPTANCE:END -->
+
+<!-- FW-RT6-4a-D-CLOSURE-SYNC:BEGIN -->
+## FW-RT6-4a closure sync
+
+```text
+checkpoint:
+FW-RT6-4a
+
+implementation commit:
+dc80d1ade4db539a38d30c74edf73e8ba824531a
+
+commit subject:
+feat: implement realtime session construction
+
+status:
+COMPLETED / VERIFIED / COMMITTED / PUSHED / ACCEPTED / CLOSED
+
+aggregate tasks:
+7 / 7 ACCEPTED
+
+focused construction tests before publish:
+35 / PASS
+
+full unit suite before publish:
+80 / PASS
+
+real-request mock fallback:
+False
+
+real provider execution:
+False
+
+next checkpoint:
+FW-RT6-4b
+
+next checkpoint status:
+EXACT_CONTRACT_REVIEW COMPLETED / CONTROL A AUTHORIZED
+```
+
+This closure record supersedes only the checkpoint status. The earlier Control
+A/B/C sections remain historical records of their pre-publish states.
+<!-- FW-RT6-4a-D-CLOSURE-SYNC:END -->

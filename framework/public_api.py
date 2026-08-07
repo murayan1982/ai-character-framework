@@ -190,6 +190,15 @@ REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS = (
     "RealtimeSessionConstructionResult",
 )
 
+REALTIME_TURN_START_PUBLIC_EXPORTS = (
+    "RealtimeTurnStartResult",
+)
+
+REALTIME_EXECUTION_PUBLIC_EXPORTS = (
+    "RealtimeExecutionErrorCode",
+    "RealtimeExecutionError",
+)
+
 PUBLIC_API_GROUPS = MappingProxyType(
     {
         "provider_compat_lazy": PROVIDER_COMPAT_LAZY_EXPORTS,
@@ -209,6 +218,8 @@ PUBLIC_API_GROUPS = MappingProxyType(
         "realtime_event_payloads": REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
         "realtime_capabilities": REALTIME_CAPABILITY_PUBLIC_EXPORTS,
         "realtime_session_construction": REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS,
+        "realtime_turn_start": REALTIME_TURN_START_PUBLIC_EXPORTS,
+        "realtime_execution": REALTIME_EXECUTION_PUBLIC_EXPORTS,
     }
 )
 

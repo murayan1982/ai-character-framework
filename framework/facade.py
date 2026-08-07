@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Generator
+from threading import RLock
+from typing import TYPE_CHECKING, Callable, Generator, Mapping
 
 from llm.base import BaseLLM
 from config.prompt_builder import build_final_system_instruction
@@ -12,6 +13,21 @@ if TYPE_CHECKING:
     from config.loader import RuntimeConfig
 
 from framework.version import TEXT_CHAT_API_VERSION
+from framework.identity import EventSequence, GenerationId, SessionId, TurnId
+from framework.lifecycle import RealtimePhase, TurnOutcome
+from framework.realtime import (
+    RealtimeErrorCode,
+    RealtimeEvent,
+    RealtimeEventType,
+    RealtimeState,
+)
+from framework.realtime_event_payloads import (
+    InterruptEventPayload,
+    LifecycleEventPayload,
+    RealtimeEventPayload,
+    ResponseEventPayload,
+)
+from framework.output_control import InterruptOutcome, InterruptRequest, InterruptResult
 from framework.public_safety import (
     PublicErrorClassification,
     classify_public_exception,
@@ -99,6 +115,16 @@ class TextChatStateChange:
     new_state: str
 
 
+@dataclass(frozen=True, slots=True)
+class _TextChatRealtimeTurnContext:
+    """Internal v6 correlation context for one legacy text-chat turn."""
+
+    session_id: SessionId
+    turn_id: TurnId
+    generation_id: GenerationId
+    input_text: str = field(repr=False)
+
+
 class TextChatSession:
     """Public text-chat session facade.
 
@@ -114,6 +140,97 @@ class TextChatSession:
         self._state = "idle"
         self._event_callbacks: list[Callable[[TextChatSessionEvent], None]] = []
         self._state_change_callbacks: list[Callable[[TextChatStateChange], None]] = []
+        self._session_id = SessionId.new()
+        self._next_realtime_event_sequence = EventSequence.first()
+        self._realtime_event_callbacks: list[Callable[[RealtimeEvent], None]] = []
+        self._realtime_event_lock = RLock()
+        self._active_realtime_turn_context: _TextChatRealtimeTurnContext | None = None
+
+    @property
+    def session_id(self) -> SessionId:
+        """Return the stable v6 correlation identity for this text session."""
+
+        return self._session_id
+
+    def on_realtime_event(
+        self,
+        callback: Callable[[RealtimeEvent], None],
+    ) -> Callable[[RealtimeEvent], None]:
+        """Register a canonical v6 realtime-event callback and return it.
+
+        FW-RT6-5c Control A adds the callback boundary and identity scaffold only.
+        Existing ``ask()`` / ``ask_stream()`` event behavior is adopted in a later
+        control so legacy app-facing events remain unchanged in this checkpoint.
+        """
+
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+        with self._realtime_event_lock:
+            self._realtime_event_callbacks.append(callback)
+        return callback
+
+    def _new_realtime_turn_context(
+        self,
+        input_text: str,
+    ) -> _TextChatRealtimeTurnContext:
+        """Create one Framework-owned turn/generation correlation context."""
+
+        return _TextChatRealtimeTurnContext(
+            session_id=self._session_id,
+            turn_id=TurnId.new(),
+            generation_id=GenerationId.new(),
+            input_text=input_text,
+        )
+
+    def _emit_realtime_event(
+        self,
+        event_type: RealtimeEventType,
+        *,
+        state: RealtimeState,
+        context: _TextChatRealtimeTurnContext | None = None,
+        previous_state: RealtimeState | None = None,
+        phase: RealtimePhase | None = None,
+        payload: RealtimeEventPayload | None = None,
+        terminal: bool | None = None,
+        public_error_code: RealtimeErrorCode = RealtimeErrorCode.NONE,
+        safe_message: str = "",
+        retryable: bool = False,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> RealtimeEvent:
+        """Emit one sequenced canonical v6 event to compatibility callbacks."""
+
+        if not isinstance(event_type, RealtimeEventType):
+            raise TypeError("event_type must be a RealtimeEventType")
+        if not isinstance(state, RealtimeState):
+            raise TypeError("state must be a RealtimeState")
+
+        with self._realtime_event_lock:
+            sequence = self._next_realtime_event_sequence
+            self._next_realtime_event_sequence = sequence.next()
+            callbacks = tuple(self._realtime_event_callbacks)
+
+        event = RealtimeEvent(
+            type=event_type,
+            state=state,
+            previous_state=previous_state,
+            session_id=self._session_id,
+            turn_id=context.turn_id if context is not None else None,
+            generation_id=(
+                context.generation_id if context is not None else None
+            ),
+            sequence=sequence,
+            phase=phase,
+            payload=payload,
+            terminal=terminal,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            retryable=retryable,
+            public_metadata=public_metadata or {},
+            boundary="text_chat",
+        )
+        for callback in callbacks:
+            callback(event)
+        return event
 
     def on_event(
         self,
@@ -156,6 +273,41 @@ class TextChatSession:
         event = TextChatStateChange(old_state=old_state, new_state=new_state)
         for callback in list(self._state_change_callbacks):
             callback(event)
+
+    def _emit_legacy_event_from_realtime_event(
+        self,
+        event: RealtimeEvent,
+        *,
+        context: _TextChatRealtimeTurnContext | None = None,
+        classification: PublicErrorClassification | None = None,
+    ) -> None:
+        """Project selected canonical events onto the stable v4/v5 facade event shape."""
+
+        if event.type is RealtimeEventType.RESPONSE_STARTED:
+            if context is None:
+                raise RuntimeError("Text chat compatibility context is required.")
+            self._emit_event("response_started", {"text": context.input_text})
+            return
+
+        if event.type is RealtimeEventType.RESPONSE_DELTA:
+            payload = event.payload
+            if not isinstance(payload, ResponseEventPayload):
+                raise RuntimeError("Text chat response delta payload is invalid.")
+            self._emit_event("response_chunk", {"chunk": payload.text})
+            return
+
+        if event.type is RealtimeEventType.RESPONSE_COMPLETED:
+            self._emit_event("response_completed")
+            return
+
+        if event.type is RealtimeEventType.INTERRUPT_REQUESTED:
+            self._emit_event("interrupt_requested")
+            return
+
+        if event.type is RealtimeEventType.TURN_FAILED:
+            if classification is None:
+                raise RuntimeError("Text chat failure classification is required.")
+            self._emit_event("error", _text_chat_error_event_data(classification))
 
     def ask(self, text: str) -> str:
         """Send one text turn and return the full assistant response."""
@@ -236,31 +388,120 @@ class TextChatSession:
         )
     def ask_stream(self, text: str) -> Generator[str, None, None]:
         """Send one text turn and yield assistant response chunks."""
+        context = self._new_realtime_turn_context(text)
+        self._active_realtime_turn_context = context
         self._interrupt_requested = False
         self._set_state("responding")
-        self._emit_event("response_started", {"text": text})
+
+        self._emit_realtime_event(
+            RealtimeEventType.TURN_STARTED,
+            state=RealtimeState.THINKING,
+            previous_state=RealtimeState.IDLE,
+            phase=RealtimePhase.THINKING,
+            context=context,
+            payload=LifecycleEventPayload(reason="text_chat_started"),
+        )
+        response_started = self._emit_realtime_event(
+            RealtimeEventType.RESPONSE_STARTED,
+            state=RealtimeState.THINKING,
+            phase=RealtimePhase.THINKING,
+            context=context,
+            payload=ResponseEventPayload(text="", is_final=False),
+        )
+        self._emit_legacy_event_from_realtime_event(
+            response_started,
+            context=context,
+        )
 
         completed = False
+        response_parts: list[str] = []
+        delta_index = 0
         try:
             for chunk, _emotions in self._llm.ask_stream(text):
                 if self._interrupt_requested:
                     self._set_state("interrupted")
+                    self._emit_realtime_event(
+                        RealtimeEventType.TURN_INTERRUPTED,
+                        state=RealtimeState.INTERRUPTED,
+                        previous_state=RealtimeState.THINKING,
+                        context=context,
+                        payload=LifecycleEventPayload(
+                            outcome=TurnOutcome.INTERRUPTED,
+                            reason="interrupt_requested",
+                        ),
+                        public_error_code=RealtimeErrorCode.INTERRUPTED,
+                        safe_message=_TEXT_CHAT_SAFE_MESSAGES["request_cancelled"],
+                        retryable=False,
+                        public_metadata={"boundary": "text_chat"},
+                    )
                     break
                 if chunk:
-                    self._emit_event("response_chunk", {"chunk": chunk})
+                    response_parts.append(chunk)
+                    response_delta = self._emit_realtime_event(
+                        RealtimeEventType.RESPONSE_DELTA,
+                        state=RealtimeState.THINKING,
+                        phase=RealtimePhase.THINKING,
+                        context=context,
+                        payload=ResponseEventPayload(
+                            text=chunk,
+                            delta_index=delta_index,
+                            is_final=False,
+                        ),
+                    )
+                    delta_index += 1
+                    self._emit_legacy_event_from_realtime_event(response_delta)
                     yield chunk
             else:
                 completed = True
-                self._emit_event("response_completed")
+                response_completed = self._emit_realtime_event(
+                    RealtimeEventType.RESPONSE_COMPLETED,
+                    state=RealtimeState.THINKING,
+                    phase=RealtimePhase.THINKING,
+                    context=context,
+                    payload=ResponseEventPayload(
+                        text="".join(response_parts),
+                        is_final=True,
+                    ),
+                )
+                self._emit_legacy_event_from_realtime_event(response_completed)
+                self._emit_realtime_event(
+                    RealtimeEventType.TURN_COMPLETED,
+                    state=RealtimeState.COMPLETED,
+                    previous_state=RealtimeState.THINKING,
+                    context=context,
+                    payload=LifecycleEventPayload(
+                        outcome=TurnOutcome.COMPLETED,
+                        reason="text_chat_completed",
+                    ),
+                )
         except Exception as exc:
             self._set_state("error")
             classification = _classify_text_chat_exception(exc)
-            self._emit_event(
-                "error",
-                _text_chat_error_event_data(classification),
+            failed = self._emit_realtime_event(
+                RealtimeEventType.TURN_FAILED,
+                state=RealtimeState.FAILED,
+                previous_state=RealtimeState.THINKING,
+                context=context,
+                payload=LifecycleEventPayload(
+                    outcome=TurnOutcome.FAILED,
+                    reason="text_chat_failed",
+                ),
+                public_error_code=_text_chat_realtime_error_code(classification),
+                safe_message=classification.safe_message,
+                retryable=classification.retryable,
+                public_metadata={
+                    **dict(classification.public_metadata),
+                    "text_chat_public_error_code": classification.public_error_code,
+                },
+            )
+            self._emit_legacy_event_from_realtime_event(
+                failed,
+                classification=classification,
             )
             raise
         finally:
+            if self._active_realtime_turn_context is context:
+                self._active_realtime_turn_context = None
             if completed or self._state in {"responding", "interrupted", "error"}:
                 self._set_state("idle")
 
@@ -270,15 +511,110 @@ class TextChatSession:
         self._emit_event("reset")
         self._set_state("idle")
 
-    def interrupt(self) -> bool:
-        """Request interruption of the current or next app-facing operation.
+    def interrupt_result(
+        self,
+        request: InterruptRequest | None = None,
+    ) -> InterruptResult:
+        """Return the typed v6 outcome for one text-chat interrupt request.
 
-        v4.0.0 exposes this as a public app-facing boundary. Text sessions do not
-        provide provider-level hard cancellation yet, so this method records the
-        request and returns whether the session accepted it.
+        This compatibility boundary only accepts cooperative suppression of future
+        delivered text chunks. It does not claim provider transport hard-cancel or
+        output-queue flush support. The stable legacy ``interrupt()`` method keeps
+        its historical boolean request-received contract separately.
         """
-        self._interrupt_requested = True
-        self._emit_event("interrupt_requested")
+
+        if request is not None and not isinstance(request, InterruptRequest):
+            raise TypeError("request must be an InterruptRequest or None")
+
+        context = self._active_realtime_turn_context
+        request = request or InterruptRequest(
+            turn_id=context.turn_id if context is not None else None,
+        )
+
+        if self.is_closed:
+            result = InterruptResult(
+                outcome=InterruptOutcome.ALREADY_CLOSED,
+                scope=request.scope,
+                reason=request.reason,
+                turn_id=(
+                    context.turn_id
+                    if context is not None
+                    else request.turn_id
+                ),
+                safe_message="Text chat session is already closed.",
+                retryable=False,
+                provider_cancel_supported=False,
+                queue_flush_supported=False,
+                public_metadata={
+                    "boundary": "text_chat",
+                    "reason": "session_closed",
+                },
+            )
+            state = RealtimeState.CLOSED
+            phase = None
+        elif context is None:
+            result = InterruptResult(
+                outcome=InterruptOutcome.NO_ACTIVE_TURN,
+                scope=request.scope,
+                reason=request.reason,
+                turn_id=request.turn_id,
+                safe_message="There is no active text chat turn to interrupt.",
+                retryable=False,
+                provider_cancel_supported=False,
+                queue_flush_supported=False,
+                public_metadata={
+                    "boundary": "text_chat",
+                    "reason": "no_active_turn",
+                },
+            )
+            state = RealtimeState.IDLE
+            phase = RealtimePhase.IDLE
+        else:
+            self._interrupt_requested = True
+            result = InterruptResult(
+                outcome=InterruptOutcome.ACCEPTED,
+                scope=request.scope,
+                reason=request.reason,
+                turn_id=context.turn_id,
+                safe_message="Text chat interrupt request was accepted.",
+                retryable=False,
+                provider_cancel_supported=False,
+                queue_flush_supported=False,
+                public_metadata={
+                    "boundary": "text_chat",
+                    "cooperative_delivery_interrupt": True,
+                },
+            )
+            state = RealtimeState.THINKING
+            phase = RealtimePhase.THINKING
+
+        requested = self._emit_realtime_event(
+            RealtimeEventType.INTERRUPT_REQUESTED,
+            state=state,
+            context=context,
+            phase=phase,
+            payload=InterruptEventPayload(
+                scope=result.scope,
+                outcome=result.outcome,
+                reason=result.reason.value,
+            ),
+            safe_message=result.safe_message,
+            retryable=result.retryable,
+            public_metadata=result.public_metadata,
+        )
+        self._emit_legacy_event_from_realtime_event(requested)
+        return result
+
+    def interrupt(self) -> bool:
+        """Preserve the legacy v4/v5 boolean interrupt request contract.
+
+        The typed runtime outcome is available through ``interrupt_result()``.
+        Historically this method returned ``True`` when the host request was
+        received, even if there was no active turn, so that observable behavior
+        remains unchanged.
+        """
+
+        self.interrupt_result()
         return True
 
 
@@ -672,6 +1008,21 @@ def _classify_text_chat_exception(exc: Exception) -> PublicErrorClassification:
             **dict(base.public_metadata),
         },
     )
+
+
+def _text_chat_realtime_error_code(
+    classification: PublicErrorClassification,
+) -> RealtimeErrorCode:
+    """Map the stable text-chat classifier onto the existing v6 error vocabulary."""
+
+    return {
+        "configuration_missing": RealtimeErrorCode.CONFIGURATION_MISSING,
+        "session_closed": RealtimeErrorCode.SESSION_CLOSED,
+        "invalid_request": RealtimeErrorCode.INVALID_REQUEST,
+        "unsupported_capability": RealtimeErrorCode.UNSUPPORTED,
+        "provider_unavailable": RealtimeErrorCode.UNAVAILABLE,
+        "request_cancelled": RealtimeErrorCode.CANCELLED,
+    }.get(classification.public_error_code, RealtimeErrorCode.PROVIDER_ERROR)
 
 
 def _text_chat_error_event_data(

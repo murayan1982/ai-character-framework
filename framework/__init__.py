@@ -71,6 +71,7 @@ from .realtime import (
     RealtimeState,
     RealtimeTurn,
     RealtimeTurnResult,
+    RealtimeTurnStartResult,
 )
 from .realtime_capabilities import (
     CapabilitySnapshotScope,
@@ -80,6 +81,10 @@ from .realtime_capabilities import (
     RealtimeVoiceOutputCapability,
     RuntimeCapabilityState,
     TextGenerationCapability,
+)
+from .realtime_execution import (
+    RealtimeExecutionError,
+    RealtimeExecutionErrorCode,
 )
 from .realtime_event_payloads import (
     AudioEventPayload,

@@ -611,6 +611,8 @@ class RealtimeTurnResult:
     retryable: bool = False
     recovery_action: RecoveryAction | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    session_id: SessionId | str | None = None
+    generation_id: GenerationId | str | None = None
 
     def __post_init__(self) -> None:
         outcome = _normalize_turn_outcome(self.outcome)
@@ -628,11 +630,18 @@ class RealtimeTurnResult:
             if isinstance(self.public_error_code, RealtimeErrorCode)
             else RealtimeErrorCode(str(self.public_error_code))
         )
+        session_id = normalize_session_id(self.session_id)
+        generation_id = _normalize_generation_id(self.generation_id)
+        if generation_id is not None and session_id is None:
+            raise ValueError("generation_id requires session_id")
+
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "recovery_action", recovery_action)
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        object.__setattr__(self, "session_id", session_id)
+        object.__setattr__(self, "generation_id", generation_id)
 
     @property
     def is_completed(self) -> bool:
@@ -650,6 +659,8 @@ class RealtimeTurnResult:
         input_text: str = "",
         output_text: str = "",
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -657,6 +668,8 @@ class RealtimeTurnResult:
             input_text=input_text,
             output_text=output_text,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -666,6 +679,8 @@ class RealtimeTurnResult:
         turn_id: TurnId | str,
         safe_message: str = "Realtime turn was interrupted.",
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -674,6 +689,8 @@ class RealtimeTurnResult:
             safe_message=safe_message,
             retryable=True,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -683,6 +700,8 @@ class RealtimeTurnResult:
         turn_id: TurnId | str,
         safe_message: str = "Realtime turn was cancelled.",
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -691,6 +710,8 @@ class RealtimeTurnResult:
             safe_message=safe_message,
             retryable=True,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -700,6 +721,8 @@ class RealtimeTurnResult:
         turn_id: TurnId | str,
         safe_message: str = "Realtime turn was rejected before execution.",
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -708,6 +731,8 @@ class RealtimeTurnResult:
             safe_message=safe_message,
             retryable=False,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -720,6 +745,8 @@ class RealtimeTurnResult:
         retryable: bool = False,
         recovery_action: RecoveryAction | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -729,6 +756,8 @@ class RealtimeTurnResult:
             retryable=retryable,
             recovery_action=recovery_action,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -737,6 +766,9 @@ class RealtimeTurnResult:
         *,
         turn_id: TurnId | str,
         safe_message: str = "Realtime session is closed.",
+        public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "RealtimeTurnResult":
         return cls(
             turn_id=turn_id,
@@ -744,4 +776,69 @@ class RealtimeTurnResult:
             public_error_code=RealtimeErrorCode.SESSION_CLOSED,
             safe_message=safe_message,
             retryable=False,
+            public_metadata=public_metadata or {},
+            session_id=session_id,
+            generation_id=generation_id,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class RealtimeTurnStartResult:
+    """Provider-neutral result of explicit single-turn admission."""
+
+    accepted: bool
+    session_id: SessionId | str
+    turn_id: TurnId | str
+    generation_id: GenerationId | str | None
+    phase: RealtimePhase | str
+    terminal_result: RealtimeTurnResult | None = None
+    public_metadata: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if type(self.accepted) is not bool:
+            raise TypeError("accepted must be a boolean")
+
+        session_id = normalize_session_id(self.session_id)
+        turn_id = normalize_turn_id(self.turn_id)
+        generation_id = _normalize_generation_id(self.generation_id)
+        phase = (
+            self.phase
+            if isinstance(self.phase, RealtimePhase)
+            else RealtimePhase(str(self.phase))
+        )
+        terminal_result = self.terminal_result
+
+        if session_id is None:
+            raise ValueError("session_id must identify one realtime session")
+        if turn_id is None:
+            raise ValueError("turn_id must identify one realtime turn")
+        if terminal_result is not None and not isinstance(
+            terminal_result,
+            RealtimeTurnResult,
+        ):
+            raise TypeError("terminal_result must be a RealtimeTurnResult or None")
+
+        if self.accepted:
+            if generation_id is None:
+                raise ValueError("accepted turn start requires generation_id")
+            if terminal_result is not None:
+                raise ValueError("accepted turn start cannot contain terminal_result")
+        else:
+            if generation_id is not None:
+                raise ValueError("rejected turn start cannot allocate generation_id")
+            if terminal_result is None:
+                raise ValueError("rejected turn start requires terminal_result")
+            if terminal_result.outcome is not TurnOutcome.REJECTED:
+                raise ValueError("rejected turn start requires rejected terminal outcome")
+            if terminal_result.session_id != session_id:
+                raise ValueError("terminal_result session_id must match start result")
+            if terminal_result.turn_id != turn_id:
+                raise ValueError("terminal_result turn_id must match start result")
+            if terminal_result.generation_id is not None:
+                raise ValueError("rejected turn start terminal_result cannot have generation_id")
+
+        object.__setattr__(self, "session_id", session_id)
+        object.__setattr__(self, "turn_id", turn_id)
+        object.__setattr__(self, "generation_id", generation_id)
+        object.__setattr__(self, "phase", phase)
+        object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))

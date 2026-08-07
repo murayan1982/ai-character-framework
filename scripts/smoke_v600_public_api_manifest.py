@@ -45,6 +45,8 @@ def _check_manifest_shape() -> None:
         REALTIME_CAPABILITY_PUBLIC_EXPORTS,
         REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
         REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS,
+        REALTIME_TURN_START_PUBLIC_EXPORTS,
+        REALTIME_EXECUTION_PUBLIC_EXPORTS,
         PROVIDER_COMPAT_LAZY_EXPORTS,
         PUBLIC_API_GROUPS,
         PUBLIC_API_NAMES,
@@ -70,8 +72,8 @@ def _check_manifest_shape() -> None:
     )
     _assert(flattened == PUBLIC_API_NAMES, "public API groups must flatten exactly")
     _assert(
-        len(PUBLIC_API_NAMES) == 124,
-        "v6 construction model extension should expose 124 canonical names",
+        len(PUBLIC_API_NAMES) == 127,
+        "v6 execution model extension should expose 127 canonical names",
     )
     _assert(
         tuple(IDENTITY_PUBLIC_EXPORTS)
@@ -144,9 +146,29 @@ def _check_manifest_shape() -> None:
         "realtime session construction public export group drift",
     )
     _assert(
-        PUBLIC_API_NAMES[121:]
+        PUBLIC_API_NAMES[121:124]
         == tuple(REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS),
-        "construction models must be appended after the accepted 121-name surface",
+        "construction models must preserve the accepted 121:124 suffix",
+    )
+    _assert(
+        tuple(REALTIME_TURN_START_PUBLIC_EXPORTS)
+        == ("RealtimeTurnStartResult",),
+        "realtime turn-start public export group drift",
+    )
+    _assert(
+        PUBLIC_API_NAMES[124:125]
+        == tuple(REALTIME_TURN_START_PUBLIC_EXPORTS),
+        "turn-start model must preserve the accepted 124:125 suffix",
+    )
+    _assert(
+        tuple(REALTIME_EXECUTION_PUBLIC_EXPORTS)
+        == ("RealtimeExecutionErrorCode", "RealtimeExecutionError"),
+        "realtime execution public export group drift",
+    )
+    _assert(
+        PUBLIC_API_NAMES[125:]
+        == tuple(REALTIME_EXECUTION_PUBLIC_EXPORTS),
+        "execution models must be appended after the accepted 125-name surface",
     )
 
     lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
@@ -171,7 +193,7 @@ def _check_manifest_shape() -> None:
         f"root import loaded forbidden provider/runtime modules: {imported_forbidden}",
     )
 
-    print("[OK] canonical manifest preserves the 121-name prefix and appends construction models")
+    print("[OK] canonical manifest preserves accepted prefixes and appends execution models")
 
 
 def _check_init_source_has_one_manifest_assignment() -> None:
@@ -450,7 +472,7 @@ def main() -> None:
     _check_docs_and_status_markers()
 
     print("v600_public_api_manifest_status: accepted")
-    print("v600_public_api_manifest_name_count: 124")
+    print("v600_public_api_manifest_name_count: 127")
     print("v600_framework_all_single_source: True")
     print("v600_provider_compatibility_exports_preserved: True")
     print("v600_provider_compatibility_exports_lazy: True")
@@ -498,7 +520,7 @@ def main() -> None:
     print("v600_runtime_unit_test_smoke_separation: accepted")
     print("v600_next_checkpoint: FW-RT6-4a Control A review")
     print("v600_next_checkpoint_authorized: IMPLEMENTED_AWAITING_REVIEW")
-    print("[OK] canonical public API manifest smoke passed with the additive construction-model suffix")
+    print("[OK] canonical public API manifest smoke passed with the additive execution-model suffix")
 
 
 if __name__ == "__main__":

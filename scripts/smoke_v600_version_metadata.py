@@ -148,7 +148,7 @@ def check_runtime_values() -> None:
 
     _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
-    _assert(len(framework.__all__) == 124, "root-public name count drift")
+    _assert(len(framework.__all__) == 127, "root-public name count drift")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -195,13 +195,22 @@ def check_runtime_values() -> None:
         "detailed capability suffix drift",
     )
     _assert(
-        tuple(framework.__all__[121:])
+        tuple(framework.__all__[121:124])
         == (
             "RealtimeSessionConfig",
             "RealtimeSessionConstructionStatus",
             "RealtimeSessionConstructionResult",
         ),
         "realtime session construction suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[124:125]) == ("RealtimeTurnStartResult",),
+        "realtime turn-start suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[125:])
+        == ("RealtimeExecutionErrorCode", "RealtimeExecutionError"),
+        "realtime execution suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -396,7 +405,7 @@ def main() -> None:
     print("v600_version_metadata_status: accepted")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
-    print("v600_root_public_name_count: 124")
+    print("v600_root_public_name_count: 127")
     print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-capability-and-construction-models-only")
     print("v600_capability_truthfulness_changed: global-builder-and-session-adoption-accepted")
     print("v600_provider_sdk_imported: False")
@@ -438,7 +447,7 @@ def main() -> None:
     print("v600_runtime_unit_test_smoke_separation: accepted")
     print("v600_next_checkpoint: FW-RT6-4a Control A review")
     print("v600_next_checkpoint_authorized: IMPLEMENTED_AWAITING_REVIEW")
-    print("[OK] central version metadata smoke passed with frozen values and additive construction models")
+    print("[OK] central version metadata smoke passed with frozen values and additive execution models")
 
 
 if __name__ == "__main__":
