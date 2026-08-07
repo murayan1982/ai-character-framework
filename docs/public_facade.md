@@ -2748,3 +2748,30 @@ Control A is foundation-only. Real provider adoption and removal of the legacy
 completed there. Pending synthesis work, active cancellation/invalidation, and
 host playback are separate later controls.
 <!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:END -->
+
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:BEGIN -->
+## v6 bounded pending voice-output queue foundation
+
+FW-RT6-6c Control A adds the explicitly stable package
+`framework.realtime_voice_output_queue` without changing the 127-name root
+facade.
+
+The stable surface represents only pending synthesis work. Public pending items
+contain `RealtimeStageContext` plus `SynthesisWorkId`; request text and provider
+objects are not part of the public pending snapshot.
+
+```text
+bounded pending depth: configurable / >= 1
+enqueue: typed ACCEPTED or REJECTED_FULL
+silent overflow drop: False
+overflow component event: typed
+pending clear: typed
+pending clear cancels active synthesis: False
+provider pending_flush_supported changed: False
+```
+
+The concrete bounded reference queue remains outside the stable `__all__` list.
+Queue-to-stage execution, active-generation handoff, active cancellation,
+artifact invalidation, future-delivery suppression, and host playback remain
+separate controls.
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->

@@ -2322,3 +2322,43 @@ Provider adoption and `str(artifact_path)` removal remain FW-RT6-6b Control B.
 Pending queue behavior, active generation cancellation/invalidation, and host
 playback remain FW-RT6-6c/6d/6e.
 <!-- FW-RT6-6b-A-OPAQUE-ARTIFACT-STORE:END -->
+
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:BEGIN -->
+## FW-RT6-6c Control A — bounded pending voice-output queue foundation
+
+FW-RT6-6c Control A adds the explicitly stable provider-neutral package
+`framework.realtime_voice_output_queue`. It is not re-exported from the
+`framework` root, so the root-public surface remains 127 names.
+
+The queue owns pending synthesis work only. Each accepted item has Framework
+session / turn / generation context plus an opaque `SynthesisWorkId`; request
+text remains private to the concrete queue entry and is absent from public
+pending snapshots.
+
+`max_pending_depth` is fixed per queue instance. Admission returns a typed
+`VoiceSynthesisEnqueueResult`. A full queue returns `REJECTED_FULL`, leaves all
+already pending work unchanged, and emits one typed `VoiceSynthesisQueueEvent`
+overflow diagnostic to the configured component callback. The caller therefore
+receives a typed rejection even if the diagnostic callback itself fails.
+
+`clear_pending()` clears pending items only and always reports
+`active_generation_cancelled=False`. It does not cancel active synthesis, apply
+provider hard cancel, invalidate completed artifacts, suppress future delivery,
+or stop host playback.
+
+Control A does not execute a synthesis stage or provider. Queue-to-stage work-ID
+handoff and explicit active/pending composition remain Control B work.
+
+```text
+checkpoint: FW-RT6-6c Control A
+baseline head: 3bdd196c34d2ffd3eaa2dfc30cc39cf22aa34409
+FW-RT6-6c exact contract review: COMPLETED
+status: IMPLEMENTED / AWAITING_REVIEW
+stable package: framework.realtime_voice_output_queue
+root-public names: 127 / UNCHANGED
+active generation cancellation: False / DEFERRED FW-RT6-6d
+provider/network/microphone/playback/real VTS execution: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->

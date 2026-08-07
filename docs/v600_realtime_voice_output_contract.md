@@ -1014,3 +1014,244 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:BEGIN -->
+## FW-RT6-6c Control A — bounded pending synthesis queue foundation
+
+### Baseline and authorization
+
+```text
+baseline HEAD / origin/main:
+3bdd196c34d2ffd3eaa2dfc30cc39cf22aa34409
+
+FW-RT6-6b:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+FW-RT6-6c exact contract review:
+COMPLETED
+
+Control A:
+AUTHORIZED
+```
+
+The exact contract review keeps pending work separate from active synthesis.
+The accepted `ProviderNeutralVoiceSynthesisStage` remains the active-generation
+owner. Control A introduces a pending-only queue and does not execute the stage.
+
+### Stable explicit package
+
+Control A adds one explicitly stable package:
+
+```text
+framework.realtime_voice_output_queue
+```
+
+It is not imported or re-exported by the `framework` root.
+
+```text
+root-public names:
+127 / UNCHANGED
+```
+
+The exact stable exports are:
+
+```text
+VoiceSynthesisPendingWork
+VoiceSynthesisEnqueueOutcome
+VoiceSynthesisEnqueueResult
+VoiceSynthesisPendingClearOutcome
+VoiceSynthesisPendingClearResult
+VoiceSynthesisQueueEventType
+VoiceSynthesisQueueEvent
+VoiceSynthesisPendingQueue
+```
+
+The concrete `BoundedVoiceSynthesisPendingQueue` reference implementation is not
+part of the stable `__all__` surface in Control A.
+
+### Pending work identity and privacy
+
+Every enqueue attempt receives one Framework-owned `SynthesisWorkId`. An
+accepted pending item retains exactly:
+
+```text
+RealtimeStageContext:
+session_id
+turn_id
+generation_id
+
+SynthesisWorkId:
+work_id
+```
+
+`VoiceSynthesisPendingWork` contains no `VoiceOutputRequest`, synthesis text,
+provider/model/voice identity, provider object, artifact reference/path, or raw
+result.
+
+The concrete reference queue may retain the request privately for later
+Control B handoff. That private entry is not part of the stable protocol.
+
+### Bounded admission
+
+`max_pending_depth` is configured at queue construction and must be an integer
+greater than or equal to one. It counts pending work only; active synthesis is
+not included.
+
+```text
+pending_count < max_pending_depth:
+ACCEPTED
+
+pending_count == max_pending_depth:
+REJECTED_FULL
+
+automatic oldest-item drop:
+False
+
+automatic newest-item silent drop:
+False
+```
+
+A full-queue rejection leaves the existing pending FIFO unchanged.
+
+`VoiceSynthesisEnqueueResult` is the authoritative admission result. Overflow is
+therefore non-silent even when no event callback is registered or a host
+diagnostic callback fails.
+
+### Overflow event
+
+Control A adds a provider-neutral component event:
+
+```text
+VoiceSynthesisQueueEventType.OVERFLOW
+```
+
+The event contains only the rejected work identity, pending count, configured
+maximum depth, cumulative overflow count, safe message, and public-safe
+metadata. It does not contain request text or provider data.
+
+This component event is deliberately not a self-sequenced `RealtimeEvent`.
+Canonical session event sequencing remains owned by `RealtimeEventHub`.
+A later integration may project queue overflow into the already existing
+`RealtimeEventType.EVENT_OVERFLOW` / `DiagnosticEventPayload` vocabulary without
+creating a second sequence allocator.
+
+### Pending clear
+
+```text
+clear_pending(context=None):
+clear all pending work
+
+clear_pending(context=<RealtimeStageContext>):
+clear only exact matching pending context
+
+active generation cancellation:
+False / DEFERRED FW-RT6-6d
+
+provider hard cancel:
+False / DEFERRED FW-RT6-6d
+
+artifact invalidation:
+False / DEFERRED FW-RT6-6d
+
+future-delivery suppression:
+False / DEFERRED FW-RT6-6d
+
+host playback stop:
+False / DEFERRED FW-RT6-6e
+```
+
+`VoiceSynthesisPendingClearResult.active_generation_cancelled` is fixed to
+`False`; constructing a pending-clear result that claims active cancellation is
+rejected.
+
+The existing provider capability remains truthful in Control A:
+
+```text
+RealtimeVoiceOutputCapability.pending_flush_supported:
+UNCHANGED / provider boundary remains False
+
+RealtimeVoiceOutputCapability.generation_cancel_supported:
+UNCHANGED / False
+
+RealtimeVoiceOutputCapability.provider_hard_cancel_supported:
+UNCHANGED / False
+```
+
+Framework queue ownership is not inferred as provider-side queue flush support.
+
+### Deferred Control B adoption
+
+Control B owns queue-to-stage handoff. It must preserve the enqueue-time
+`SynthesisWorkId` when pending work becomes active rather than allocating a
+second unrelated work identity.
+
+Control B must also prove:
+
+```text
+active generation state:
+owned by synthesis stage
+
+pending state:
+owned by pending queue
+
+same item simultaneously active and pending:
+False
+
+pending clear changes active generation:
+False
+
+active cancel overclaim:
+False
+```
+
+No provider adapter receives Framework session, turn, generation, or work IDs.
+
+### Control A status
+
+```text
+checkpoint:
+FW-RT6-6c Control A
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact change surface:
+5 files
+
+stable package:
+framework.realtime_voice_output_queue
+
+stable exports:
+8
+
+bounded pending queue:
+True
+
+max_pending_depth:
+CONFIGURABLE / >= 1
+
+enqueue typed result:
+True
+
+silent overflow drop:
+False
+
+pending clear:
+True
+
+active generation cancellation:
+False / DEFERRED FW-RT6-6d
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+Control B:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->
