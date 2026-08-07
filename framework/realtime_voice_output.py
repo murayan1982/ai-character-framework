@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 import re
+import threading
 from typing import Mapping, Protocol, runtime_checkable
 from uuid import uuid4
 
@@ -276,6 +277,158 @@ class VoiceSynthesisStage(Protocol):
 
     def close(self) -> None:
         ...
+
+
+class ProviderNeutralVoiceSynthesisStage:
+    """Reference synchronous synthesis stage with public-safe active state.
+
+    Control B adopts the accepted provider-adapter protocol and makes the
+    currently executing synthesis work observable without exposing request text,
+    provider details, artifacts, or provider handles. The reference stage is
+    intentionally synchronous and does not implement generation cancellation,
+    pending work, artifact invalidation, or host playback control.
+    """
+
+    __slots__ = ("_adapter", "_capability", "_lock", "_closed", "_active_generation")
+
+    def __init__(self, adapter: VoiceSynthesisProviderAdapter) -> None:
+        if not isinstance(adapter, VoiceSynthesisProviderAdapter):
+            raise TypeError(
+                "adapter must implement the VoiceSynthesisProviderAdapter protocol"
+            )
+        capability = adapter.capability()
+        if not isinstance(capability, RealtimeVoiceOutputCapability):
+            raise TypeError("adapter capability must be RealtimeVoiceOutputCapability")
+        if capability.generation_cancel_supported:
+            raise ValueError(
+                "Control B stage does not adopt generation cancellation support"
+            )
+        if capability.provider_hard_cancel_supported:
+            raise ValueError(
+                "Control B stage does not adopt provider hard-cancel support"
+            )
+        self._adapter = adapter
+        self._capability = capability
+        self._lock = threading.RLock()
+        self._closed = False
+        self._active_generation: VoiceSynthesisActiveGeneration | None = None
+
+    @property
+    def active_generation(self) -> VoiceSynthesisActiveGeneration | None:
+        """Return the current public-safe active synthesis snapshot, if any."""
+
+        with self._lock:
+            return self._active_generation
+
+    def preflight(self) -> RealtimeVoiceOutputCapability:
+        """Return the adopted provider capability without provider execution."""
+
+        return self._validated_capability()
+
+    def capability(self) -> RealtimeVoiceOutputCapability:
+        """Return the truthful current synthesis capability snapshot."""
+
+        return self._validated_capability()
+
+    def start(
+        self,
+        *,
+        context: RealtimeStageContext,
+        request: VoiceOutputRequest,
+    ) -> VoiceSynthesisResultEnvelope:
+        """Run one synchronous synthesis while exposing opaque active identity."""
+
+        if not isinstance(context, RealtimeStageContext):
+            raise TypeError("context must be a RealtimeStageContext")
+        if not isinstance(request, VoiceOutputRequest):
+            raise TypeError("request must be a VoiceOutputRequest")
+
+        work_id = SynthesisWorkId.new()
+        active = VoiceSynthesisActiveGeneration(context=context, work_id=work_id)
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("Voice synthesis stage is closed.")
+            if self._active_generation is not None:
+                raise RuntimeError("Voice synthesis generation is already active.")
+            self._active_generation = active
+
+        try:
+            result = self._adapter.synthesize(request)
+            if not isinstance(result, VoiceOutputResult):
+                raise TypeError("adapter synthesize result must be VoiceOutputResult")
+            return VoiceSynthesisResultEnvelope(
+                context=context,
+                work_id=work_id,
+                result=result,
+            )
+        finally:
+            with self._lock:
+                current = self._active_generation
+                if current is not None and current.work_id == work_id:
+                    self._active_generation = None
+
+    def cancel(
+        self,
+        *,
+        context: RealtimeStageContext,
+        work_id: SynthesisWorkId | str | None = None,
+    ) -> VoiceSynthesisCancelResult:
+        """Report Control B cancellation truth without cancelling synthesis.
+
+        Active-generation cancellation execution and provider hard cancellation
+        remain FW-RT6-6d work, so an active matching work item is classified as
+        ``UNSUPPORTED`` rather than falsely returning ``REQUESTED``.
+        """
+
+        if not isinstance(context, RealtimeStageContext):
+            raise TypeError("context must be a RealtimeStageContext")
+        requested_work_id = work_id
+        if requested_work_id is not None and not isinstance(
+            requested_work_id, SynthesisWorkId
+        ):
+            requested_work_id = SynthesisWorkId.parse(requested_work_id)
+
+        with self._lock:
+            if self._closed:
+                return VoiceSynthesisCancelResult(
+                    outcome=VoiceSynthesisCancelOutcome.ALREADY_CLOSED,
+                    context=context,
+                    work_id=requested_work_id,
+                    safe_message="Voice synthesis stage is already closed.",
+                )
+            active = self._active_generation
+            if active is None:
+                return VoiceSynthesisCancelResult(
+                    outcome=VoiceSynthesisCancelOutcome.NO_ACTIVE_GENERATION,
+                    context=context,
+                    work_id=requested_work_id,
+                    safe_message="No voice synthesis generation is active.",
+                )
+            if active.context != context or (
+                requested_work_id is not None and requested_work_id != active.work_id
+            ):
+                return VoiceSynthesisCancelResult(
+                    outcome=VoiceSynthesisCancelOutcome.WORK_MISMATCH,
+                    context=context,
+                    work_id=requested_work_id,
+                    safe_message="Requested voice synthesis work is not active.",
+                )
+
+            return VoiceSynthesisCancelResult(
+                outcome=VoiceSynthesisCancelOutcome.UNSUPPORTED,
+                context=context,
+                work_id=active.work_id,
+                safe_message="Active voice synthesis cancellation is not supported.",
+            )
+
+    def close(self) -> None:
+        """Close the stage idempotently without claiming active cancellation."""
+
+        with self._lock:
+            self._closed = True
+
+    def _validated_capability(self) -> RealtimeVoiceOutputCapability:
+        return self._capability
 
 
 __all__ = [

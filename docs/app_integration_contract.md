@@ -2240,3 +2240,41 @@ Control B provider/stage adoption: DEFERRED / NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:END -->
+
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:BEGIN -->
+## v6.0.0 voice-synthesis provider adoption and active work observability
+
+FW-RT6-6a Control B keeps host applications on the existing root voice-output
+session API. Framework composition may use the accepted
+`framework.realtime_voice_output` protocols while the existing internal
+voice-output adapters now supply provider-neutral `RealtimeVoiceOutputCapability`
+facts.
+
+The reference synthesis stage owns an opaque `SynthesisWorkId` and a thread-safe
+`active_generation` snapshot containing only correlation context plus that work
+ID. Request text, provider details, artifact data, and provider handles remain
+private.
+
+Control B does not claim cancellation that does not exist in the current
+provider boundary:
+
+```text
+generation_cancel_supported = False
+provider_hard_cancel_supported = False
+active matching cancel -> UNSUPPORTED
+provider/network/microphone/playback/real VTS execution: False
+root-public names: 127 / UNCHANGED
+```
+
+Pending queue control, active cancellation execution, artifact invalidation, and
+host playback stop remain FW-RT6-6c/6d/6e responsibilities.
+
+```text
+checkpoint: FW-RT6-6a Control B
+baseline head: 5a509c9ddc18cd55dc84b264193bab973c176ee6
+status: IMPLEMENTED / AWAITING_REVIEW
+stable exports changed: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->

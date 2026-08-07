@@ -290,3 +290,121 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:END -->
+
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:BEGIN -->
+## FW-RT6-6a Control B — provider adapter and active-generation adoption
+
+### Baseline
+
+```text
+baseline HEAD / origin/main:
+5a509c9ddc18cd55dc84b264193bab973c176ee6
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+Control B:
+AUTHORIZED
+```
+
+Control B adopts the accepted `VoiceSynthesisProviderAdapter` shape in the
+existing private voice-output provider adapter layer and adds a Framework-owned
+reference synthesis stage with thread-safe `active_generation` observability.
+It does not expand the accepted stable export list or the `framework` root API.
+
+### Existing provider adapter adoption
+
+The existing private adapters now expose exactly the capability facts required
+by the stable provider-neutral protocol:
+
+```text
+capability() -> RealtimeVoiceOutputCapability
+synthesize(VoiceOutputRequest) -> VoiceOutputResult
+```
+
+Capability inspection does not load a provider SDK, perform network I/O, read a
+microphone, play audio, connect to VTube Studio, or execute real TTS. Existing
+provider selection and `VoiceOutputSession.create_output()` compatibility remain
+unchanged.
+
+The current v5 voice-output providers do not expose a verified active-generation
+cancel handle. Therefore Control B truthfully reports:
+
+```text
+generation_cancel_supported = False
+provider_hard_cancel_supported = False
+pending_flush_supported = False
+active_audio_invalidation_supported = False
+```
+
+A configured provider key is not sufficient to claim provider runtime
+availability. Control B does not import/probe the provider SDK during capability
+inspection, so unprobed runtime availability remains false rather than being
+overclaimed.
+
+### Concrete active-generation state
+
+`ProviderNeutralVoiceSynthesisStage` is a Framework reference implementation of
+the accepted `VoiceSynthesisStage` protocol. It is intentionally **not** added to
+`framework.realtime_voice_output.__all__`; the accepted seven-name stable package
+surface from Control A remains unchanged.
+
+For one synchronous synthesis call the stage owns:
+
+```text
+SynthesisWorkId
+VoiceSynthesisActiveGeneration(context, work_id)
+thread-safe active-generation state
+exact active->terminal clearing
+single-active-work rejection
+```
+
+The public-safe active snapshot continues to expose only:
+
+```text
+context
+work_id
+```
+
+It never exposes request text, provider/client/model/voice identifiers, provider
+payloads, audio result data, artifact paths/refs, or provider handles.
+
+### Cancellation truth in Control B
+
+Control B does not implement active synthesis cancellation. While a matching
+synthesis work item is active, `cancel()` returns `UNSUPPORTED` and both
+cancellation facts remain false:
+
+```text
+cooperative_cancel_requested = False
+provider_hard_cancel_applied = False
+```
+
+A non-matching context/work ID returns `WORK_MISMATCH`; no active work returns
+`NO_ACTIVE_GENERATION`; a closed stage returns `ALREADY_CLOSED`.
+
+Actual active-generation cancellation execution, future-delivery suppression,
+and artifact invalidation remain **FW-RT6-6d** work. Pending work remains
+FW-RT6-6c and host playback stop remains FW-RT6-6e.
+
+### Compatibility and exact surface
+
+```text
+existing VoiceOutputSession behavior changed:
+False
+
+existing framework.realtime_stage.VoiceOutputStage changed:
+False
+
+stable framework.realtime_voice_output exports changed:
+False
+
+root-public names:
+127 / UNCHANGED
+
+exact change surface: 6 files
+provider/network/microphone/playback/real VTS execution: False
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->

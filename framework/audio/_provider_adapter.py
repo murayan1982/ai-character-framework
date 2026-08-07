@@ -15,6 +15,11 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
+
+from framework.realtime_capabilities import (
+    RealtimeVoiceOutputCapability,
+    RuntimeCapabilityState,
+)
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -45,7 +50,14 @@ class VoiceOutputProviderStatus:
 
 
 class VoiceOutputProviderAdapter(Protocol):
-    """Internal adapter protocol used by the public voice output boundary."""
+    """Internal adapter protocol used by the public voice output boundary.
+
+    Control B aligns this private compatibility protocol with the stable
+    ``VoiceSynthesisProviderAdapter`` contract without exposing provider details.
+    """
+
+    def capability(self) -> RealtimeVoiceOutputCapability:
+        """Return provider-neutral voice-output capability facts."""
 
     def synthesize(self, request: "VoiceOutputRequest") -> "VoiceOutputResult":
         """Return a provider-neutral public result for one request."""
@@ -148,6 +160,7 @@ def create_voice_output_adapter(
 
     if provider_key == "elevenlabs":
         return ElevenLabsVoiceOutputAdapter(
+            status=status,
             project_root=project_root,
             artifact_dir=artifact_dir,
         )
@@ -160,6 +173,11 @@ class UnavailableVoiceOutputAdapter:
 
     def __init__(self, *, status: VoiceOutputProviderStatus) -> None:
         self._status = status
+
+    def capability(self) -> RealtimeVoiceOutputCapability:
+        """Return truthful unavailable/guarded capability without provider work."""
+
+        return _capability_from_status(self._status)
 
     def synthesize(self, request: "VoiceOutputRequest") -> "VoiceOutputResult":
         from framework.audio.voice_output import VoiceOutputResult
@@ -186,9 +204,16 @@ class ElevenLabsVoiceOutputAdapter:
         *,
         project_root: Path | None,
         artifact_dir: str | Path | None = None,
+        status: VoiceOutputProviderStatus | None = None,
     ) -> None:
+        self._status = status or _direct_elevenlabs_status()
         self._project_root = project_root
         self._artifact_dir = Path(artifact_dir).expanduser() if artifact_dir is not None else None
+
+    def capability(self) -> RealtimeVoiceOutputCapability:
+        """Return truthful ElevenLabs capability without loading its SDK."""
+
+        return _capability_from_status(self._status, audio_formats=("mp3",))
 
     def synthesize(self, request: "VoiceOutputRequest") -> "VoiceOutputResult":
         from framework.audio.voice_output import VoiceOutputResult
@@ -343,6 +368,80 @@ class ElevenLabsVoiceOutputAdapter:
             return self._project_root / "temp" / "voice_output"
 
         return Path(tempfile.gettempdir()) / "ai-character-framework" / "voice_output"
+
+
+def _direct_elevenlabs_status() -> VoiceOutputProviderStatus:
+    """Preserve direct private-adapter construction used by compatibility checks."""
+
+    allowed = _resolve_provider_execution_allowed()
+    return VoiceOutputProviderStatus(
+        real_tts_enabled=True,
+        provider_configured=True,
+        provider_execution_allowed=allowed,
+        supports_audio_artifact_ref=True,
+        supports_audio_url=False,
+        status="provider_configured" if allowed else "execution_guarded",
+        status_reason=(
+            "A FW-owned voice output provider adapter was selected directly. "
+            "Runtime availability remains unverified until explicit synthesis."
+        ),
+    )
+
+
+def _capability_from_status(
+    status: VoiceOutputProviderStatus,
+    *,
+    audio_formats: tuple[str, ...] = (),
+) -> RealtimeVoiceOutputCapability:
+    """Map private provider status to public-safe Control B capability facts.
+
+    Existing v5 adapters remain synchronous and expose no verified generation
+    cancellation or provider hard-cancel handle. Control B therefore keeps both
+    facts false even when real synthesis is configured.
+    """
+
+    if not isinstance(status, VoiceOutputProviderStatus):
+        raise TypeError("status must be VoiceOutputProviderStatus")
+
+    configured = bool(status.provider_configured)
+    guarded = configured and not bool(status.provider_execution_allowed)
+    # Status resolution deliberately does not import or probe the provider SDK.
+    # Therefore runtime availability must remain unverified/false in Control B.
+    runtime_available = False
+    if not status.real_tts_enabled:
+        unavailable_reason = "real_tts_disabled"
+    elif not configured:
+        unavailable_reason = "provider_unavailable"
+    elif guarded:
+        unavailable_reason = "provider_execution_guarded"
+    else:
+        unavailable_reason = "runtime_not_verified"
+
+    return RealtimeVoiceOutputCapability(
+        runtime=RuntimeCapabilityState(
+            configured=configured,
+            runtime_available=runtime_available,
+            guarded=guarded,
+            fake_runtime=False,
+            real_runtime=False,
+            unavailable_reason=unavailable_reason,
+            public_metadata={
+                "boundary": "voice_output",
+                "provider_details_exposed": False,
+            },
+        ),
+        streaming_audio_supported=False,
+        generation_cancel_supported=False,
+        provider_hard_cancel_supported=False,
+        pending_flush_supported=False,
+        active_audio_invalidation_supported=False,
+        audio_formats=audio_formats if configured else (),
+        maximum_text_size=None,
+        public_metadata={
+            "provider_details_exposed": False,
+            "provider_hard_cancel_verified": False,
+        },
+    )
 
 
 def _resolve_real_tts_enabled(value: bool | None) -> bool:

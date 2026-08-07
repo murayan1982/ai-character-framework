@@ -2677,3 +2677,35 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:END -->
+
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:BEGIN -->
+## Voice-synthesis active-generation reference adoption
+
+FW-RT6-6a Control B adopts the stable `VoiceSynthesisProviderAdapter`
+capability shape in the existing private voice-output adapter layer. Capability
+inspection stays provider-neutral and does not execute or eagerly import the
+configured provider SDK.
+
+`ProviderNeutralVoiceSynthesisStage` is the internal/reference implementation
+used to prove thread-safe `active_generation` observability. It remains outside
+`framework.realtime_voice_output.__all__`, so the accepted seven-name stable
+package surface and the 127-name `framework` root API do not change.
+
+```text
+active_generation public fields: context / work_id
+generation_cancel_supported = False
+provider_hard_cancel_supported = False
+matching active cancel result: UNSUPPORTED
+future cancellation/invalidation executor: FW-RT6-6d
+provider/network/microphone/playback/real VTS execution: False
+root-public names: 127 / UNCHANGED
+```
+
+```text
+checkpoint: FW-RT6-6a Control B
+baseline head: 5a509c9ddc18cd55dc84b264193bab973c176ee6
+status: IMPLEMENTED / AWAITING_REVIEW
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-B-PROVIDER-ACTIVE-ADOPTION:END -->
