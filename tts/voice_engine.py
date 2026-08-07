@@ -1,4 +1,10 @@
 # tts/voice_engine.py
+# Legacy local playback is retained only for v5-compatible runtime paths.
+# New v6 integrations must use the provider-neutral Framework voice-output
+# artifact/host-playback boundary instead of importing this module.
+LEGACY_LOCAL_PLAYER_STATUS = "deprecated_internal_compatibility"
+LEGACY_LOCAL_PLAYER_REMOVAL_POLICY = "future_major_only_with_migration_notice"
+
 import os
 import subprocess
 import threading
@@ -22,7 +28,7 @@ class VoiceEngine:
     """
     ElevenLabs-backed queued TTS playback engine.
 
-    Public boundary used by the runtime pipeline:
+    Legacy runtime compatibility boundary:
     - speak(text): append streaming text and enqueue speakable segments.
     - flush(): enqueue any remaining buffered text at the end of a turn.
     - is_speaking_active: report whether queued or active playback remains.
@@ -30,8 +36,9 @@ class VoiceEngine:
     - stop_immediately(): local playback cancellation implementation.
 
     This class currently owns provider-specific TTS generation and local audio
-    playback. Provider abstraction and interruption behavior are intentionally
-    handled as future runtime milestones.
+    playback for the legacy runtime only. It is deprecated internal compatibility
+    in v6.0.0, is not a Framework root-public API or capability source, and is not
+    removed until a future major version with migration notice.
     """
     def __init__(self, language_code: str = "ja"):
         require_tts_settings()

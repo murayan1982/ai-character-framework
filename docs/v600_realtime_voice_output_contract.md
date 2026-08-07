@@ -2143,3 +2143,206 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->
+
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:BEGIN -->
+## FW-RT6-6e Control B — host playback runtime coordination adoption
+
+### Baseline
+
+```text
+baseline HEAD / origin/main:
+6c1d920fb8c15d3f66eed58a8a35c506224dc66e
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+Control B:
+AUTHORIZED / IMPLEMENTED-CANDIDATE
+```
+
+Control B adopts the accepted Control A playback-ownership and host-stop event
+vocabulary into the public `RealtimeSession` coordination boundary without
+executing physical audio playback.
+
+### Session capability adoption
+
+The mock-safe session voice-output snapshot now reports the same typed ownership
+fact already carried by its metadata:
+
+```text
+playback_ownership:
+host
+
+host_playback_stop_request_supported:
+True
+
+host_playback_stop_ack_supported:
+True
+```
+
+Global and internal provider-adapter capability builders also report host
+acknowledgement support because the Framework coordination boundary can now
+ingest an optional host acknowledgement. This does not make provider transports
+or the Framework owner of host playback.
+
+### Host-stop request emission
+
+`RealtimeSession.flush_output()` preserves the existing queue result contract.
+It emits `PLAYBACK_STOP_REQUESTED_TO_HOST` only when all of the following are
+true:
+
+```text
+OutputFlushRequest.stop_playback:
+True
+
+TTSQueueState.playback_stop_required:
+True
+
+voice_output.playback_ownership:
+host
+
+voice_output.host_playback_stop_request_supported:
+True
+```
+
+An empty mock queue still produces the existing `NOTHING_TO_FLUSH` path and does
+not emit a host-stop request.
+
+A host-stop request event records:
+
+```text
+host_stop_requested:
+True
+
+host_stop_acknowledged:
+None
+
+physical_playback_stop_confirmed:
+False
+```
+
+The queue flush result remains independent. A host-stop request does not turn an
+otherwise unsupported Framework queue flush into `FLUSHED`.
+
+### Host acknowledgement ingestion
+
+`RealtimeSession.acknowledge_host_playback_stop()` is additive. It accepts an
+acknowledgement only for a previously emitted host-stop request with the same
+turn/generation coordination context.
+
+The resulting canonical event is:
+
+```text
+PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST
+```
+
+with:
+
+```text
+host_stop_requested:
+True
+
+host_stop_acknowledged:
+True | False
+
+physical_playback_stop_confirmed:
+False
+```
+
+Repeated acknowledgement returns the first recorded acknowledgement event and
+does not create a second canonical event. An acknowledgement without a previous
+request returns `None`.
+
+Host-stop request and acknowledgement are allowed after turn terminal because
+host-owned playback may outlive the Framework turn. Their original generation
+identity is retained from the terminal result where available.
+
+### Artifact invalidation event adoption
+
+Control B adds an internal `RealtimeSession` integration hook for the accepted
+FW-RT6-6d invalidation result. The hook emits `AUDIO_INVALIDATED` only when the
+caller supplies a positive accepted invalidation count.
+
+```text
+AUDIO_INVALIDATED:
+emitted from accepted invalidation fact
+
+physical_playback_stop_confirmed:
+False
+```
+
+The hook does not perform artifact-store mutation itself; FW-RT6-6d remains the
+owner of actual artifact invalidation. This avoids a second artifact lifecycle
+registry.
+
+### Legacy local player isolation / deprecation policy
+
+`tts.VoiceEngine` remains available only for the existing legacy runtime path.
+
+```text
+classification:
+deprecated_internal_compatibility
+
+framework root-public:
+False
+
+v6 capability source:
+False
+
+new v6 app integrations:
+MUST NOT USE
+
+v6.0.0 removal:
+False
+
+removal:
+future major only with migration notice
+```
+
+No runtime warning is emitted in v6.0.0 because existing legacy applications
+must remain compatible. The deprecation is documentation/source-contract only.
+
+### Truthfulness
+
+```text
+host stop request => physical stop:
+False
+
+host acknowledgement => physical stop:
+False
+
+artifact invalidation => physical stop:
+False
+
+legacy ffplay kill => host playback stop:
+NOT APPLICABLE
+
+FW-owned physical playback execution:
+False
+```
+
+### Control B status
+
+```text
+exact Control B surface:
+8 files
+
+RealtimeSession:
+host-stop coordination adopted
+
+physical playback execution:
+False
+
+provider/network/microphone/real VTS execution:
+False
+
+FW-RT6-6e tasklist:
+0 / 6 CLOSED
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->

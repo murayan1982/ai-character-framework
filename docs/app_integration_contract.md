@@ -2496,3 +2496,26 @@ Applications must therefore treat artifact invalidation and playback stopping as
 separate facts. Control A defines the typed contract only; runtime coordination
 is deferred to FW-RT6-6e Control B.
 <!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->
+
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:BEGIN -->
+## FW-RT6-6e Control B — app host playback coordination
+
+When the detailed voice-output capability reports:
+
+```text
+playback_ownership = host
+host_playback_stop_request_supported = True
+```
+
+an app should treat `PLAYBACK_STOP_REQUESTED_TO_HOST` as a request to its own
+playback layer. The app may optionally report receipt through
+`RealtimeSession.acknowledge_host_playback_stop()`.
+
+Acknowledgement is not a speaker/media-engine stop confirmation. Apps that need a
+separate physical-stop result must keep that result in their own host playback
+layer until a later explicit Framework contract defines otherwise.
+
+The Framework may emit `AUDIO_INVALIDATED` after its accepted artifact lifecycle
+control invalidates a Framework-owned artifact. Apps must still separately stop
+already-buffered or already-downloaded host playback.
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->

@@ -2899,3 +2899,34 @@ The legacy `tts.VoiceEngine` / `ffplay` path remains internal compatibility and
 is not part of the framework root-public API. Runtime host-stop coordination is
 deferred to FW-RT6-6e Control B.
 <!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->
+
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:BEGIN -->
+## FW-RT6-6e Control B — host playback coordination runtime
+
+`RealtimeSession.flush_output()` can now emit the canonical
+`PLAYBACK_STOP_REQUESTED_TO_HOST` event when the queue snapshot says playback
+stop is required and the typed voice-output capability says playback is
+host-owned.
+
+This is coordination only:
+
+```text
+host stop request:
+physical stop success = False
+
+host acknowledgement:
+physical stop success = False
+
+artifact invalidation:
+physical stop success = False
+```
+
+`RealtimeSession.acknowledge_host_playback_stop()` optionally records the host
+response for a previously emitted request. It is idempotent for the same
+turn/generation request and does not convert the response into a physical-stop
+success claim.
+
+The legacy `tts.VoiceEngine` / `ffplay` player is deprecated internal
+compatibility. It remains usable by the legacy runtime during v6.0.0 but is not a
+v6 public playback API and is not a capability source.
+<!-- FW-RT6-6e-B-HOST-PLAYBACK-ADOPTION:END -->

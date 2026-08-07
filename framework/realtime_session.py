@@ -55,6 +55,7 @@ from .realtime_terminal_registry import (
     TerminalCommitDecision,
 )
 from .realtime_event_payloads import (
+    AudioEventPayload,
     DiagnosticEventPayload,
     InterruptEventPayload,
     LifecycleEventPayload,
@@ -101,6 +102,14 @@ _TURN_TERMINAL_EVENT_TYPES = frozenset(
         RealtimeEventType.TURN_REJECTED,
     }
 )
+_POST_TERMINAL_COORDINATION_EVENT_TYPES = frozenset(
+    {
+        RealtimeEventType.AUDIO_INVALIDATED,
+        RealtimeEventType.PLAYBACK_STOP_REQUESTED_TO_HOST,
+        RealtimeEventType.PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST,
+    }
+)
+_EVENT_GENERATION_AUTO = object()
 
 
 def _validated_injected_stages(
@@ -474,6 +483,14 @@ class RealtimeSession:
         self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
         self._active_generation_id: GenerationId | None = None
+        self._host_playback_stop_requests: dict[
+            tuple[TurnId | str | None, GenerationId | None],
+            RealtimeEvent,
+        ] = {}
+        self._host_playback_stop_acknowledgements: dict[
+            tuple[TurnId | str | None, GenerationId | None],
+            RealtimeEvent,
+        ] = {}
         self._info = RealtimeSessionInfo(
             session_id=self._session_id,
             state=self._state,
@@ -905,6 +922,23 @@ class RealtimeSession:
             return None
         return self._active_generation_id
 
+    def _host_playback_context(
+        self,
+        turn_id: TurnId | str | None,
+    ) -> tuple[TurnId | str | None, GenerationId | None]:
+        resolved_turn_id = turn_id or self._active_turn_id
+        if resolved_turn_id is None:
+            return None, None
+        if (
+            self._active_turn_id == resolved_turn_id
+            and self._active_generation_id is not None
+        ):
+            return resolved_turn_id, self._active_generation_id
+        terminal = self._terminal_registry.get(resolved_turn_id)
+        if terminal is not None and terminal.result is not None:
+            return resolved_turn_id, terminal.result.generation_id
+        return resolved_turn_id, None
+
     def _build_event_overflow(
         self,
         *,
@@ -977,6 +1011,7 @@ class RealtimeSession:
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
         _allow_closed_event: bool = False,
+        _event_generation_id: GenerationId | None | object = _EVENT_GENERATION_AUTO,
     ) -> RealtimeEvent:
         if self._closed and not _allow_closed_event:
             raise self._session_closed_error()
@@ -984,6 +1019,7 @@ class RealtimeSession:
             turn_id is not None
             and event_type is not RealtimeEventType.SESSION_CLOSED
             and event_type not in _TURN_TERMINAL_EVENT_TYPES
+            and event_type not in _POST_TERMINAL_COORDINATION_EVENT_TYPES
             and not self._terminal_registry.admit_non_terminal(turn_id)
         ):
             raise _LateNonTerminalRejected(turn_id)
@@ -992,7 +1028,13 @@ class RealtimeSession:
         resolved_payload = _require_runtime_event_payload(event_type, payload)
         previous_state = self._state
         self._state = new_state
-        generation_id = self._generation_for_event(turn_id)
+        generation_id = (
+            self._generation_for_event(turn_id)
+            if _event_generation_id is _EVENT_GENERATION_AUTO
+            else _event_generation_id
+        )
+        if generation_id is not None and not isinstance(generation_id, GenerationId):
+            raise TypeError("_event_generation_id must be GenerationId, None, or auto")
         phase = self._phase
         metadata = {
             "boundary": "realtime",
@@ -1859,6 +1901,131 @@ class RealtimeSession:
                 advance_reason="cancel",
             )
 
+    def acknowledge_host_playback_stop(
+        self,
+        *,
+        turn_id: TurnId | str | None = None,
+        acknowledged: bool = True,
+    ) -> RealtimeEvent | None:
+        """Record an optional host acknowledgement without claiming physical stop."""
+
+        if not isinstance(acknowledged, bool):
+            raise TypeError("acknowledged must be a boolean")
+        with self._serialized_operation():
+            if self._closed or self._close_requested:
+                return None
+            capability = self._capability_snapshot.voice_output
+            if (
+                capability.playback_ownership != "host"
+                or not capability.host_playback_stop_ack_supported
+            ):
+                return None
+
+            resolved_turn_id, generation_id = self._host_playback_context(turn_id)
+            key = (resolved_turn_id, generation_id)
+            requested = self._host_playback_stop_requests.get(key)
+            if requested is None:
+                return None
+            existing = self._host_playback_stop_acknowledgements.get(key)
+            if existing is not None:
+                return existing
+
+            artifact_ref = (
+                requested.payload.artifact_ref
+                if isinstance(requested.payload, AudioEventPayload)
+                else None
+            )
+            event = self._transition(
+                RealtimeEventType.PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST,
+                self._state,
+                turn_id=resolved_turn_id,
+                payload=AudioEventPayload(
+                    artifact_ref=artifact_ref,
+                    host_stop_requested=True,
+                    host_stop_acknowledged=acknowledged,
+                ),
+                public_metadata={
+                    "playback_ownership": "host",
+                    "host_stop_acknowledged": acknowledged,
+                    "physical_playback_stop_confirmed": False,
+                },
+                _event_generation_id=generation_id,
+            )
+            self._host_playback_stop_acknowledgements[key] = event
+            return event
+
+    def _request_host_playback_stop_serialized(
+        self,
+        *,
+        turn_id: TurnId | str | None,
+        artifact_ref: str | None = None,
+        reason: str,
+    ) -> RealtimeEvent | None:
+        capability = self._capability_snapshot.voice_output
+        if (
+            capability.playback_ownership != "host"
+            or not capability.host_playback_stop_request_supported
+        ):
+            return None
+
+        resolved_turn_id, generation_id = self._host_playback_context(turn_id)
+        key = (resolved_turn_id, generation_id)
+        existing = self._host_playback_stop_requests.get(key)
+        if existing is not None:
+            return existing
+
+        event = self._transition(
+            RealtimeEventType.PLAYBACK_STOP_REQUESTED_TO_HOST,
+            self._state,
+            turn_id=resolved_turn_id,
+            payload=AudioEventPayload(
+                artifact_ref=artifact_ref,
+                host_stop_requested=True,
+            ),
+            public_metadata={
+                "playback_ownership": "host",
+                "reason": reason,
+                "physical_playback_stop_confirmed": False,
+            },
+            _event_generation_id=generation_id,
+        )
+        self._host_playback_stop_requests[key] = event
+        return event
+
+    def _record_voice_artifact_invalidation(
+        self,
+        *,
+        turn_id: TurnId | str | None,
+        generation_id: GenerationId | None,
+        invalidated_artifact_count: int,
+        artifact_ref: str | None = None,
+    ) -> RealtimeEvent:
+        """Adopt a positive FW-RT6-6d invalidation fact into canonical events."""
+
+        if (
+            isinstance(invalidated_artifact_count, bool)
+            or not isinstance(invalidated_artifact_count, int)
+        ):
+            raise TypeError("invalidated_artifact_count must be an integer")
+        if invalidated_artifact_count <= 0:
+            raise ValueError("invalidated_artifact_count must be positive")
+
+        with self._serialized_operation():
+            return self._transition(
+                RealtimeEventType.AUDIO_INVALIDATED,
+                self._state,
+                turn_id=turn_id,
+                payload=AudioEventPayload(
+                    artifact_ref=artifact_ref,
+                    invalidated=True,
+                ),
+                public_metadata={
+                    "invalidated_artifact_count": invalidated_artifact_count,
+                    "physical_playback_stop_confirmed": False,
+                },
+                _event_generation_id=generation_id,
+            )
+
     def flush_output(self, request: OutputFlushRequest | None = None) -> OutputFlushResult:
         with self._serialized_operation():
             return self._flush_output_serialized(request)
@@ -1891,6 +2058,13 @@ class RealtimeSession:
             )
 
             queue_state = self.get_tts_queue_state()
+            host_stop_event = None
+            if request.stop_playback and queue_state.playback_stop_required:
+                host_stop_event = self._request_host_playback_stop_serialized(
+                    turn_id=resolved_turn_id,
+                    reason="output_flush",
+                )
+
             if queue_state.queued_count == 0 and not queue_state.is_playing:
                 result = OutputFlushResult.nothing_to_flush(request=request)
                 self._transition(
@@ -1901,6 +2075,8 @@ class RealtimeSession:
                     public_metadata={
                         "flush_outcome": result.outcome.value,
                         "queued_count": queue_state.queued_count,
+                        "host_playback_stop_requested": host_stop_event is not None,
+                        "physical_playback_stop_confirmed": False,
                     },
                 )
                 return result
@@ -1915,6 +2091,8 @@ class RealtimeSession:
                 public_metadata={
                     "flush_outcome": result.outcome.value,
                     "queued_count": queue_state.queued_count,
+                    "host_playback_stop_requested": host_stop_event is not None,
+                    "physical_playback_stop_confirmed": False,
                 },
             )
             return result
