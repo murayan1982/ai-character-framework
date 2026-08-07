@@ -2968,3 +2968,46 @@ The normal public audio-transcription path still defaults to the mock-safe fake
 adapter in Control A. Provider-neutral automatic fake/real composition is
 deferred to FW-RT6-7a Control B.
 <!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:END -->
+
+<!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:BEGIN -->
+## FW-RT6-7a Control B — provider-neutral default voice-input composition
+
+`VoiceInputSession.transcribe_audio_result()` now owns default fake/real
+selection when no explicit adapter is supplied.
+
+```text
+explicit adapter supplied:
+existing adapter path wins
+
+real STT not requested:
+mock-safe FakeVoiceInputProviderAdapter
+
+real STT requested but a required guard is closed:
+typed unavailable / no silent fake fallback
+
+real STT requested + provider=openai + every explicit runtime gate open:
+session-owned lazy OpenAI composition
+```
+
+A normal public OpenAI flow no longer requires the host to construct
+`OpenAIVoiceInputProviderAdapter`, `OpenAIVoiceInputRealClientFactory`, or
+`OpenAIVoiceInputRealProviderExecutor`.
+
+Real execution remains explicit-only. The provider-neutral session arguments
+separately control provider execution, SDK import, client creation, and actual
+provider execution. A private credential must be passed explicitly through
+`private_credential`; `credential_env` remains capability/preflight input and
+its credential value is never consumed by the runtime composition path.
+
+The OpenAI transcription model remains an internal Framework default for this
+control. Provider-specific model configuration is not required for the normal
+public flow.
+
+The normal no-real-STT configuration still uses the fake adapter. A real-STT
+request that cannot run is never represented as a successful fake transcript.
+
+FW-RT6-7b lifecycle/stage composition and FW-RT6-7c result correlation remain
+separate later work. Control B does not add transcript lifecycle events, stale
+generation enforcement, input abort, or correlation fields to
+`VoiceInputResult`.
+<!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:END -->

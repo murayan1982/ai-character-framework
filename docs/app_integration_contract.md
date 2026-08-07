@@ -2550,3 +2550,49 @@ Provider-neutral default fake/real composition is FW-RT6-7a Control B work.
 Applications must not construct provider-native clients or infer real runtime
 availability from executor implementation availability.
 <!-- FW-RT6-7a-A-VOICE-INPUT-CORRECTION:END -->
+
+<!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:BEGIN -->
+## FW-RT6-7a Control B — host default fake/real selection
+
+Hosts may use `create_voice_input_session()` plus
+`transcribe_audio_result()` without constructing provider-specific Framework
+adapter/factory/executor objects.
+
+The provider-neutral selection contract is:
+
+```text
+default/no real STT intent:
+fake path
+
+explicit adapter:
+host-provided adapter wins
+
+real STT intent with incomplete guards:
+typed unavailable / no silent fake fallback
+
+real OpenAI STT with all explicit guards:
+Framework-owned lazy composition
+```
+
+The following gates remain separate:
+
+```text
+real_stt_enabled
+allow_provider_execution
+allow_provider_sdk_import
+allow_provider_client_creation
+allow_real_provider_execution
+```
+
+`private_credential` is an explicit secret-bearing argument and is never copied
+to session info, public metadata, events, safe messages, or results.
+`credential_env` remains preflight/capability input only; runtime composition
+does not consume its credential value.
+
+Host-owned FILE_PATH audio is still opened only by the accepted real executor
+after all real-runtime guards pass. Framework microphone capture is not added.
+
+FW-RT6-7b owns typed voice-input stage lifecycle/transcript events and stale
+generation handling. FW-RT6-7c owns additive `VoiceInputResult` correlation and
+the final v5 result/callback compatibility bridge.
+<!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:END -->

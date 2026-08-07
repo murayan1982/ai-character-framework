@@ -1,12 +1,13 @@
 """Public voice-input / STT session boundary.
 
 The default path remains mock-safe. FW-RT6-7a Control A corrects real-STT
-implementation capability reporting and adds correlation/event scaffolding
-without selecting or executing a real provider by default.
+capability/correlation foundations and Control B adds provider-neutral default
+fake/real composition without changing v5 result/callback compatibility.
 """
 
 from __future__ import annotations
 
+from . import voice_input_composition as _voice_input_composition
 from .voice_input_audio import VoiceInputAudioSource
 from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceInputProviderAdapter
 
@@ -43,6 +44,7 @@ from .voice_input_capability import (
     VoiceInputCapabilities,
     VoiceInputProviderStatus,
     get_voice_input_capabilities,
+    resolve_voice_input_provider_config,
 )
 
 
@@ -105,6 +107,13 @@ class VoiceInputSession:
         real_stt_enabled: bool | None = None,
         allow_provider_execution: bool | None = None,
         credential_env: Mapping[str, str] | None = None,
+        private_credential: str | None = None,
+        allow_provider_sdk_import: bool = False,
+        allow_provider_client_creation: bool = False,
+        allow_real_provider_execution: bool = False,
+        max_audio_bytes: int = 25 * 1024 * 1024,
+        provider_timeout_seconds: float = 30.0,
+        provider_max_retries: int = 0,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._project_root = Path(project_root).resolve() if project_root is not None else None
@@ -114,23 +123,48 @@ class VoiceInputSession:
         self._realtime_event_lock = RLock()
         self._provider = provider
         self._language = language
-        self._real_stt_enabled = bool(real_stt_enabled)
         self._allow_provider_execution = allow_provider_execution
         self._credential_env = credential_env
         self._closed = False
         self._callbacks: list[VoiceInputCallback] = []
+
+        capability_credential_env = _voice_input_composition.credential_presence_env(
+            provider=provider,
+            credential_env=credential_env,
+            private_credential=private_credential,
+        )
+        resolved_provider_config = resolve_voice_input_provider_config(
+            provider=provider,
+            real_stt_enabled=real_stt_enabled,
+            allow_provider_execution=allow_provider_execution,
+            credential_env=capability_credential_env,
+            public_metadata=public_metadata,
+        )
+        self._real_stt_enabled = resolved_provider_config.real_stt_enabled
         self._capabilities = get_voice_input_capabilities(
             provider=provider,
             real_stt_enabled=real_stt_enabled,
             allow_provider_execution=allow_provider_execution,
-            credential_env=credential_env,
+            credential_env=capability_credential_env,
             public_metadata=public_metadata,
+        )
+        self._composition_config = _voice_input_composition.VoiceInputCompositionConfig(
+            provider=self._capabilities.provider or resolved_provider_config.provider,
+            real_stt_requested=resolved_provider_config.real_stt_enabled,
+            allow_provider_execution=resolved_provider_config.provider_execution_allowed,
+            private_credential=private_credential,
+            allow_provider_sdk_import=allow_provider_sdk_import,
+            allow_provider_client_creation=allow_provider_client_creation,
+            allow_real_provider_execution=allow_real_provider_execution,
+            max_audio_bytes=max_audio_bytes,
+            provider_timeout_seconds=provider_timeout_seconds,
+            provider_max_retries=provider_max_retries,
         )
         self._info = VoiceInputSessionInfo(
             session_id=self._session_id,
             provider=self._capabilities.provider or provider,
             language=language,
-            real_stt_enabled=bool(real_stt_enabled),
+            real_stt_enabled=resolved_provider_config.real_stt_enabled,
             provider_status=self._capabilities.provider_status,
             supports_real_stt=self._capabilities.supports_real_stt,
             safe_message=self._capabilities.safe_message,
@@ -326,11 +360,13 @@ class VoiceInputSession:
         request: VoiceInputRequest | None = None,
         adapter: VoiceInputProviderAdapter | None = None,
     ) -> VoiceInputResult:
-        """Transcribe host-captured audio through a lazy provider adapter.
+        """Transcribe host-captured audio through provider-neutral selection.
 
-        This public wiring path is data-only from the session side. It does not
-        read audio, open microphones, create provider clients, or execute a real
-        STT provider by itself. The default adapter is the mock-safe fake adapter.
+        An explicit adapter retains precedence. Without one, the normal default
+        remains mock-safe fake transcription unless real STT was explicitly
+        requested. A real request never silently falls back to fake; it is either
+        rejected truthfully by a closed guard or lazily composed through the
+        accepted real-provider runtime.
         """
 
         if self.is_closed:
@@ -346,8 +382,24 @@ class VoiceInputSession:
             language=audio_source.language,
             max_duration_ms=audio_source.max_duration_ms,
         )
-        effective_adapter = adapter or FakeVoiceInputProviderAdapter()
-        return effective_adapter.transcribe(audio_source=audio_source, request=effective_request)
+        if adapter is not None:
+            return adapter.transcribe(
+                audio_source=audio_source,
+                request=effective_request,
+            )
+
+        reason = self._capabilities.public_metadata.get(
+            "reason",
+            self._capabilities.provider_status.value,
+        )
+        return _voice_input_composition.transcribe_default(
+            config=self._composition_config,
+            audio_source=audio_source,
+            request=effective_request,
+            capability_supports_real_stt=self._capabilities.supports_real_stt,
+            capability_reason=str(reason),
+            capability_safe_message=self._capabilities.safe_message,
+        )
 
     def listen_audio_result(
         self,
@@ -384,12 +436,19 @@ def create_voice_input_session(
     real_stt_enabled: bool | None = None,
     allow_provider_execution: bool | None = None,
     credential_env: Mapping[str, str] | None = None,
+    private_credential: str | None = None,
+    allow_provider_sdk_import: bool = False,
+    allow_provider_client_creation: bool = False,
+    allow_real_provider_execution: bool = False,
+    max_audio_bytes: int = 25 * 1024 * 1024,
+    provider_timeout_seconds: float = 30.0,
+    provider_max_retries: int = 0,
     public_metadata: Mapping[str, Any] | None = None,
 ) -> VoiceInputSession:
-    """Create a mock-safe public voice-input session.
+    """Create a provider-neutral public voice-input session.
 
-    This factory is provider-neutral by default. Real STT execution is not
-    performed by this skeleton.
+    The default remains mock-safe. Real provider composition requires explicit
+    real-STT intent, all runtime gates, and an explicit private credential.
     """
 
     return VoiceInputSession(
@@ -399,5 +458,12 @@ def create_voice_input_session(
         real_stt_enabled=real_stt_enabled,
         allow_provider_execution=allow_provider_execution,
         credential_env=credential_env,
+        private_credential=private_credential,
+        allow_provider_sdk_import=allow_provider_sdk_import,
+        allow_provider_client_creation=allow_provider_client_creation,
+        allow_real_provider_execution=allow_real_provider_execution,
+        max_audio_bytes=max_audio_bytes,
+        provider_timeout_seconds=provider_timeout_seconds,
+        provider_max_retries=provider_max_retries,
         public_metadata=public_metadata,
     )

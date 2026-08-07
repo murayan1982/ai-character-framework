@@ -251,16 +251,10 @@ def check_default_fake_path_preserved() -> None:
         max_duration_ms=1000,
     )
 
-    session = framework.create_voice_input_session(
-        provider="openai",
-        real_stt_enabled=True,
-        allow_provider_execution=True,
-        credential_env={"OPENAI_API_KEY": "control-a-placeholder"},
-    )
+    session = framework.create_voice_input_session()
     _require(
-        session.capabilities.provider_status
-        is VoiceInputProviderStatus.REAL_STT_EXECUTOR_AVAILABLE,
-        "session did not receive corrected OpenAI capability",
+        session.capabilities.provider_status is VoiceInputProviderStatus.DISABLED,
+        "default mock-safe session capability drift",
     )
     result = session.transcribe_audio_result(source)
     _require(result.outcome is VoiceInputOutcome.COMPLETED, "default fake path no longer completes")
@@ -299,8 +293,9 @@ def check_docs_and_boundaries() -> None:
     )
 
     _require(
-        "effective_adapter = adapter or FakeVoiceInputProviderAdapter()" in session_source,
-        "Control A prematurely changed provider-neutral default composition",
+        "def transcribe_audio_result(" in session_source
+        and "return _voice_input_composition.transcribe_default(" in session_source,
+        "accepted voice-input transcription boundary or current provider-neutral composition is missing",
     )
     _require(
         "class VoiceInputResult:" in result_source,
