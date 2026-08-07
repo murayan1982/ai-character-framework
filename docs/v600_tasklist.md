@@ -3512,3 +3512,43 @@ next checkpoint: FW-RT6-6a / NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-5c-C-INTERRUPT-AGGREGATE:END -->
+
+
+<!-- FW-RT6-6a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6a Control A — voice-synthesis protocol acceptance sync
+
+```text
+checkpoint: FW-RT6-6a Control A
+baseline head: 3c40a1bc537aaa9015235b520b3431819ec0381a
+implementation commit: 5d6762115b939e30cf942e3ccf2068ed1346fa18
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 5 files
+dedicated gate: PASS
+focused FW-RT6-5a regression: 41 / PASS
+focused FW-RT6-5b regression: 51 / PASS
+focused FW-RT6-5c regression: 46 / PASS
+full Framework unit suite: 290 / PASS
+stable package: framework.realtime_voice_output
+synthesis work ID: fw_synthesis_<32 lowercase hex>
+correlation: session / turn / generation / work
+root-public names: 127 / UNCHANGED
+provider details public: False
+provider hard-cancel overclaim: False
+existing voice-output/session/stage contracts changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6a aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the provider-neutral synthesis identity, result/cancel protocol
+vocabulary, and capability truthfulness boundary. Existing provider-adapter
+adoption and concrete active-generation observability remain Control B work, so
+the aggregate FW-RT6-6a task checkboxes above remain open until their owning
+controls are accepted.
+
+The roadmap P0-5 TTS Work Control scope is unchanged. FW-RT6-6b through 6e
+remain separate authorization boundaries for artifact storage, bounded pending
+work, generation cancellation/invalidation, and the host playback boundary.
+<!-- FW-RT6-6a-A-ACCEPTANCE-SYNC:END -->
