@@ -4369,3 +4369,53 @@ coordination remains FW-RT6-6e. The resulting synchronized state authorizes only
 FW-RT6-6e exact contract review; FW-RT6-6e implementation remains separately
 gated and not authorized.
 <!-- FW-RT6-6d-C-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6e-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6e Control A — host playback foundation acceptance sync
+
+```text
+checkpoint: FW-RT6-6e Control A
+baseline head: cff06c92cbf1e25e128c02bcbefcc2cfe98d3125
+implementation commit: 855cbe09bd9be07f13d02d7a6cb368a11a87714f
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control A surface: 9 files
+dedicated gate: PASS
+FW-RT6-6d aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+playback ownership capability: TYPED / PASS
+current public playback ownership: host / PASS
+host stop request event: PASS
+host stop acknowledgement contract: OPTIONAL / PASS
+host stop request implies physical stop: False / PASS
+host stop acknowledgement implies physical stop: False / PASS
+artifact invalidation implies physical stop: False / PASS
+legacy VoiceEngine / ffplay root-public: False / PASS
+RealtimeSession changed: False
+legacy VoiceEngine / ffplay runtime changed: False
+framework root-public names: 127 / UNCHANGED
+framework.realtime_capabilities exports: 7 / UNCHANGED
+framework.realtime_event_payloads exports: 10 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6e aggregate: NOT_COMPLETED
+FW-RT6-6e tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B: AUTHORIZED
+Control B implementation: NOT_STARTED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the typed playback-ownership and canonical host-stop
+coordination vocabulary only. Current public voice-output artifact handoff is
+host-owned. A Framework host-stop request and an optional host acknowledgement
+are coordination facts and must not be represented as confirmed physical
+playback stop.
+
+The legacy `tts.VoiceEngine` / `ffplay` path remains internal compatibility and
+is not promoted into the framework root-public API. `RealtimeSession` runtime
+host-stop emission, acknowledgement ingestion, legacy-local-player isolation /
+deprecation wiring, and any FW-owned playback adapter remain Control B work.
+
+The six FW-RT6-6e aggregate task checkboxes remain open. Control B is authorized
+to implement the runtime coordination boundary while preserving the accepted
+truthfulness rule that host-owned physical stop success is never inferred.
+<!-- FW-RT6-6e-A-ACCEPTANCE-SYNC:END -->
