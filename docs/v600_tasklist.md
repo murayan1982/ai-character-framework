@@ -4540,3 +4540,60 @@ version with migration notice.
 
 FW-RT6-7a remains unopened and unauthorized by this candidate.
 <!-- FW-RT6-6e-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6e-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6e — host playback boundary final acceptance sync
+
+```text
+checkpoint: FW-RT6-6e final acceptance
+baseline head: 16880f442c51ead05ed33f613a5c37177fa28cf3
+Control A implementation: 855cbe09bd9be07f13d02d7a6cb368a11a87714f
+Control A acceptance sync: 6c1d920fb8c15d3f66eed58a8a35c506224dc66e
+Control B implementation: 16f88c2e2fe2591c330f446c4808876b86368e9e
+Control B acceptance sync: eefa693ff3453e43d4341270bf92d780f370a477
+Control C aggregate implementation: 16880f442c51ead05ed33f613a5c37177fa28cf3
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+aggregate gate: PASS
+full Framework unit suite: 290 / PASS
+root-public names: 127 / UNCHANGED
+runtime source changed by Control C: False
+FW-owned vs host-owned playback: TYPED / PASS
+current public playback ownership: host / PASS
+host stop request event/runtime: PASS
+host acknowledgement: OPTIONAL / PASS
+post-terminal host acknowledgement: PASS
+duplicate host acknowledgement: IDEMPOTENT / PASS
+empty mock NOTHING_TO_FLUSH behavior: PRESERVED / PASS
+artifact invalidation emitted: AUDIO_INVALIDATED / PASS
+host playback physical stop claimed: False / PASS
+host stop request implies physical stop: False / PASS
+host stop acknowledgement implies physical stop: False / PASS
+artifact invalidation implies physical stop: False / PASS
+legacy VoiceEngine / ffplay root-public: False / PASS
+legacy local player status: deprecated_internal_compatibility
+legacy v6.0.0 removal: False
+legacy removal policy: future major only with migration notice
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6e tasks: 6 / 6 ACCEPTED
+FW-RT6-6e aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+FW-RT6-7a tasks: 0 / 6 CLOSED
+FW-RT6-7a exact contract review: AUTHORIZED
+FW-RT6-7a implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-6e is accepted as a truthful host-playback coordination boundary.
+Framework-owned artifact invalidation, a host playback stop request, and an
+optional host acknowledgement remain separate facts. None of them is represented
+as confirmed physical host playback stop.
+
+The current public voice-output handoff remains host-owned. The legacy
+`tts.VoiceEngine` / `ffplay` path remains deprecated internal compatibility for
+v6.0.0 and remains outside the Framework root-public API and v6 capability
+source.
+
+This sync closes FW-RT6-6e only. It authorizes FW-RT6-7a exact contract review,
+not FW-RT6-7a implementation.
+<!-- FW-RT6-6e-FINAL-ACCEPTANCE-SYNC:END -->
