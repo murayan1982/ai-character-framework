@@ -4305,3 +4305,67 @@ stop remain FW-RT6-6e; this aggregate does not claim host playback success.
 FW-RT6-6e is not authorized by this candidate. Its exact contract review remains
 separately gated after FW-RT6-6d aggregate acceptance and source-of-truth sync.
 <!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6d-C-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6d Control C — aggregate acceptance sync
+
+```text
+checkpoint: FW-RT6-6d Control C
+aggregate implementation commit: 45e9b7d789ae4ae0fc03f4e2ed0956de9195ee5a
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control C surface: 3 files
+aggregate gate: PASS
+Control A typed-result regression: PASS
+Control B runtime cancellation regression: PASS
+FW-RT6-6a synthesis-generation regression: PASS
+FW-RT6-6b artifact-store regression: PASS
+FW-RT6-6c bounded-queue regression: PASS
+full Framework unit suite: 290 / PASS
+active synthesis cooperative cancel: PASS
+provider cancel timeout: BOUNDED / PASS
+provider hard cancel applied: False / TRUTHFUL
+provider hard cancel unsupported: True / PASS
+completed artifact invalidation: PASS
+invalidated artifact playable: False / PASS
+future delivery suppression: PASS
+late artifact stale guard: existing RealtimeGenerationGate / PASS
+new freshness registry: False / PASS
+duplicate cancel: IDEMPOTENT / PASS
+duplicate flush: IDEMPOTENT / PASS
+pending clear vs active cancel: DISTINGUISHED / PASS
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output_queue exports: 8 / UNCHANGED
+root-public names: 127 / UNCHANGED
+Control C runtime implementation changed: False
+provider capability source changed: False
+RealtimeSession changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6d tasks: 7 / 7 ACCEPTED
+FW-RT6-6d aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+FW-RT6-6e tasks: 0 / 6 CLOSED
+next checkpoint: FW-RT6-6e
+FW-RT6-6e exact contract review: AUTHORIZED
+FW-RT6-6e implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-6d is accepted as the Framework-owned generation-cancel and artifact-
+invalidation boundary. Framework-cooperative cancellation remains distinct from
+provider transport hard cancel; current provider hard cancel is truthfully
+unsupported and is not inferred from cooperative completion.
+
+Cancellation establishes a one-way future-delivery suppression barrier.
+Completed or late generation-bound Framework artifacts become non-playable when
+invalidated. Late completion freshness continues to use the existing
+`RealtimeGenerationGate` rather than a second registry. Pending clear remains
+distinct from active cancellation, and duplicate cancel / flush are idempotent.
+
+This acceptance does not claim host physical playback stop. Host playback
+coordination remains FW-RT6-6e. The resulting synchronized state authorizes only
+FW-RT6-6e exact contract review; FW-RT6-6e implementation remains separately
+gated and not authorized.
+<!-- FW-RT6-6d-C-ACCEPTANCE-SYNC:END -->
