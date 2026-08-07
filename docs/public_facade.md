@@ -3050,3 +3050,32 @@ This aggregate does not add FW-RT6-7b stage lifecycle/transcript emission,
 input abort or stale-generation rejection. It also does not add FW-RT6-7c
 correlation fields to `VoiceInputResult`. Control C changes no runtime source.
 <!-- FW-RT6-7a-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:BEGIN -->
+## FW-RT6-7b Control A — voice-input lifecycle and audio privacy
+
+`VoiceInputSession.transcribe_audio_result()` associates each host-owned audio
+request with one Framework-owned turn/generation context and emits an additive
+canonical lifecycle sequence through `on_realtime_event()`:
+
+```text
+VOICE_INPUT_PREFLIGHT
+LISTENING_STARTED
+LISTENING_COMPLETED
+TRANSCRIPT_FINAL
+```
+
+The failure path ends with `VOICE_INPUT_FAILED`. Lifecycle events carry
+`LifecycleEventPayload`; the final transcript carries
+`TranscriptEventPayload(is_final=True)`. The existing `VoiceInputResult` shape,
+factory methods and mapping callbacks are unchanged.
+
+Public event metadata contains only the opaque `audio_id`, the provider-neutral
+`source_kind`, and explicit false privacy markers. A `FILE_PATH` source value is
+never copied to event metadata or payloads, and the session does not retain the
+host audio source after the synchronous operation returns.
+
+Control A does not implement input abort or generation-gate admission. Those
+remain FW-RT6-7b Control B. `VoiceInputResult` correlation fields remain
+FW-RT6-7c, while partial transcript/audio streaming remains P1 scope.
+<!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:END -->

@@ -134,6 +134,8 @@ class RealtimeEventType(str, Enum):
     TURN_REJECTED = "realtime.turn.rejected"
     LISTENING_STARTED = "realtime.listening.started"
     LISTENING_COMPLETED = "realtime.listening.completed"
+    VOICE_INPUT_PREFLIGHT = "realtime.voice_input.preflight"
+    VOICE_INPUT_FAILED = "realtime.voice_input.failed"
     SPEECH_STARTED = "realtime.speech.started"
     SPEECH_ENDED = "realtime.speech.ended"
     TRANSCRIPT_PARTIAL = "realtime.transcript.partial"
@@ -232,6 +234,8 @@ _RUNTIME_PAYLOAD_TYPE_BY_EVENT = MappingProxyType(
         RealtimeEventType.TURN_FAILED: LifecycleEventPayload,
         RealtimeEventType.LISTENING_STARTED: LifecycleEventPayload,
         RealtimeEventType.LISTENING_COMPLETED: LifecycleEventPayload,
+        RealtimeEventType.VOICE_INPUT_PREFLIGHT: LifecycleEventPayload,
+        RealtimeEventType.VOICE_INPUT_FAILED: LifecycleEventPayload,
         RealtimeEventType.SPEECH_STARTED: LifecycleEventPayload,
         RealtimeEventType.SPEECH_ENDED: LifecycleEventPayload,
         RealtimeEventType.TRANSCRIPT_PARTIAL: TranscriptEventPayload,

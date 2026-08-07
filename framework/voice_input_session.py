@@ -38,6 +38,7 @@ from .realtime import (
     RealtimeState,
 )
 from .realtime_event_payloads import RealtimeEventPayload
+from .realtime_event_payloads import LifecycleEventPayload, TranscriptEventPayload
 from .version import VOICE_INPUT_API_VERSION
 
 from .voice_input_capability import (
@@ -378,28 +379,112 @@ class VoiceInputSession:
         if not isinstance(audio_source, VoiceInputAudioSource):
             raise TypeError("audio_source must be a VoiceInputAudioSource")
 
+        context = self._new_realtime_turn_context()
+        event_metadata = {
+            "audio_id": audio_source.audio_id,
+            "source_kind": audio_source.source_kind.value,
+            "raw_audio_retained": False,
+            "audio_path_exposed": False,
+        }
+        self._emit_realtime_event(
+            RealtimeEventType.VOICE_INPUT_PREFLIGHT,
+            state=RealtimeState.IDLE,
+            context=context,
+            payload=LifecycleEventPayload(reason="voice_input_preflight"),
+            public_metadata=event_metadata,
+        )
+        self._emit_realtime_event(
+            RealtimeEventType.LISTENING_STARTED,
+            state=RealtimeState.LISTENING,
+            previous_state=RealtimeState.IDLE,
+            context=context,
+            payload=LifecycleEventPayload(reason="voice_input_started"),
+            public_metadata=event_metadata,
+        )
+
         effective_request = request or VoiceInputRequest(
             language=audio_source.language,
             max_duration_ms=audio_source.max_duration_ms,
         )
-        if adapter is not None:
-            return adapter.transcribe(
-                audio_source=audio_source,
-                request=effective_request,
+        try:
+            if adapter is not None:
+                result = adapter.transcribe(
+                    audio_source=audio_source,
+                    request=effective_request,
+                )
+            else:
+                reason = self._capabilities.public_metadata.get(
+                    "reason",
+                    self._capabilities.provider_status.value,
+                )
+                result = _voice_input_composition.transcribe_default(
+                    config=self._composition_config,
+                    audio_source=audio_source,
+                    request=effective_request,
+                    capability_supports_real_stt=self._capabilities.supports_real_stt,
+                    capability_reason=str(reason),
+                    capability_safe_message=self._capabilities.safe_message,
+                )
+        except Exception:
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_FAILED,
+                state=RealtimeState.FAILED,
+                previous_state=RealtimeState.LISTENING,
+                context=context,
+                payload=LifecycleEventPayload(reason="voice_input_stage_exception"),
+                public_error_code=RealtimeErrorCode.STAGE_FAILED,
+                safe_message="Voice input failed.",
+                public_metadata=event_metadata,
             )
+            raise
 
-        reason = self._capabilities.public_metadata.get(
-            "reason",
-            self._capabilities.provider_status.value,
+        if result.is_completed:
+            self._emit_realtime_event(
+                RealtimeEventType.LISTENING_COMPLETED,
+                state=RealtimeState.TRANSCRIBING,
+                previous_state=RealtimeState.LISTENING,
+                context=context,
+                payload=LifecycleEventPayload(reason="voice_input_completed"),
+                public_metadata=event_metadata,
+            )
+            self._emit_realtime_event(
+                RealtimeEventType.TRANSCRIPT_FINAL,
+                state=RealtimeState.TRANSCRIBING,
+                context=context,
+                payload=TranscriptEventPayload(
+                    text=result.text,
+                    is_final=True,
+                    confidence=result.confidence,
+                ),
+                public_metadata=event_metadata,
+            )
+            return result
+
+        error_code = RealtimeErrorCode.STAGE_FAILED
+        if result.public_error_code is VoiceInputErrorCode.UNAVAILABLE:
+            error_code = RealtimeErrorCode.UNAVAILABLE
+        elif result.public_error_code is VoiceInputErrorCode.INVALID_REQUEST:
+            error_code = RealtimeErrorCode.INVALID_REQUEST
+        elif result.public_error_code is VoiceInputErrorCode.INTERRUPTED:
+            error_code = RealtimeErrorCode.INTERRUPTED
+        elif result.public_error_code is VoiceInputErrorCode.PROVIDER_ERROR:
+            error_code = RealtimeErrorCode.PROVIDER_ERROR
+
+        self._emit_realtime_event(
+            RealtimeEventType.VOICE_INPUT_FAILED,
+            state=RealtimeState.FAILED,
+            previous_state=RealtimeState.LISTENING,
+            context=context,
+            payload=LifecycleEventPayload(reason=result.outcome.value),
+            public_error_code=error_code,
+            safe_message=result.safe_message,
+            retryable=result.retryable,
+            public_metadata={
+                **event_metadata,
+                "outcome": result.outcome.value,
+            },
         )
-        return _voice_input_composition.transcribe_default(
-            config=self._composition_config,
-            audio_source=audio_source,
-            request=effective_request,
-            capability_supports_real_stt=self._capabilities.supports_real_stt,
-            capability_reason=str(reason),
-            capability_safe_message=self._capabilities.safe_message,
-        )
+        return result
 
     def listen_audio_result(
         self,

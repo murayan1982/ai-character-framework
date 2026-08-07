@@ -2596,3 +2596,31 @@ FW-RT6-7b owns typed voice-input stage lifecycle/transcript events and stale
 generation handling. FW-RT6-7c owns additive `VoiceInputResult` correlation and
 the final v5 result/callback compatibility bridge.
 <!-- FW-RT6-7a-B-PROVIDER-NEUTRAL-COMPOSITION:END -->
+
+<!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:BEGIN -->
+## FW-RT6-7b Control A — host-audio lifecycle integration
+
+Hosts continue to own audio capture and hand one `VoiceInputAudioSource` to
+`transcribe_audio_result()`. The Framework assigns one turn/generation context
+for that operation and emits canonical preflight, listening start, listening
+completion and final-transcript events. Non-completed results and adapter
+exceptions emit a typed, safe `VOICE_INPUT_FAILED` event without changing the
+existing result or exception behavior.
+
+For a `FILE_PATH` source, the path remains an execution-private value. Public
+events expose only:
+
+```text
+audio_id: opaque
+source_kind: file_path
+raw_audio_retained: False
+audio_path_exposed: False
+```
+
+The Framework does not retain raw audio or the host audio source in session
+state. Control A performs no microphone, provider, network or audio execution
+during acceptance verification.
+
+Input abort and late-transcript rejection remain Control B work. Result-level
+session/turn/generation correlation remains FW-RT6-7c.
+<!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:END -->
