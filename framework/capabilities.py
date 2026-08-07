@@ -368,6 +368,9 @@ def _global_realtime_snapshot(
             provider_hard_cancel_supported=False,
             pending_flush_supported=False,
             active_audio_invalidation_supported=False,
+            playback_ownership="host",
+            host_playback_stop_request_supported=True,
+            host_playback_stop_ack_supported=False,
             audio_formats=(),
             maximum_text_size=None,
             public_metadata={

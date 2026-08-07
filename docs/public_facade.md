@@ -2864,3 +2864,38 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->
+
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:BEGIN -->
+## FW-RT6-6e Control A — host-owned playback contract
+
+The app-facing voice-output boundary remains an artifact handoff. Generated
+audio is returned to the host as `audio_url` or an opaque
+`VoiceArtifactRef`; the public `VoiceOutputSession` does not become a local
+audio player.
+
+The detailed voice-output capability now distinguishes playback ownership:
+
+```text
+playback_ownership:
+none | framework | host
+```
+
+The current public artifact handoff is `host`. The v6 event contract can
+represent `realtime.playback_stop.requested_to_host`; an optional host
+acknowledgement is a coordination fact only.
+
+```text
+host stop requested:
+physical playback stop NOT IMPLIED
+
+host acknowledgement:
+physical playback stop NOT IMPLIED
+
+artifact invalidation:
+physical playback stop NOT IMPLIED
+```
+
+The legacy `tts.VoiceEngine` / `ffplay` path remains internal compatibility and
+is not part of the framework root-public API. Runtime host-stop coordination is
+deferred to FW-RT6-6e Control B.
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->

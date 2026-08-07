@@ -1955,3 +1955,191 @@ False
 
 FW-RT6-6e is not authorized by this Control C candidate.
 <!-- FW-RT6-6d-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:BEGIN -->
+## FW-RT6-6e Control A — typed playback ownership / host-stop event foundation
+
+### Baseline and scope
+
+```text
+baseline HEAD / origin/main:
+cff06c92cbf1e25e128c02bcbefcc2cfe98d3125
+
+FW-RT6-6d:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+FW-RT6-6e exact contract review:
+COMPLETED
+
+Control A:
+AUTHORIZED / IMPLEMENTED-CANDIDATE
+```
+
+Control A defines only provider-neutral playback ownership and host-stop event
+vocabulary. It does not execute playback, wire `RealtimeSession` to a real
+playback coordinator, or promote the legacy local player into the v6 stable API.
+
+### Playback ownership capability
+
+`RealtimeVoiceOutputCapability` adds three additive fields:
+
+```text
+playback_ownership:
+none | framework | host
+
+host_playback_stop_request_supported:
+bool
+
+host_playback_stop_ack_supported:
+bool
+```
+
+The current app-facing voice-output artifact handoff is host-owned:
+
+```text
+playback_ownership:
+host
+
+host_playback_stop_request_supported:
+True
+
+host_playback_stop_ack_supported:
+False
+```
+
+`host_playback_stop_request_supported=True` means the public v6 contract can
+represent a request to the host when host-owned playback must stop. It does not
+mean `RealtimeSession` already emits that request in Control A and it does not
+mean physical playback stopped.
+
+Capability invariants:
+
+```text
+host stop request supported:
+requires playback_ownership = host
+
+host stop ack supported:
+requires host stop request supported = True
+
+framework-owned playback:
+host stop request/ack support = False
+```
+
+### Canonical host-stop events
+
+The canonical v6 event vocabulary adds:
+
+```text
+PLAYBACK_STOP_REQUESTED_TO_HOST
+= realtime.playback_stop.requested_to_host
+
+PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST
+= realtime.playback_stop.acknowledged_by_host
+```
+
+Both use `AudioEventPayload`. They intentionally have no v5 projection.
+
+`AudioEventPayload` keeps the existing `host_stop_requested` field and adds:
+
+```text
+host_stop_acknowledged:
+bool | None
+```
+
+`None` means no host acknowledgement fact was supplied. A non-`None`
+acknowledgement requires `host_stop_requested=True`.
+
+### Truthfulness boundary
+
+```text
+host stop requested
+=> physical playback stopped:
+NOT IMPLIED
+
+host acknowledgement
+=> physical playback stopped:
+NOT IMPLIED
+
+artifact invalidated
+=> host physical playback stopped:
+NOT IMPLIED
+
+host-owned playback
+=> FW physical stop success:
+MUST NOT BE CLAIMED
+
+framework-owned playback
+=> stop success may be claimed:
+ONLY FROM AN ACTUAL FW-OWNED PLAYBACK ADAPTER RESULT
+```
+
+Host acknowledgement is therefore an optional coordination fact, not a physical
+stop-success result.
+
+### Legacy compatibility boundary
+
+The existing `tts.VoiceEngine` still owns provider-specific generation, a local
+queue, temporary files, `ffplay`, and process termination. Control A does not
+modify or export that path.
+
+```text
+legacy VoiceEngine / ffplay classification:
+INTERNAL LEGACY COMPATIBILITY
+
+framework root-public:
+False
+
+v6 playback capability source:
+False
+
+legacy local player deprecation implementation:
+DEFERRED / Control B
+```
+
+### Deferred runtime adoption
+
+```text
+RealtimeSession host-stop emission:
+DEFERRED / Control B
+
+host acknowledgement ingestion:
+DEFERRED / Control B
+
+FW-owned playback adapter:
+DEFERRED / Control B or later exact contract
+
+legacy VoiceEngine isolation/deprecation wiring:
+DEFERRED / Control B
+
+physical playback execution in Control A:
+False
+```
+
+### Control A status
+
+```text
+exact Control A surface:
+9 files
+
+root-public names:
+127 / UNCHANGED
+
+framework.realtime_capabilities exports:
+7 / UNCHANGED
+
+framework.realtime_event_payloads exports:
+10 / UNCHANGED
+
+FW-RT6-6e tasklist:
+0 / 6 CLOSED
+
+Control B:
+NOT_AUTHORIZED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->

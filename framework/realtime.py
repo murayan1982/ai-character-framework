@@ -145,6 +145,10 @@ class RealtimeEventType(str, Enum):
     SYNTHESIS_COMPLETED = "realtime.synthesis.completed"
     AUDIO_AVAILABLE = "realtime.audio.available"
     AUDIO_INVALIDATED = "realtime.audio.invalidated"
+    PLAYBACK_STOP_REQUESTED_TO_HOST = "realtime.playback_stop.requested_to_host"
+    PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST = (
+        "realtime.playback_stop.acknowledged_by_host"
+    )
     MOTION_REQUESTED = "realtime.motion.requested"
     MOTION_FAILED = "realtime.motion.failed"
     STALE_RESULT_DROPPED = "realtime.stale_result.dropped"
@@ -239,6 +243,8 @@ _RUNTIME_PAYLOAD_TYPE_BY_EVENT = MappingProxyType(
         RealtimeEventType.SYNTHESIS_COMPLETED: SynthesisEventPayload,
         RealtimeEventType.AUDIO_AVAILABLE: AudioEventPayload,
         RealtimeEventType.AUDIO_INVALIDATED: AudioEventPayload,
+        RealtimeEventType.PLAYBACK_STOP_REQUESTED_TO_HOST: AudioEventPayload,
+        RealtimeEventType.PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST: AudioEventPayload,
         RealtimeEventType.MOTION_REQUESTED: MotionEventPayload,
         RealtimeEventType.MOTION_STARTED: MotionEventPayload,
         RealtimeEventType.MOTION_COMPLETED: MotionEventPayload,

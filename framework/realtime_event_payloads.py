@@ -255,6 +255,7 @@ class AudioEventPayload:
     available: bool = False
     invalidated: bool = False
     host_stop_requested: bool = False
+    host_stop_acknowledged: bool | None = None
     kind: RealtimeEventPayloadKind = field(
         init=False,
         default=RealtimeEventPayloadKind.AUDIO,
@@ -268,6 +269,16 @@ class AudioEventPayload:
             self.host_stop_requested,
             field_name="host_stop_requested",
         )
+        host_stop_acknowledged = self.host_stop_acknowledged
+        if host_stop_acknowledged is not None:
+            host_stop_acknowledged = _require_bool(
+                host_stop_acknowledged,
+                field_name="host_stop_acknowledged",
+            )
+            if not host_stop_requested:
+                raise ValueError(
+                    "host playback acknowledgement requires a prior stop request"
+                )
         if available and invalidated:
             raise ValueError("audio payload cannot be available and invalidated together")
         if available and artifact_ref is None:
@@ -276,6 +287,11 @@ class AudioEventPayload:
         object.__setattr__(self, "available", available)
         object.__setattr__(self, "invalidated", invalidated)
         object.__setattr__(self, "host_stop_requested", host_stop_requested)
+        object.__setattr__(
+            self,
+            "host_stop_acknowledged",
+            host_stop_acknowledged,
+        )
 
     def as_dict(self) -> Mapping[str, object]:
         return _mapping(
@@ -284,6 +300,7 @@ class AudioEventPayload:
             available=self.available,
             invalidated=self.invalidated,
             host_stop_requested=self.host_stop_requested,
+            host_stop_acknowledged=self.host_stop_acknowledged,
         )
 
 

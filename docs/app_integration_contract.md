@@ -2467,3 +2467,32 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6d-B-CANCEL-INVALIDATION-ADOPTION:END -->
+
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:BEGIN -->
+## FW-RT6-6e Control A — playback ownership / host-stop coordination contract
+
+Host applications that consume a voice-output artifact own playback when
+`RealtimeVoiceOutputCapability.playback_ownership == "host"`.
+
+The Framework may represent a request for the host to stop that playback through
+the canonical v6 `PLAYBACK_STOP_REQUESTED_TO_HOST` event. A host may optionally
+acknowledge receipt through `PLAYBACK_STOP_ACKNOWLEDGED_BY_HOST`.
+
+Neither event is proof that speakers, browser audio, platform media playback, or
+another host-owned playback engine has physically stopped.
+
+```text
+host stop request received:
+physical stop success = NOT IMPLIED
+
+host acknowledgement received:
+physical stop success = NOT IMPLIED
+
+FW artifact invalidated:
+physical stop success = NOT IMPLIED
+```
+
+Applications must therefore treat artifact invalidation and playback stopping as
+separate facts. Control A defines the typed contract only; runtime coordination
+is deferred to FW-RT6-6e Control B.
+<!-- FW-RT6-6e-A-HOST-PLAYBACK-FOUNDATION:END -->

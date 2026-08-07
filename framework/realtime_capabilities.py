@@ -267,6 +267,9 @@ class RealtimeVoiceOutputCapability:
     provider_hard_cancel_supported: bool = False
     pending_flush_supported: bool = False
     active_audio_invalidation_supported: bool = False
+    playback_ownership: str = "none"
+    host_playback_stop_request_supported: bool = False
+    host_playback_stop_ack_supported: bool = False
     audio_formats: tuple[str, ...] = ()
     maximum_text_size: int | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
@@ -280,8 +283,35 @@ class RealtimeVoiceOutputCapability:
             "provider_hard_cancel_supported",
             "pending_flush_supported",
             "active_audio_invalidation_supported",
+            "host_playback_stop_request_supported",
+            "host_playback_stop_ack_supported",
         ):
             object.__setattr__(self, name, bool(getattr(self, name)))
+
+        playback_ownership = self.playback_ownership
+        if not isinstance(playback_ownership, str):
+            raise TypeError("playback_ownership must be a string")
+        playback_ownership = playback_ownership.strip().lower()
+        if playback_ownership not in {"none", "framework", "host"}:
+            raise ValueError(
+                "playback_ownership must be one of: none, framework, host"
+            )
+        if (
+            self.host_playback_stop_request_supported
+            and playback_ownership != "host"
+        ):
+            raise ValueError(
+                "host playback stop request support requires host playback ownership"
+            )
+        if (
+            self.host_playback_stop_ack_supported
+            and not self.host_playback_stop_request_supported
+        ):
+            raise ValueError(
+                "host playback stop acknowledgement support requires stop request support"
+            )
+        object.__setattr__(self, "playback_ownership", playback_ownership)
+
         object.__setattr__(
             self,
             "audio_formats",
@@ -307,6 +337,13 @@ class RealtimeVoiceOutputCapability:
                 "pending_flush_supported": self.pending_flush_supported,
                 "active_audio_invalidation_supported": (
                     self.active_audio_invalidation_supported
+                ),
+                "playback_ownership": self.playback_ownership,
+                "host_playback_stop_request_supported": (
+                    self.host_playback_stop_request_supported
+                ),
+                "host_playback_stop_ack_supported": (
+                    self.host_playback_stop_ack_supported
                 ),
                 "audio_formats": self.audio_formats,
                 "maximum_text_size": self.maximum_text_size,
