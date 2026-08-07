@@ -4419,3 +4419,62 @@ The six FW-RT6-6e aggregate task checkboxes remain open. Control B is authorized
 to implement the runtime coordination boundary while preserving the accepted
 truthfulness rule that host-owned physical stop success is never inferred.
 <!-- FW-RT6-6e-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6e-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6e Control B — host playback runtime coordination acceptance sync
+
+```text
+checkpoint: FW-RT6-6e Control B
+baseline head: 6c1d920fb8c15d3f66eed58a8a35c506224dc66e
+implementation commit: 16f88c2e2fe2591c330f446c4808876b86368e9e
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 8 files
+dedicated gate: PASS
+Control A model/event/stable-boundary regression: PASS
+FW-RT6-6d aggregate regression: PASS
+full Framework unit suite: 290 / PASS
+session/global/provider playback ownership: host / PASS
+host stop request runtime: PASS
+host stop acknowledgement runtime: OPTIONAL / PASS
+post-terminal host acknowledgement: PASS
+duplicate host acknowledgement: IDEMPOTENT / PASS
+empty mock NOTHING_TO_FLUSH behavior: PRESERVED / PASS
+artifact invalidation event: AUDIO_INVALIDATED / PASS
+host stop request implies physical stop: False / PASS
+host stop acknowledgement implies physical stop: False / PASS
+artifact invalidation implies physical stop: False / PASS
+unsupported queue flush promoted to FLUSHED by host request: False / PASS
+legacy VoiceEngine / ffplay root-public: False / PASS
+legacy local player status: deprecated_internal_compatibility
+legacy v6.0.0 removal: False
+legacy future removal policy: future major only with migration notice
+physical playback execution: False
+provider/network/microphone/real VTS execution: False
+FW-RT6-6e aggregate: NOT_COMPLETED
+FW-RT6-6e tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C: AUTHORIZED
+Control C implementation: NOT_STARTED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the runtime coordination boundary for host-owned playback.
+`RealtimeSession` may emit a canonical host-stop request when playback stopping
+is actually required by the queue snapshot, and may record an optional host
+acknowledgement for that request. Neither fact is represented as confirmed
+physical playback stop.
+
+The accepted FW-RT6-6d artifact invalidation result may now be projected as
+`AUDIO_INVALIDATED` without creating a second artifact lifecycle registry.
+Artifact invalidation remains separate from host physical playback stop.
+
+The existing `tts.VoiceEngine` / `ffplay` path remains usable only as deprecated
+internal compatibility for the legacy runtime during v6.0.0. It is not promoted
+to the Framework root-public API or used as the v6 playback capability source.
+
+The six FW-RT6-6e aggregate task checkboxes remain open. Control C is authorized
+for aggregate acceptance only: review accepted Control A+B together, run the
+dedicated aggregate gate and regressions, and close the six aggregate task
+checkboxes only if the aggregate review passes. Control C must not add new
+runtime behavior.
+<!-- FW-RT6-6e-B-ACCEPTANCE-SYNC:END -->
