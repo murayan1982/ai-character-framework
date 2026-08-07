@@ -2201,3 +2201,42 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:END -->
+
+<!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:BEGIN -->
+## v6.0.0 voice-synthesis generation typing boundary
+
+Host applications continue to use the existing root voice-output session API.
+Framework composition/test code that needs generation-level typing may
+explicitly import `framework.realtime_voice_output`.
+
+The additive protocol keeps provider details outside application-visible
+correlation:
+
+```text
+Framework correlation:
+session_id / turn_id / generation_id / SynthesisWorkId
+
+provider adapter input:
+VoiceOutputRequest only
+
+provider receives Framework correlation IDs:
+False
+
+active generation exposes request text/provider/artifact:
+False
+```
+
+`RealtimeVoiceOutputCapability.generation_cancel_supported` and
+`provider_hard_cancel_supported` remain the canonical capability facts.
+Cooperative cancel acceptance never implies provider hard-cancel completion.
+Control A does not wire a provider adapter, execute TTS, create a queue, perform
+playback, or change the existing root-public voice-output API.
+
+```text
+checkpoint: FW-RT6-6a Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+root-public names: 127 / UNCHANGED
+Control B provider/stage adoption: DEFERRED / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:END -->

@@ -2640,3 +2640,40 @@ Control C: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-3b-B-GATE-TERMINAL-ADOPTION:END -->
+
+<!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:BEGIN -->
+## v6.0.0 stable voice-synthesis generation protocol package
+
+Advanced Framework composition and typing code may explicitly import
+`framework.realtime_voice_output`. Control A adds provider-neutral synthesis
+work identity, result/active/cancel models, a provider-adapter protocol, and a
+synthesis-stage protocol without expanding the 127-name `framework` root API.
+
+```text
+SynthesisWorkId:
+fw_synthesis_<32 lowercase hex>
+
+correlation:
+session / turn / generation / work
+
+active generation public snapshot:
+context + work_id only
+
+provider details public:
+False
+```
+
+Existing root-facing `VoiceOutputSession`, `VoiceOutputRequest`,
+`VoiceOutputResult`, and the existing `framework.realtime_stage.VoiceOutputStage`
+remain unchanged. Provider adapter adoption and concrete active-generation state
+are deferred to FW-RT6-6a Control B.
+
+```text
+checkpoint: FW-RT6-6a Control A
+status: IMPLEMENTED / AWAITING_REVIEW
+root-public names: 127 / UNCHANGED
+provider/network/microphone/playback/real VTS execution: False
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6a-A-VOICE-SYNTHESIS-PROTOCOL:END -->
