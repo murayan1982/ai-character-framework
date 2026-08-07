@@ -899,3 +899,118 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6b-B-PROVIDER-ARTIFACT-ADOPTION:END -->
+
+<!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6b Control C — aggregate opaque artifact-store acceptance
+
+### Accepted combined boundary
+
+Control C performs no runtime implementation. It reviews the accepted Control A
+artifact-store foundation and Control B provider adoption as one FW-RT6-6b
+contract and closes the seven aggregate task items as an acceptance candidate.
+
+```text
+baseline HEAD / origin/main:
+163ad7c7a611221148dd1bc5a902685615caaf16
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+Control B:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+
+exact Control C delta:
+3 files
+```
+
+### Aggregate invariants
+
+```text
+VoiceArtifactStore protocol:
+True
+
+opaque artifact ID:
+fw_voice_artifact_<32 lowercase hex>
+
+internal storage path exposed by VoiceArtifactRef:
+False
+
+resolve / open / delete / expire:
+PASS
+
+generated audio handoff:
+audio_url XOR audio_artifact_ref / REQUIRED
+
+real provider local path in VoiceOutputResult:
+False
+
+provider result artifact type:
+VoiceArtifactRef
+
+lifecycle generation association:
+Framework synthesis-stage side
+
+provider adapter receives Framework correlation IDs:
+False
+
+expired/deleted artifact playable:
+False
+```
+
+`FileVoiceArtifactStore` may own a private local storage path internally, but
+that path is not a public artifact identity. Public handoff is the opaque
+`VoiceArtifactRef`, and real provider adapters do not publish
+`str(artifact_path)`.
+
+Lifecycle `GenerationId` remains outside the provider protocol. The Framework
+synthesis stage binds a returned artifact reference to its lifecycle generation
+after provider synthesis returns.
+
+### Deferred P0-5 boundaries
+
+```text
+bounded pending work / pending clear:
+FW-RT6-6c
+
+active synthesis cancellation / provider hard cancel:
+FW-RT6-6d
+
+interrupt-driven artifact invalidation:
+FW-RT6-6d
+
+future-delivery suppression:
+FW-RT6-6d
+
+host playback coordination / physical stop:
+FW-RT6-6e
+```
+
+Expired/deleted artifacts are non-playable under the FW-RT6-6b store validity
+contract. Control C does not reinterpret that as active interrupt-driven
+artifact invalidation support.
+
+### Control C status
+
+```text
+checkpoint:
+FW-RT6-6b Control C
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+FW-RT6-6b tasks:
+7 / 7 ACCEPTED-CANDIDATE
+
+root-public names:
+127 / UNCHANGED
+
+provider/network/microphone/playback/real VTS execution:
+False
+
+next checkpoint:
+FW-RT6-6c / NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:END -->

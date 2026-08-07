@@ -2563,13 +2563,13 @@ False
 
 **Tasks:**
 
-- [ ] FW-owned `VoiceArtifactStore` protocolを定義する。
-- [ ] opaque artifact IDを発行する。
-- [ ] internal pathとpublic refを分離する。
-- [ ] resolve/open/delete/expire contractを定義する。
-- [ ] URL handoffとartifact refを排他的にする。
-- [ ] real provider adapterの`str(artifact_path)`返却を廃止する。
-- [ ] lifecycle generationとartifact validityを関連付ける。
+- [x] FW-owned `VoiceArtifactStore` protocolを定義する。
+- [x] opaque artifact IDを発行する。
+- [x] internal pathとpublic refを分離する。
+- [x] resolve/open/delete/expire contractを定義する。
+- [x] URL handoffとartifact refを排他的にする。
+- [x] real provider adapterの`str(artifact_path)`返却を廃止する。
+- [x] lifecycle generationとartifact validityを関連付ける。
 
 **Acceptance:**
 
@@ -3786,3 +3786,55 @@ active synthesis cancellation, interrupt-driven artifact invalidation, and
 future-delivery suppression remain FW-RT6-6d; host playback coordination remains
 FW-RT6-6e.
 <!-- FW-RT6-6b-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-6b Control C — opaque artifact-store aggregate acceptance
+
+```text
+checkpoint: FW-RT6-6b Control C
+baseline head: 163ad7c7a611221148dd1bc5a902685615caaf16
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+status: IMPLEMENTED / AWAITING_REVIEW
+exact Control C delta: 3 files
+Control B dedicated regression: PASS expected
+artifact-result contract regression: PASS expected
+FW-RT6-6a aggregate regression: PASS expected
+full Framework unit suite: 290 / PASS expected
+VoiceArtifactStore protocol: PASS expected
+opaque artifact ID: PASS expected
+internal path / public ref separation: PASS expected
+resolve / open / delete / expire: PASS expected
+generated exactly-one audio handoff: PASS expected
+real provider local-path handoff: False expected
+lifecycle generation / artifact validity association: PASS expected
+expired/deleted artifact playable: False expected
+interrupt-driven artifact invalidation: DEFERRED / FW-RT6-6d
+provider adapter receives Framework correlation IDs: False expected
+stable framework.voice_artifacts exports: 4 / UNCHANGED
+stable framework.realtime_voice_output exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-6b tasks: 7 / 7 ACCEPTED-CANDIDATE
+pending queue changed: False
+generation cancel / interrupt invalidation changed: False
+host playback changed: False
+provider/network/microphone/playback/real VTS execution: False
+next checkpoint: FW-RT6-6c / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C closes the seven FW-RT6-6b aggregate task checkboxes only as an
+acceptance candidate after the accepted Control A artifact-store foundation and
+Control B provider-adoption/generation-binding boundary are reviewed together.
+No new runtime behavior is introduced by Control C.
+
+The aggregate acceptance treats expired/deleted store records as non-playable
+artifact validity states. It does not claim interrupt-driven active artifact
+invalidation, synthesis cancellation, or future-delivery suppression; those
+remain FW-RT6-6d.
+
+The roadmap P0-5 split is unchanged. Bounded pending work remains FW-RT6-6c,
+active synthesis cancellation / interrupt-driven artifact invalidation /
+future-delivery suppression remain FW-RT6-6d, and host playback coordination
+remains FW-RT6-6e.
+<!-- FW-RT6-6b-C-AGGREGATE-ACCEPTANCE:END -->
