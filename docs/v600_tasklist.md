@@ -3552,3 +3552,44 @@ The roadmap P0-5 TTS Work Control scope is unchanged. FW-RT6-6b through 6e
 remain separate authorization boundaries for artifact storage, bounded pending
 work, generation cancellation/invalidation, and the host playback boundary.
 <!-- FW-RT6-6a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-6a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-6a Control B — provider adoption / active-generation acceptance sync
+
+```text
+checkpoint: FW-RT6-6a Control B
+baseline head: 5a509c9ddc18cd55dc84b264193bab973c176ee6
+implementation commit: 82ca4ee7f4a7105727013b729279b9fe81a74a4c
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED
+exact Control B surface: 6 files
+dedicated gate: PASS
+Control A regression: PASS
+full Framework unit suite: 290 / PASS
+provider adapter protocol adoption: True
+active generation observable: True
+active generation thread-safe: True
+stable package exports: 7 / UNCHANGED
+root-public names: 127 / UNCHANGED
+generation_cancel_supported: False
+provider_hard_cancel_supported: False
+pending queue changed: False
+artifact invalidation changed: False
+provider/network/microphone/playback/real VTS execution: False
+FW-RT6-6a aggregate: NOT_COMPLETED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C: AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts provider-adapter capability adoption plus concrete, thread-safe
+active-generation observability without expanding the accepted stable package or
+root-public API. It does not claim active synthesis cancellation or provider hard
+cancel support that the current provider boundary cannot perform.
+
+FW-RT6-6a aggregate acceptance remains Control C work. Control C owns the final
+identity / observability / privacy / capability aggregate review and may close the
+six FW-RT6-6a task checkboxes only if the combined Control A+B contract remains
+truthful. Pending queue, artifact invalidation, generation-cancel execution, and
+host playback remain FW-RT6-6c/6d/6e boundaries.
+<!-- FW-RT6-6a-B-ACCEPTANCE-SYNC:END -->
