@@ -1255,3 +1255,161 @@ commit / push:
 NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->
+
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:BEGIN -->
+## FW-RT6-6c Control B — pending-to-active stage handoff
+
+### Baseline and authorization
+
+```text
+baseline HEAD / origin/main:
+820056ff897e7bfdcfa20c3f7d4b14df0633c3b1
+
+Control A:
+COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+
+Control B:
+AUTHORIZED
+```
+
+Control B adopts the deferred queue-to-stage composition without changing the
+stable `VoiceSynthesisPendingQueue` or `VoiceSynthesisStage` protocols.
+
+### Exact implementation surface
+
+```text
+M docs/app_integration_contract.md
+M docs/public_facade.md
+M docs/v600_realtime_voice_output_contract.md
+M framework/realtime_voice_output.py
+M framework/realtime_voice_output_queue.py
+M scripts/smoke_v600_voice_output_queue_control_a.py
+A scripts/smoke_v600_voice_output_queue_control_b.py
+```
+
+`framework` root remains 127 names. `framework.realtime_voice_output` remains the
+accepted seven-name stable package and
+`framework.realtime_voice_output_queue` remains the accepted eight-name stable
+package. The concrete queue/stage composition is not added to either `__all__`.
+
+### Pending-to-active ownership transition
+
+The concrete bounded queue owns pending state. The concrete synthesis stage owns
+active state. `handoff_next(stage=...)` performs one FIFO transition.
+
+```text
+1. inspect oldest private pending entry under queue lock
+2. concrete stage claims entry.context + entry.work_id
+3. only after successful claim, remove that exact entry from pending FIFO
+4. release queue lock
+5. execute provider through the already accepted stage adapter boundary
+6. return VoiceSynthesisResultEnvelope with the SAME work_id
+7. clear stage active state on completion or failure
+```
+
+The stage claim and queue removal form one observable ownership transition: a
+pending observer cannot observe the claimed item after the queue lock is released,
+and the stable pending protocol never owns active state.
+
+### Claim failure and execution failure
+
+A closed or already-active stage rejects before queue removal. The pending FIFO is
+therefore unchanged and no restore race is required.
+
+Once the stage claim succeeds and the item leaves pending state, provider
+execution failure is an active-work failure. The item is not silently requeued.
+The stage clears active state in its existing deterministic finally boundary.
+
+### Identity preservation and privacy
+
+```text
+enqueue work_id:
+SynthesisWorkId A
+
+active work_id:
+SynthesisWorkId A
+
+result envelope work_id:
+SynthesisWorkId A
+
+second work ID allocation during handoff:
+False
+```
+
+Provider adapters still receive only `VoiceOutputRequest`; session, turn,
+generation, and synthesis-work identities are not passed to the adapter. Request
+text remains private and is absent from public pending/active snapshots.
+
+### Pending clear and deferred P0-5 behavior
+
+Pending clear continues to operate only on queue-owned pending entries. Once a
+work item is active it is absent from the pending queue, so targeted or full
+pending clear cannot change the stage-owned active generation.
+
+```text
+generation cancellation:
+False / DEFERRED FW-RT6-6d
+
+provider cancel timeout:
+DEFERRED FW-RT6-6d
+
+interrupt-driven artifact invalidation:
+DEFERRED FW-RT6-6d
+
+future-delivery suppression:
+DEFERRED FW-RT6-6d
+
+host playback coordination:
+DEFERRED FW-RT6-6e
+```
+
+`RealtimeVoiceOutputCapability.pending_flush_supported`,
+`generation_cancel_supported`, and `provider_hard_cancel_supported` remain
+unchanged and false at the accepted provider boundary.
+
+### Control B status
+
+```text
+checkpoint:
+FW-RT6-6c Control B
+
+status:
+IMPLEMENTED / AWAITING_REVIEW
+
+exact change surface:
+7 files
+
+queue-to-stage handoff:
+True
+
+same enqueue/active/result work ID:
+True
+
+active state owner:
+synthesis stage
+
+pending state owner:
+pending queue
+
+same work simultaneously observable as pending and active:
+False
+
+pending clear changes active generation:
+False
+
+active cancel overclaim:
+False
+
+root-public names:
+127 / UNCHANGED
+
+FW-RT6-6c aggregate tasklist:
+0 / 7 CLOSED
+
+Control C:
+NOT_AUTHORIZED
+
+commit / push:
+NOT_AUTHORIZED
+```
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->

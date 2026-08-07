@@ -2362,3 +2362,34 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->
+
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:BEGIN -->
+## FW-RT6-6c Control B — pending-to-active voice synthesis handoff
+
+The accepted bounded pending queue now composes with the accepted concrete
+provider-neutral synthesis stage without expanding either stable protocol.
+`BoundedVoiceSynthesisPendingQueue.handoff_next()` is a reference-only helper on
+the non-stable concrete queue implementation.
+
+The oldest pending entry leaves the queue only after the concrete stage claims
+its exact enqueue-time `SynthesisWorkId`. During provider execution the item is
+therefore active/stage-owned and is no longer pending/queue-owned. The result
+envelope preserves the same context and work identity.
+
+A closed or already-active stage rejects the claim before the FIFO is mutated.
+Pending clear remains queue-only and cannot cancel or alter active synthesis.
+Generation cancellation, artifact invalidation, future-delivery suppression,
+and host playback remain later boundaries.
+
+```text
+checkpoint: FW-RT6-6c Control B
+baseline head: 820056ff897e7bfdcfa20c3f7d4b14df0633c3b1
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+status: IMPLEMENTED / AWAITING_REVIEW
+root-public names: 127 / UNCHANGED
+queue stable exports: 8 / UNCHANGED
+voice synthesis stable exports: 7 / UNCHANGED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->

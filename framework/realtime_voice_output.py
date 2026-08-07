@@ -353,31 +353,79 @@ class ProviderNeutralVoiceSynthesisStage:
             raise TypeError("context must be a RealtimeStageContext")
         if not isinstance(request, VoiceOutputRequest):
             raise TypeError("request must be a VoiceOutputRequest")
-
         work_id = SynthesisWorkId.new()
-        active = VoiceSynthesisActiveGeneration(context=context, work_id=work_id)
+        active = self._claim_generation(context=context, work_id=work_id)
+        return self._run_claimed(active=active, request=request)
+
+    def _claim_generation(
+        self,
+        *,
+        context: RealtimeStageContext,
+        work_id: SynthesisWorkId | str,
+    ) -> VoiceSynthesisActiveGeneration:
+        """Claim one Framework-owned work identity without executing a provider."""
+
+        if not isinstance(context, RealtimeStageContext):
+            raise TypeError("context must be a RealtimeStageContext")
+        normalized_work_id = (
+            work_id
+            if isinstance(work_id, SynthesisWorkId)
+            else SynthesisWorkId.parse(work_id)
+        )
+        active = VoiceSynthesisActiveGeneration(
+            context=context,
+            work_id=normalized_work_id,
+        )
         with self._lock:
             if self._closed:
                 raise RuntimeError("Voice synthesis stage is closed.")
             if self._active_generation is not None:
                 raise RuntimeError("Voice synthesis generation is already active.")
             self._active_generation = active
+        return active
+
+    def _run_claimed(
+        self,
+        *,
+        active: VoiceSynthesisActiveGeneration,
+        request: VoiceOutputRequest,
+    ) -> VoiceSynthesisResultEnvelope:
+        """Execute exactly one already-claimed synthesis work item."""
+
+        if not isinstance(active, VoiceSynthesisActiveGeneration):
+            raise TypeError("active must be VoiceSynthesisActiveGeneration")
+        if not isinstance(request, VoiceOutputRequest):
+            self._release_generation(active.work_id)
+            raise TypeError("request must be a VoiceOutputRequest")
+        with self._lock:
+            if self._active_generation != active:
+                raise RuntimeError("Voice synthesis work is not the active generation.")
 
         try:
             result = self._adapter.synthesize(request)
             if not isinstance(result, VoiceOutputResult):
                 raise TypeError("adapter synthesize result must be VoiceOutputResult")
-            self._bind_result_artifact(context=context, result=result)
+            self._bind_result_artifact(context=active.context, result=result)
             return VoiceSynthesisResultEnvelope(
-                context=context,
-                work_id=work_id,
+                context=active.context,
+                work_id=active.work_id,
                 result=result,
             )
         finally:
-            with self._lock:
-                current = self._active_generation
-                if current is not None and current.work_id == work_id:
-                    self._active_generation = None
+            self._release_generation(active.work_id)
+
+    def _release_generation(self, work_id: SynthesisWorkId | str) -> None:
+        """Release one matching active generation without claiming cancellation."""
+
+        normalized_work_id = (
+            work_id
+            if isinstance(work_id, SynthesisWorkId)
+            else SynthesisWorkId.parse(work_id)
+        )
+        with self._lock:
+            current = self._active_generation
+            if current is not None and current.work_id == normalized_work_id:
+                self._active_generation = None
 
     def cancel(
         self,

@@ -2,13 +2,15 @@
 
 FW-RT6-6c Control A defines Framework-owned pending-work identity, bounded
 admission, typed enqueue/clear results, and non-silent overflow notification.
-The queue is pending-only: it does not execute synthesis, cancel an active
-generation, invalidate artifacts, perform playback, import provider SDKs, access
-the network, use a microphone, or connect to VTube Studio.
+Control B composes the non-stable concrete queue with the non-stable concrete
+synthesis stage while the stable queue protocol remains pending-only. The
+module does not cancel active generation, invalidate artifacts, perform host
+playback, import provider SDKs, access the network directly, use a microphone,
+or connect to VTube Studio.
 
 The module is an explicitly stable package as
 ``framework.realtime_voice_output_queue`` but is not re-exported by the
-``framework`` root in Control A.
+``framework`` root.
 """
 
 from __future__ import annotations
@@ -23,7 +25,11 @@ from .audio.voice_output import VoiceOutputRequest
 from .identity import GenerationId, SessionId, TurnId
 from .public_safety import public_mapping, sanitize_public_value
 from .realtime_stage import RealtimeStageContext
-from .realtime_voice_output import SynthesisWorkId
+from .realtime_voice_output import (
+    ProviderNeutralVoiceSynthesisStage,
+    SynthesisWorkId,
+    VoiceSynthesisResultEnvelope,
+)
 
 
 def _non_negative_int(value: int, *, field_name: str) -> int:
@@ -326,9 +332,9 @@ class _PendingVoiceSynthesisEntry:
 class BoundedVoiceSynthesisPendingQueue:
     """Framework reference implementation of the bounded pending queue.
 
-    The concrete implementation is intentionally omitted from ``__all__`` in
-    Control A. Request objects are retained only in private entries for later
-    Control B stage handoff.
+    The concrete implementation is intentionally omitted from ``__all__``.
+    Control B adds a reference-only pending-to-active handoff while the stable
+    pending protocol remains unchanged.
     """
 
     __slots__ = (
@@ -493,23 +499,37 @@ class BoundedVoiceSynthesisPendingQueue:
             },
         )
 
-    def _take_next(self) -> _PendingVoiceSynthesisEntry | None:
-        """Internal Control B handoff hook; not part of the stable protocol."""
+    def handoff_next(
+        self,
+        *,
+        stage: ProviderNeutralVoiceSynthesisStage,
+    ) -> VoiceSynthesisResultEnvelope | None:
+        """Move the oldest pending item into the concrete active stage boundary.
+
+        This reference-only composition helper is intentionally absent from the
+        stable ``VoiceSynthesisPendingQueue`` protocol. The pending item is removed
+        only after the stage has successfully claimed the exact enqueue-time
+        ``SynthesisWorkId``. A closed or already-active stage therefore leaves the
+        FIFO unchanged. Provider execution happens after the queue lock is released.
+        """
+
+        if not isinstance(stage, ProviderNeutralVoiceSynthesisStage):
+            raise TypeError("stage must be ProviderNeutralVoiceSynthesisStage")
 
         with self._lock:
             if not self._pending:
                 return None
-            return self._pending.popleft()
+            entry = self._pending[0]
+            active = stage._claim_generation(
+                context=entry.work.context,
+                work_id=entry.work.work_id,
+            )
+            claimed = self._pending.popleft()
+            if claimed is not entry:  # pragma: no cover - protected by queue lock
+                stage._release_generation(active.work_id)
+                raise RuntimeError("pending voice synthesis FIFO claim drift")
 
-    def _restore_front(self, entry: _PendingVoiceSynthesisEntry) -> None:
-        """Restore one privately claimed item if later handoff cannot start."""
-
-        if not isinstance(entry, _PendingVoiceSynthesisEntry):
-            raise TypeError("entry must be a private pending voice synthesis entry")
-        with self._lock:
-            if len(self._pending) >= self._max_pending_depth:
-                raise RuntimeError("cannot restore pending work into a full queue")
-            self._pending.appendleft(entry)
+        return stage._run_claimed(active=active, request=entry.request)
 
     def _deliver_event(self, event: VoiceSynthesisQueueEvent) -> None:
         callback = self._on_event

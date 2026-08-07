@@ -2775,3 +2775,24 @@ Queue-to-stage execution, active-generation handoff, active cancellation,
 artifact invalidation, future-delivery suppression, and host playback remain
 separate controls.
 <!-- FW-RT6-6c-A-BOUNDED-PENDING-QUEUE:END -->
+
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:BEGIN -->
+## v6 pending-to-active voice-output handoff adoption
+
+FW-RT6-6c Control B composes the non-stable concrete bounded queue and concrete
+synthesis stage while preserving the accepted stable surfaces. The queue
+protocol remains pending-only; the synthesis stage protocol remains active-only.
+
+```text
+enqueue-time SynthesisWorkId -> active SynthesisWorkId: SAME
+pending item while active: False
+stage busy/closed claim mutates pending FIFO: False
+pending clear changes active generation: False
+generation cancel support changed: False
+provider hard cancel support changed: False
+root-public names: 127 / UNCHANGED
+```
+
+Provider adapters continue to receive only `VoiceOutputRequest`; Framework
+session/turn/generation/work identities remain orchestration-owned.
+<!-- FW-RT6-6c-B-PENDING-ACTIVE-HANDOFF:END -->

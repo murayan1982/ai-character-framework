@@ -320,8 +320,8 @@ def check_source_boundaries() -> None:
         PROJECT_ROOT / "framework/realtime_voice_output.py"
     ).read_text(encoding="utf-8")
 
+    control_b_adopted = "def handoff_next(" in queue_source
     for forbidden in (
-        "ProviderNeutralVoiceSynthesisStage",
         ".synthesize(",
         "from elevenlabs",
         "import elevenlabs",
@@ -333,7 +333,23 @@ def check_source_boundaries() -> None:
         "subprocess.Popen",
         "subprocess.run",
     ):
-        _assert(forbidden not in queue_source, f"Control A queue source leaked deferred execution/import: {forbidden}")
+        _assert(forbidden not in queue_source, f"queue source leaked provider/direct execution/import: {forbidden}")
+
+    if control_b_adopted:
+        _assert(
+            "ProviderNeutralVoiceSynthesisStage" in queue_source,
+            "Control B concrete stage composition marker missing",
+        )
+        _assert(
+            "stage._claim_generation(" in queue_source
+            and "stage._run_claimed(" in queue_source,
+            "Control B same-work-ID handoff markers missing",
+        )
+    else:
+        _assert(
+            "ProviderNeutralVoiceSynthesisStage" not in queue_source,
+            "Control A queue source leaked deferred stage composition",
+        )
 
     _assert(
         "active_generation" not in queue_source.split("class VoiceSynthesisPendingQueue", 1)[1].split("@dataclass", 1)[0],
@@ -351,7 +367,10 @@ def check_source_boundaries() -> None:
         "def start(" in voice_source and "work_id = SynthesisWorkId.new()" in voice_source,
         "accepted synthesis stage identity baseline drift",
     )
-    print("[OK] Control A remains pending-only and does not overclaim active/provider control")
+    if control_b_adopted:
+        print("[OK] accepted Control A pending protocol remains intact under Control B concrete handoff adoption")
+    else:
+        print("[OK] Control A remains pending-only and does not overclaim active/provider control")
 
 
 def check_docs() -> None:
