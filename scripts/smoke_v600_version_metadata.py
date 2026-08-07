@@ -148,7 +148,7 @@ def check_runtime_values() -> None:
 
     _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
-    _assert(len(framework.__all__) == 121, "root-public name count drift")
+    _assert(len(framework.__all__) == 124, "root-public name count drift")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -182,7 +182,7 @@ def check_runtime_values() -> None:
         "typed realtime event payload suffix drift",
     )
     _assert(
-        tuple(framework.__all__[114:])
+        tuple(framework.__all__[114:121])
         == (
             "CapabilitySnapshotScope",
             "RuntimeCapabilityState",
@@ -193,6 +193,15 @@ def check_runtime_values() -> None:
             "RealtimeCapabilitySnapshot",
         ),
         "detailed capability suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[121:])
+        == (
+            "RealtimeSessionConfig",
+            "RealtimeSessionConstructionStatus",
+            "RealtimeSessionConstructionResult",
+        ),
+        "realtime session construction suffix drift",
     )
 
     text_info = TextChatSessionInfo(
@@ -387,8 +396,8 @@ def main() -> None:
     print("v600_version_metadata_status: accepted")
     print("v600_framework_source_version: 6.0.0.dev0")
     print("v600_latest_published_release: 5.5.0")
-    print("v600_root_public_name_count: 121")
-    print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-and-capability-models-only")
+    print("v600_root_public_name_count: 124")
+    print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-capability-and-construction-models-only")
     print("v600_capability_truthfulness_changed: global-builder-and-session-adoption-accepted")
     print("v600_provider_sdk_imported: False")
     print("v600_network_execution: False")
@@ -411,6 +420,7 @@ def main() -> None:
     print("v600_realtime_stage_fake_injection: PASS")
     print("v600_realtime_stage_run_turn_execution: False / deferred")
     print("v600_realtime_session_factory_signature_changed: additive-stage-injection-keyword-only")
+    print("v600_realtime_session_construction_models_status: implemented-awaiting-review")
     print("v600_realtime_fake_runtime_status: accepted")
     print("v600_realtime_fake_runtime_package: framework.realtime_fake_runtime")
     print("v600_realtime_fake_runtime_controller: DeterministicFakeRuntimeController")
@@ -420,14 +430,15 @@ def main() -> None:
     print("v600_realtime_fake_runtime_race_reproducible: True")
     print("v600_realtime_fake_runtime_session_orchestration_changed: False")
     print("v600_realtime_fake_runtime_event_hub_trace_projection: False / deferred")
-    print("v600_runtime_unit_test_status: accepted")
+    print("v600_runtime_unit_test_status: accepted-plus-control-a-candidate")
     print("v600_runtime_unit_test_runner: unittest")
-    print("v600_runtime_unit_test_count: 45")
+    print("v600_runtime_unit_test_accepted_baseline_count: 45")
+    print("v600_runtime_unit_test_current_count: 55")
     print("v600_runtime_unit_tests_network_free: True")
     print("v600_runtime_unit_test_smoke_separation: accepted")
-    print("v600_next_checkpoint: FW-RT6-4a")
-    print("v600_next_checkpoint_authorized: False")
-    print("[OK] central version metadata smoke passed with frozen values and accepted FW-RT6-3c normal runtime unit tests")
+    print("v600_next_checkpoint: FW-RT6-4a Control A review")
+    print("v600_next_checkpoint_authorized: IMPLEMENTED_AWAITING_REVIEW")
+    print("[OK] central version metadata smoke passed with frozen values and additive construction models")
 
 
 if __name__ == "__main__":

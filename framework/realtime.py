@@ -351,6 +351,7 @@ class RealtimeErrorCode(str, Enum):
     INTERRUPTED = "interrupted"
     SESSION_CLOSED = "session_closed"
     INVALID_REQUEST = "invalid_request"
+    CONFIGURATION_MISSING = "configuration_missing"
     STAGE_FAILED = "stage_failed"
     PROVIDER_ERROR = "provider_error"
     CANCELLED = "cancelled"

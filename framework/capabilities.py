@@ -400,121 +400,286 @@ def _global_realtime_snapshot(
 
 
 
+def _unavailable_runtime_state(*, reason: str, source: str) -> RuntimeCapabilityState:
+    return RuntimeCapabilityState(
+        configured=False,
+        runtime_available=False,
+        guarded=False,
+        fake_runtime=False,
+        real_runtime=False,
+        unavailable_reason=reason,
+        public_metadata={
+            "snapshot_source": source,
+            "provider_execution_performed": False,
+        },
+    )
+
+
+def _unavailable_text_generation_capability(*, reason: str) -> TextGenerationCapability:
+    return TextGenerationCapability(
+        runtime=_unavailable_runtime_state(
+            reason=reason,
+            source="realtime_session_text_generation_preflight",
+        ),
+        streaming_supported=False,
+        cooperative_cancel_supported=False,
+        provider_hard_cancel_supported=False,
+        public_metadata={"boundary": "text_generation"},
+    )
+
+
+def _unavailable_voice_input_capability(*, reason: str) -> RealtimeVoiceInputCapability:
+    return RealtimeVoiceInputCapability(
+        runtime=_unavailable_runtime_state(
+            reason=reason,
+            source="realtime_session_voice_input_preflight",
+        ),
+        audio_chunk_input_supported=False,
+        partial_transcript_supported=False,
+        final_transcript_supported=False,
+        input_abort_supported=False,
+        backpressure_supported=False,
+        accepted_audio_formats=(),
+        maximum_chunk_size=None,
+        maximum_duration=None,
+        public_metadata={"boundary": "voice_input"},
+    )
+
+
+def _unavailable_voice_output_capability(*, reason: str) -> RealtimeVoiceOutputCapability:
+    return RealtimeVoiceOutputCapability(
+        runtime=_unavailable_runtime_state(
+            reason=reason,
+            source="realtime_session_voice_output_preflight",
+        ),
+        streaming_audio_supported=False,
+        generation_cancel_supported=False,
+        provider_hard_cancel_supported=False,
+        pending_flush_supported=False,
+        active_audio_invalidation_supported=False,
+        audio_formats=(),
+        maximum_text_size=None,
+        public_metadata={"boundary": "voice_output"},
+    )
+
+
+def _unavailable_motion_capability(*, reason: str) -> RealtimeMotionCapability:
+    return RealtimeMotionCapability(
+        runtime=_unavailable_runtime_state(
+            reason=reason,
+            source="realtime_session_motion_preflight",
+        ),
+        request_cancel_supported=False,
+        completion_event_supported=False,
+        provider_neutral_intent_supported=False,
+        public_metadata={"boundary": "motion"},
+    )
+
+
 def _session_realtime_snapshot(
     *,
     session_id: SessionId | str,
     snapshot_generation: int = 1,
     project_root: str | Path | None = None,
     real_runtime_requested: bool = False,
+    stage_capabilities: Mapping[str, object] | None = None,
+    failed_stage_kinds: tuple[str, ...] = (),
 ) -> RealtimeCapabilitySnapshot:
-    """Build one truthful session-scoped snapshot for RealtimeSession.
+    """Build one immutable truthful session-scoped capability snapshot.
 
-    Control C reports the deterministic stages actually emitted by the current
-    mock-safe RealtimeSession. Standalone/global capability availability is not
-    promoted into session wiring, and a real-runtime request is not treated as
-    real runtime availability.
+    The default-off mock path preserves the accepted deterministic session
+    capability surface. When real runtime composition is explicitly requested,
+    only provider-neutral stage preflight results supplied by RealtimeSession are
+    projected into the snapshot. This builder never calls a stage or provider.
     """
 
     resolved_project_root = (
         Path(project_root).resolve() if project_root is not None else None
     )
-    mock_runtime = RuntimeCapabilityState(
-        configured=True,
-        runtime_available=True,
-        guarded=False,
-        fake_runtime=True,
-        real_runtime=False,
-        unavailable_reason=None,
-        public_metadata={
-            "snapshot_source": "realtime_session_mock_runtime",
-            "provider_execution_performed": False,
-        },
-    )
-    motion_runtime = RuntimeCapabilityState(
-        configured=False,
-        runtime_available=False,
-        guarded=False,
-        fake_runtime=False,
-        real_runtime=False,
-        unavailable_reason="not_wired_to_realtime_session",
-        public_metadata={
-            "snapshot_source": "realtime_session_motion_boundary",
-            "provider_execution_performed": False,
-        },
-    )
+    normalized_stage_capabilities = dict(stage_capabilities or {})
+    normalized_failed_stage_kinds = tuple(failed_stage_kinds)
+
+    expected_capability_types: Mapping[str, type[object]] = {
+        "voice_input": RealtimeVoiceInputCapability,
+        "text_generation": TextGenerationCapability,
+        "voice_output": RealtimeVoiceOutputCapability,
+        "motion": RealtimeMotionCapability,
+    }
+    for stage_kind, capability in normalized_stage_capabilities.items():
+        expected = expected_capability_types.get(stage_kind)
+        if expected is None:
+            raise ValueError("stage_capabilities contains an unknown realtime stage kind")
+        if not isinstance(capability, expected):
+            raise TypeError(
+                f"stage_capabilities[{stage_kind!r}] must be {expected.__name__}"
+            )
+    for stage_kind in normalized_failed_stage_kinds:
+        if stage_kind not in expected_capability_types:
+            raise ValueError("failed_stage_kinds contains an unknown realtime stage kind")
+
+    if not real_runtime_requested:
+        mock_runtime = RuntimeCapabilityState(
+            configured=True,
+            runtime_available=True,
+            guarded=False,
+            fake_runtime=True,
+            real_runtime=False,
+            unavailable_reason=None,
+            public_metadata={
+                "snapshot_source": "realtime_session_mock_runtime",
+                "provider_execution_performed": False,
+            },
+        )
+        motion_runtime = RuntimeCapabilityState(
+            configured=False,
+            runtime_available=False,
+            guarded=False,
+            fake_runtime=False,
+            real_runtime=False,
+            unavailable_reason="not_wired_to_realtime_session",
+            public_metadata={
+                "snapshot_source": "realtime_session_motion_boundary",
+                "provider_execution_performed": False,
+            },
+        )
+
+        return RealtimeCapabilitySnapshot(
+            session_id=session_id,
+            snapshot_scope=CapabilitySnapshotScope.SESSION,
+            snapshot_generation=snapshot_generation,
+            text_generation=TextGenerationCapability(
+                runtime=mock_runtime,
+                streaming_supported=False,
+                cooperative_cancel_supported=False,
+                provider_hard_cancel_supported=False,
+                public_metadata={
+                    "boundary": "text_generation",
+                    "session_stage": "mock_response_completed",
+                },
+            ),
+            voice_input=RealtimeVoiceInputCapability(
+                runtime=mock_runtime,
+                audio_chunk_input_supported=False,
+                partial_transcript_supported=False,
+                final_transcript_supported=True,
+                input_abort_supported=False,
+                backpressure_supported=False,
+                accepted_audio_formats=(),
+                maximum_chunk_size=None,
+                maximum_duration=None,
+                public_metadata={
+                    "boundary": "voice_input",
+                    "session_stage": "mock_transcript_final",
+                    "host_text_input_supported": True,
+                },
+            ),
+            voice_output=RealtimeVoiceOutputCapability(
+                runtime=mock_runtime,
+                streaming_audio_supported=False,
+                generation_cancel_supported=False,
+                provider_hard_cancel_supported=False,
+                pending_flush_supported=False,
+                active_audio_invalidation_supported=False,
+                audio_formats=(),
+                maximum_text_size=None,
+                public_metadata={
+                    "boundary": "voice_output",
+                    "session_stage": "mock_synthesis_completed",
+                    "audio_artifact_delivery": False,
+                    "host_playback_owned": True,
+                },
+            ),
+            motion=RealtimeMotionCapability(
+                runtime=motion_runtime,
+                request_cancel_supported=False,
+                completion_event_supported=False,
+                provider_neutral_intent_supported=False,
+                public_metadata={
+                    "boundary": "motion",
+                    "session_wiring": "not_adopted",
+                },
+            ),
+            supports_text_chat=True,
+            supports_voice_input=True,
+            supports_voice_output=True,
+            supports_motion=False,
+            real_runtime_enabled=False,
+            hard_cancel_supported=False,
+            tts_queue_flush_supported=False,
+            public_metadata={
+                "boundary": "realtime_capabilities",
+                "snapshot_source": "realtime_session",
+                "authoritative_builder": True,
+                "session_wiring_adopted": True,
+                "real_runtime_requested": False,
+                "real_runtime_available": False,
+                "project_root_provided": resolved_project_root is not None,
+                "provider_execution_performed": False,
+                "preflight_ready_stage_kinds": tuple(normalized_stage_capabilities),
+                "preflight_failed_stage_kinds": normalized_failed_stage_kinds,
+            },
+        )
+
+    def unavailable_reason(stage_kind: str) -> str:
+        return (
+            "stage_preflight_failed"
+            if stage_kind in normalized_failed_stage_kinds
+            else "stage_not_configured"
+        )
+
+    text_generation = normalized_stage_capabilities.get("text_generation")
+    if text_generation is None:
+        text_generation = _unavailable_text_generation_capability(
+            reason=unavailable_reason("text_generation")
+        )
+    voice_input = normalized_stage_capabilities.get("voice_input")
+    if voice_input is None:
+        voice_input = _unavailable_voice_input_capability(
+            reason=unavailable_reason("voice_input")
+        )
+    voice_output = normalized_stage_capabilities.get("voice_output")
+    if voice_output is None:
+        voice_output = _unavailable_voice_output_capability(
+            reason=unavailable_reason("voice_output")
+        )
+    motion = normalized_stage_capabilities.get("motion")
+    if motion is None:
+        motion = _unavailable_motion_capability(reason=unavailable_reason("motion"))
+
+    assert isinstance(text_generation, TextGenerationCapability)
+    assert isinstance(voice_input, RealtimeVoiceInputCapability)
+    assert isinstance(voice_output, RealtimeVoiceOutputCapability)
+    assert isinstance(motion, RealtimeMotionCapability)
 
     return RealtimeCapabilitySnapshot(
         session_id=session_id,
         snapshot_scope=CapabilitySnapshotScope.SESSION,
         snapshot_generation=snapshot_generation,
-        text_generation=TextGenerationCapability(
-            runtime=mock_runtime,
-            streaming_supported=False,
-            cooperative_cancel_supported=False,
-            provider_hard_cancel_supported=False,
-            public_metadata={
-                "boundary": "text_generation",
-                "session_stage": "mock_response_completed",
-            },
-        ),
-        voice_input=RealtimeVoiceInputCapability(
-            runtime=mock_runtime,
-            audio_chunk_input_supported=False,
-            partial_transcript_supported=False,
-            final_transcript_supported=True,
-            input_abort_supported=False,
-            backpressure_supported=False,
-            accepted_audio_formats=(),
-            maximum_chunk_size=None,
-            maximum_duration=None,
-            public_metadata={
-                "boundary": "voice_input",
-                "session_stage": "mock_transcript_final",
-                "host_text_input_supported": True,
-            },
-        ),
-        voice_output=RealtimeVoiceOutputCapability(
-            runtime=mock_runtime,
-            streaming_audio_supported=False,
-            generation_cancel_supported=False,
-            provider_hard_cancel_supported=False,
-            pending_flush_supported=False,
-            active_audio_invalidation_supported=False,
-            audio_formats=(),
-            maximum_text_size=None,
-            public_metadata={
-                "boundary": "voice_output",
-                "session_stage": "mock_synthesis_completed",
-                "audio_artifact_delivery": False,
-                "host_playback_owned": True,
-            },
-        ),
-        motion=RealtimeMotionCapability(
-            runtime=motion_runtime,
-            request_cancel_supported=False,
-            completion_event_supported=False,
-            provider_neutral_intent_supported=False,
-            public_metadata={
-                "boundary": "motion",
-                "session_wiring": "not_adopted",
-            },
-        ),
-        supports_text_chat=True,
-        supports_voice_input=True,
-        supports_voice_output=True,
-        supports_motion=False,
+        text_generation=text_generation,
+        voice_input=voice_input,
+        voice_output=voice_output,
+        motion=motion,
+        supports_text_chat=text_generation.runtime.usable,
+        supports_voice_input=voice_input.runtime.usable,
+        supports_voice_output=voice_output.runtime.usable,
+        supports_motion=motion.runtime.usable,
         real_runtime_enabled=False,
-        hard_cancel_supported=False,
-        tts_queue_flush_supported=False,
+        hard_cancel_supported=(
+            text_generation.provider_hard_cancel_supported
+            or voice_output.provider_hard_cancel_supported
+        ),
+        tts_queue_flush_supported=voice_output.pending_flush_supported,
         public_metadata={
             "boundary": "realtime_capabilities",
-            "snapshot_source": "realtime_session",
+            "snapshot_source": "realtime_session_stage_preflight",
             "authoritative_builder": True,
             "session_wiring_adopted": True,
-            "real_runtime_requested": bool(real_runtime_requested),
+            "real_runtime_requested": True,
             "real_runtime_available": False,
             "project_root_provided": resolved_project_root is not None,
             "provider_execution_performed": False,
+            "preflight_ready_stage_kinds": tuple(normalized_stage_capabilities),
+            "preflight_failed_stage_kinds": normalized_failed_stage_kinds,
         },
     )
 

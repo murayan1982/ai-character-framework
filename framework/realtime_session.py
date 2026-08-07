@@ -41,6 +41,11 @@ from .output_control import (
 from .version import REALTIME_API_VERSION
 
 from .realtime_capabilities import RealtimeCapabilitySnapshot
+from .realtime_session_config import (
+    RealtimeSessionConfig,
+    RealtimeSessionConstructionResult,
+    RealtimeSessionConstructionStatus,
+)
 from .realtime_event_hub import RealtimeEventHub
 from .realtime_terminal_registry import (
     RealtimeTerminalRegistry,
@@ -181,6 +186,158 @@ def _validated_injected_stages(
     return bindings
 
 
+
+def _normalize_realtime_session_config(
+    *,
+    config: RealtimeSessionConfig | None,
+    real_runtime_enabled: bool | None,
+    voice_input_stage: object | None,
+    text_generation_stage: object | None,
+    voice_output_stage: object | None,
+    motion_stage: object | None,
+) -> RealtimeSessionConfig:
+    """Normalize legacy keyword inputs into one immutable public config."""
+
+    if config is not None:
+        if not isinstance(config, RealtimeSessionConfig):
+            raise TypeError("config must be a RealtimeSessionConfig or None")
+        if real_runtime_enabled is not None or any(
+            stage is not None
+            for stage in (
+                voice_input_stage,
+                text_generation_stage,
+                voice_output_stage,
+                motion_stage,
+            )
+        ):
+            raise TypeError(
+                "config cannot be combined with real_runtime_enabled or stage arguments"
+            )
+        return config
+
+    return RealtimeSessionConfig(
+        real_runtime_enabled=bool(real_runtime_enabled),
+        voice_input_stage=voice_input_stage,
+        text_generation_stage=text_generation_stage,
+        voice_output_stage=voice_output_stage,
+        motion_stage=motion_stage,
+    )
+
+
+def _preflight_injected_stages(
+    bindings: Mapping[str, object],
+) -> tuple[dict[str, object], tuple[str, ...]]:
+    """Call each injected stage preflight exactly once without raw-error exposure."""
+
+    if not bindings:
+        return {}, ()
+
+    from .realtime_capabilities import (
+        RealtimeMotionCapability,
+        RealtimeVoiceInputCapability,
+        RealtimeVoiceOutputCapability,
+        TextGenerationCapability,
+    )
+
+    expected_types: Mapping[str, type[object]] = {
+        "voice_input": RealtimeVoiceInputCapability,
+        "text_generation": TextGenerationCapability,
+        "voice_output": RealtimeVoiceOutputCapability,
+        "motion": RealtimeMotionCapability,
+    }
+    capabilities: dict[str, object] = {}
+    failed: list[str] = []
+    for stage_kind, stage in bindings.items():
+        try:
+            capability = stage.preflight()
+        except Exception:
+            failed.append(stage_kind)
+            continue
+        expected = expected_types[stage_kind]
+        if not isinstance(capability, expected):
+            failed.append(stage_kind)
+            continue
+        try:
+            runtime_usable = capability.runtime.usable
+            real_runtime = capability.runtime.real_runtime
+        except Exception:
+            failed.append(stage_kind)
+            continue
+        if not runtime_usable or not real_runtime:
+            failed.append(stage_kind)
+            continue
+        capabilities[stage_kind] = capability
+    return capabilities, tuple(failed)
+
+
+def _construction_result_for_config(
+    *,
+    session_id: SessionId,
+    config: RealtimeSessionConfig,
+    injected_stage_kinds: tuple[str, ...],
+    failed_stage_kinds: tuple[str, ...],
+) -> RealtimeSessionConstructionResult:
+    """Build one internal typed construction result for later public adoption."""
+
+    preflight_metadata = {
+        "boundary": "realtime_session_construction",
+        "provider_execution_performed": False,
+        "preflight_stage_count": len(injected_stage_kinds),
+        "preflight_failure_count": len(failed_stage_kinds),
+    }
+    if not config.real_runtime_enabled:
+        return RealtimeSessionConstructionResult(
+            status=RealtimeSessionConstructionStatus.MOCK_READY,
+            session_id=session_id,
+            configuration_complete=True,
+            runtime_executable=True,
+            real_runtime_requested=False,
+            real_runtime_enabled=False,
+            safe_message="Deterministic mock realtime runtime is ready.",
+            public_metadata=preflight_metadata,
+        )
+
+    missing_stage_kinds = (
+        () if "text_generation" in injected_stage_kinds else ("text_generation",)
+    )
+    if failed_stage_kinds:
+        return RealtimeSessionConstructionResult(
+            status=RealtimeSessionConstructionStatus.PREFLIGHT_FAILED,
+            session_id=session_id,
+            configuration_complete=not missing_stage_kinds,
+            runtime_executable=False,
+            real_runtime_requested=True,
+            real_runtime_enabled=False,
+            missing_stage_kinds=missing_stage_kinds,
+            failed_stage_kinds=failed_stage_kinds,
+            safe_message="Realtime stage preflight failed safely.",
+            retryable=True,
+            public_metadata=preflight_metadata,
+        )
+    if missing_stage_kinds:
+        return RealtimeSessionConstructionResult(
+            status=RealtimeSessionConstructionStatus.CONFIGURATION_INCOMPLETE,
+            session_id=session_id,
+            configuration_complete=False,
+            runtime_executable=False,
+            real_runtime_requested=True,
+            real_runtime_enabled=False,
+            missing_stage_kinds=missing_stage_kinds,
+            safe_message="Realtime text-generation stage configuration is missing.",
+            public_metadata=preflight_metadata,
+        )
+    return RealtimeSessionConstructionResult(
+        status=RealtimeSessionConstructionStatus.REAL_CONFIGURATION_READY,
+        session_id=session_id,
+        configuration_complete=True,
+        runtime_executable=False,
+        real_runtime_requested=True,
+        real_runtime_enabled=False,
+        safe_message="Real runtime configuration is ready; orchestration is not available.",
+        public_metadata=preflight_metadata,
+    )
+
+
 class _LateNonTerminalRejected(RuntimeError):
     """Internal control-flow signal for a terminal turn's late event attempt."""
 
@@ -239,9 +396,25 @@ class RealtimeSession:
         text_generation_stage: TextGenerationStage | None = None,
         voice_output_stage: VoiceOutputStage | None = None,
         motion_stage: MotionStage | None = None,
+        config: RealtimeSessionConfig | None = None,
     ) -> None:
+        normalized_config = _normalize_realtime_session_config(
+            config=config,
+            real_runtime_enabled=real_runtime_enabled,
+            voice_input_stage=voice_input_stage,
+            text_generation_stage=text_generation_stage,
+            voice_output_stage=voice_output_stage,
+            motion_stage=motion_stage,
+        )
+        self._config = normalized_config
         self._project_root = Path(project_root).resolve() if project_root is not None else None
         self._session_id = SessionId.new()
+        self._injected_stages = _validated_injected_stages(
+            voice_input_stage=normalized_config.voice_input_stage,
+            text_generation_stage=normalized_config.text_generation_stage,
+            voice_output_stage=normalized_config.voice_output_stage,
+            motion_stage=normalized_config.motion_stage,
+        )
         self._state = RealtimeState.IDLE
         self._phase: RealtimePhase | None = RealtimePhase.IDLE
         self._closed = False
@@ -253,23 +426,29 @@ class RealtimeSession:
         from .realtime_generation_gate import RealtimeGenerationGate
 
         self._generation_gate = RealtimeGenerationGate()
-        self._injected_stages = _validated_injected_stages(
-            voice_input_stage=voice_input_stage,
-            text_generation_stage=text_generation_stage,
-            voice_output_stage=voice_output_stage,
-            motion_stage=motion_stage,
-        )
         self._injected_stages_closed = False
         self._stage_close_count = 0
         self._stage_close_error_count = 0
-        self._real_runtime_requested = bool(real_runtime_enabled)
+        self._real_runtime_requested = normalized_config.real_runtime_enabled
+        (
+            self._stage_capabilities,
+            self._stage_preflight_failed_kinds,
+        ) = _preflight_injected_stages(self._injected_stages)
         self._capability_snapshot = _session_realtime_snapshot(
             session_id=self._session_id,
             snapshot_generation=1,
             project_root=self._project_root,
             real_runtime_requested=self._real_runtime_requested,
+            stage_capabilities=self._stage_capabilities,
+            failed_stage_kinds=self._stage_preflight_failed_kinds,
         )
         self._real_runtime_enabled = self._capability_snapshot.real_runtime_enabled
+        self._construction_result = _construction_result_for_config(
+            session_id=self._session_id,
+            config=normalized_config,
+            injected_stage_kinds=tuple(self._injected_stages),
+            failed_stage_kinds=self._stage_preflight_failed_kinds,
+        )
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
         self._active_turn_id: TurnId | str | None = None
@@ -278,8 +457,15 @@ class RealtimeSession:
             session_id=self._session_id,
             state=self._state,
             phase=self._phase,
-            supports_motion="motion" in self._injected_stages,
+            supports_voice_input=self._capability_snapshot.supports_voice_input,
+            supports_text_chat=self._capability_snapshot.supports_text_chat,
+            supports_voice_output=self._capability_snapshot.supports_voice_output,
+            supports_motion=self._capability_snapshot.supports_motion,
             real_runtime_enabled=self._real_runtime_enabled,
+            hard_cancel_supported=self._capability_snapshot.hard_cancel_supported,
+            tts_queue_flush_supported=(
+                self._capability_snapshot.tts_queue_flush_supported
+            ),
             public_metadata={
                 "boundary": "realtime",
                 "capability_snapshot_scope": self._capability_snapshot.snapshot_scope.value,
@@ -287,6 +473,9 @@ class RealtimeSession:
                 "real_runtime_requested": self._real_runtime_requested,
                 "injected_stage_count": len(self._injected_stages),
                 "injected_stage_kinds": tuple(self._injected_stages),
+                "stage_preflight_failure_count": len(
+                    self._stage_preflight_failed_kinds
+                ),
                 **dict(public_metadata or {}),
             },
         )
@@ -297,8 +486,15 @@ class RealtimeSession:
             session_id=self._session_id,
             state=self._state,
             phase=self._phase,
-            supports_motion="motion" in self._injected_stages,
+            supports_voice_input=self._capability_snapshot.supports_voice_input,
+            supports_text_chat=self._capability_snapshot.supports_text_chat,
+            supports_voice_output=self._capability_snapshot.supports_voice_output,
+            supports_motion=self._capability_snapshot.supports_motion,
             real_runtime_enabled=self._real_runtime_enabled,
+            hard_cancel_supported=self._capability_snapshot.hard_cancel_supported,
+            tts_queue_flush_supported=(
+                self._capability_snapshot.tts_queue_flush_supported
+            ),
             public_metadata={
                 "boundary": "realtime",
                 "barge_in_policy": self._barge_in_policy.mode.value,
@@ -307,6 +503,9 @@ class RealtimeSession:
                 "real_runtime_requested": self._real_runtime_requested,
                 "injected_stage_count": len(self._injected_stages),
                 "injected_stage_kinds": tuple(self._injected_stages),
+                "stage_preflight_failure_count": len(
+                    self._stage_preflight_failed_kinds
+                ),
                 **dict(self._public_metadata),
             },
         )
@@ -316,6 +515,12 @@ class RealtimeSession:
         """Return this session's immutable truthful capability snapshot."""
 
         return self._capability_snapshot
+
+    @property
+    def construction_result(self) -> RealtimeSessionConstructionResult:
+        """Return the immutable public-safe result of session construction."""
+
+        return self._construction_result
 
     @property
     def injected_stage_kinds(self) -> tuple[str, ...]:
@@ -548,6 +753,10 @@ class RealtimeSession:
         event_type: RealtimeEventType,
         new_state: RealtimeState,
         reason: str,
+        public_error_code: RealtimeErrorCode = RealtimeErrorCode.NONE,
+        safe_message: str = "",
+        retryable: bool = False,
+        public_metadata: Mapping[str, Any] | None = None,
     ) -> RealtimeTurnResult:
         """Commit one terminal result and let only the first owner emit."""
 
@@ -574,6 +783,10 @@ class RealtimeSession:
                     recovery_action=decision.record.recovery_action,
                     reason=decision.record.reason,
                 ),
+                public_error_code=public_error_code,
+                safe_message=safe_message,
+                retryable=retryable,
+                public_metadata=public_metadata,
             )
         committed = decision.record.result
         if committed is None:
@@ -784,6 +997,70 @@ class RealtimeSession:
             public_metadata={"reason": "session_started"},
         )
 
+    def _reject_unexecutable_real_runtime_turn(
+        self,
+        turn: RealtimeTurn,
+    ) -> RealtimeTurnResult:
+        """Reject a real-runtime request before any mock or stage execution."""
+
+        construction = self._construction_result
+        status = construction.status
+        if status is RealtimeSessionConstructionStatus.CONFIGURATION_INCOMPLETE:
+            public_error_code = RealtimeErrorCode.CONFIGURATION_MISSING
+            safe_message = "Realtime runtime configuration is incomplete."
+            reason = "real_runtime_configuration_missing"
+            retryable = False
+        elif status is RealtimeSessionConstructionStatus.PREFLIGHT_FAILED:
+            public_error_code = RealtimeErrorCode.UNAVAILABLE
+            safe_message = "Realtime runtime is unavailable because stage preflight failed."
+            reason = "real_runtime_preflight_failed"
+            retryable = construction.retryable
+        elif status is RealtimeSessionConstructionStatus.REAL_CONFIGURATION_READY:
+            public_error_code = RealtimeErrorCode.UNAVAILABLE
+            safe_message = "Real realtime runtime orchestration is not available."
+            reason = "real_runtime_orchestration_not_available"
+            retryable = False
+        else:
+            public_error_code = RealtimeErrorCode.UNAVAILABLE
+            safe_message = "Requested realtime runtime is not executable."
+            reason = "real_runtime_not_executable"
+            retryable = False
+
+        metadata = {
+            "boundary": "realtime",
+            "reason": reason,
+            "construction_status": status.value,
+            "real_runtime_requested": True,
+            "real_runtime_enabled": construction.real_runtime_enabled,
+            "mock_runtime": False,
+            "provider_execution_performed": False,
+        }
+        result = RealtimeTurnResult(
+            turn_id=turn.turn_id,
+            outcome=TurnOutcome.REJECTED,
+            input_text=turn.input_text,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            retryable=retryable,
+            recovery_action=RecoveryAction.REUSE_SESSION,
+            public_metadata=metadata,
+        )
+        committed_result = self._commit_terminal_result(
+            result,
+            event_type=RealtimeEventType.TURN_REJECTED,
+            new_state=RealtimeState.FAILED,
+            reason=reason,
+            public_error_code=public_error_code,
+            safe_message=safe_message,
+            retryable=retryable,
+            public_metadata=metadata,
+        )
+        self._active_turn_id = None
+        self._active_generation_id = None
+        self._phase = RealtimePhase.IDLE
+        self._state = RealtimeState.IDLE
+        return committed_result
+
     def run_turn(
         self,
         turn: RealtimeTurn | None = None,
@@ -834,6 +1111,9 @@ class RealtimeSession:
         existing_terminal = self._duplicate_terminal_result(turn.turn_id)
         if existing_terminal is not None:
             return existing_terminal
+
+        if self._real_runtime_requested:
+            return self._reject_unexecutable_real_runtime_turn(turn)
 
         self._start_turn_generation(turn.turn_id)
         transcript_text = turn.input_text or input_text
@@ -1306,10 +1586,13 @@ def create_realtime_session(
     text_generation_stage: TextGenerationStage | None = None,
     voice_output_stage: VoiceOutputStage | None = None,
     motion_stage: MotionStage | None = None,
+    config: RealtimeSessionConfig | None = None,
 ) -> RealtimeSession:
-    """Create a mock-safe public realtime session.
+    """Create one provider-neutral realtime session composition root.
 
-    Real provider orchestration is not performed by this skeleton.
+    Construction may call supplied stage ``preflight()`` methods, but does not
+    call stage execution, cancellation, capability refresh, or provider runtime
+    operations. Real orchestration remains a later control.
     """
 
     return RealtimeSession(
@@ -1320,4 +1603,5 @@ def create_realtime_session(
         text_generation_stage=text_generation_stage,
         voice_output_stage=voice_output_stage,
         motion_stage=motion_stage,
+        config=config,
     )

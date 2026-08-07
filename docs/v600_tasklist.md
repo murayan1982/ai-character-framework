@@ -1348,13 +1348,13 @@ commit / push: NOT_AUTHORIZED
 
 **Tasks:**
 
-- [ ] provider-neutral `RealtimeSessionConfig`を定義する。
-- [ ] stage factory/injection pointsを定義する。
-- [ ] capability snapshotをsession construction時に固定する。
-- [ ] session IDを生成する。
-- [ ] subscriber hub/terminal registry/generation gateを所有する。
-- [ ] real runtimeはdefault-offにする。
-- [ ] configuration不足をtyped resultにする。
+- [x] provider-neutral `RealtimeSessionConfig`を定義する。
+- [x] stage factory/injection pointsを定義する。
+- [x] capability snapshotをsession construction時に固定する。
+- [x] session IDを生成する。
+- [x] subscriber hub/terminal registry/generation gateを所有する。
+- [x] real runtimeはdefault-offにする。
+- [x] configuration不足をtyped resultにする。
 
 **Acceptance:**
 
@@ -1368,6 +1368,42 @@ False
 capability snapshot available:
 True
 ```
+
+<!-- FW-RT6-4a-C-ACCEPTANCE-SYNC:BEGIN -->
+**Aggregate status:**
+
+```text
+checkpoint: FW-RT6-4a Control C
+baseline HEAD / origin/main: 0192f941e3a2009d203535ec0c97a6ceb69050ed
+status: IMPLEMENTED / AWAITING_REVIEW
+Control A public construction/config models: ACCEPTED
+Control B RealtimeSession construction adoption: ACCEPTED
+Control C exact change surface: 6 files
+combined uncommitted Control A+B+C surface: 18 files
+accepted task count: 7
+RealtimeSessionConfig: provider-neutral
+stage factory/injection points: provider-neutral session factory + four stage slots
+capability snapshot fixed at construction: True
+session ID generated: True
+subscriber hub / terminal registry / generation gate owned: True
+real runtime default-off: True
+construction_result public property: True
+configuration missing typed result: True
+mock session creation: PASS
+real-request mock fallback: False
+real provider execution at construction: False
+capability snapshot available: True
+focused construction tests: 35 / PASS
+full unit suite: 80 / PASS
+root-public names: 124 / UNCHANGED FROM CONTROL A
+provider / network / microphone / playback / real VTS execution: False
+DRC repository accessed or changed: False
+root-draft stash accessed or changed: False
+next checkpoint: FW-RT6-4b
+next checkpoint status: READY_FOR_EXACT_CONTRACT_REVIEW / NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-4a-C-ACCEPTANCE-SYNC:END -->
 
 ---
 

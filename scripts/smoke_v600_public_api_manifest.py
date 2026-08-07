@@ -44,6 +44,7 @@ def _check_manifest_shape() -> None:
         LIFECYCLE_PUBLIC_EXPORTS,
         REALTIME_CAPABILITY_PUBLIC_EXPORTS,
         REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
+        REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS,
         PROVIDER_COMPAT_LAZY_EXPORTS,
         PUBLIC_API_GROUPS,
         PUBLIC_API_NAMES,
@@ -69,8 +70,8 @@ def _check_manifest_shape() -> None:
     )
     _assert(flattened == PUBLIC_API_NAMES, "public API groups must flatten exactly")
     _assert(
-        len(PUBLIC_API_NAMES) == 121,
-        "v6 detailed capability extension should expose 121 canonical names",
+        len(PUBLIC_API_NAMES) == 124,
+        "v6 construction model extension should expose 124 canonical names",
     )
     _assert(
         tuple(IDENTITY_PUBLIC_EXPORTS)
@@ -130,8 +131,22 @@ def _check_manifest_shape() -> None:
         "detailed realtime capability public export group drift",
     )
     _assert(
-        PUBLIC_API_NAMES[114:] == tuple(REALTIME_CAPABILITY_PUBLIC_EXPORTS),
-        "detailed capability names must be appended after the accepted 114-name surface",
+        PUBLIC_API_NAMES[114:121] == tuple(REALTIME_CAPABILITY_PUBLIC_EXPORTS),
+        "detailed capability names must preserve the accepted 114:121 suffix",
+    )
+    _assert(
+        tuple(REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS)
+        == (
+            "RealtimeSessionConfig",
+            "RealtimeSessionConstructionStatus",
+            "RealtimeSessionConstructionResult",
+        ),
+        "realtime session construction public export group drift",
+    )
+    _assert(
+        PUBLIC_API_NAMES[121:]
+        == tuple(REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS),
+        "construction models must be appended after the accepted 121-name surface",
     )
 
     lazy_names = set(PROVIDER_COMPAT_LAZY_EXPORTS)
@@ -156,7 +171,7 @@ def _check_manifest_shape() -> None:
         f"root import loaded forbidden provider/runtime modules: {imported_forbidden}",
     )
 
-    print("[OK] canonical manifest preserves the 114-name prefix and appends detailed capability models")
+    print("[OK] canonical manifest preserves the 121-name prefix and appends construction models")
 
 
 def _check_init_source_has_one_manifest_assignment() -> None:
@@ -435,7 +450,7 @@ def main() -> None:
     _check_docs_and_status_markers()
 
     print("v600_public_api_manifest_status: accepted")
-    print("v600_public_api_manifest_name_count: 121")
+    print("v600_public_api_manifest_name_count: 124")
     print("v600_framework_all_single_source: True")
     print("v600_provider_compatibility_exports_preserved: True")
     print("v600_provider_compatibility_exports_lazy: True")
@@ -465,6 +480,7 @@ def main() -> None:
     print("v600_realtime_stage_fake_injection: PASS")
     print("v600_realtime_stage_run_turn_execution: False / deferred")
     print("v600_realtime_stage_provider_sdk_root_import: False")
+    print("v600_realtime_session_construction_models_status: implemented-awaiting-review")
     print("v600_realtime_fake_runtime_status: accepted")
     print("v600_realtime_fake_runtime_package: framework.realtime_fake_runtime")
     print("v600_realtime_fake_runtime_controller: DeterministicFakeRuntimeController")
@@ -474,14 +490,15 @@ def main() -> None:
     print("v600_realtime_fake_runtime_race_reproducible: True")
     print("v600_realtime_fake_runtime_session_orchestration_changed: False")
     print("v600_realtime_fake_runtime_event_hub_trace_projection: False / deferred")
-    print("v600_runtime_unit_test_status: accepted")
+    print("v600_runtime_unit_test_status: accepted-plus-control-a-candidate")
     print("v600_runtime_unit_test_runner: unittest")
-    print("v600_runtime_unit_test_count: 45")
+    print("v600_runtime_unit_test_accepted_baseline_count: 45")
+    print("v600_runtime_unit_test_current_count: 55")
     print("v600_runtime_unit_tests_network_free: True")
     print("v600_runtime_unit_test_smoke_separation: accepted")
-    print("v600_next_checkpoint: FW-RT6-4a")
-    print("v600_next_checkpoint_authorized: False")
-    print("[OK] canonical public API manifest smoke passed with unchanged names and accepted FW-RT6-3c normal runtime unit tests")
+    print("v600_next_checkpoint: FW-RT6-4a Control A review")
+    print("v600_next_checkpoint_authorized: IMPLEMENTED_AWAITING_REVIEW")
+    print("[OK] canonical public API manifest smoke passed with the additive construction-model suffix")
 
 
 if __name__ == "__main__":

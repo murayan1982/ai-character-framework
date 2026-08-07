@@ -94,6 +94,11 @@ from .realtime_event_payloads import (
     TranscriptEventPayload,
 )
 from .realtime_session import RealtimeSession, RealtimeSessionInfo, create_realtime_session
+from .realtime_session_config import (
+    RealtimeSessionConfig,
+    RealtimeSessionConstructionResult,
+    RealtimeSessionConstructionStatus,
+)
 from .text_chat_result import TextChatResult
 from .voice_input import (
     VoiceInputErrorCode,

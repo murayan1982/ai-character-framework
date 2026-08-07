@@ -132,7 +132,7 @@ def check_version_metadata() -> None:
         "__version__" not in framework.__all__,
         "framework.__version__ should not change the wildcard public API",
     )
-    _assert(len(framework.__all__) == 121, "canonical public API count should be 121")
+    _assert(len(framework.__all__) == 124, "canonical public API count should be 124")
     _assert(
         tuple(framework.__all__[95:99])
         == ("SessionId", "TurnId", "GenerationId", "EventSequence"),
@@ -166,7 +166,7 @@ def check_version_metadata() -> None:
         "typed event payload suffix drift",
     )
     _assert(
-        tuple(framework.__all__[114:])
+        tuple(framework.__all__[114:121])
         == (
             "CapabilitySnapshotScope",
             "RuntimeCapabilityState",
@@ -177,6 +177,15 @@ def check_version_metadata() -> None:
             "RealtimeCapabilitySnapshot",
         ),
         "detailed capability suffix drift",
+    )
+    _assert(
+        tuple(framework.__all__[121:])
+        == (
+            "RealtimeSessionConfig",
+            "RealtimeSessionConstructionStatus",
+            "RealtimeSessionConstructionResult",
+        ),
+        "realtime session construction suffix drift",
     )
 
     text_info = TextChatSessionInfo(

@@ -184,6 +184,12 @@ REALTIME_CAPABILITY_PUBLIC_EXPORTS = (
     "RealtimeCapabilitySnapshot",
 )
 
+REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS = (
+    "RealtimeSessionConfig",
+    "RealtimeSessionConstructionStatus",
+    "RealtimeSessionConstructionResult",
+)
+
 PUBLIC_API_GROUPS = MappingProxyType(
     {
         "provider_compat_lazy": PROVIDER_COMPAT_LAZY_EXPORTS,
@@ -202,6 +208,7 @@ PUBLIC_API_GROUPS = MappingProxyType(
         "lifecycle": LIFECYCLE_PUBLIC_EXPORTS,
         "realtime_event_payloads": REALTIME_EVENT_PAYLOAD_PUBLIC_EXPORTS,
         "realtime_capabilities": REALTIME_CAPABILITY_PUBLIC_EXPORTS,
+        "realtime_session_construction": REALTIME_SESSION_CONSTRUCTION_PUBLIC_EXPORTS,
     }
 )
 
