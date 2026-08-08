@@ -2926,3 +2926,72 @@ FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:END -->
+
+<!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:BEGIN -->
+## FW-RT6-8b Control B — RealtimeSession motion lifecycle adoption
+
+`RealtimeSession.set_motion_lifecycle_hook(hook)` explicitly installs the one
+host/plugin-owned mapping hook for a session. Passing `None` disables it. The
+hook is not a factory or `RealtimeSessionConfig` parameter and cannot be
+replaced while a turn is active. Product-specific expression, emotion, gesture,
+character, model, hotkey, or provider selection remains outside Framework core.
+
+After the canonical source event has been sequenced and delivered, the session
+builds one correlated `MotionLifecycleNotification`. The adopted mapping is:
+
+| Canonical source | Hook signal / outcome |
+|---|---|
+| `LISTENING_STARTED` | `listening` / no outcome |
+| `RESPONSE_STARTED` | `thinking` / no outcome |
+| `SYNTHESIS_STARTED` | `speaking` / no outcome |
+| `TURN_INTERRUPTED` | `interrupted` / `INTERRUPTED` |
+| `TURN_CANCELLED` | `interrupted` / `CANCELLED` |
+| `TURN_COMPLETED` | `completed` / `COMPLETED` |
+| `TURN_FAILED` | `failed` / `FAILED` |
+
+`TURN_REJECTED` and `SESSION_CLOSED` do not invoke the hook. A skipped or failed
+hook emits no motion events and starts no stage. Only a mapped
+`MotionRequest` enters the existing injected `MotionStage` boundary.
+
+Mapped execution uses the session's existing `RealtimeEventHub`. A usable stage
+emits `MOTION_REQUESTED`, `MOTION_STARTED`, then `MOTION_COMPLETED` or
+`MOTION_FAILED`. A missing or failed-preflight stage emits requested then one
+typed failure without a started event. Stage exceptions, malformed envelopes,
+and request/result/context correlation mismatch normalize to a public-safe
+failed result; raw error details do not escape. An adapter's existing
+`MotionOutcome.UNSUPPORTED` remains unsupported and is not reclassified as hook
+skip/failure.
+
+Transient completion admission uses the existing shared
+`RealtimeGenerationGate`. A completion retired by interrupt, cancellation,
+replacement, or close is dropped with `STALE_RESULT_DROPPED` and a correlated
+motion interrupted failure. The motion sidecar never starts or advances a turn
+generation.
+
+Terminal motion starts only after the terminal registry commit and canonical
+terminal publication. It is a post-terminal side effect validated against that
+committed terminal source, not a late pre-terminal completion. It does not
+reopen a retired generation, change the conversation state, replace the
+conversation outcome, or create a second conversation terminal.
+
+```text
+exact Control B surface: 5 files
+public registration: RealtimeSession.set_motion_lifecycle_hook / PASS
+factory/config hook parameter added: False / PASS
+source event published before hook: True / PASS
+shared EventSequence owner: RealtimeEventHub / PASS
+transient completion freshness owner: RealtimeGenerationGate / PASS
+terminal motion reopens generation: False / PASS
+conversation terminal changed by hook/stage failure: False / PASS
+missing MotionStage: MotionOutcome.NOT_CONFIGURED / PASS
+unsupported adapter outcome preserved: MotionOutcome.UNSUPPORTED / PASS
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-8b aggregate tasks: 0 / 6 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False / PASS
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:END -->

@@ -47,7 +47,7 @@ from .realtime_session_config import (
     RealtimeSessionConstructionResult,
     RealtimeSessionConstructionStatus,
 )
-from .realtime_event_hub import RealtimeEventHub
+from .realtime_event_hub import EventHubClosedError, RealtimeEventHub
 from .realtime_execution import RealtimeExecutionError, RealtimeExecutionErrorCode
 from .realtime_execution_bridge import _RealtimeExecutionBridge
 from .realtime_terminal_registry import (
@@ -59,6 +59,7 @@ from .realtime_event_payloads import (
     DiagnosticEventPayload,
     InterruptEventPayload,
     LifecycleEventPayload,
+    MotionEventPayload,
     RealtimeEventPayload,
     ResponseEventPayload,
     SynthesisEventPayload,
@@ -78,6 +79,8 @@ from .realtime import (
 )
 
 if TYPE_CHECKING:
+    from .motion import MotionErrorCode, MotionRequest, MotionResult, MotionState
+    from .motion_lifecycle import MotionLifecycleHook, MotionLifecycleNotification
     from .realtime_generation_gate import (
         GenerationAdmissionDecision,
         GenerationAdvanceReason,
@@ -110,6 +113,23 @@ _POST_TERMINAL_COORDINATION_EVENT_TYPES = frozenset(
     }
 )
 _EVENT_GENERATION_AUTO = object()
+_MOTION_LIFECYCLE_SOURCE_SIGNALS = {
+    RealtimeEventType.LISTENING_STARTED: ("listening", None),
+    RealtimeEventType.RESPONSE_STARTED: ("thinking", None),
+    RealtimeEventType.SYNTHESIS_STARTED: ("speaking", None),
+    RealtimeEventType.TURN_INTERRUPTED: ("interrupted", TurnOutcome.INTERRUPTED),
+    RealtimeEventType.TURN_CANCELLED: ("interrupted", TurnOutcome.CANCELLED),
+    RealtimeEventType.TURN_COMPLETED: ("completed", TurnOutcome.COMPLETED),
+    RealtimeEventType.TURN_FAILED: ("failed", TurnOutcome.FAILED),
+}
+_MOTION_LIFECYCLE_TERMINAL_SOURCE_TYPES = frozenset(
+    {
+        RealtimeEventType.TURN_INTERRUPTED,
+        RealtimeEventType.TURN_CANCELLED,
+        RealtimeEventType.TURN_COMPLETED,
+        RealtimeEventType.TURN_FAILED,
+    }
+)
 
 
 def _validated_injected_stages(
@@ -479,6 +499,7 @@ class RealtimeSession:
         )
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
+        self._motion_lifecycle_hook: MotionLifecycleHook | None = None
         self._turn_admission_lock = RLock()
         self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
@@ -1076,11 +1097,13 @@ class RealtimeSession:
                 phase=phase,
             )
 
-        return self._event_hub.emit(
+        emitted = self._event_hub.emit(
             event_factory,
             legacy_projector=lambda emitted: emitted.to_v5(),
             overflow_event_factory=overflow_event_factory,
         )
+        self._handle_motion_lifecycle_event(emitted)
+        return emitted
 
     def emit_created(self) -> RealtimeEvent:
         """Emit a public session-created event."""
@@ -2113,6 +2136,430 @@ class RealtimeSession:
             self._barge_in_policy = policy
             return self._barge_in_policy
 
+    def set_motion_lifecycle_hook(
+        self,
+        hook: MotionLifecycleHook | None,
+    ) -> None:
+        """Set the single host/plugin lifecycle-to-motion mapping hook.
+
+        Registration is explicit and session-owned. ``None`` disables mapping.
+        The hook cannot be replaced while a turn is active so one admitted turn
+        always observes one deterministic mapping owner.
+        """
+
+        with self._serialized_operation():
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            if self._active_turn_identity()[0] is not None:
+                raise RuntimeError(
+                    "motion lifecycle hook cannot change while a turn is active"
+                )
+            if hook is not None and not callable(hook):
+                raise TypeError("hook must be callable or None")
+            self._motion_lifecycle_hook = hook
+
+    @staticmethod
+    def _realtime_state_for_motion_state(state: MotionState) -> RealtimeState:
+        from .motion import MotionState
+
+        if state is MotionState.IDLE:
+            return RealtimeState.IDLE
+        if state is MotionState.INTERRUPTED:
+            return RealtimeState.INTERRUPTED
+        if state in {MotionState.FAILED, MotionState.UNAVAILABLE}:
+            return RealtimeState.FAILED
+        if state is MotionState.CLOSED:
+            return RealtimeState.CLOSED
+        return RealtimeState.MOTION
+
+    @staticmethod
+    def _realtime_error_for_motion_error(
+        error_code: MotionErrorCode,
+    ) -> RealtimeErrorCode:
+        from .motion import MotionErrorCode
+
+        if error_code is MotionErrorCode.NONE:
+            return RealtimeErrorCode.NONE
+        if error_code is MotionErrorCode.INTERRUPTED:
+            return RealtimeErrorCode.INTERRUPTED
+        if error_code is MotionErrorCode.SESSION_CLOSED:
+            return RealtimeErrorCode.SESSION_CLOSED
+        if error_code is MotionErrorCode.PROVIDER_ERROR:
+            return RealtimeErrorCode.PROVIDER_ERROR
+        if error_code in {MotionErrorCode.UNSUPPORTED, MotionErrorCode.NOT_IMPLEMENTED}:
+            return RealtimeErrorCode.UNSUPPORTED
+        if error_code in {
+            MotionErrorCode.NOT_CONFIGURED,
+            MotionErrorCode.TOKEN_MISSING,
+            MotionErrorCode.RUNTIME_NOT_INSTALLED,
+            MotionErrorCode.MODEL_NOT_SELECTED,
+        }:
+            return RealtimeErrorCode.CONFIGURATION_MISSING
+        return RealtimeErrorCode.UNAVAILABLE
+
+    def _emit_motion_lifecycle_event(
+        self,
+        event_type: RealtimeEventType,
+        *,
+        source_event: RealtimeEvent,
+        request: MotionRequest,
+        result: MotionResult | None = None,
+    ) -> RealtimeEvent | None:
+        """Emit one state-neutral motion event through the session sequencer."""
+
+        from .motion import MotionRequest, MotionResult, MotionState
+
+        if not isinstance(request, MotionRequest):
+            raise TypeError("request must be a MotionRequest")
+        if result is not None and not isinstance(result, MotionResult):
+            raise TypeError("result must be a MotionResult or None")
+        if self._closed or self._close_requested:
+            return None
+
+        motion_state = result.state if result is not None else MotionState.PREPARING
+        realtime_state = self._realtime_state_for_motion_state(motion_state)
+        error_code = (
+            self._realtime_error_for_motion_error(result.public_error_code)
+            if result is not None
+            else RealtimeErrorCode.NONE
+        )
+        metadata = {
+            "boundary": "motion",
+            "source_event_type": source_event.type.value,
+            "source_sequence": int(source_event.sequence),
+            "lifecycle_triggered": True,
+        }
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=event_type,
+                state=realtime_state,
+                previous_state=self._state,
+                turn_id=request.turn_id,
+                session_id=self._session_id,
+                boundary="motion",
+                public_error_code=error_code,
+                safe_message=result.safe_message if result is not None else "",
+                retryable=result.retryable if result is not None else False,
+                public_metadata=metadata,
+                sequence=sequence,
+                generation_id=request.generation_id,
+                phase=RealtimePhase.MOTION,
+                payload=MotionEventPayload(
+                    request_id=request.request_id,
+                    outcome=result.outcome if result is not None else None,
+                ),
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        def overflow_event_factory(
+            sequence: EventSequence,
+            dropped_sequence: EventSequence | None,
+            overflow_count: int,
+        ) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=RealtimeEventType.EVENT_OVERFLOW,
+                state=realtime_state,
+                previous_state=self._state,
+                turn_id=request.turn_id,
+                session_id=self._session_id,
+                boundary="motion",
+                safe_message="Realtime motion event history overflowed.",
+                public_metadata={"boundary": "motion"},
+                sequence=sequence,
+                generation_id=request.generation_id,
+                phase=RealtimePhase.MOTION,
+                payload=DiagnosticEventPayload(
+                    code="motion_event_history_overflow",
+                    drop_reason="history_limit",
+                    dropped_sequence=dropped_sequence,
+                    overflow_count=overflow_count,
+                ),
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        try:
+            return self._event_hub.emit(
+                event_factory,
+                legacy_projector=lambda emitted: emitted.to_v5(),
+                overflow_event_factory=overflow_event_factory,
+            )
+        except EventHubClosedError:
+            return None
+
+    def _motion_lifecycle_failure_result(
+        self,
+        *,
+        request: MotionRequest,
+        reason: str,
+    ) -> MotionResult:
+        from .motion import (
+            MotionAdapterStatus,
+            MotionErrorCode,
+            MotionOutcome,
+            MotionRequest,
+            MotionResult,
+            MotionState,
+        )
+
+        if not isinstance(request, MotionRequest):
+            raise TypeError("request must be a MotionRequest")
+        if reason == "stage_not_configured":
+            outcome = MotionOutcome.NOT_CONFIGURED
+            status = MotionAdapterStatus.NOT_CONFIGURED
+            error_code = MotionErrorCode.NOT_CONFIGURED
+            state = MotionState.UNAVAILABLE
+            safe_message = "Realtime motion stage is not configured."
+        elif reason == "stage_preflight_failed":
+            outcome = MotionOutcome.UNAVAILABLE
+            status = MotionAdapterStatus.DISABLED
+            error_code = MotionErrorCode.UNAVAILABLE
+            state = MotionState.UNAVAILABLE
+            safe_message = "Realtime motion stage is unavailable."
+        elif reason == "stale_generation":
+            outcome = MotionOutcome.INTERRUPTED
+            status = MotionAdapterStatus.CONFIGURED
+            error_code = MotionErrorCode.INTERRUPTED
+            state = MotionState.INTERRUPTED
+            safe_message = "Stale realtime motion completion was dropped."
+        else:
+            outcome = MotionOutcome.FAILED
+            status = MotionAdapterStatus.CONFIGURED
+            error_code = MotionErrorCode.PROVIDER_ERROR
+            state = MotionState.FAILED
+            safe_message = "Realtime motion stage failed safely."
+
+        return MotionResult(
+            outcome=outcome,
+            state=state,
+            adapter_status=status,
+            public_error_code=error_code,
+            safe_message=safe_message,
+            retryable=False,
+            request_id=request.request_id,
+            session_id=self._session_id,
+            turn_id=request.turn_id,
+            generation_id=request.generation_id,
+            public_metadata={
+                "boundary": "motion",
+                "reason": reason,
+                "conversation_terminal_changed": False,
+            },
+        )
+
+    def _motion_lifecycle_terminal_source_is_current(
+        self,
+        notification: MotionLifecycleNotification,
+    ) -> bool:
+        record = self._terminal_registry.get(notification.turn_id)
+        return record is not None and record.outcome is notification.outcome
+
+    def _validated_motion_stage_result(
+        self,
+        *,
+        envelope: object,
+        context: object,
+        request: MotionRequest,
+    ) -> MotionResult | None:
+        from .motion import MotionRequest, MotionResult
+        from .realtime_stage import (
+            RealtimeStageContext,
+            RealtimeStageKind,
+            RealtimeStageResultEnvelope,
+        )
+
+        if (
+            not isinstance(request, MotionRequest)
+            or not isinstance(context, RealtimeStageContext)
+            or not isinstance(envelope, RealtimeStageResultEnvelope)
+            or envelope.stage_kind is not RealtimeStageKind.MOTION
+            or envelope.context != context
+            or not isinstance(envelope.result, MotionResult)
+        ):
+            return None
+        result = envelope.result
+        if (
+            not result.is_terminal
+            or result.request_id != request.request_id
+            or result.turn_id != request.turn_id
+            or result.generation_id != request.generation_id
+        ):
+            return None
+        return result
+
+    def _execute_motion_lifecycle_request(
+        self,
+        *,
+        source_event: RealtimeEvent,
+        notification: MotionLifecycleNotification,
+        request: MotionRequest,
+    ) -> None:
+        from .motion import MotionOutcome, MotionRequest, MotionResult
+        from .realtime_generation_gate import RealtimeStageCompletionEnvelope
+        from .realtime_stage import RealtimeStageContext
+
+        if not isinstance(request, MotionRequest):
+            return
+        if self._closed or self._close_requested:
+            return
+
+        self._emit_motion_lifecycle_event(
+            RealtimeEventType.MOTION_REQUESTED,
+            source_event=source_event,
+            request=request,
+        )
+        if self._closed or self._close_requested:
+            return
+
+        stage = self._injected_stages.get("motion")
+        if stage is None:
+            failure = self._motion_lifecycle_failure_result(
+                request=request,
+                reason="stage_not_configured",
+            )
+            self._emit_motion_lifecycle_event(
+                RealtimeEventType.MOTION_FAILED,
+                source_event=source_event,
+                request=request,
+                result=failure,
+            )
+            return
+        if "motion" in self._stage_preflight_failed_kinds:
+            failure = self._motion_lifecycle_failure_result(
+                request=request,
+                reason="stage_preflight_failed",
+            )
+            self._emit_motion_lifecycle_event(
+                RealtimeEventType.MOTION_FAILED,
+                source_event=source_event,
+                request=request,
+                result=failure,
+            )
+            return
+
+        context = RealtimeStageContext(
+            session_id=self._session_id,
+            turn_id=notification.turn_id,
+            generation_id=notification.generation_id,
+            public_metadata={
+                "boundary": "motion_lifecycle",
+                "source_event_type": source_event.type.value,
+                "source_sequence": int(source_event.sequence),
+            },
+        )
+        self._emit_motion_lifecycle_event(
+            RealtimeEventType.MOTION_STARTED,
+            source_event=source_event,
+            request=request,
+        )
+        if self._closed or self._close_requested:
+            return
+
+        try:
+            raw_envelope = stage.start(context=context, request=request)
+            result = self._validated_motion_stage_result(
+                envelope=raw_envelope,
+                context=context,
+                request=request,
+            )
+        except Exception:
+            result = None
+        if result is None:
+            result = self._motion_lifecycle_failure_result(
+                request=request,
+                reason="stage_failed",
+            )
+        if not isinstance(result, MotionResult):
+            raise AssertionError("motion lifecycle execution must normalize a result")
+        if self._closed or self._close_requested:
+            return
+
+        if source_event.type in _MOTION_LIFECYCLE_TERMINAL_SOURCE_TYPES:
+            if not self._motion_lifecycle_terminal_source_is_current(notification):
+                return
+        else:
+            completion = RealtimeStageCompletionEnvelope(
+                turn_id=notification.turn_id,
+                generation_id=notification.generation_id,
+                stage="motion_lifecycle",
+                value=result,
+            )
+            decision = self._generation_gate.admit_completion(completion)
+            if not decision.accepted:
+                self._emit_stale_completion_diagnostic(decision)
+                result = self._motion_lifecycle_failure_result(
+                    request=request,
+                    reason="stale_generation",
+                )
+                if self._closed or self._close_requested:
+                    return
+
+        result_event_type = (
+            RealtimeEventType.MOTION_COMPLETED
+            if result.outcome is MotionOutcome.COMPLETED
+            else RealtimeEventType.MOTION_FAILED
+        )
+        self._emit_motion_lifecycle_event(
+            result_event_type,
+            source_event=source_event,
+            request=request,
+            result=result,
+        )
+
+    def _handle_motion_lifecycle_event(self, event: RealtimeEvent) -> None:
+        """Run the optional hook only after its canonical source event publishes."""
+
+        mapping = _MOTION_LIFECYCLE_SOURCE_SIGNALS.get(event.type)
+        hook = self._motion_lifecycle_hook
+        if (
+            mapping is None
+            or hook is None
+            or self._closed
+            or self._close_requested
+            or event.turn_id is None
+            or event.generation_id is None
+            or event.sequence is None
+        ):
+            return
+
+        from .motion_lifecycle import (
+            MotionLifecycleHookOutcome,
+            MotionLifecycleNotification,
+            invoke_motion_lifecycle_hook,
+        )
+
+        signal, outcome = mapping
+        try:
+            notification = MotionLifecycleNotification(
+                signal=signal,
+                session_id=self._session_id,
+                turn_id=event.turn_id,
+                generation_id=event.generation_id,
+                source_sequence=event.sequence,
+                outcome=outcome,
+                public_metadata={
+                    "boundary": "motion_lifecycle",
+                    "source_event_type": event.type.value,
+                },
+            )
+            hook_result = invoke_motion_lifecycle_hook(hook, notification)
+        except Exception:
+            return
+        if (
+            hook_result.outcome is not MotionLifecycleHookOutcome.MAPPED
+            or hook_result.request is None
+            or self._closed
+            or self._close_requested
+        ):
+            return
+        self._execute_motion_lifecycle_request(
+            source_event=event,
+            notification=notification,
+            request=hook_result.request,
+        )
+
     def decide_barge_in(
         self,
         *,
@@ -2232,6 +2679,7 @@ class RealtimeSession:
             return
         self._close_requested = False
         self._closed = True
+        self._motion_lifecycle_hook = None
         self._clear_active_turn_context()
         self._phase = None
         self._close_injected_stages()

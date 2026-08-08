@@ -3471,3 +3471,69 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:END -->
+
+<!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:BEGIN -->
+## FW-RT6-8b Control B — lifecycle hook facade adoption
+
+Control B adds one method to the existing session class:
+
+```python
+session = framework.create_realtime_session(motion_stage=motion_stage)
+session.set_motion_lifecycle_hook(character_motion)
+
+# Disable future lifecycle mapping when no turn is active.
+session.set_motion_lifecycle_hook(None)
+```
+
+This does not add a root-public symbol, factory argument, config field, or
+provider-specific mapping. Registration is single-owner and explicit. Changing
+the hook while a turn is active is rejected so one admitted turn observes one
+stable mapping owner.
+
+The hook runs after its canonical lifecycle source is published. Only a mapped
+provider-neutral `MotionRequest` starts the injected `MotionStage`; `None`, hook
+exceptions, invalid hook values, and hook correlation mismatch start no motion.
+`TURN_REJECTED` and `SESSION_CLOSED` are excluded.
+
+Lifecycle-driven canonical motion events use the session's shared event
+sequencer and retain the source turn/generation correlation:
+
+```text
+source lifecycle event
+MOTION_REQUESTED
+MOTION_STARTED             # only for a usable stage
+MOTION_COMPLETED | MOTION_FAILED
+```
+
+A missing stage returns typed `MotionOutcome.NOT_CONFIGURED`. Failed preflight
+is typed unavailable. Stage exceptions and invalid result envelopes become a
+public-safe `MotionOutcome.FAILED`; an adapter-returned
+`MotionOutcome.UNSUPPORTED` remains unchanged. None of these outcomes changes
+the conversation terminal.
+
+Transient stage results pass the existing common generation gate. Terminal
+motion is different: it begins after the conversation terminal is already
+committed and published, is validated against that committed record, and is
+emitted only as a state-neutral post-terminal motion side effect. It neither
+reopens nor advances a generation and cannot emit a second conversation
+terminal.
+
+```text
+exact Control B surface: 5 files
+RealtimeSession.set_motion_lifecycle_hook: ADOPTED / PASS
+product-specific mapping in Framework core: False / PASS
+source-before-hook ordering: PASS
+shared canonical sequence: PASS
+common transient stale guard: PASS
+late transient success delivered: False / PASS
+terminal side effect changes conversation terminal: False / PASS
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+FW-RT6-8b task count: 0 / 6 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:END -->
