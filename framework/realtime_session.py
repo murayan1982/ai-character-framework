@@ -11,7 +11,7 @@ import asyncio
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import RLock
+from threading import Event, RLock
 import time
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Mapping
@@ -80,6 +80,7 @@ from .realtime import (
 
 if TYPE_CHECKING:
     from .motion import MotionErrorCode, MotionRequest, MotionResult, MotionState
+    from .motion_control import MotionControlResult
     from .motion_lifecycle import MotionLifecycleHook, MotionLifecycleNotification
     from .realtime_generation_gate import (
         GenerationAdmissionDecision,
@@ -423,6 +424,36 @@ class _ActiveTurnContext:
         return self.turn.turn_id
 
 
+@dataclass(slots=True)
+class _ActiveMotionWork:
+    """One session-owned lifecycle motion while its stage call is in flight."""
+
+    stage: object
+    context: object
+    request: object
+    completion_event: Event = field(default_factory=Event)
+    cancel_call_finished: Event = field(default_factory=Event)
+    stop_call_finished: Event = field(default_factory=Event)
+    cancel_call_started: bool = False
+    cancel_requested: bool = False
+    cancel_accepted: bool = False
+    cancel_failed: bool = False
+    stop_call_started: bool = False
+    stop_motion_requested: bool = False
+    stop_motion_supported: bool = False
+    stop_motion_applied: bool = False
+    stop_failed: bool = False
+    future_delivery_suppressed: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _MotionControlAttempt:
+    """Internal split-phase result resolved after the session lock is available."""
+
+    work: _ActiveMotionWork | None = None
+    result: MotionControlResult | None = None
+
+
 class RealtimeSession:
     """Mock-safe public realtime session skeleton.
 
@@ -500,6 +531,8 @@ class RealtimeSession:
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
         self._motion_lifecycle_hook: MotionLifecycleHook | None = None
+        self._motion_control_lock = RLock()
+        self._active_motion_work: _ActiveMotionWork | None = None
         self._turn_admission_lock = RLock()
         self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
@@ -1778,6 +1811,304 @@ class RealtimeSession:
 
         return committed_result
 
+    @staticmethod
+    def _interrupt_targets_motion(request: InterruptRequest) -> bool:
+        """Whether this existing interrupt request reaches the motion stage."""
+
+        return request.stop_motion or request.scope in {
+            InterruptScope.CURRENT_TURN,
+            InterruptScope.MOTION,
+            InterruptScope.ALL,
+        }
+
+    def _inactive_motion_control_result(
+        self,
+        *,
+        request: InterruptRequest,
+        outcome: object,
+        safe_message: str,
+    ) -> MotionControlResult:
+        """Build one typed no-effect result without importing it at root import."""
+
+        from .motion_control import MotionControlResult
+
+        capability = self._stage_capabilities.get(
+            "motion",
+            self._capability_snapshot.motion,
+        )
+
+        return MotionControlResult(
+            outcome=outcome,
+            session_id=self._session_id,
+            turn_id=request.turn_id,
+            stop_motion_requested=request.stop_motion,
+            stop_motion_supported=capability.stop_motion_supported,
+            safe_message=safe_message,
+            retryable=False,
+            public_metadata={
+                "boundary": "motion_control",
+                "active_motion": False,
+            },
+        )
+
+    def _request_motion_control(
+        self,
+        request: InterruptRequest,
+    ) -> _MotionControlAttempt | None:
+        """Reach one active motion before taking the long session operation lock.
+
+        ``MotionStage.cancel`` and the optional explicit ``STOP_MOTION`` request
+        are deliberately invoked without ``_operation_lock``.  A stage call may
+        be the work currently holding that lock, so taking it first would make
+        cooperative cancellation impossible.
+        """
+
+        if not self._interrupt_targets_motion(request):
+            return None
+
+        from .motion import MotionOutcome, MotionRequest
+        from .motion_control import MotionControlOutcome, MotionControlResult
+
+        cancel_owner = False
+        stop_owner = False
+        with self._motion_control_lock:
+            if self._closed or self._close_requested:
+                return _MotionControlAttempt(
+                    result=self._inactive_motion_control_result(
+                        request=request,
+                        outcome=MotionControlOutcome.ALREADY_CLOSED,
+                        safe_message="Realtime session is already closed.",
+                    )
+                )
+
+            work = self._active_motion_work
+            if work is None or (
+                request.turn_id is not None
+                and getattr(work.request, "turn_id", None) != request.turn_id
+            ):
+                terminal = (
+                    self._terminal_registry.get(request.turn_id)
+                    if request.turn_id is not None
+                    else None
+                )
+                outcome = (
+                    MotionControlOutcome.ALREADY_TERMINAL
+                    if terminal is not None
+                    else MotionControlOutcome.NOT_ACTIVE
+                )
+                return _MotionControlAttempt(
+                    result=self._inactive_motion_control_result(
+                        request=request,
+                        outcome=outcome,
+                        safe_message=(
+                            "Realtime turn is already terminal."
+                            if terminal is not None
+                            else "There is no active motion request."
+                        ),
+                    )
+                )
+
+            capability = self._stage_capabilities.get(
+                "motion",
+                self._capability_snapshot.motion,
+            )
+            cancel_supported = capability.request_cancel_supported
+            stop_requested = request.stop_motion
+            stop_supported = capability.stop_motion_supported
+
+            if not cancel_supported and not (stop_requested and stop_supported):
+                return _MotionControlAttempt(
+                    result=MotionControlResult(
+                        outcome=MotionControlOutcome.UNSUPPORTED,
+                        session_id=self._session_id,
+                        turn_id=work.request.turn_id,
+                        generation_id=work.request.generation_id,
+                        request_id=work.request.request_id,
+                        stop_motion_requested=stop_requested,
+                        stop_motion_supported=stop_supported,
+                        safe_message="Motion cancellation and stop are unsupported.",
+                        retryable=False,
+                        public_metadata={
+                            "boundary": "motion_control",
+                            "active_motion": True,
+                            "request_cancel_supported": False,
+                        },
+                    )
+                )
+
+            if cancel_supported:
+                if not work.cancel_call_started:
+                    work.cancel_call_started = True
+                    work.cancel_requested = True
+                    cancel_owner = True
+
+            if stop_requested:
+                work.stop_motion_requested = True
+                work.stop_motion_supported = stop_supported
+                if stop_supported and not work.stop_call_started:
+                    work.stop_call_started = True
+                    stop_owner = True
+
+        if cancel_owner:
+            cancel_accepted = False
+            cancel_failed = False
+            try:
+                raw_accepted = work.stage.cancel(context=work.context)
+                if type(raw_accepted) is not bool:
+                    cancel_failed = True
+                else:
+                    cancel_accepted = raw_accepted
+            except Exception:
+                cancel_failed = True
+            finally:
+                with self._motion_control_lock:
+                    work.cancel_accepted = cancel_accepted
+                    work.cancel_failed = cancel_failed
+                    if cancel_accepted:
+                        work.future_delivery_suppressed = True
+                work.cancel_call_finished.set()
+        elif work.cancel_call_started:
+            work.cancel_call_finished.wait()
+
+        if stop_owner:
+            stop_applied = False
+            stop_failed = False
+            try:
+                stop_request = MotionRequest.stop_motion(
+                    turn_id=work.request.turn_id,
+                    generation_id=work.request.generation_id,
+                    public_metadata={
+                        "boundary": "motion_control",
+                        "interrupt_reason": request.reason.value,
+                    },
+                )
+                raw_envelope = work.stage.start(
+                    context=work.context,
+                    request=stop_request,
+                )
+                stop_result = self._validated_motion_stage_result(
+                    envelope=raw_envelope,
+                    context=work.context,
+                    request=stop_request,
+                )
+                stop_applied = (
+                    stop_result is not None
+                    and stop_result.outcome is MotionOutcome.COMPLETED
+                )
+                stop_failed = not stop_applied
+            except Exception:
+                stop_failed = True
+            finally:
+                with self._motion_control_lock:
+                    work.stop_motion_applied = stop_applied
+                    work.stop_failed = stop_failed
+                work.stop_call_finished.set()
+        elif work.stop_call_started:
+            work.stop_call_finished.wait()
+
+        return _MotionControlAttempt(work=work)
+
+    def _resolve_motion_control_attempt(
+        self,
+        attempt: _MotionControlAttempt | None,
+    ) -> MotionControlResult | None:
+        """Resolve one split-phase motion attempt using only observed facts."""
+
+        if attempt is None:
+            return None
+        if attempt.result is not None:
+            from .motion_control import MotionControlResult
+
+            if not isinstance(attempt.result, MotionControlResult):
+                raise AssertionError("motion-control result must be typed")
+            return attempt.result
+
+        from .motion_control import MotionControlOutcome, MotionControlResult
+
+        work = attempt.work
+        if work is None:
+            raise AssertionError("motion-control attempt must retain work or result")
+        if work.cancel_call_started:
+            work.cancel_call_finished.wait()
+        if work.stop_call_started:
+            work.stop_call_finished.wait()
+
+        with self._motion_control_lock:
+            cancel_requested = work.cancel_requested
+            cancel_accepted = work.cancel_accepted
+            cancel_completed = (
+                cancel_accepted and work.completion_event.is_set()
+            )
+            stop_requested = work.stop_motion_requested
+            stop_supported = work.stop_motion_supported
+            stop_applied = work.stop_motion_applied
+            future_suppressed = work.future_delivery_suppressed
+            failed = work.cancel_failed or work.stop_failed
+
+        if cancel_completed or stop_applied:
+            outcome = MotionControlOutcome.COMPLETED
+            safe_message = "Motion control completed."
+            retryable = False
+        elif cancel_accepted:
+            outcome = MotionControlOutcome.REQUESTED
+            safe_message = "Motion cancellation was accepted."
+            retryable = False
+        elif failed or cancel_requested or (stop_requested and stop_supported):
+            outcome = MotionControlOutcome.FAILED
+            safe_message = "Motion control failed safely."
+            retryable = True
+        else:
+            outcome = MotionControlOutcome.UNSUPPORTED
+            safe_message = "Motion cancellation and stop are unsupported."
+            retryable = False
+
+        return MotionControlResult(
+            outcome=outcome,
+            session_id=self._session_id,
+            turn_id=work.request.turn_id,
+            generation_id=work.request.generation_id,
+            request_id=work.request.request_id,
+            cancel_requested=cancel_requested,
+            cancel_accepted=cancel_accepted,
+            cancel_completed=cancel_completed,
+            stop_motion_requested=stop_requested,
+            stop_motion_supported=stop_supported,
+            stop_motion_applied=stop_applied,
+            future_delivery_suppressed=future_suppressed,
+            safe_message=safe_message,
+            retryable=retryable,
+            public_metadata={
+                "boundary": "motion_control",
+                "active_motion": True,
+                "cancel_call_started": work.cancel_call_started,
+                "stop_call_started": work.stop_call_started,
+                "duplicate_stage_control_suppressed": True,
+                "whole_turn_aggregate_changed": False,
+            },
+        )
+
+    @staticmethod
+    def _attach_motion_control_result(
+        result: InterruptResult,
+        motion_result: MotionControlResult | None,
+    ) -> InterruptResult:
+        """Project one motion reach result without changing aggregate outcome."""
+
+        if motion_result is None:
+            return result
+        return InterruptResult(
+            outcome=result.outcome,
+            scope=result.scope,
+            reason=result.reason,
+            turn_id=result.turn_id,
+            safe_message=result.safe_message,
+            retryable=result.retryable,
+            provider_cancel_supported=result.provider_cancel_supported,
+            queue_flush_supported=result.queue_flush_supported,
+            public_metadata=result.public_metadata,
+            motion_result=motion_result,
+        )
+
     def get_tts_queue_state(self) -> TTSQueueState:
         """Return a mock-safe public TTS queue snapshot."""
 
@@ -1795,10 +2126,13 @@ class RealtimeSession:
         )
 
     def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
+        request = request or InterruptRequest()
+        motion_attempt = self._request_motion_control(request)
         with self._serialized_operation():
             return self._interrupt_serialized(
                 request,
                 advance_reason="interrupt",
+                motion_result=self._resolve_motion_control_attempt(motion_attempt),
             )
 
     def _interrupt_serialized(
@@ -1806,6 +2140,7 @@ class RealtimeSession:
         request: InterruptRequest | None = None,
         *,
         advance_reason: GenerationAdvanceReason | str = "interrupt",
+        motion_result: MotionControlResult | None = None,
     ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
@@ -1816,7 +2151,10 @@ class RealtimeSession:
 
         request = request or InterruptRequest()
         if self._closed or self._close_requested:
-            return InterruptResult.already_closed(request=request)
+            return self._attach_motion_control_result(
+                InterruptResult.already_closed(request=request),
+                motion_result,
+            )
 
         current_turn_id = (
             self._generation_gate.current_turn_id
@@ -1867,7 +2205,7 @@ class RealtimeSession:
                         "interrupt_outcome": result.outcome.value,
                     },
                 )
-                return result
+                return self._attach_motion_control_result(result, motion_result)
 
             next_phase = (
                 RealtimePhase.RECOVERING
@@ -1893,14 +2231,17 @@ class RealtimeSession:
                 },
             )
         except _LateNonTerminalRejected:
-            return InterruptResult.no_active_turn(
-                request=request,
-                safe_message="Realtime turn is already terminal.",
+            return self._attach_motion_control_result(
+                InterruptResult.no_active_turn(
+                    request=request,
+                    safe_message="Realtime turn is already terminal.",
+                ),
+                motion_result,
             )
 
         self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
-        return result
+        return self._attach_motion_control_result(result, motion_result)
 
     def cancel_current_turn(
         self,
@@ -1910,18 +2251,20 @@ class RealtimeSession:
     ) -> InterruptResult:
         """Request cancellation of the current realtime turn."""
 
+        request = InterruptRequest(
+            scope=InterruptScope.CURRENT_TURN,
+            reason=reason,
+            turn_id=self._generation_gate.current_turn_id,
+            cancel_llm_stream=True,
+            cancel_tts_queue=True,
+            public_metadata=public_metadata or {},
+        )
+        motion_attempt = self._request_motion_control(request)
         with self._serialized_operation():
-            request = InterruptRequest(
-                scope=InterruptScope.CURRENT_TURN,
-                reason=reason,
-                turn_id=self._generation_gate.current_turn_id,
-                cancel_llm_stream=True,
-                cancel_tts_queue=True,
-                public_metadata=public_metadata or {},
-            )
             return self._interrupt_serialized(
                 request,
                 advance_reason="cancel",
+                motion_result=self._resolve_motion_control_attempt(motion_attempt),
             )
 
     def acknowledge_host_playback_stop(
@@ -2389,6 +2732,38 @@ class RealtimeSession:
             return None
         return result
 
+    def _begin_active_motion_work(
+        self,
+        *,
+        stage: object,
+        context: object,
+        request: MotionRequest,
+    ) -> _ActiveMotionWork | None:
+        """Install the one pending/active motion owner for this session."""
+
+        work = _ActiveMotionWork(
+            stage=stage,
+            context=context,
+            request=request,
+        )
+        with self._motion_control_lock:
+            if self._closed or self._close_requested:
+                return None
+            if self._active_motion_work is not None:
+                return None
+            self._active_motion_work = work
+        return work
+
+    def _complete_active_motion_work(self, work: _ActiveMotionWork) -> bool:
+        """Clear one work item and return its one-way delivery barrier state."""
+
+        with self._motion_control_lock:
+            suppressed = work.future_delivery_suppressed
+            if self._active_motion_work is work:
+                self._active_motion_work = None
+            work.completion_event.set()
+        return suppressed
+
     def _execute_motion_lifecycle_request(
         self,
         *,
@@ -2449,12 +2824,36 @@ class RealtimeSession:
                 "source_sequence": int(source_event.sequence),
             },
         )
+        work = self._begin_active_motion_work(
+            stage=stage,
+            context=context,
+            request=request,
+        )
+        if work is None:
+            failure = self._motion_lifecycle_failure_result(
+                request=request,
+                reason="stage_failed",
+            )
+            self._emit_motion_lifecycle_event(
+                RealtimeEventType.MOTION_FAILED,
+                source_event=source_event,
+                request=request,
+                result=failure,
+            )
+            return
         self._emit_motion_lifecycle_event(
             RealtimeEventType.MOTION_STARTED,
             source_event=source_event,
             request=request,
         )
         if self._closed or self._close_requested:
+            self._complete_active_motion_work(work)
+            return
+
+        with self._motion_control_lock:
+            pending_suppressed = work.future_delivery_suppressed
+        if pending_suppressed:
+            self._complete_active_motion_work(work)
             return
 
         try:
@@ -2466,6 +2865,9 @@ class RealtimeSession:
             )
         except Exception:
             result = None
+        delivery_suppressed = self._complete_active_motion_work(work)
+        if delivery_suppressed:
+            return
         if result is None:
             result = self._motion_lifecycle_failure_result(
                 request=request,
@@ -2660,6 +3062,22 @@ class RealtimeSession:
                 self._stage_close_count += 1
 
     def close(self) -> None:
+        with self._motion_control_lock:
+            active_motion = self._active_motion_work
+            active_motion_turn_id = (
+                getattr(active_motion.request, "turn_id", None)
+                if active_motion is not None
+                else None
+            )
+        if active_motion is not None:
+            self._request_motion_control(
+                InterruptRequest(
+                    scope=InterruptScope.MOTION,
+                    reason=InterruptReason.SESSION_CLOSED,
+                    turn_id=active_motion_turn_id,
+                )
+            )
+
         should_shutdown_bridge = False
         with self._operation_lock:
             if self._closed or self._close_requested:

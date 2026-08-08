@@ -3667,3 +3667,71 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8c-A-MOTION-CONTROL:END -->
+
+<!-- FW-RT6-8c-B-MOTION-CONTROL-ADOPTION:BEGIN -->
+## FW-RT6-8c Control B — interrupt motion reach
+
+Existing `RealtimeSession.interrupt(...)` and `cancel_current_turn(...)` calls
+now project motion-stage reach through the optional trailing
+`InterruptResult.motion_result`. Applications do not register a new callback,
+pass a new factory argument, or call a new `cancel_motion()` method.
+
+For a current-turn, motion, or all-scope request, the session checks its one
+correlated pending/active lifecycle motion. It never redirects a mismatched
+turn target. Applications can distinguish:
+
+```text
+NOT_ACTIVE
+ALREADY_TERMINAL
+ALREADY_CLOSED
+UNSUPPORTED
+FAILED
+REQUESTED
+COMPLETED
+```
+
+The runtime invokes MotionStage.cancel outside the long session operation lock
+so an in-flight stage holding that lock can cooperatively finish. Acceptance
+sets a one-way late-delivery barrier: the original stage result is no longer
+published as a late motion success. `cancel_accepted` and `cancel_completed`
+remain separate observations.
+
+`InterruptRequest.stop_motion=True` is also independent. The session issues a
+provider-neutral `STOP_MOTION` request at most once only when the cached motion
+capability reports support. `stop_motion_applied=True` requires a typed,
+correlated completed stage result. A false capability, exception, unsupported
+result, malformed result, or correlation mismatch always leaves it false.
+
+Concurrent duplicate stage-control attempts share the active work owner, so
+stage cancel and explicit stop execute at most once. This does not claim the
+FW-RT6-9b guarantee that duplicate whole interrupt calls share one aggregate
+terminal result.
+
+Control B does not turn the existing interrupt skeleton into the Phase 9
+coordinator. The aggregate interrupt outcome remains unchanged even when motion
+was reached successfully. LLM, TTS, queued output, artifact invalidation,
+partial completion, and timeout aggregation remain later work.
+
+```text
+exact Control B surface: 5 files
+active/pending motion tracking: ADOPTED / PASS
+MotionStage.cancel outside the long session operation lock: PASS
+late-delivery barrier: PASS
+request cancel equals STOP_MOTION: False / PASS
+stop-motion unsupported overclaim: False / PASS
+duplicate stage cancel/stop: SAFE / AT_MOST_ONCE
+whole-turn motion reach: InterruptResult.motion_result / PASS
+aggregate interrupt outcome changed: False
+new public cancel_motion method: False
+create_realtime_session signature: UNCHANGED
+framework root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+FW-RT6-8c aggregate tasks: 0 / 5 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+Control C: NOT_AUTHORIZED
+FW-RT6-9a: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8c-B-MOTION-CONTROL-ADOPTION:END -->
