@@ -4990,3 +4990,62 @@ remotely verified.
 This candidate changes no runtime source and does not authorize FW-RT6-7c or P1
 streaming work.
 <!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-7b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7b — voice-input stage composition final acceptance sync
+
+```text
+checkpoint: FW-RT6-7b final acceptance
+baseline head: e631067ec0dca3ee459ea0ac43cd241a46dcdec5
+Control A implementation: 2feb3150d2850e320b7bd723791a4e5b00d51ac6
+Control A acceptance sync: 1578a5bac8d6b58c66248bf58d9ed9e246218d1b
+Control B implementation: ec014f0c9a7500323b590e85448d53b74519a031
+Control B acceptance sync: bfe15c03bd9759131d7ef1d39378ce949c3f0970
+Control C aggregate implementation: e631067ec0dca3ee459ea0ac43cd241a46dcdec5
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A lifecycle/privacy tests: 6 / PASS
+focused Control B abort/stale/privacy tests: 7 / PASS
+full Framework unit suite: 303 / PASS
+accepted FW-RT6-7a regression: PASS
+framework root-public names: 127 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+host-owned audio turn/generation correlation: PASS
+typed preflight/start/completed/failed/final events: PASS
+input abort generation invalidation: PASS
+provider hard-cancel claimed: False / PASS
+host capture physical stop claimed: False / PASS
+late transcript delivered after abort/newer input: False / PASS
+stale completion diagnostic: exactly once typed / PASS
+FILE_PATH value exposed publicly: False / PASS
+raw audio retained by session: False / PASS
+default fake and explicit adapter paths: PRESERVED / PASS
+real provider composition seam: PRESERVED / PASS
+VoiceInputResult changed: False / PASS
+runtime source changed by Control C: False
+provider/network/audio/microphone execution: False / PASS
+FW-RT6-7b tasks: 7 / 7 ACCEPTED
+FW-RT6-7b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-7c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-7c implementation: NOT_AUTHORIZED
+partial transcript/audio streaming: DEFERRED_TO_P1
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-7b is accepted as the provider-neutral voice-input stage-composition
+boundary. Host-owned audio receives Framework turn/generation correlation,
+typed lifecycle/final events, cooperative input abort, and stale-completion
+rejection while preserving raw-audio and `FILE_PATH` privacy.
+
+Abort remains Framework generation invalidation only. It does not assert
+provider hard cancellation or physical stopping of host capture. The existing
+`VoiceInputResult` shape and compatibility behavior remain unchanged.
+
+This sync closes FW-RT6-7b only. It authorizes FW-RT6-7c exact contract review
+after the sync commit/push is remotely verified, not FW-RT6-7c implementation.
+Partial transcript/audio streaming remains P1 scope.
+<!-- FW-RT6-7b-FINAL-ACCEPTANCE-SYNC:END -->
