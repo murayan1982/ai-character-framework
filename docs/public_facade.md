@@ -3120,3 +3120,43 @@ close-result contract, or claim provider cancellation. Those compatibility and
 close semantics remain FW-RT6-7c. Partial transcript/audio streaming remains
 P1 scope.
 <!-- FW-RT6-7b-B-ABORT-STALE-GATE:END -->
+
+<!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7b Control C — aggregate voice-input stage acceptance
+
+The accepted voice-input stage boundary combines the Control A
+lifecycle/privacy foundation with the Control B abort/stale-completion gate:
+
+```text
+host-owned audio correlated to one turn/generation:
+True
+
+typed preflight/start/completed/failed/final events:
+True
+
+current generation may publish TRANSCRIPT_FINAL:
+True
+
+retired generation may publish TRANSCRIPT_FINAL:
+False
+
+raw audio retained by the session:
+False
+
+FILE_PATH value exposed publicly:
+False
+```
+
+`VoiceInputSession.abort_input()` remains cooperative Framework generation
+invalidation. A `True` return does not claim provider hard cancellation or
+physical stopping of host-owned capture. A late result or exception is rejected
+before transcript delivery and produces one typed, path-safe
+`STALE_RESULT_DROPPED` diagnostic.
+
+The existing `VoiceInputResult` factories and shape remain unchanged. Additive
+result correlation, unified close rejection, and the final v5 compatibility
+bridge remain FW-RT6-7c. Partial transcript/audio streaming remains P1 scope.
+
+Control C changes no runtime source; it records aggregate acceptance and adds
+the dedicated aggregate regression gate.
+<!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:END -->

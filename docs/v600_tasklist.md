@@ -2701,13 +2701,13 @@ PASS
 
 **Tasks:**
 
-- [ ] host-owned audio sourceをturnへ関連付ける。
-- [ ] preflight/start/completed/failed eventを発行する。
-- [ ] transcript finalをtyped payloadにする。
-- [ ] input abortを実装する。
-- [ ] late transcriptをgeneration gateで拒否する。
-- [ ] raw audio retention default-offを維持する。
-- [ ] FILE_PATH pathをpublic eventへ出さない。
+- [x] host-owned audio sourceをturnへ関連付ける。
+- [x] preflight/start/completed/failed eventを発行する。
+- [x] transcript finalをtyped payloadにする。
+- [x] input abortを実装する。
+- [x] late transcriptをgeneration gateで拒否する。
+- [x] raw audio retention default-offを維持する。
+- [x] FILE_PATH pathをpublic eventへ出さない。
 
 **Acceptance:**
 
@@ -4933,3 +4933,60 @@ This sync authorizes only Control C exact contract review after the sync
 commit/push is remotely verified. It does not authorize Control C
 implementation or any FW-RT6-7c work.
 <!-- FW-RT6-7b-B-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7b Control C — aggregate stage-composition acceptance
+
+```text
+checkpoint: FW-RT6-7b Control C aggregate acceptance
+baseline head: bfe15c03bd9759131d7ef1d39378ce949c3f0970
+Control A implementation: 2feb3150d2850e320b7bd723791a4e5b00d51ac6
+Control A acceptance sync: 1578a5bac8d6b58c66248bf58d9ed9e246218d1b
+Control B implementation: ec014f0c9a7500323b590e85448d53b74519a031
+Control B acceptance sync: bfe15c03bd9759131d7ef1d39378ce949c3f0970
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: implemented-awaiting-review
+Control C exact surface: 3 files
+aggregate gate: PASS expected
+focused Control A lifecycle/privacy tests: 6 / PASS expected
+focused Control B abort/stale/privacy tests: 7 / PASS expected
+full Framework unit suite: 303 / PASS expected
+accepted FW-RT6-7a regression: PASS expected
+host-owned audio turn/generation correlation: PASS expected
+typed lifecycle/final transcript events: PASS expected
+input abort generation invalidation: PASS expected
+provider hard-cancel claimed: False / PASS expected
+host capture physical stop claimed: False / PASS expected
+late transcript delivered after abort/newer input: False / PASS expected
+stale completion diagnostic: exactly once typed / PASS expected
+FILE_PATH value exposed publicly: False / PASS expected
+raw audio retained by session: False / PASS expected
+default fake and explicit adapter paths: PRESERVED / PASS expected
+real provider composition seam: PRESERVED / PASS expected
+VoiceInputResult changed: False / PASS expected
+framework root-public names: 127 / UNCHANGED expected
+runtime source changed by Control C: False
+provider/network/audio/microphone execution: False / PASS expected
+FW-RT6-7b tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-7b aggregate: IMPLEMENTED_AWAITING_REVIEW
+FW-RT6-7b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-7c result correlation/close compatibility: NOT_AUTHORIZED
+partial transcript/audio streaming: DEFERRED_TO_P1
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the already accepted lifecycle/privacy and
+abort/stale-generation controls. Only a current voice-input generation may
+publish a final transcript; retired completions are rejected without exposing
+the host audio path or raw audio and without claiming provider hard
+cancellation.
+
+All seven FW-RT6-7b tasks close here as acceptance candidates. Final
+COMPLETED/VERIFIED/ACCEPTED/CLOSED status is deferred to the one-file final
+acceptance sync after this candidate is reviewed, committed, pushed, and
+remotely verified.
+
+This candidate changes no runtime source and does not authorize FW-RT6-7c or P1
+streaming work.
+<!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:END -->
