@@ -2624,3 +2624,42 @@ during acceptance verification.
 Input abort and late-transcript rejection remain Control B work. Result-level
 session/turn/generation correlation remains FW-RT6-7c.
 <!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:END -->
+
+<!-- FW-RT6-7b-B-ABORT-STALE-GATE:BEGIN -->
+## FW-RT6-7b Control B — host input abort and late completion handling
+
+An app may call `VoiceInputSession.abort_input()` while
+`transcribe_audio_result()` is in progress. The first call that invalidates the
+active Framework generation returns `True`; a call with no active input, or a
+duplicate call for the same operation, returns `False`.
+
+The return value is a Framework admission fact only:
+
+```text
+active generation invalidated:
+True
+
+provider request hard-cancelled:
+NOT IMPLIED
+
+host microphone/capture stopped:
+NOT IMPLIED
+```
+
+The host remains responsible for stopping its own capture mechanism. A provider
+adapter may still finish after the abort. The session rejects that late
+completion at its generation gate, returns the existing interrupted
+`VoiceInputResult` to the waiting caller, emits one typed
+`STALE_RESULT_DROPPED` diagnostic, and does not emit `TRANSCRIPT_FINAL` for the
+retired generation.
+
+Starting a newer voice-input operation likewise retires the earlier generation.
+Only the current operation may publish its final transcript. Stale diagnostic
+metadata contains safe retirement facts and never the raw audio source or a
+host `FILE_PATH` value.
+
+Apps must not interpret this control as provider hard cancellation, result-level
+correlation, or unified close rejection. Additive `VoiceInputResult`
+correlation and close compatibility remain FW-RT6-7c; partial streaming remains
+P1 scope.
+<!-- FW-RT6-7b-B-ABORT-STALE-GATE:END -->

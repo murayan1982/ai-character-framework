@@ -3079,3 +3079,44 @@ Control A does not implement input abort or generation-gate admission. Those
 remain FW-RT6-7b Control B. `VoiceInputResult` correlation fields remain
 FW-RT6-7c, while partial transcript/audio streaming remains P1 scope.
 <!-- FW-RT6-7b-A-LIFECYCLE-PRIVACY:END -->
+
+<!-- FW-RT6-7b-B-ABORT-STALE-GATE:BEGIN -->
+## FW-RT6-7b Control B — input abort and stale-completion gate
+
+`VoiceInputSession.abort_input()` cooperatively invalidates the active
+voice-input generation. It returns `True` only for the first accepted
+invalidation of an active input operation. It returns `False` when no input is
+active and for a duplicate abort.
+
+An accepted abort means only that the Framework generation is no longer
+eligible to publish a completion. It does not claim that the provider request
+was hard-cancelled or that host-owned audio capture physically stopped.
+
+Every adapter completion is admitted through the session-owned generation gate
+before its transcript may be emitted. An abort or a newer input operation
+retires the earlier generation. A later result or exception from that retired
+generation:
+
+```text
+VoiceInputResult returned to the waiting caller:
+interrupted (existing result shape)
+
+TRANSCRIPT_FINAL emitted:
+False
+
+STALE_RESULT_DROPPED emitted:
+exactly once, with DiagnosticEventPayload
+
+provider hard-cancel implied:
+False
+```
+
+The current-generation success path and the Control A event order remain
+unchanged. Raw audio is still not retained, and a `FILE_PATH` value is never
+copied into public events or stale diagnostics.
+
+Control B does not add correlation fields to `VoiceInputResult`, unify the
+close-result contract, or claim provider cancellation. Those compatibility and
+close semantics remain FW-RT6-7c. Partial transcript/audio streaming remains
+P1 scope.
+<!-- FW-RT6-7b-B-ABORT-STALE-GATE:END -->

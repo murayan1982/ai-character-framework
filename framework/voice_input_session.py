@@ -37,8 +37,18 @@ from .realtime import (
     RealtimeEventType,
     RealtimeState,
 )
-from .realtime_event_payloads import RealtimeEventPayload
-from .realtime_event_payloads import LifecycleEventPayload, TranscriptEventPayload
+from .realtime_event_payloads import (
+    DiagnosticEventPayload,
+    LifecycleEventPayload,
+    RealtimeEventPayload,
+    TranscriptEventPayload,
+)
+from .realtime_generation_gate import (
+    GenerationAdmissionDecision,
+    GenerationAdvanceReason,
+    RealtimeGenerationGate,
+    RealtimeStageCompletionEnvelope,
+)
 from .version import VOICE_INPUT_API_VERSION
 
 from .voice_input_capability import (
@@ -122,6 +132,9 @@ class VoiceInputSession:
         self._next_realtime_event_sequence = EventSequence.first()
         self._realtime_event_callbacks: list[VoiceInputRealtimeCallback] = []
         self._realtime_event_lock = RLock()
+        self._input_operation_lock = RLock()
+        self._generation_gate = RealtimeGenerationGate()
+        self._active_input_context: _VoiceInputTurnContext | None = None
         self._provider = provider
         self._language = language
         self._allow_provider_execution = allow_provider_execution
@@ -209,11 +222,110 @@ class VoiceInputSession:
     def _new_realtime_turn_context(self) -> _VoiceInputTurnContext:
         """Allocate one Framework-owned turn/generation correlation context."""
 
-        return _VoiceInputTurnContext(
-            session_id=self._session_id,
-            turn_id=TurnId.new(),
-            generation_id=GenerationId.new(),
+        with self._input_operation_lock:
+            turn_id = TurnId.new()
+            context = _VoiceInputTurnContext(
+                session_id=self._session_id,
+                turn_id=turn_id,
+                generation_id=self._generation_gate.start_generation(turn_id),
+            )
+            self._active_input_context = context
+            return context
+
+    def _input_context_is_current(self, context: _VoiceInputTurnContext) -> bool:
+        return (
+            self._active_input_context == context
+            and self._generation_gate.current_turn_id == context.turn_id
+            and self._generation_gate.current_generation_id == context.generation_id
         )
+
+    def _admit_input_completion(
+        self,
+        *,
+        context: _VoiceInputTurnContext,
+        value: object,
+    ) -> GenerationAdmissionDecision[object]:
+        return self._generation_gate.admit_completion(
+            RealtimeStageCompletionEnvelope(
+                turn_id=context.turn_id,
+                generation_id=context.generation_id,
+                stage="voice_input",
+                value=value,
+            )
+        )
+
+    def _emit_stale_input_completion(
+        self,
+        *,
+        context: _VoiceInputTurnContext,
+        decision: GenerationAdmissionDecision[object],
+    ) -> RealtimeEvent:
+        if decision.accepted or decision.stale_reason is None:
+            raise ValueError("stale voice-input diagnostic requires a rejected completion")
+        metadata: dict[str, object] = {
+            "stale_reason": decision.stale_reason.value,
+            "late_transcript_delivered": False,
+            "provider_hard_cancel_claimed": False,
+        }
+        if decision.retired_by is not None:
+            metadata["retired_by"] = decision.retired_by.value
+        return self._emit_realtime_event(
+            RealtimeEventType.STALE_RESULT_DROPPED,
+            state=RealtimeState.INTERRUPTED,
+            previous_state=RealtimeState.LISTENING,
+            context=context,
+            payload=DiagnosticEventPayload(
+                code="stale_voice_input_completion",
+                drop_reason=decision.stale_reason.value,
+            ),
+            safe_message="Stale voice input completion was dropped.",
+            public_metadata=metadata,
+        )
+
+    def _finish_input_context(self, context: _VoiceInputTurnContext) -> None:
+        if not self._input_context_is_current(context):
+            return
+        self._generation_gate.advance(GenerationAdvanceReason.TURN_TERMINAL)
+        self._active_input_context = None
+
+    @staticmethod
+    def _stale_input_result() -> VoiceInputResult:
+        return VoiceInputResult.interrupted(
+            safe_message="Stale voice input completion was dropped."
+        )
+
+    def abort_input(self) -> bool:
+        """Cooperatively invalidate the active input generation once.
+
+        A true result means only that Framework generation invalidation was
+        accepted. It does not claim provider hard cancellation or physical
+        termination of host audio capture.
+        """
+
+        with self._input_operation_lock:
+            context = self._active_input_context
+            if context is None or not self._input_context_is_current(context):
+                return False
+            retired = self._generation_gate.advance(GenerationAdvanceReason.CANCEL)
+            if retired is None:
+                return False
+            self._active_input_context = None
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_FAILED,
+                state=RealtimeState.INTERRUPTED,
+                previous_state=RealtimeState.LISTENING,
+                context=context,
+                payload=LifecycleEventPayload(reason="input_aborted"),
+                public_error_code=RealtimeErrorCode.INTERRUPTED,
+                safe_message="Voice input was interrupted.",
+                retryable=True,
+                public_metadata={
+                    "generation_invalidated": True,
+                    "provider_hard_cancel_claimed": False,
+                    "host_audio_capture_stopped_claimed": False,
+                },
+            )
+            return True
 
     def _emit_realtime_event(
         self,
@@ -386,21 +498,26 @@ class VoiceInputSession:
             "raw_audio_retained": False,
             "audio_path_exposed": False,
         }
-        self._emit_realtime_event(
-            RealtimeEventType.VOICE_INPUT_PREFLIGHT,
-            state=RealtimeState.IDLE,
-            context=context,
-            payload=LifecycleEventPayload(reason="voice_input_preflight"),
-            public_metadata=event_metadata,
-        )
-        self._emit_realtime_event(
-            RealtimeEventType.LISTENING_STARTED,
-            state=RealtimeState.LISTENING,
-            previous_state=RealtimeState.IDLE,
-            context=context,
-            payload=LifecycleEventPayload(reason="voice_input_started"),
-            public_metadata=event_metadata,
-        )
+        with self._input_operation_lock:
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_PREFLIGHT,
+                state=RealtimeState.IDLE,
+                context=context,
+                payload=LifecycleEventPayload(reason="voice_input_preflight"),
+                public_metadata=event_metadata,
+            )
+            if not self._input_context_is_current(context):
+                return VoiceInputResult.interrupted()
+            self._emit_realtime_event(
+                RealtimeEventType.LISTENING_STARTED,
+                state=RealtimeState.LISTENING,
+                previous_state=RealtimeState.IDLE,
+                context=context,
+                payload=LifecycleEventPayload(reason="voice_input_started"),
+                public_metadata=event_metadata,
+            )
+            if not self._input_context_is_current(context):
+                return VoiceInputResult.interrupted()
 
         effective_request = request or VoiceInputRequest(
             language=audio_source.language,
@@ -426,65 +543,101 @@ class VoiceInputSession:
                     capability_safe_message=self._capabilities.safe_message,
                 )
         except Exception:
+            with self._input_operation_lock:
+                decision = self._admit_input_completion(
+                    context=context,
+                    value=None,
+                )
+                if not decision.accepted:
+                    self._emit_stale_input_completion(
+                        context=context,
+                        decision=decision,
+                    )
+                    return self._stale_input_result()
+                self._emit_realtime_event(
+                    RealtimeEventType.VOICE_INPUT_FAILED,
+                    state=RealtimeState.FAILED,
+                    previous_state=RealtimeState.LISTENING,
+                    context=context,
+                    payload=LifecycleEventPayload(reason="voice_input_stage_exception"),
+                    public_error_code=RealtimeErrorCode.STAGE_FAILED,
+                    safe_message="Voice input failed.",
+                    public_metadata=event_metadata,
+                )
+                self._finish_input_context(context)
+            raise
+
+        with self._input_operation_lock:
+            decision = self._admit_input_completion(
+                context=context,
+                value=result,
+            )
+            if not decision.accepted:
+                self._emit_stale_input_completion(
+                    context=context,
+                    decision=decision,
+                )
+                return self._stale_input_result()
+
+            if result.is_completed:
+                self._emit_realtime_event(
+                    RealtimeEventType.LISTENING_COMPLETED,
+                    state=RealtimeState.TRANSCRIBING,
+                    previous_state=RealtimeState.LISTENING,
+                    context=context,
+                    payload=LifecycleEventPayload(reason="voice_input_completed"),
+                    public_metadata=event_metadata,
+                )
+                if not self._input_context_is_current(context):
+                    stale = self._admit_input_completion(
+                        context=context,
+                        value=result,
+                    )
+                    self._emit_stale_input_completion(
+                        context=context,
+                        decision=stale,
+                    )
+                    return self._stale_input_result()
+                self._emit_realtime_event(
+                    RealtimeEventType.TRANSCRIPT_FINAL,
+                    state=RealtimeState.TRANSCRIBING,
+                    context=context,
+                    payload=TranscriptEventPayload(
+                        text=result.text,
+                        is_final=True,
+                        confidence=result.confidence,
+                    ),
+                    public_metadata=event_metadata,
+                )
+                self._finish_input_context(context)
+                return result
+
+            error_code = RealtimeErrorCode.STAGE_FAILED
+            if result.public_error_code is VoiceInputErrorCode.UNAVAILABLE:
+                error_code = RealtimeErrorCode.UNAVAILABLE
+            elif result.public_error_code is VoiceInputErrorCode.INVALID_REQUEST:
+                error_code = RealtimeErrorCode.INVALID_REQUEST
+            elif result.public_error_code is VoiceInputErrorCode.INTERRUPTED:
+                error_code = RealtimeErrorCode.INTERRUPTED
+            elif result.public_error_code is VoiceInputErrorCode.PROVIDER_ERROR:
+                error_code = RealtimeErrorCode.PROVIDER_ERROR
+
             self._emit_realtime_event(
                 RealtimeEventType.VOICE_INPUT_FAILED,
                 state=RealtimeState.FAILED,
                 previous_state=RealtimeState.LISTENING,
                 context=context,
-                payload=LifecycleEventPayload(reason="voice_input_stage_exception"),
-                public_error_code=RealtimeErrorCode.STAGE_FAILED,
-                safe_message="Voice input failed.",
-                public_metadata=event_metadata,
+                payload=LifecycleEventPayload(reason=result.outcome.value),
+                public_error_code=error_code,
+                safe_message=result.safe_message,
+                retryable=result.retryable,
+                public_metadata={
+                    **event_metadata,
+                    "outcome": result.outcome.value,
+                },
             )
-            raise
-
-        if result.is_completed:
-            self._emit_realtime_event(
-                RealtimeEventType.LISTENING_COMPLETED,
-                state=RealtimeState.TRANSCRIBING,
-                previous_state=RealtimeState.LISTENING,
-                context=context,
-                payload=LifecycleEventPayload(reason="voice_input_completed"),
-                public_metadata=event_metadata,
-            )
-            self._emit_realtime_event(
-                RealtimeEventType.TRANSCRIPT_FINAL,
-                state=RealtimeState.TRANSCRIBING,
-                context=context,
-                payload=TranscriptEventPayload(
-                    text=result.text,
-                    is_final=True,
-                    confidence=result.confidence,
-                ),
-                public_metadata=event_metadata,
-            )
+            self._finish_input_context(context)
             return result
-
-        error_code = RealtimeErrorCode.STAGE_FAILED
-        if result.public_error_code is VoiceInputErrorCode.UNAVAILABLE:
-            error_code = RealtimeErrorCode.UNAVAILABLE
-        elif result.public_error_code is VoiceInputErrorCode.INVALID_REQUEST:
-            error_code = RealtimeErrorCode.INVALID_REQUEST
-        elif result.public_error_code is VoiceInputErrorCode.INTERRUPTED:
-            error_code = RealtimeErrorCode.INTERRUPTED
-        elif result.public_error_code is VoiceInputErrorCode.PROVIDER_ERROR:
-            error_code = RealtimeErrorCode.PROVIDER_ERROR
-
-        self._emit_realtime_event(
-            RealtimeEventType.VOICE_INPUT_FAILED,
-            state=RealtimeState.FAILED,
-            previous_state=RealtimeState.LISTENING,
-            context=context,
-            payload=LifecycleEventPayload(reason=result.outcome.value),
-            public_error_code=error_code,
-            safe_message=result.safe_message,
-            retryable=result.retryable,
-            public_metadata={
-                **event_metadata,
-                "outcome": result.outcome.value,
-            },
-        )
-        return result
 
     def listen_audio_result(
         self,
