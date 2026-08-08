@@ -5498,3 +5498,76 @@ closes the five task checkboxes only as aggregate acceptance candidates. Final
 deferred to a reviewed, committed, pushed, and remotely verified one-file final
 acceptance sync. This control does not authorize FW-RT6-8b or FW-RT6-8c work.
 <!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-8a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8a — motion correlation final acceptance sync
+
+```text
+checkpoint: FW-RT6-8a final acceptance
+baseline head: dc9c1526d0ab850555e1de96accfd22358fdbb1c
+Control A implementation: f99f540c8534bbfeee8e1be049d3559b81c24b8c
+Control A acceptance sync: d3d4166a99b946c4a5976032bf6580ca821b953f
+Control B implementation: a06d7a3371ebeec69bce9a7265a2d01af7b89322
+Control B acceptance sync: 38405956b1646e33a82b366256c5e95b819d7dc8
+Control C aggregate implementation: dc9c1526d0ab850555e1de96accfd22358fdbb1c
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A motion-correlation tests: 9 / PASS
+focused Control B motion-coordination tests: 8 / PASS
+full Framework unit suite: 336 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+legacy MotionRequest prefix: 11 fields / SAME ORDER / PASS
+legacy MotionResult prefix: 9 fields / SAME ORDER / PASS
+additive optional correlation suffix: turn_id / generation_id / PASS
+existing request_id/session_id compatibility: PRESERVED / PASS
+standalone correlation identity invented: False / PASS
+shared EventSequence owner: RealtimeEventHub / PASS
+separate local motion sequencer: False / PASS
+typed canonical motion payload: MotionEventPayload / PASS
+legacy mapping callback shape/sequence: PRESERVED / PASS
+common freshness owner: RealtimeGenerationGate / PASS
+MotionSession starts or advances unified generation: False / PASS
+unknown generation replaces active owner: False / PASS
+retired mock completion delivered: False / PASS
+retired VTS completion delivered: False / PASS
+stale canonical diagnostic: STALE_RESULT_DROPPED / PASS
+stale legacy terminal projection: motion.interrupted / PASS
+late motion completed event emitted: False / PASS
+VTS transport lifecycle-generation guard preserved: True / PASS
+provider hard cancellation claimed: False / PASS
+create_motion_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+FW-RT6-8a tasks: 5 / 5 ACCEPTED
+FW-RT6-8a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-8b exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-8b implementation: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-8a is accepted as the provider-neutral motion correlation boundary. It
+preserves the existing v5.5 request/result and public factory contracts while
+carrying optional Framework turn/generation identity through results, canonical
+events, and legacy mapping projections.
+
+Canonical motion events join the existing shared realtime sequence and terminal
+results use the common generation gate. Late or otherwise stale mock/VTube
+Studio completions normalize to correlated interrupted results and never emit a
+completed event. The existing VTube Studio lifecycle-generation check remains
+the transport-local close defense; this acceptance does not claim provider hard
+cancellation.
+
+This sync closes FW-RT6-8a only. It authorizes FW-RT6-8b exact contract review
+after the sync commit/push is remotely verified, not FW-RT6-8b implementation.
+FW-RT6-8c motion cancel/clear work remains not authorized.
+<!-- FW-RT6-8a-FINAL-ACCEPTANCE-SYNC:END -->
