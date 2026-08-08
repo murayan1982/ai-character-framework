@@ -4871,3 +4871,65 @@ This sync authorizes only Control B exact contract review after the sync
 commit/push is remotely verified. It does not authorize Control B
 implementation or any FW-RT6-7c work.
 <!-- FW-RT6-7b-A-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-7b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7b Control B — input-abort/stale-gate acceptance sync
+
+```text
+checkpoint: FW-RT6-7b Control B
+baseline head: ec014f0c9a7500323b590e85448d53b74519a031
+implementation commit: ec014f0c9a7500323b590e85448d53b74519a031
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 5 files
+dedicated gate: PASS
+focused Control A lifecycle/privacy tests: 6 / PASS
+focused Control B abort/stale/privacy tests: 7 / PASS
+full Framework unit suite: 303 / PASS
+accepted FW-RT6-7a regression: PASS
+Control A lifecycle/privacy regression: PASS
+session-owned RealtimeGenerationGate: PASS
+abort with active input first call: True / PASS
+abort with no active input: False / PASS
+duplicate abort: False / PASS
+abort meaning: Framework generation invalidation only / PASS
+provider hard-cancel claimed: False / PASS
+host capture physical stop claimed: False / PASS
+late transcript delivered after abort: False / PASS
+late transcript delivered after newer input: False / PASS
+late adapter exception exposed after abort: False / PASS
+stale completion diagnostic: exactly once / PASS
+stale completion payload: DiagnosticEventPayload / PASS
+waiting caller stale result: existing interrupted VoiceInputResult / PASS
+current-generation success path changed: False / PASS
+FILE_PATH value exposed to public event/diagnostic: False / PASS
+raw audio retained by session: False / PASS
+VoiceInputResult changed: False / PASS
+FW-RT6-7c result correlation/close semantics adopted: False / PASS
+partial transcript/audio streaming adopted: False / DEFERRED_TO_P1
+provider/network/audio/microphone execution: False / PASS
+framework root-public names: 127 / UNCHANGED
+Control A+B aggregate acceptance candidates: 7 / 7
+FW-RT6-7b aggregate: NOT_COMPLETED
+FW-RT6-7b tasklist: 0 / 7 CLOSED
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-7c: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts cooperative input abort and session-owned generation
+admission without claiming provider hard cancellation or physical host-capture
+stopping. An abort or a newer input retires the earlier generation; its late
+result or exception cannot publish a final transcript and produces one typed,
+path-safe stale diagnostic.
+
+The accepted Control A lifecycle/privacy foundation and Control B abort/stale
+gate together cover all seven FW-RT6-7b tasks as aggregate acceptance
+candidates. The task checkboxes remain `0 / 7 CLOSED` until Control C performs
+the aggregate review and closure.
+
+This sync authorizes only Control C exact contract review after the sync
+commit/push is remotely verified. It does not authorize Control C
+implementation or any FW-RT6-7c work.
+<!-- FW-RT6-7b-B-ACCEPTANCE-SYNC:END -->
