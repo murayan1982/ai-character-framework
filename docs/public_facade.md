@@ -3798,3 +3798,71 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:BEGIN -->
+## FW-RT6-9a Control A — explicit interrupt coordination models
+
+Applications that need typed inspection of future whole-turn interrupt reach
+may import the explicit package below. These names are intentionally not added
+to the Framework root in Control A.
+
+```python
+from framework.interrupt_coordination import (
+    InterruptAggregateOutcome,
+    InterruptAggregateResult,
+    InterruptSubsystem,
+    InterruptSubsystemOutcome,
+    InterruptSubsystemResult,
+)
+```
+
+The five stable subsystem targets are text generation, TTS generation, the TTS
+pending queue, audio artifacts, and motion. Each result states whether its
+target was reached and separately reports cooperative cancellation, provider
+hard cancellation, future-delivery suppression, and affected item count.
+
+```text
+cooperative cancel != provider hard cancel
+accepted != completed
+provider support != provider application
+unsupported overclaim: False
+```
+
+The aggregate accepts a non-empty set containing at most one result per
+subsystem. Session and turn correlation must agree. Its outcome is derived,
+not trusted from a caller: all completed maps to `COMPLETED`, all timed out maps
+to `TIMED_OUT`, all unsupported maps to `UNSUPPORTED`, and mixed observations
+map to `PARTIAL`.
+
+Existing root-public `InterruptRequest` gains only the optional trailing
+`timeout_seconds` value. Existing root-public `InterruptResult` accepts an
+optional trailing `coordination_result` projection while preserving its
+accepted dataclass field inventory and legacy defaults. Control A does not
+populate that projection at runtime.
+
+The internal registry, target dispatch, stage cancellation, artifact
+invalidation, bounded waiting, and final mapping to the established
+`InterruptResult.outcome` are Control B work. Whole-request duplicate/race
+ordering and barge-in execution remain FW-RT6-9b and FW-RT6-9c respectively.
+
+```text
+exact Control A surface: 6 files
+explicit package exports: 5 / EXACT
+subsystem outcomes: 8 / EXACT
+aggregate outcomes: 9 / EXACT
+subsystem reach observable: MODEL READY
+aggregate outcome derived from subsystem results: True
+partial result: PASS
+unsupported overclaim: False
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+FW-RT6-9a aggregate tasks: 0 / 9 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-9b: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:END -->

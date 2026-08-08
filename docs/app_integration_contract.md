@@ -3139,3 +3139,76 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8c-B-MOTION-CONTROL-ADOPTION:END -->
+
+<!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:BEGIN -->
+## FW-RT6-9a Control A — interrupt coordination result contract
+
+Control A adds the explicit-only `framework.interrupt_coordination` package.
+It defines provider-neutral subsystem reach and aggregate result facts; it does
+not register active stages, call a stage cancel method, invalidate an artifact,
+wait for cancellation, or change `RealtimeSession.interrupt()` execution.
+
+```python
+from framework.interrupt_coordination import (
+    InterruptAggregateOutcome,
+    InterruptAggregateResult,
+    InterruptSubsystem,
+    InterruptSubsystemOutcome,
+    InterruptSubsystemResult,
+)
+```
+
+One result identifies exactly one of `TEXT_GENERATION`, `TTS_GENERATION`,
+`TTS_QUEUE`, `AUDIO_ARTIFACT`, or `MOTION`. Its typed facts keep Framework
+cooperative cancellation, provider hard cancellation, future-delivery
+suppression, and affected item counts independent.
+
+```text
+cooperative cancel != provider hard cancel
+cancel accepted != cancel completed
+provider hard cancel applied requires advertised support: True
+unsupported overclaim: False
+```
+
+`InterruptAggregateResult.from_results(...)` derives the aggregate outcome
+from a non-empty, unique, session/turn-correlated set of subsystem results.
+Uniform subsystem outcomes map to the corresponding aggregate; heterogeneous
+outcomes map to `PARTIAL`. A caller cannot label unsupported or mixed results
+as completed.
+
+`InterruptRequest.timeout_seconds` is an optional trailing field. `None`
+preserves existing behavior; supplied values must be finite and greater than
+zero. Control A only validates and carries the value. It starts no timer.
+
+`InterruptResult` accepts one optional trailing `coordination_result`
+constructor projection. The established ten dataclass fields through
+`motion_result`, existing helper constructors, aggregate `InterruptOutcome`,
+and default behavior remain unchanged. A supplied aggregate must be typed and
+must match the interrupt turn when both identify one.
+
+Control B may later add the internal active-stage registry and compose existing
+text generation, TTS generation/queue, artifact invalidation, and motion
+control primitives. Whole-request duplicate convergence and race ordering
+remain FW-RT6-9b; barge-in decision/execution remains FW-RT6-9c.
+
+```text
+exact Control A surface: 6 files
+stable explicit package: framework.interrupt_coordination
+subsystem reach observable: MODEL READY
+aggregate outcome derived from subsystem results: True
+partial result: PASS
+unsupported overclaim: False
+InterruptRequest legacy prefix: 8 fields / SAME ORDER
+InterruptResult accepted dataclass fields: UNCHANGED
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+duplicate/race ordering: DEFERRED TO FW-RT6-9b
+barge-in execution: DEFERRED TO FW-RT6-9c
+FW-RT6-9a aggregate tasks: 0 / 9 CLOSED
+Control B: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:END -->

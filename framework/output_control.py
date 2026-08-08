@@ -8,14 +8,16 @@ or provider SDK modules.
 from __future__ import annotations
 from .public_safety import public_mapping as _recursive_public_mapping
 
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from enum import Enum
+from math import isfinite
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Mapping
 
 from .identity import TurnId, normalize_turn_id
 
 if TYPE_CHECKING:
+    from .interrupt_coordination import InterruptAggregateResult
     from .motion_control import MotionControlResult
 
 
@@ -102,6 +104,7 @@ class InterruptRequest:
     cancel_llm_stream: bool = False
     stop_motion: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    timeout_seconds: float | None = None
 
     def __post_init__(self) -> None:
         scope = self.scope if isinstance(self.scope, InterruptScope) else InterruptScope(str(self.scope))
@@ -110,6 +113,18 @@ class InterruptRequest:
         object.__setattr__(self, "reason", reason)
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        timeout_seconds = self.timeout_seconds
+        if timeout_seconds is not None:
+            if isinstance(timeout_seconds, bool) or not isinstance(
+                timeout_seconds, (int, float)
+            ):
+                raise TypeError("timeout_seconds must be a number or None")
+            timeout_seconds = float(timeout_seconds)
+            if not isfinite(timeout_seconds) or timeout_seconds <= 0.0:
+                raise ValueError(
+                    "timeout_seconds must be finite and greater than zero"
+                )
+        object.__setattr__(self, "timeout_seconds", timeout_seconds)
 
     @classmethod
     def user_barge_in(
@@ -118,6 +133,7 @@ class InterruptRequest:
         turn_id: TurnId | str | None = None,
         scope: InterruptScope | str = InterruptScope.ALL,
         public_metadata: Mapping[str, Any] | None = None,
+        timeout_seconds: float | None = None,
     ) -> "InterruptRequest":
         """Create a standard user barge-in interrupt request."""
 
@@ -130,6 +146,7 @@ class InterruptRequest:
             cancel_llm_stream=True,
             stop_motion=True,
             public_metadata=public_metadata or {},
+            timeout_seconds=timeout_seconds,
         )
 
 
@@ -147,8 +164,12 @@ class InterruptResult:
     queue_flush_supported: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
     motion_result: "MotionControlResult | None" = None
+    coordination_result: InitVar["InterruptAggregateResult | None"] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        coordination_result: "InterruptAggregateResult | None",
+    ) -> None:
         outcome = self.outcome if isinstance(self.outcome, InterruptOutcome) else InterruptOutcome(str(self.outcome))
         scope = self.scope if isinstance(self.scope, InterruptScope) else InterruptScope(str(self.scope))
         reason = self.reason if isinstance(self.reason, InterruptReason) else InterruptReason(str(self.reason))
@@ -168,6 +189,22 @@ class InterruptResult:
                 and self.turn_id != self.motion_result.turn_id
             ):
                 raise ValueError("motion_result turn_id must match interrupt turn_id")
+        if coordination_result is not None:
+            from .interrupt_coordination import InterruptAggregateResult
+
+            if not isinstance(coordination_result, InterruptAggregateResult):
+                raise TypeError(
+                    "coordination_result must be an InterruptAggregateResult or None"
+                )
+            if (
+                self.turn_id is not None
+                and coordination_result.turn_id is not None
+                and self.turn_id != coordination_result.turn_id
+            ):
+                raise ValueError(
+                    "coordination_result turn_id must match interrupt turn_id"
+                )
+        object.__setattr__(self, "_coordination_result", coordination_result)
 
     @property
     def accepted(self) -> bool:
@@ -237,6 +274,24 @@ class InterruptResult:
             retryable=False,
             public_metadata={"boundary": "interrupt", "reason": "no_active_turn"},
         )
+
+
+def _get_interrupt_coordination_result(
+    result: InterruptResult,
+) -> "InterruptAggregateResult | None":
+    """Return the additive aggregate projection stored by the constructor.
+
+    The projection is an ``InitVar`` so accepted v5.2 dataclass field
+    introspection remains unchanged while the constructor gains one trailing,
+    optional value.
+    """
+
+    return getattr(result, "_coordination_result", None)
+
+
+InterruptResult.coordination_result = property(  # type: ignore[attr-defined]
+    _get_interrupt_coordination_result
+)
 
 
 @dataclass(frozen=True)
