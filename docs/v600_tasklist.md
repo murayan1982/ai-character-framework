@@ -6184,3 +6184,89 @@ contract.
 This sync closes FW-RT6-8c only. It authorizes FW-RT6-9a exact contract review
 after the sync commit/push is remotely verified, not FW-RT6-9a implementation.
 <!-- FW-RT6-8c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9a Control A — interrupt coordination contract acceptance sync
+
+```text
+checkpoint: FW-RT6-9a Control A
+baseline head: 712a03e27db1ea6c2229f6907c54d581680bb208
+Control A implementation: 712a03e27db1ea6c2229f6907c54d581680bb208
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 6 files
+dedicated Control A gate: PASS
+focused Control A interrupt-coordination tests: 17 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+full Framework unit suite: 404 / PASS
+explicit package: framework.interrupt_coordination / PASS
+interrupt subsystems: 5 EXACT / PASS
+typed subsystem outcomes: 8 EXACT / PASS
+typed aggregate outcomes: 9 EXACT / PASS
+subsystem reach observable: MODEL READY / PASS
+aggregate outcome derived from subsystem results: True / PASS
+partial result: PASS
+unsupported overclaim: False / PASS
+cooperative cancel equals provider hard cancel: False / PASS
+provider hard cancel application requires advertised support: True / PASS
+InterruptRequest additive timeout_seconds: PASS
+legacy InterruptRequest positional prefix: UNCHANGED / PASS
+InterruptResult additive coordination_result projection: PASS
+accepted InterruptResult dataclass fields: UNCHANGED / PASS
+aggregate/subsystem session and turn correlation: PASS
+duplicate subsystem aggregate entries accepted: False / PASS
+root import loads framework.interrupt_coordination eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+active stage registry: DEFERRED_TO_CONTROL_B
+interrupt target dispatch and validation: DEFERRED_TO_CONTROL_B
+LLM/TTS/artifact/motion runtime coordination: DEFERRED_TO_CONTROL_B
+bounded wait and runtime partial completion: DEFERRED_TO_CONTROL_B
+whole-request duplicate/race ordering: DEFERRED_TO_FW_RT6_9B
+barge-in decision/execution: DEFERRED_TO_FW_RT6_9C
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-9a aggregate: NOT_COMPLETED
+FW-RT6-9a tasklist: 0 / 9 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-9b implementation: NOT_AUTHORIZED
+FW-RT6-9c implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the explicit provider-neutral result boundary for future
+whole-turn interrupt coordination. Each typed result identifies one of text
+generation, TTS generation, the TTS pending queue, audio artifacts, or motion
+and reports target reach separately from cooperative cancellation, provider
+hard cancellation, future-delivery suppression, and affected item count.
+
+`InterruptAggregateResult.from_results(...)` derives its outcome from a
+non-empty set containing at most one result for each subsystem. Session and
+turn correlation must agree. Uniform observations map to the matching typed
+aggregate outcome, while heterogeneous observations map to `PARTIAL`; callers
+cannot relabel unsupported or mixed results as completed.
+
+The trailing optional `InterruptRequest.timeout_seconds` preserves the legacy
+request prefix and accepts only finite positive values. The optional trailing
+`InterruptResult.coordination_result` constructor projection preserves the
+accepted dataclass field inventory and existing helper defaults. The explicit
+coordination package remains absent from the root-public surface, and realtime
+and motion API versions remain unchanged.
+
+Control A adds models and validation only. Active-stage ownership, target
+dispatch, LLM/TTS/artifact/motion control calls, bounded waiting, and runtime
+aggregate projection remain Control B work. Therefore all nine FW-RT6-9a task
+checkboxes stay open. Whole-request duplicate/race ordering remains FW-RT6-9b,
+and barge-in decision/execution remains FW-RT6-9c. This sync authorizes only
+Control B exact contract review after the sync commit/push is remotely
+verified; it does not authorize Control B, FW-RT6-9b, or FW-RT6-9c
+implementation.
+<!-- FW-RT6-9a-A-ACCEPTANCE-SYNC:END -->
