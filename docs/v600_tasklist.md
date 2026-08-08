@@ -5571,3 +5571,73 @@ This sync closes FW-RT6-8a only. It authorizes FW-RT6-8b exact contract review
 after the sync commit/push is remotely verified, not FW-RT6-8b implementation.
 FW-RT6-8c motion cancel/clear work remains not authorized.
 <!-- FW-RT6-8a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8b Control A — motion lifecycle hook acceptance sync
+
+```text
+checkpoint: FW-RT6-8b Control A
+baseline head: 6903b5a8ac96ea7e0e7bbd1b0108d7eb9f9f8dd7
+implementation commit: 6903b5a8ac96ea7e0e7bbd1b0108d7eb9f9f8dd7
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 5 files
+dedicated gate: PASS
+focused Control A motion-lifecycle tests: 13 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a aggregate regression: PASS
+full Framework unit suite: 349 / PASS
+stable explicit package: framework.motion_lifecycle / PASS
+explicit-package exports: 6 / PASS
+lifecycle signal vocabulary: 6 EXACT / PASS
+notification session/turn/generation correlation: PASS
+notification source EventSequence: PASS
+transient/terminal outcome separation: PASS
+provider-neutral hook return: MotionRequest | None / PASS
+uncorrelated request context inheritance: PASS
+matching request correlation preservation: PASS
+partial/mismatched correlation escapes boundary: False / PASS
+None hook result: SKIPPED / PASS
+malformed hook result: FAILED / PUBLIC-SAFE / PASS
+hook exception escapes Framework boundary: False / PASS
+raw hook exception public: False / PASS
+conversation terminal changed by hook failure: False / PASS
+unsupported motion intent channel: MotionOutcome.UNSUPPORTED / PASS
+product-specific mapping in Framework core: False / PASS
+framework root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime hook adoption: DEFERRED_TO_CONTROL_B
+MotionStage execution: DEFERRED_TO_CONTROL_B
+canonical hook/motion event integration: DEFERRED_TO_CONTROL_B
+FW-RT6-8b aggregate: NOT_COMPLETED
+FW-RT6-8b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the provider-neutral lifecycle-to-motion extension contract.
+The stable explicit `framework.motion_lifecycle` package carries the accepted
+session, turn, generation, and canonical source sequence into one of six exact
+lifecycle notifications. A host/plugin may return an existing provider-neutral
+`MotionRequest` or intentionally skip the signal with `None`; Framework core
+does not choose a character, expression, gesture, model, hotkey, or provider.
+
+Uncorrelated requests inherit the notification's existing turn/generation
+identity, while partial or mismatched correlation, malformed returns, and hook
+exceptions remain inside a typed public-safe hook failure boundary. Hook skip,
+hook failure, and adapter-level `MotionOutcome.UNSUPPORTED` remain distinct, and
+none of them changes an already established conversation terminal outcome.
+
+Runtime hook adoption, `MotionStage` execution, and canonical hook/motion event
+integration remain Control B work. Therefore all six FW-RT6-8b aggregate task
+checkboxes stay open. This sync authorizes only Control B exact contract review
+after the sync commit/push is remotely verified; it does not authorize Control
+B implementation or any FW-RT6-8c motion cancel/clear work.
+<!-- FW-RT6-8b-A-ACCEPTANCE-SYNC:END -->
