@@ -5794,3 +5794,84 @@ closes the six task checkboxes only as aggregate acceptance candidates. Final
 deferred to a reviewed, committed, pushed, and remotely verified one-file final
 acceptance sync. FW-RT6-8c motion cancel/clear work remains not authorized.
 <!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-8b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8b — motion lifecycle extension final acceptance sync
+
+```text
+checkpoint: FW-RT6-8b final acceptance
+baseline head: 6502762f5e320dc6d7e663b431861c61713cb1c4
+Control A implementation: 6903b5a8ac96ea7e0e7bbd1b0108d7eb9f9f8dd7
+Control A acceptance sync: 7e8afe4955c23d89924227dba269714ad71aed09
+Control B implementation: c07d8d23723229118c95b2f2b1a292e6ce3f6129
+Control B acceptance sync: a67af1caa45cc3a4f98fb324ce84d5f23ee060c1
+Control C aggregate implementation: 6502762f5e320dc6d7e663b431861c61713cb1c4
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A motion-lifecycle tests: 13 / PASS
+focused Control B motion-lifecycle tests: 15 / PASS
+full Framework unit suite: 364 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a aggregate regression: PASS
+stable explicit hook package exports: 6 / PASS
+public registration: RealtimeSession.set_motion_lifecycle_hook / PASS
+factory/config hook parameter added: False / PASS
+lifecycle source mapping: 7 canonical sources / PASS
+hook signal vocabulary: 6 EXACT / PASS
+source canonical event published before hook: True / PASS
+provider-neutral mapped request: MotionRequest / PASS
+product-specific mapping in Framework core: False / PASS
+hook skip/failure starts MotionStage: False / PASS
+mapped request uses injected MotionStage: True / PASS
+canonical motion sequence owner: shared RealtimeEventHub / PASS
+transient completion freshness owner: shared RealtimeGenerationGate / PASS
+motion lifecycle starts/advances generation: False / PASS
+terminal motion begins after terminal commit/publication: True / PASS
+terminal motion reopens retired generation: False / PASS
+conversation terminal replaced/duplicated by motion: False / PASS
+missing MotionStage: MotionOutcome.NOT_CONFIGURED / PASS
+failed MotionStage preflight: MotionOutcome.UNAVAILABLE / PASS
+stage exception/malformed/correlation mismatch: PUBLIC-SAFE FAILED / PASS
+unsupported adapter outcome: MotionOutcome.UNSUPPORTED / PRESERVED / PASS
+callback/hook close starts MotionStage afterward: False / PASS
+MotionStage close ownership: RealtimeSession / IDEMPOTENT / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+FW-RT6-8b tasks: 6 / 6 ACCEPTED
+FW-RT6-8b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-8c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-8c implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-8b is accepted as the provider-neutral lifecycle-to-motion extension
+boundary. The stable hook contract preserves existing session, turn,
+generation, and source-event sequence correlation while host/plugin code remains
+the sole owner of character- and product-specific mapping.
+
+Mapped requests execute through the existing injected `MotionStage`. Canonical
+motion events use the session's shared sequencer, and transient completions use
+the existing common freshness gate. Terminal-triggered motion remains a
+post-terminal side effect and cannot reopen generation ownership or
+replace/duplicate the accepted conversation terminal state.
+
+Hook skip, hook failure, missing or unavailable stages, malformed or mismatched
+results, and unsupported adapters remain typed and public-safe. The accepted
+boundary changes neither the root-public surface nor realtime/motion API
+versions and introduces no provider, network, audio, microphone, or real VTube
+Studio execution.
+
+This sync closes FW-RT6-8b only. It authorizes FW-RT6-8c exact contract review
+after the sync commit/push is remotely verified, not FW-RT6-8c implementation.
+<!-- FW-RT6-8b-FINAL-ACCEPTANCE-SYNC:END -->
