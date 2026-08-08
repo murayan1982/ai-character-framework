@@ -3735,3 +3735,66 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8c-B-MOTION-CONTROL-ADOPTION:END -->
+
+
+<!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8c Control C — aggregate motion-control acceptance
+
+Control C accepts the combined provider-neutral motion-control result contract
+and its `RealtimeSession` runtime bridge. Applications continue to use the
+existing `interrupt(...)` or `cancel_current_turn(...)` entry points and inspect
+the optional trailing `InterruptResult.motion_result`; no new public
+`cancel_motion()` method, factory parameter, root export, or callback is added.
+
+One session-owned pending or active lifecycle motion provides the correlated
+stage and request context. `MotionStage.cancel` runs outside the long session
+operation lock. Once cancellation is accepted, a one-way late-delivery barrier
+prevents the original stage call from publishing a late motion completion or
+failure. Cancel request, acceptance, and actual completion remain independently
+observable.
+
+Explicit provider-neutral `STOP_MOTION` remains a separate operation. The
+cached construction preflight is the capability authority, and
+`stop_motion_applied=True` requires a typed, correlated
+`MotionOutcome.COMPLETED` result. Unsupported capability, exceptions, malformed
+or mismatched envelopes, and non-completed results never claim a provider-side
+stop.
+
+Duplicate stage cancel and provider stop execution is limited to at most once
+per active work item, and a mismatched turn target cannot reach another turn's
+motion. `NOT_ACTIVE`, `ALREADY_TERMINAL`, and `ALREADY_CLOSED` remain distinct
+typed facts.
+
+Control C changes no runtime source. It does not alter the existing aggregate
+`InterruptResult.outcome`; LLM, TTS, queued output, artifact invalidation,
+partial completion, timeouts, and whole-request duplicate convergence remain
+FW-RT6-9a/FW-RT6-9b work. The five FW-RT6-8c tasks are therefore closed only as
+an accepted-candidate set pending final acceptance sync.
+
+```text
+Control A: COMPLETED / VERIFIED / ACCEPTED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused motion-control tests: 12 + 11 / PASS
+pending/active motion owner: RealtimeSession / PASS
+pre-lock MotionStage.cancel: PASS
+accepted cancel late-delivery barrier: PASS
+stop_motion unsupported overclaim: False / PASS
+duplicate cancel/stop execution: AT_MOST_ONCE / PASS
+turn mismatch cancels another motion: False / PASS
+whole-turn motion reach: InterruptResult.motion_result / PASS
+aggregate InterruptResult outcome changed: False
+new public cancel_motion method: False
+standalone MotionSession public contract changed: False
+framework root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime source changed by Control C: False
+FW-RT6-8c tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-8c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9a aggregate interrupt: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:END -->

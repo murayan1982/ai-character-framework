@@ -2803,11 +2803,11 @@ documented/tested
 
 **Tasks:**
 
-- [ ] pending motion request trackingを追加する。
-- [ ] request cancel capabilityを追加する。
-- [ ] stop_motion unavailableをtruthfulに返す。
-- [ ] whole-turn interruptからmotion reachを返す。
-- [ ] duplicate stop/cancelをsafeにする。
+- [x] pending motion request trackingを追加する。
+- [x] request cancel capabilityを追加する。
+- [x] stop_motion unavailableをtruthfulに返す。
+- [x] whole-turn interruptからmotion reachを返す。
+- [x] duplicate stop/cancelをsafeにする。
 
 **Acceptance:**
 
@@ -6028,3 +6028,78 @@ sync authorizes only Control C aggregate exact contract review after the sync
 commit/push is remotely verified; it does not authorize Control C
 implementation or FW-RT6-9a aggregate interrupt work.
 <!-- FW-RT6-8c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8c Control C — motion cancel/clear aggregate acceptance
+
+```text
+checkpoint: FW-RT6-8c Control C aggregate acceptance candidate
+baseline head: b1710ba1398cbbaf982d0fa436f41ba43d707e96
+Control A implementation: 1fcff27a9b2f89cd0682cf613b351b3f4b35c60b
+Control A acceptance sync: 538b1baae3ff6e0ad2c1add3a8d667f9d107d474
+Control B implementation: 2750fc3c584aa2cca238a10e2ed596639bd113d9
+Control B acceptance sync: b1710ba1398cbbaf982d0fa436f41ba43d707e96
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused Control A motion-control tests: 12 / PASS
+focused Control B motion-control tests: 11 / PASS
+full Framework unit suite: 387 / PASS
+typed MotionControlOutcome vocabulary: 8 EXACT / PASS
+pending/active lifecycle motion owner: RealtimeSession / PASS
+request cancel capability source: cached construction preflight / PASS
+MotionStage.cancel outside long session operation lock: PASS
+cancel request/accept/completion facts separated: True / PASS
+accepted cancel late-delivery barrier: PASS
+late motion terminal event delivered: False / PASS
+request cancel equals STOP_MOTION: False / PASS
+stop_motion unsupported overclaim: False / PASS
+provider stop application requires correlated COMPLETED: True / PASS
+duplicate stage cancel execution: AT_MOST_ONCE / PASS
+duplicate provider stop execution: AT_MOST_ONCE / PASS
+turn mismatch cancels another motion: False / PASS
+whole-turn motion reach: InterruptResult.motion_result / PASS
+aggregate InterruptResult outcome changed: False
+no active / terminal / closed outcomes: TYPED / PASS
+new public cancel_motion method: False / PASS
+standalone MotionSession public contract changed: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+FW-RT6-8c tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-8c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9a aggregate interrupt: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted typed motion-control contract and its
+`RealtimeSession` runtime adoption. One session-owned pending or active
+lifecycle motion retains the stage and request correlation needed to report
+truthful cancel and provider-neutral stop facts through the existing additive
+`InterruptResult.motion_result` projection.
+
+Cancellation remains split phase: `MotionStage.cancel` executes outside the
+long session operation lock, and accepted cancellation arms a one-way
+late-delivery barrier before the interrupt waits for that lock. Request,
+acceptance, completion, and explicit provider stop application remain separate
+facts. Unsupported capability, exceptions, malformed or mismatched results,
+and non-completed stop outcomes never claim provider application.
+
+One active-work owner linearizes duplicate stage cancel and provider stop
+execution. Target mismatch cannot cancel another turn. No-active, terminal, and
+closed cases remain distinct typed motion-control outcomes. The established
+aggregate interrupt outcome is deliberately unchanged; Control C does not
+implement the FW-RT6-9a whole-turn coordinator.
+
+Control C changes no runtime source. It adds the aggregate regression gate and
+closes the five FW-RT6-8c task checkboxes only as aggregate acceptance
+candidates. Final `COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED /
+CLOSED` status remains deferred to a reviewed, committed, pushed, and remotely
+verified one-file final acceptance sync. FW-RT6-9a remains not authorized.
+<!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:END -->
