@@ -205,7 +205,7 @@ def check_focused_tests() -> None:
     print("[OK] eight focused result-correlation compatibility tests pass")
 
 
-def check_docs_and_deferred_scope() -> None:
+def check_docs_and_control_b_bridge() -> None:
     tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(encoding="utf-8")
     start = tasklist.index("## FW-RT6-7c — Voice input result compatibility")
     end = tasklist.index("\n---\n", start)
@@ -221,22 +221,39 @@ def check_docs_and_deferred_scope() -> None:
             f"Control A docs marker missing: {relative}",
         )
         _require(
-            "Control B" in text and "closed" in text.lower(),
-            f"Control B close/callback deferral missing: {relative}",
+            "FW-RT6-7c-B-COMPATIBILITY-BRIDGE:BEGIN" in text,
+            f"Control B compatibility marker missing: {relative}",
         )
     session = __import__("framework").create_voice_input_session()
     listen_result = session.listen_result()
+    fallback_result = session.text_fallback_result("fallback")
     session.close()
-    closed_result = session.listen_result()
-    _require(
-        listen_result.turn_id is None and listen_result.generation_id is None,
-        "Control A prematurely correlated listen_result",
+    closed_results = (
+        session.listen_result(),
+        session.text_fallback_result("ignored"),
     )
     _require(
-        closed_result.turn_id is None and closed_result.generation_id is None,
-        "Control A prematurely adopted unified close result correlation",
+        listen_result.session_id == session.session_id
+        and listen_result.turn_id is not None
+        and listen_result.generation_id is not None,
+        "Control B listen_result correlation bridge drift",
     )
-    print("[OK] mapping/listen/close bridge remains deferred to Control B")
+    _require(
+        fallback_result.session_id == session.session_id
+        and fallback_result.turn_id is not None
+        and fallback_result.generation_id is not None,
+        "Control B text-fallback correlation bridge drift",
+    )
+    _require(
+        all(
+            result.session_id == session.session_id
+            and result.turn_id is None
+            and result.generation_id is None
+            for result in closed_results
+        ),
+        "Control B unified post-close rejection drift",
+    )
+    print("[OK] accepted Control A correlation remains compatible with Control B bridge")
 
 
 def main() -> None:
@@ -250,16 +267,16 @@ def main() -> None:
     check_session_result_event_correlation()
     check_v5_compatibility_gates()
     check_focused_tests()
-    check_docs_and_deferred_scope()
-    print("v600_rt6_7c_control_a_status: implemented-awaiting-review")
+    check_docs_and_control_b_bridge()
+    print("v600_rt6_7c_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_7c_control_a_exact_surface: 7 files")
     print("v600_rt6_7c_result_fields: legacy-9 + additive-3 / PASS")
     print("v600_rt6_7c_factory_compatibility: PASS")
     print("v600_rt6_7c_transcribe_result_event_correlation: PASS")
     print("v600_rt6_7c_adapter_correlation_authority: session-owned / PASS")
-    print("v600_rt6_7c_legacy_mapping_callback_bridge: DEFERRED_TO_CONTROL_B")
-    print("v600_rt6_7c_listen_text_fallback_correlation: DEFERRED_TO_CONTROL_B")
-    print("v600_rt6_7c_close_rejection: DEFERRED_TO_CONTROL_B")
+    print("v600_rt6_7c_legacy_mapping_callback_bridge: ADOPTED_BY_CONTROL_B / PASS")
+    print("v600_rt6_7c_listen_text_fallback_correlation: ADOPTED_BY_CONTROL_B / PASS")
+    print("v600_rt6_7c_close_rejection: ADOPTED_BY_CONTROL_B / PASS")
     print("v600_rt6_7c_root_public_names: 127 / UNCHANGED")
     print("v600_rt6_7c_task_count: 0 / 5 CLOSED")
     print("v600_rt6_7c_commit_push: NOT_AUTHORIZED")

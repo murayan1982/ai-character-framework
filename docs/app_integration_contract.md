@@ -2693,3 +2693,41 @@ This control does not yet attach correlation to `listen_result()` or text
 fallback, adapt legacy mapping callbacks from canonical v6 events, or unify
 closed-session result rejection. Those remain FW-RT6-7c Control B.
 <!-- FW-RT6-7c-A-RESULT-CORRELATION:END -->
+
+<!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:BEGIN -->
+## FW-RT6-7c Control B — app result/callback compatibility bridge
+
+Apps may correlate every open-session result-returning voice-input operation
+without constructing identities. `listen_result()` and
+`text_fallback_result()` now receive the same session-owned turn/generation
+context already used by `transcribe_audio_result()`.
+
+```text
+open operation result:
+session_id + turn_id + generation_id
+
+post-close rejection:
+session_id only; no turn or generation admitted
+```
+
+The canonical `on_realtime_event()` callback remains the v6 authority. For apps
+that still use `on_event()`, the session explicitly projects the accepted legacy
+mapping events from canonical preflight/failure/final/close events. Mapping
+objects keep their existing `type`, `session_type`, and `payload` keys.
+
+`listen_result()` continues to report the provider-neutral unavailable outcome
+when live capture is not implemented. Text fallback continues to return a
+completed result. Host-audio `transcribe_audio_result()` continues to emit no
+legacy mapping callbacks, so this bridge does not invent a previously absent
+host-audio callback flow.
+
+Calling `close()` is idempotent. The first close emits exactly one canonical
+`SESSION_CLOSED` and one mapped `voice_input.closed` event. All later result
+operations return the same safe session-only closed rejection without emitting
+another close event.
+
+This contract does not imply provider hard cancellation, provider/network/audio
+execution, Framework microphone ownership, or partial streaming. It adds no
+root-public name and does not change `VOICE_INPUT_API_VERSION`. FW-RT6-7c
+aggregate checkbox closure remains Control C.
+<!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:END -->

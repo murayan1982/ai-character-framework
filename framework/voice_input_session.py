@@ -2,7 +2,8 @@
 
 The default path remains mock-safe. FW-RT6-7a Control A corrects real-STT
 capability/correlation foundations and Control B adds provider-neutral default
-fake/real composition without changing v5 result/callback compatibility.
+fake/real composition. FW-RT6-7c keeps result and mapping-callback compatibility
+while adopting Framework-owned v6 correlation.
 """
 
 from __future__ import annotations
@@ -313,6 +314,57 @@ class VoiceInputSession:
             generation_id=context.generation_id,
         )
 
+    def _closed_input_result(self) -> VoiceInputResult:
+        """Return the unified post-close rejection without admitting a turn."""
+
+        return VoiceInputResult.closed(session_id=self._session_id)
+
+    @staticmethod
+    def _legacy_mapping_from_realtime_event(
+        event: RealtimeEvent,
+    ) -> Mapping[str, Any] | None:
+        """Project selected canonical events to the existing voice-input mapping."""
+
+        input_mode = event.public_metadata.get("input_mode")
+        event_type: str | None = None
+        payload: Mapping[str, Any] | None = None
+
+        if (
+            event.type is RealtimeEventType.VOICE_INPUT_PREFLIGHT
+            and input_mode == "listen"
+        ):
+            event_type = "voice_input.started"
+            payload = {"language": event.public_metadata.get("language")}
+        elif (
+            event.type is RealtimeEventType.VOICE_INPUT_FAILED
+            and input_mode == "listen"
+        ):
+            event_type = "voice_input.unavailable"
+            payload = {
+                "provider_status": event.public_metadata.get("provider_status"),
+                "reason": event.public_metadata.get("reason"),
+                "provider": event.public_metadata.get("provider"),
+            }
+        elif (
+            event.type is RealtimeEventType.TRANSCRIPT_FINAL
+            and input_mode == "text_fallback"
+        ):
+            event_type = "voice_input.text_fallback"
+            payload = {"language": event.public_metadata.get("language")}
+        elif event.type is RealtimeEventType.SESSION_CLOSED:
+            event_type = "voice_input.closed"
+            payload = {}
+
+        if event_type is None or payload is None:
+            return None
+        return MappingProxyType(
+            {
+                "type": event_type,
+                "session_type": "voice_input",
+                "payload": _public_mapping(payload),
+            }
+        )
+
     def abort_input(self) -> bool:
         """Cooperatively invalidate the active input generation once.
 
@@ -359,7 +411,7 @@ class VoiceInputSession:
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
     ) -> RealtimeEvent:
-        """Emit one sequenced canonical event without changing legacy callbacks."""
+        """Emit one canonical event and its explicit legacy mapping projection."""
 
         if not isinstance(event_type, RealtimeEventType):
             raise TypeError("event_type must be a RealtimeEventType")
@@ -393,6 +445,10 @@ class VoiceInputSession:
         )
         for callback in callbacks:
             callback(event)
+        legacy_event = self._legacy_mapping_from_realtime_event(event)
+        if legacy_event is not None:
+            for callback in list(self._callbacks):
+                callback(legacy_event)
         return event
 
     def on_event(self, callback: VoiceInputCallback) -> None:
@@ -402,18 +458,10 @@ class VoiceInputSession:
             raise TypeError("callback must be callable")
         self._callbacks.append(callback)
 
-    def _emit(self, event_type: str, **payload: Any) -> None:
-        event = MappingProxyType(
-            {
-                "type": event_type,
-                "session_type": "voice_input",
-                "payload": _public_mapping(payload),
-            }
-        )
-        for callback in list(self._callbacks):
-            callback(event)
-
-    def _unavailable_from_capability(self) -> VoiceInputResult:
+    def _unavailable_from_capability(
+        self,
+        context: _VoiceInputTurnContext,
+    ) -> VoiceInputResult:
         status = self._capabilities.provider_status
         reason = self._capabilities.public_metadata.get("reason", status.value)
 
@@ -422,13 +470,6 @@ class VoiceInputSession:
             error_code = VoiceInputErrorCode.MISSING_CREDENTIALS
         elif status is VoiceInputProviderStatus.UNSUPPORTED_PROVIDER:
             error_code = VoiceInputErrorCode.INVALID_REQUEST
-
-        self._emit(
-            "voice_input.unavailable",
-            provider_status=status.value,
-            reason=reason,
-            provider=self._capabilities.provider,
-        )
 
         return VoiceInputResult(
             outcome=VoiceInputOutcome.UNAVAILABLE,
@@ -441,6 +482,9 @@ class VoiceInputSession:
                 "reason": reason,
                 "supports_real_stt": self._capabilities.supports_real_stt,
             },
+            session_id=context.session_id,
+            turn_id=context.turn_id,
+            generation_id=context.generation_id,
         )
 
     def listen_result(self, request: VoiceInputRequest | None = None) -> VoiceInputResult:
@@ -452,14 +496,58 @@ class VoiceInputSession:
         """
 
         if self._closed:
-            self._emit("voice_input.closed")
-            return VoiceInputResult.closed()
+            return self._closed_input_result()
 
         if request is None:
             request = VoiceInputRequest(language=self._language)
 
-        self._emit("voice_input.started", language=request.language or self._language)
-        return self._unavailable_from_capability()
+        context = self._new_realtime_turn_context()
+        status = self._capabilities.provider_status
+        reason = self._capabilities.public_metadata.get("reason", status.value)
+        event_metadata = {
+            "input_mode": "listen",
+            "language": request.language or self._language,
+            "provider_status": status.value,
+            "reason": reason,
+            "provider": self._capabilities.provider,
+        }
+        with self._input_operation_lock:
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_PREFLIGHT,
+                state=RealtimeState.IDLE,
+                context=context,
+                payload=LifecycleEventPayload(reason="voice_input_preflight"),
+                public_metadata=event_metadata,
+            )
+            if not self._input_context_is_current(context):
+                return VoiceInputResult.interrupted(
+                    session_id=context.session_id,
+                    turn_id=context.turn_id,
+                    generation_id=context.generation_id,
+                )
+
+            result = self._unavailable_from_capability(context)
+            error_code = RealtimeErrorCode.UNAVAILABLE
+            if result.public_error_code is VoiceInputErrorCode.INVALID_REQUEST:
+                error_code = RealtimeErrorCode.INVALID_REQUEST
+            elif result.public_error_code is VoiceInputErrorCode.MISSING_CREDENTIALS:
+                error_code = RealtimeErrorCode.CONFIGURATION_MISSING
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_FAILED,
+                state=RealtimeState.FAILED,
+                previous_state=RealtimeState.IDLE,
+                context=context,
+                payload=LifecycleEventPayload(reason=result.outcome.value),
+                public_error_code=error_code,
+                safe_message=result.safe_message,
+                retryable=result.retryable,
+                public_metadata={
+                    **event_metadata,
+                    "outcome": result.outcome.value,
+                },
+            )
+            self._finish_input_context(context)
+            return result
 
     def text_fallback_result(
         self,
@@ -471,19 +559,52 @@ class VoiceInputSession:
         """Return a completed result for app-provided text fallback input."""
 
         if self._closed:
-            self._emit("voice_input.closed")
-            return VoiceInputResult.closed()
+            return self._closed_input_result()
 
-        self._emit("voice_input.text_fallback", language=language or self._language)
-        return VoiceInputResult.completed(
+        context = self._new_realtime_turn_context()
+        effective_language = language or self._language
+        event_metadata = {
+            "input_mode": "text_fallback",
+            "language": effective_language,
+            "raw_audio_retained": False,
+            "audio_path_exposed": False,
+        }
+        result = VoiceInputResult.completed(
             text,
-            language=language or self._language,
+            language=effective_language,
             public_metadata={
                 "boundary": "voice_input",
                 "input_mode": "text_fallback",
                 **dict(public_metadata or {}),
             },
+            session_id=context.session_id,
+            turn_id=context.turn_id,
+            generation_id=context.generation_id,
         )
+        with self._input_operation_lock:
+            self._emit_realtime_event(
+                RealtimeEventType.VOICE_INPUT_PREFLIGHT,
+                state=RealtimeState.IDLE,
+                context=context,
+                payload=LifecycleEventPayload(reason="text_fallback_preflight"),
+                public_metadata=event_metadata,
+            )
+            if not self._input_context_is_current(context):
+                return VoiceInputResult.interrupted(
+                    session_id=context.session_id,
+                    turn_id=context.turn_id,
+                    generation_id=context.generation_id,
+                )
+            self._emit_realtime_event(
+                RealtimeEventType.TRANSCRIPT_FINAL,
+                state=RealtimeState.TRANSCRIBING,
+                previous_state=RealtimeState.IDLE,
+                context=context,
+                payload=TranscriptEventPayload(text=text, is_final=True),
+                public_metadata=event_metadata,
+            )
+            self._finish_input_context(context)
+            return result
 
     def transcribe_audio_result(
         self,
@@ -502,16 +623,19 @@ class VoiceInputSession:
         """
 
         if self.is_closed:
-            try:
-                return self.listen_result(request=request)
-            except TypeError:
-                return self.listen_result()
+            return self._closed_input_result()
 
         if not isinstance(audio_source, VoiceInputAudioSource):
             raise TypeError("audio_source must be a VoiceInputAudioSource")
 
+        effective_request = request or VoiceInputRequest(
+            language=audio_source.language,
+            max_duration_ms=audio_source.max_duration_ms,
+        )
         context = self._new_realtime_turn_context()
         event_metadata = {
+            "input_mode": "host_audio",
+            "language": effective_request.language or audio_source.language or self._language,
             "audio_id": audio_source.audio_id,
             "source_kind": audio_source.source_kind.value,
             "raw_audio_retained": False,
@@ -546,10 +670,6 @@ class VoiceInputSession:
                     generation_id=context.generation_id,
                 )
 
-        effective_request = request or VoiceInputRequest(
-            language=audio_source.language,
-            max_duration_ms=audio_source.max_duration_ms,
-        )
         try:
             if adapter is not None:
                 result = adapter.transcribe(
@@ -682,7 +802,15 @@ class VoiceInputSession:
         if self._closed:
             return
         self._closed = True
-        self._emit("voice_input.closed")
+        self._emit_realtime_event(
+            RealtimeEventType.SESSION_CLOSED,
+            state=RealtimeState.CLOSED,
+            previous_state=RealtimeState.IDLE,
+            payload=LifecycleEventPayload(reason="session_closed"),
+            public_error_code=RealtimeErrorCode.SESSION_CLOSED,
+            safe_message="Voice input session is closed.",
+            public_metadata={"input_mode": "session"},
+        )
 
     def dispose(self) -> None:
         self.close()

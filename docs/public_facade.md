@@ -3194,3 +3194,40 @@ callback payloads, or closed-session rejection behavior. Their unified v6
 adapter/close bridge remains Control B. The root-public names and
 `VOICE_INPUT_API_VERSION` compatibility value remain unchanged.
 <!-- FW-RT6-7c-A-RESULT-CORRELATION:END -->
+
+<!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:BEGIN -->
+## FW-RT6-7c Control B — result and callback compatibility bridge
+
+The remaining public voice-input result paths now use the same
+Framework-owned correlation model. An open-session `listen_result()` or
+`text_fallback_result()` admits one turn and generation, and its terminal
+`VoiceInputResult` carries the same session, turn, and generation identities as
+its canonical realtime events.
+
+Existing `on_event()` mapping callbacks are preserved as an explicit projection
+from selected canonical events:
+
+```text
+listen preflight -> voice_input.started
+listen failure -> voice_input.unavailable
+text final -> voice_input.text_fallback
+session close -> voice_input.closed
+```
+
+The projection retains the existing three-key mapping shape (`type`,
+`session_type`, `payload`). Host-audio `transcribe_audio_result()` remains
+mapping-callback silent, matching its accepted pre-Control-B behavior. The
+canonical `on_realtime_event()` stream remains the authority for v6 event
+identity, sequence, state, typed payloads, and correlation.
+
+After `close()`, `listen_result()`, `text_fallback_result()`, and
+`transcribe_audio_result()` return the same session-only `SESSION_CLOSED`
+rejection. No turn or generation is admitted after close, and repeated calls do
+not emit duplicate close events. The initial close produces one canonical
+`SESSION_CLOSED` event and one legacy `voice_input.closed` projection.
+
+This control does not add provider execution, network access, microphone
+capture, audio streaming, or root-public names. `VOICE_INPUT_API_VERSION`
+remains compatible. Aggregate FW-RT6-7c task closure and final acceptance remain
+Control C work.
+<!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:END -->
