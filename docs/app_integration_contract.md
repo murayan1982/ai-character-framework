@@ -2847,3 +2847,82 @@ FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8a-B-MOTION-COORDINATION:END -->
+
+<!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:BEGIN -->
+## FW-RT6-8b Control A — provider-neutral motion lifecycle hook
+
+Control A adds the stable explicit package `framework.motion_lifecycle`. It
+defines a host/plugin extension contract and an isolated invocation boundary;
+it does not adopt the hook in `RealtimeSession` or execute a motion stage.
+
+```python
+from framework import MotionRequest
+from framework.motion_lifecycle import (
+    MotionLifecycleNotification,
+    MotionLifecycleSignal,
+)
+
+
+def character_motion(notification: MotionLifecycleNotification):
+    if notification.signal is MotionLifecycleSignal.SPEAKING:
+        return MotionRequest.speaking_state(True)
+    return None
+```
+
+The six signals intentionally combine three transient notifications with three
+terminal notifications without changing the accepted lifecycle model:
+
+| Hook signal | Canonical source selected for Control B |
+|---|---|
+| `listening` | `LISTENING_STARTED` |
+| `thinking` | `RESPONSE_STARTED` |
+| `speaking` | `SYNTHESIS_STARTED` |
+| `interrupted` | `TURN_INTERRUPTED` or `TURN_CANCELLED` |
+| `completed` | `TURN_COMPLETED` |
+| `failed` | `TURN_FAILED` |
+
+Transient notifications have no terminal outcome. Terminal notifications must
+match the accepted `TurnOutcome`; cancellation remains distinct in the
+notification even though it selects the `interrupted` motion signal.
+`TURN_REJECTED` and `SESSION_CLOSED` are not Control A hook signals.
+
+The notification carries the existing session, turn, generation, and source
+event sequence. A hook may return one provider-neutral `MotionRequest` or
+`None`. An uncorrelated request inherits the notification's turn/generation.
+Matching correlation is preserved; partial or mismatched correlation becomes a
+public-safe failed hook result and is not executed.
+
+```text
+product-specific mapping in Framework core: False
+provider-neutral hook return: MotionRequest | None
+None result: SKIPPED / not unsupported / not failure
+hook exception escapes Framework boundary: False
+raw hook exception public: False
+conversation terminal changed by hook failure: False
+unsupported motion intent channel: MotionOutcome.UNSUPPORTED
+```
+
+Unsupported adapter execution remains an existing typed motion outcome. It is
+not conflated with a hook skip or hook-resolution failure. The Control B
+coordinator must preserve an already committed conversation terminal before it
+invokes a terminal hook, and motion/hook failure must not commit or replace a
+conversation terminal.
+
+Control A changes no existing runtime source, root-public manifest, public
+factory signature, or motion API version. It imports no provider SDK and
+performs no provider, network, audio, microphone, or real VTS operation.
+
+```text
+exact Control A surface: 5 files
+stable explicit package: framework.motion_lifecycle
+root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime hook adoption: DEFERRED TO CONTROL B
+MotionStage execution: DEFERRED TO CONTROL B
+canonical hook/motion event integration: DEFERRED TO CONTROL B
+FW-RT6-8b aggregate tasks: 0 / 6 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:END -->

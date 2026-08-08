@@ -3404,3 +3404,70 @@ factory signature, or executing pyvts/WebSocket/provider/network/audio/
 microphone/real VTS work. FW-RT6-8b lifecycle hooks and FW-RT6-8c motion
 cancel/clear remain not authorized.
 <!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:BEGIN -->
+## FW-RT6-8b Control A — motion lifecycle extension contract
+
+`framework.motion_lifecycle` is a stable explicit extension package for
+host/plugin lifecycle-to-motion mapping. Control A defines only provider-neutral
+models and a safe hook resolver; it does not add a facade method or change the
+existing root-public manifest.
+
+The hook receives one `MotionLifecycleNotification` and returns
+`MotionRequest | None`. The exact signal vocabulary is:
+
+```text
+listening
+thinking
+speaking
+interrupted
+completed
+failed
+```
+
+The Framework does not add terminal values to `RealtimePhase`. Notifications
+retain the existing `TurnOutcome`: `completed` requires `COMPLETED`, `failed`
+requires `FAILED`, and `interrupted` accepts the distinct `INTERRUPTED` or
+`CANCELLED` outcomes. Transient notifications require no outcome.
+
+Each notification carries the already accepted session, turn, generation, and
+canonical source sequence. The hook owns character/product mapping and may
+select any existing provider-neutral `MotionRequest`. Framework core does not
+choose an expression, emotion, gesture, character, model, or provider-specific
+hotkey.
+
+An uncorrelated request is copied with the notification's turn/generation
+identity. Matching correlation remains unchanged. Partial correlation,
+mismatched correlation, malformed returns, and hook exceptions become a typed
+public-safe failed hook result; raw exception text and objects are not retained.
+
+```text
+product-specific mapping in Framework core: False
+provider-neutral hook return: MotionRequest | None
+None result: SKIPPED
+hook exception escapes resolver: False
+conversation terminal changed by hook failure: False
+unsupported motion intent channel: MotionOutcome.UNSUPPORTED
+```
+
+Hook `SKIPPED`, hook `FAILED`, and motion `UNSUPPORTED` remain distinct. Control
+B must invoke terminal hooks only after terminal-registry commit and canonical
+terminal publication. A hook or motion failure may affect the motion boundary,
+but it cannot replace the conversation outcome, create a second turn terminal,
+or advance unified generation ownership.
+
+```text
+exact change surface: 5 files
+stable explicit package: framework.motion_lifecycle
+root-public names: 127 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime hook adoption: DEFERRED TO CONTROL B
+MotionStage execution: DEFERRED TO CONTROL B
+canonical hook/motion event integration: DEFERRED TO CONTROL B
+FW-RT6-8b task count: 0 / 6 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8b-A-MOTION-LIFECYCLE-HOOK:END -->
