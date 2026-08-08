@@ -2731,3 +2731,51 @@ execution, Framework microphone ownership, or partial streaming. It adds no
 root-public name and does not change `VOICE_INPUT_API_VERSION`. FW-RT6-7c
 aggregate checkbox closure remains Control C.
 <!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:END -->
+
+<!-- FW-RT6-8a-A-MOTION-CORRELATION:BEGIN -->
+## FW-RT6-8a Control A — motion request/result correlation
+
+An app or Framework orchestrator may attach an existing unified-turn context to
+the public `MotionRequest` through two additive optional fields:
+
+```text
+turn_id: TurnId | legacy string | None
+generation_id: GenerationId | serialized GenerationId | None
+```
+
+The same two fields are appended to `MotionResult`. `MotionSession` preserves
+them through mock success, guarded/unavailable, preflight failure, unsupported,
+closed, and VTube Studio transport-result projection paths. Existing mapping
+callbacks add JSON-safe `turn_id` and `generation_id` values and keep the
+existing `session_id` and `request_id` values unchanged.
+
+When a request has no correlation context, the new request/result/event values
+remain `None`. A standalone motion session does not allocate a turn or
+generation. A generation requires a turn; a correlated result additionally
+requires its existing session identity.
+
+```text
+MotionRequest request_id changed: False
+GenerationId promoted from request_id: False
+MotionResult session_id compatibility: PRESERVED
+legacy MotionRequest/MotionResult positional prefix: PRESERVED
+standalone correlation identity invented: False
+root-public names: 127 / UNCHANGED
+MotionSessionInfo.api_version: 5.5.0 / UNCHANGED
+```
+
+Control A does not add `on_realtime_event()`, allocate `EventSequence`, replace
+the existing mapping callback, or change VTube Studio lifecycle-generation
+suppression. Those adoption steps require one shared ordering/freshness owner
+and remain Control B work.
+
+```text
+unified EventSequence bridge: DEFERRED TO CONTROL B
+common stale guard / VTS suppression adoption: DEFERRED TO CONTROL B
+VTS lifecycle-generation source changed: False
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-8a aggregate tasks: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8a-A-MOTION-CORRELATION:END -->

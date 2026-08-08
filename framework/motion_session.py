@@ -434,6 +434,20 @@ class MotionSession:
                 "type": event_type.value,
                 "session_id": str(self._session_id),
                 "request_id": request.request_id if request else result.request_id if result else None,
+                "turn_id": (
+                    str(request.turn_id)
+                    if request is not None and request.turn_id is not None
+                    else str(result.turn_id)
+                    if result is not None and result.turn_id is not None
+                    else None
+                ),
+                "generation_id": (
+                    str(request.generation_id)
+                    if request is not None and request.generation_id is not None
+                    else str(result.generation_id)
+                    if result is not None and result.generation_id is not None
+                    else None
+                ),
                 "state": (state or self._state).value,
                 "adapter": self._adapter,
                 "adapter_status": (result.adapter_status if result else self.info.adapter_status).value,
@@ -677,6 +691,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata={
                         "boundary": "motion",
                         "reason": str(
@@ -720,6 +736,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.COMPLETED,
@@ -735,6 +753,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.FAILED,
@@ -750,6 +770,8 @@ class MotionSession:
                     retryable=True,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.FAILED,
@@ -769,6 +791,8 @@ class MotionSession:
                     ),
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.FAILED,
@@ -784,6 +808,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.FAILED,
@@ -799,6 +825,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata=metadata,
                 ),
                 MotionEventType.SESSION_CLOSED,
@@ -813,6 +841,8 @@ class MotionSession:
                 retryable=False,
                 request_id=request.request_id,
                 session_id=self._session_id,
+                turn_id=request.turn_id,
+                generation_id=request.generation_id,
                 public_metadata=metadata,
             ),
             MotionEventType.FAILED,
@@ -864,6 +894,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata={
                         "boundary": "motion",
                         "reason": "preflight_required",
@@ -898,6 +930,8 @@ class MotionSession:
                     retryable=False,
                     request_id=request.request_id,
                     session_id=self._session_id,
+                    turn_id=request.turn_id,
+                    generation_id=request.generation_id,
                     public_metadata={
                         "boundary": "motion",
                         "reason": resolution.reason,

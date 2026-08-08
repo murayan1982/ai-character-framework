@@ -3267,3 +3267,45 @@ records acceptance without adding root-public names, changing
 Motion correlation remains FW-RT6-8a, and partial transcript/audio streaming
 remains deferred P1 scope.
 <!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-8a-A-MOTION-CORRELATION:BEGIN -->
+## FW-RT6-8a Control A — additive motion correlation
+
+`MotionRequest` and `MotionResult` now end with optional `turn_id` and
+`generation_id` fields. Existing construction remains valid and leaves both
+fields `None`. Existing `MotionRequest` factory methods accept the fields as
+keyword-only arguments, and existing `MotionResult` factories copy correlation
+from a supplied request while retaining their legacy defaults.
+
+For an open `MotionSession`, every result path carries the session's existing
+`SessionId` plus the request's optional turn/generation context. Mapping callback
+events serialize the two new IDs as strings when present. The opaque legacy
+`request_id` remains a separate string and is never promoted to `GenerationId`.
+
+```text
+MotionRequest request_id changed: False
+GenerationId promoted from request_id: False
+existing session_id propagation: PRESERVED
+uncorrelated request/result/event: None / PRESERVED
+standalone correlation identity invented: False
+root-public names: 127 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+```
+
+This control is only the correlation/compatibility foundation. It does not add
+a canonical motion callback or a separate local sequencer, because motion must
+join the unified event owner rather than create a competing ordering domain.
+It also leaves the accepted VTube Studio lifecycle-generation implementation
+unchanged until the common stale guard is adopted in the same coordinated
+control.
+
+```text
+exact change surface: 6 files
+unified EventSequence bridge: DEFERRED TO CONTROL B
+common stale guard / VTS suppression adoption: DEFERRED TO CONTROL B
+VTS lifecycle-generation source changed: False
+FW-RT6-8a task count: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8a-A-MOTION-CORRELATION:END -->

@@ -14,7 +14,13 @@ from types import MappingProxyType
 from typing import Any, Mapping
 from uuid import uuid4
 
-from .identity import SessionId, normalize_session_id
+from .identity import (
+    GenerationId,
+    SessionId,
+    TurnId,
+    normalize_session_id,
+    normalize_turn_id,
+)
 
 
 _SECRET_KEY_FRAGMENTS = (
@@ -31,6 +37,18 @@ _SECRET_KEY_FRAGMENTS = (
 def _public_mapping(values: Mapping[str, Any] | None) -> Mapping[str, Any]:
     """Delegate to the common recursive public-safety utility."""
     return _recursive_public_mapping(values)
+
+
+def _normalize_generation_id(
+    value: GenerationId | str | None,
+) -> GenerationId | None:
+    if value is None:
+        return None
+    if isinstance(value, GenerationId):
+        return value
+    if not isinstance(value, str):
+        raise TypeError("generation_id must be a GenerationId, string, or None")
+    return GenerationId.parse(value)
 
 
 class MotionAdapterStatus(str, Enum):
@@ -210,6 +228,8 @@ class MotionRequest:
     character_id: str | None = None
     model_id: str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    turn_id: TurnId | str | None = None
+    generation_id: GenerationId | str | None = None
 
     def __post_init__(self) -> None:
         intent = self.intent if isinstance(self.intent, MotionIntent) else MotionIntent(str(self.intent))
@@ -217,8 +237,14 @@ class MotionRequest:
             raise ValueError("duration_ms must be positive when provided")
         if self.intensity is not None and not (0.0 <= self.intensity <= 1.0):
             raise ValueError("intensity must be between 0.0 and 1.0 when provided")
+        turn_id = normalize_turn_id(self.turn_id)
+        generation_id = _normalize_generation_id(self.generation_id)
+        if generation_id is not None and turn_id is None:
+            raise ValueError("generation_id requires turn_id")
         object.__setattr__(self, "intent", intent)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        object.__setattr__(self, "turn_id", turn_id)
+        object.__setattr__(self, "generation_id", generation_id)
 
     @classmethod
     def expression_change(
@@ -229,6 +255,8 @@ class MotionRequest:
         duration_ms: int | None = None,
         character_id: str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionRequest":
         return cls(
             intent=MotionIntent.EXPRESSION,
@@ -237,6 +265,8 @@ class MotionRequest:
             duration_ms=duration_ms,
             character_id=character_id,
             public_metadata=public_metadata or {},
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -247,6 +277,8 @@ class MotionRequest:
         intensity: float | None = None,
         character_id: str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionRequest":
         return cls(
             intent=MotionIntent.EMOTION,
@@ -254,6 +286,8 @@ class MotionRequest:
             intensity=intensity,
             character_id=character_id,
             public_metadata=public_metadata or {},
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -263,12 +297,16 @@ class MotionRequest:
         *,
         character_id: str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionRequest":
         return cls(
             intent=MotionIntent.SPEAKING_STATE,
             speaking=speaking,
             character_id=character_id,
             public_metadata=public_metadata or {},
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -277,11 +315,15 @@ class MotionRequest:
         *,
         character_id: str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionRequest":
         return cls(
             intent=MotionIntent.STOP_MOTION,
             character_id=character_id,
             public_metadata=public_metadata or {},
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
 
@@ -298,6 +340,8 @@ class MotionResult:
     request_id: str | None = None
     session_id: SessionId | str | None = None
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    turn_id: TurnId | str | None = None
+    generation_id: GenerationId | str | None = None
 
     def __post_init__(self) -> None:
         outcome = self.outcome if isinstance(self.outcome, MotionOutcome) else MotionOutcome(str(self.outcome))
@@ -312,12 +356,22 @@ class MotionResult:
             if isinstance(self.public_error_code, MotionErrorCode)
             else MotionErrorCode(str(self.public_error_code))
         )
+        session_id = normalize_session_id(self.session_id)
+        turn_id = normalize_turn_id(self.turn_id)
+        generation_id = _normalize_generation_id(self.generation_id)
+        if turn_id is not None and session_id is None:
+            raise ValueError("turn_id requires session_id")
+        if generation_id is not None and turn_id is None:
+            raise ValueError("generation_id requires turn_id")
+
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "state", state)
         object.__setattr__(self, "adapter_status", status)
         object.__setattr__(self, "public_error_code", error_code)
-        object.__setattr__(self, "session_id", normalize_session_id(self.session_id))
+        object.__setattr__(self, "session_id", session_id)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        object.__setattr__(self, "turn_id", turn_id)
+        object.__setattr__(self, "generation_id", generation_id)
 
     @property
     def is_completed(self) -> bool:
@@ -344,6 +398,8 @@ class MotionResult:
         session_id: SessionId | str | None = None,
         state: MotionState | str = MotionState.IDLE,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionResult":
         return cls(
             outcome=MotionOutcome.COMPLETED,
@@ -352,6 +408,12 @@ class MotionResult:
             request_id=request.request_id if request else None,
             session_id=session_id,
             public_metadata={"boundary": "motion", **dict(public_metadata or {})},
+            turn_id=turn_id if turn_id is not None else request.turn_id if request else None,
+            generation_id=(
+                generation_id
+                if generation_id is not None
+                else request.generation_id if request else None
+            ),
         )
 
     @classmethod
@@ -365,6 +427,8 @@ class MotionResult:
         retryable: bool = False,
         session_id: SessionId | str | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionResult":
         return cls(
             outcome=MotionOutcome.UNAVAILABLE,
@@ -376,6 +440,12 @@ class MotionResult:
             request_id=request.request_id if request else None,
             session_id=session_id,
             public_metadata={"boundary": "motion", **dict(public_metadata or {})},
+            turn_id=turn_id if turn_id is not None else request.turn_id if request else None,
+            generation_id=(
+                generation_id
+                if generation_id is not None
+                else request.generation_id if request else None
+            ),
         )
 
     @classmethod
@@ -385,6 +455,8 @@ class MotionResult:
         request: MotionRequest | None = None,
         session_id: SessionId | str | None = None,
         safe_message: str = "Motion adapter is not implemented yet.",
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionResult":
         return cls(
             outcome=MotionOutcome.NOT_IMPLEMENTED,
@@ -396,6 +468,12 @@ class MotionResult:
             request_id=request.request_id if request else None,
             session_id=session_id,
             public_metadata={"boundary": "motion", "reason": "not_implemented"},
+            turn_id=turn_id if turn_id is not None else request.turn_id if request else None,
+            generation_id=(
+                generation_id
+                if generation_id is not None
+                else request.generation_id if request else None
+            ),
         )
 
     @classmethod
@@ -405,6 +483,8 @@ class MotionResult:
         request: MotionRequest | None = None,
         session_id: SessionId | str | None = None,
         safe_message: str = "Motion session is closed.",
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "MotionResult":
         return cls(
             outcome=MotionOutcome.CLOSED,
@@ -416,4 +496,10 @@ class MotionResult:
             request_id=request.request_id if request else None,
             session_id=session_id,
             public_metadata={"boundary": "motion", "reason": "session_closed"},
+            turn_id=turn_id if turn_id is not None else request.turn_id if request else None,
+            generation_id=(
+                generation_id
+                if generation_id is not None
+                else request.generation_id if request else None
+            ),
         )
