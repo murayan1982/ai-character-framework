@@ -5049,3 +5049,65 @@ This sync closes FW-RT6-7b only. It authorizes FW-RT6-7c exact contract review
 after the sync commit/push is remotely verified, not FW-RT6-7c implementation.
 Partial transcript/audio streaming remains P1 scope.
 <!-- FW-RT6-7b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-7c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7c Control A — result-correlation acceptance sync
+
+```text
+checkpoint: FW-RT6-7c Control A
+baseline head: 28b298f1ee70bb114f13782d40c54b536a8174a7
+implementation commit: 28b298f1ee70bb114f13782d40c54b536a8174a7
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 7 files
+dedicated gate: PASS
+focused Control A result-compatibility tests: 8 / PASS
+focused FW-RT6-7b lifecycle/privacy tests: 6 / PASS
+focused FW-RT6-7b abort/stale/privacy tests: 7 / PASS
+full Framework unit suite: 311 / PASS
+accepted FW-RT6-7b regression: PASS
+legacy VoiceInputResult prefix: 9 fields / SAME ORDER / PASS
+additive optional correlation suffix: session_id / turn_id / generation_id / PASS
+existing factory call compatibility: PASS
+typed Framework identity normalization: PASS
+legacy non-Framework session/turn strings: PRESERVED / PASS
+turn without session accepted: False / PASS
+generation without turn accepted: False / PASS
+transcribe_audio_result correlation: PASS
+result/event session/turn/generation agreement: PASS
+adapter-provided correlation overrides session context: False / PASS
+stale/interrupted terminal result correlation: PASS
+existing listen_result behavior changed: False / PASS
+listen_result correlation adoption: DEFERRED_TO_CONTROL_B
+text fallback correlation adoption: DEFERRED_TO_CONTROL_B
+legacy mapping callback v6 adapter: DEFERRED_TO_CONTROL_B
+unified close rejection correlation: DEFERRED_TO_CONTROL_B
+framework root-public names: 127 / UNCHANGED
+provider/network/audio/microphone execution: False / PASS
+FW-RT6-7c aggregate: NOT_COMPLETED
+FW-RT6-7c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the additive `VoiceInputResult` correlation foundation and
+the `transcribe_audio_result()` session-owned result wiring. The original nine
+fields retain their order, the three correlation fields are optional and
+appended, and existing factory calls remain compatible.
+
+Framework-created result correlation uses the same session, turn and generation
+context as canonical voice-input events. Adapter-supplied correlation cannot
+replace the session-owned context, and interrupted or stale terminal results
+retain the admitted request correlation without exposing host audio data.
+
+`listen_result()` correlation, text fallback, the legacy mapping-callback v6
+adapter, and unified close rejection remain Control B work. Therefore all five
+FW-RT6-7c aggregate task checkboxes remain open.
+
+This sync authorizes only Control B exact contract review after the sync
+commit/push is remotely verified. It does not authorize Control B
+implementation.
+<!-- FW-RT6-7c-A-ACCEPTANCE-SYNC:END -->
