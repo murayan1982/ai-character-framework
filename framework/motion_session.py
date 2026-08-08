@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import math
 import threading
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Mapping
 
-from .identity import SessionId, normalize_session_id
+from .identity import EventSequence, SessionId, normalize_session_id
+from .lifecycle import RealtimePhase
 from .motion import (
     MotionAdapterStatus,
     MotionCapability,
@@ -29,6 +31,18 @@ from .motion import (
     _public_mapping,
 )
 from .version import MOTION_API_VERSION
+from .realtime import RealtimeErrorCode, RealtimeEvent, RealtimeEventType, RealtimeState
+from .realtime_event_hub import (
+    EventHubClosedError,
+    EventSubscriptionToken,
+    RealtimeEventHub,
+)
+from .realtime_event_payloads import DiagnosticEventPayload, MotionEventPayload
+from .realtime_generation_gate import (
+    GenerationAdmissionDecision,
+    RealtimeGenerationGate,
+    RealtimeStageCompletionEnvelope,
+)
 
 from .motion_adapter_execution import (
     MotionAdapterExecutionConfig,
@@ -40,6 +54,7 @@ if TYPE_CHECKING:
 
 
 MotionEventCallback = Callable[[Mapping[str, Any]], None]
+MotionRealtimeEventCallback = Callable[[RealtimeEvent], None]
 
 _VTS_ALIASES = frozenset({"vts", "vtube_studio", "live2d"})
 _MAX_VTS_HOTKEY_BINDINGS = 256
@@ -260,6 +275,11 @@ class MotionSession:
         self._closed_event_lock = threading.Lock()
         self._state = MotionState.IDLE
         self._callbacks: list[MotionEventCallback] = []
+        self._realtime_coordination_lock = threading.RLock()
+        self._realtime_event_callbacks: list[MotionRealtimeEventCallback] = []
+        self._realtime_event_hub: RealtimeEventHub[RealtimeEvent] | None = None
+        self._realtime_generation_gate: RealtimeGenerationGate | None = None
+        self._realtime_subscription_tokens: list[EventSubscriptionToken] = []
         self._public_metadata = _public_mapping(public_metadata)
 
         self._runtime_available = bool(runtime_available)
@@ -420,6 +440,237 @@ class MotionSession:
             raise TypeError("callback must be callable")
         self._callbacks.append(callback)
 
+    def on_realtime_event(self, callback: MotionRealtimeEventCallback) -> None:
+        """Register a canonical motion callback for a bound unified owner.
+
+        Registration is additive and safe before the Framework binds the
+        session to its shared event/generation owners.  An unbound standalone
+        session keeps its v5.5 mapping callback behavior and does not allocate a
+        competing local ``EventSequence`` domain.
+        """
+
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+        with self._realtime_coordination_lock:
+            self._realtime_event_callbacks.append(callback)
+            if not self._closed and self._realtime_event_hub is not None:
+                self._subscribe_realtime_callback_locked(callback)
+
+    def _bind_realtime_coordination(
+        self,
+        *,
+        event_hub: RealtimeEventHub[RealtimeEvent],
+        generation_gate: RealtimeGenerationGate,
+    ) -> None:
+        """Bind the Framework-owned ordering and freshness owners once.
+
+        This is an internal composition seam, not a new host construction
+        requirement.  The public factory remains unchanged and standalone
+        motion continues to operate without turn/generation invention.
+        """
+
+        if not isinstance(event_hub, RealtimeEventHub):
+            raise TypeError("event_hub must be a RealtimeEventHub")
+        if not isinstance(generation_gate, RealtimeGenerationGate):
+            raise TypeError("generation_gate must be a RealtimeGenerationGate")
+        with self._realtime_coordination_lock:
+            if self._closed:
+                raise RuntimeError("Cannot bind a closed motion session.")
+            if self._realtime_event_hub is not None:
+                if (
+                    self._realtime_event_hub is event_hub
+                    and self._realtime_generation_gate is generation_gate
+                ):
+                    return
+                raise RuntimeError(
+                    "Motion session is already bound to realtime coordination owners."
+                )
+            if event_hub.is_closed:
+                raise EventHubClosedError("Realtime event hub is closed.")
+            self._realtime_event_hub = event_hub
+            self._realtime_generation_gate = generation_gate
+            for callback in self._realtime_event_callbacks:
+                self._subscribe_realtime_callback_locked(callback)
+
+    def _subscribe_realtime_callback_locked(
+        self,
+        callback: MotionRealtimeEventCallback,
+    ) -> None:
+        event_hub = self._realtime_event_hub
+        if event_hub is None:
+            return
+
+        def scoped_callback(event: RealtimeEvent) -> None:
+            if (
+                event.boundary == "motion"
+                and event.session_id == self._session_id
+            ):
+                callback(event)
+
+        token = event_hub.subscribe(scoped_callback)
+        self._realtime_subscription_tokens.append(token)
+
+    def _release_realtime_subscriptions(self) -> None:
+        with self._realtime_coordination_lock:
+            event_hub = self._realtime_event_hub
+            tokens = tuple(self._realtime_subscription_tokens)
+            self._realtime_subscription_tokens.clear()
+        if event_hub is None:
+            return
+        for token in tokens:
+            event_hub.unsubscribe(token)
+
+    @staticmethod
+    def _realtime_type_for_motion_event(
+        event_type: MotionEventType,
+    ) -> RealtimeEventType | None:
+        return {
+            MotionEventType.REQUESTED: RealtimeEventType.MOTION_REQUESTED,
+            MotionEventType.STARTED: RealtimeEventType.MOTION_STARTED,
+            MotionEventType.COMPLETED: RealtimeEventType.MOTION_COMPLETED,
+            MotionEventType.INTERRUPTED: RealtimeEventType.MOTION_FAILED,
+            MotionEventType.FAILED: RealtimeEventType.MOTION_FAILED,
+            MotionEventType.UNSUPPORTED: RealtimeEventType.MOTION_FAILED,
+        }.get(event_type)
+
+    @staticmethod
+    def _realtime_state_for_motion_state(state: MotionState) -> RealtimeState:
+        if state is MotionState.IDLE:
+            return RealtimeState.IDLE
+        if state is MotionState.INTERRUPTED:
+            return RealtimeState.INTERRUPTED
+        if state in {MotionState.FAILED, MotionState.UNAVAILABLE}:
+            return RealtimeState.FAILED
+        if state is MotionState.CLOSED:
+            return RealtimeState.CLOSED
+        return RealtimeState.MOTION
+
+    @staticmethod
+    def _realtime_error_for_motion_error(
+        error_code: MotionErrorCode,
+    ) -> RealtimeErrorCode:
+        if error_code is MotionErrorCode.NONE:
+            return RealtimeErrorCode.NONE
+        if error_code is MotionErrorCode.INTERRUPTED:
+            return RealtimeErrorCode.INTERRUPTED
+        if error_code is MotionErrorCode.SESSION_CLOSED:
+            return RealtimeErrorCode.SESSION_CLOSED
+        if error_code is MotionErrorCode.PROVIDER_ERROR:
+            return RealtimeErrorCode.PROVIDER_ERROR
+        if error_code in {MotionErrorCode.UNSUPPORTED, MotionErrorCode.NOT_IMPLEMENTED}:
+            return RealtimeErrorCode.UNSUPPORTED
+        if error_code in {
+            MotionErrorCode.NOT_CONFIGURED,
+            MotionErrorCode.TOKEN_MISSING,
+            MotionErrorCode.RUNTIME_NOT_INSTALLED,
+            MotionErrorCode.MODEL_NOT_SELECTED,
+        }:
+            return RealtimeErrorCode.CONFIGURATION_MISSING
+        return RealtimeErrorCode.UNAVAILABLE
+
+    def _emit_canonical_motion_event(
+        self,
+        event_type: MotionEventType,
+        *,
+        request: MotionRequest | None,
+        result: MotionResult | None,
+        state: MotionState,
+        public_metadata: Mapping[str, Any] | None,
+    ) -> RealtimeEvent | None:
+        realtime_type = self._realtime_type_for_motion_event(event_type)
+        with self._realtime_coordination_lock:
+            event_hub = self._realtime_event_hub
+        if event_hub is None or realtime_type is None:
+            return None
+
+        request_id = (
+            request.request_id
+            if request is not None
+            else result.request_id if result is not None else None
+        )
+        if request_id is None:
+            return None
+        turn_id = (
+            request.turn_id
+            if request is not None
+            else result.turn_id if result is not None else None
+        )
+        generation_id = (
+            request.generation_id
+            if request is not None
+            else result.generation_id if result is not None else None
+        )
+        outcome = result.outcome if result is not None else None
+        error_code = (
+            result.public_error_code
+            if result is not None
+            else MotionErrorCode.NONE
+        )
+        metadata = {
+            "boundary": "motion",
+            "motion_event_type": event_type.value,
+            "adapter": self._adapter,
+            **dict(public_metadata or {}),
+        }
+        realtime_state = self._realtime_state_for_motion_state(state)
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=realtime_type,
+                state=realtime_state,
+                session_id=self._session_id,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                sequence=sequence,
+                phase=RealtimePhase.MOTION,
+                payload=MotionEventPayload(
+                    request_id=request_id,
+                    outcome=outcome,
+                ),
+                boundary="motion",
+                public_error_code=self._realtime_error_for_motion_error(error_code),
+                safe_message=result.safe_message if result is not None else "",
+                retryable=result.retryable if result is not None else False,
+                public_metadata=metadata,
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        def overflow_event_factory(
+            sequence: EventSequence,
+            dropped_sequence: EventSequence | None,
+            overflow_count: int,
+        ) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=RealtimeEventType.EVENT_OVERFLOW,
+                state=realtime_state,
+                session_id=self._session_id,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                sequence=sequence,
+                phase=RealtimePhase.MOTION,
+                payload=DiagnosticEventPayload(
+                    code="motion_event_history_overflow",
+                    drop_reason="history_limit",
+                    dropped_sequence=dropped_sequence,
+                    overflow_count=overflow_count,
+                ),
+                boundary="motion",
+                safe_message="Realtime motion event history overflowed.",
+                public_metadata={"boundary": "motion"},
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        try:
+            return event_hub.emit(
+                event_factory,
+                legacy_projector=lambda emitted: emitted.to_v5(),
+                overflow_event_factory=overflow_event_factory,
+            )
+        except EventHubClosedError:
+            return None
+
     def _emit(
         self,
         event_type: MotionEventType,
@@ -428,7 +679,9 @@ class MotionSession:
         result: MotionResult | None = None,
         state: MotionState | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        emit_canonical: bool = True,
     ) -> Mapping[str, Any]:
+        resolved_state = state or self._state
         payload = _public_mapping(
             {
                 "type": event_type.value,
@@ -448,7 +701,7 @@ class MotionSession:
                     if result is not None and result.generation_id is not None
                     else None
                 ),
-                "state": (state or self._state).value,
+                "state": resolved_state.value,
                 "adapter": self._adapter,
                 "adapter_status": (result.adapter_status if result else self.info.adapter_status).value,
                 "outcome": result.outcome.value if result else None,
@@ -463,6 +716,14 @@ class MotionSession:
                 ),
             }
         )
+        if emit_canonical:
+            self._emit_canonical_motion_event(
+                event_type,
+                request=request,
+                result=result,
+                state=resolved_state,
+                public_metadata=public_metadata,
+            )
         for callback in list(self._callbacks):
             callback(payload)
         return payload
@@ -848,6 +1109,148 @@ class MotionSession:
             MotionEventType.FAILED,
         )
 
+    def _admit_motion_completion(
+        self,
+        *,
+        request: MotionRequest,
+        result: MotionResult,
+    ) -> GenerationAdmissionDecision[MotionResult] | None:
+        """Ask the bound common gate to admit one correlated terminal result."""
+
+        with self._realtime_coordination_lock:
+            generation_gate = self._realtime_generation_gate
+        if (
+            generation_gate is None
+            or request.turn_id is None
+            or request.generation_id is None
+        ):
+            return None
+        return generation_gate.admit_completion(
+            RealtimeStageCompletionEnvelope(
+                turn_id=request.turn_id,
+                generation_id=request.generation_id,
+                stage="motion",
+                value=result,
+            )
+        )
+
+    def _stale_motion_result(
+        self,
+        *,
+        request: MotionRequest,
+        decision: GenerationAdmissionDecision[MotionResult],
+    ) -> MotionResult:
+        metadata: dict[str, Any] = {
+            "boundary": "motion",
+            "reason": "stale_motion_completion",
+            "stale_reason": decision.stale_reason.value,
+            "late_motion_completion_delivered": False,
+            "common_generation_gate": True,
+            "vts_lifecycle_generation_guard_preserved": True,
+        }
+        if decision.retired_by is not None:
+            metadata["retired_by"] = decision.retired_by.value
+        return MotionResult(
+            outcome=MotionOutcome.INTERRUPTED,
+            state=MotionState.INTERRUPTED,
+            adapter_status=decision.envelope.value.adapter_status,
+            public_error_code=MotionErrorCode.INTERRUPTED,
+            safe_message="Stale motion completion was dropped.",
+            retryable=False,
+            request_id=request.request_id,
+            session_id=self._session_id,
+            turn_id=request.turn_id,
+            generation_id=request.generation_id,
+            public_metadata=metadata,
+        )
+
+    def _emit_stale_motion_completion(
+        self,
+        *,
+        request: MotionRequest,
+        decision: GenerationAdmissionDecision[MotionResult],
+    ) -> RealtimeEvent | None:
+        with self._realtime_coordination_lock:
+            event_hub = self._realtime_event_hub
+        if event_hub is None or decision.stale_reason is None:
+            return None
+
+        metadata: dict[str, Any] = {
+            "boundary": "motion",
+            "stale_reason": decision.stale_reason.value,
+            "late_motion_completion_delivered": False,
+            "common_generation_gate": True,
+            "vts_lifecycle_generation_guard_preserved": True,
+        }
+        if decision.retired_by is not None:
+            metadata["retired_by"] = decision.retired_by.value
+
+        def event_factory(sequence: EventSequence) -> RealtimeEvent:
+            return RealtimeEvent(
+                type=RealtimeEventType.STALE_RESULT_DROPPED,
+                state=RealtimeState.INTERRUPTED,
+                session_id=self._session_id,
+                turn_id=request.turn_id,
+                generation_id=request.generation_id,
+                sequence=sequence,
+                phase=RealtimePhase.MOTION,
+                payload=DiagnosticEventPayload(
+                    code="stale_motion_completion",
+                    drop_reason=decision.stale_reason.value,
+                ),
+                boundary="motion",
+                public_error_code=RealtimeErrorCode.INTERRUPTED,
+                safe_message="Stale motion completion was dropped.",
+                public_metadata=metadata,
+                timestamp=time.time(),
+                monotonic_timestamp=time.monotonic(),
+            )
+
+        try:
+            return event_hub.emit(event_factory)
+        except EventHubClosedError:
+            return None
+
+    def _publish_motion_result(
+        self,
+        *,
+        request: MotionRequest,
+        result: MotionResult,
+        event_type: MotionEventType,
+    ) -> MotionResult:
+        decision = self._admit_motion_completion(request=request, result=result)
+        if decision is not None and not decision.accepted:
+            stale_result = self._stale_motion_result(
+                request=request,
+                decision=decision,
+            )
+            self._state = MotionState.INTERRUPTED
+            self._emit_stale_motion_completion(
+                request=request,
+                decision=decision,
+            )
+            self._emit(
+                MotionEventType.INTERRUPTED,
+                request=request,
+                result=stale_result,
+                state=self._state,
+                public_metadata={
+                    "reason": "stale_motion_completion",
+                    "late_motion_completion_delivered": False,
+                },
+                emit_canonical=False,
+            )
+            return stale_result
+
+        self._state = result.state
+        self._emit(
+            event_type,
+            request=request,
+            result=result,
+            state=self._state,
+        )
+        return result
+
     def apply_motion(self, request: MotionRequest) -> MotionResult:
         """Apply a public motion request through mock or guarded VTS paths."""
 
@@ -873,16 +1276,20 @@ class MotionSession:
                     "intent": request.intent.value,
                 },
             )
-            self._state = MotionState.IDLE
-            self._emit(MotionEventType.COMPLETED, request=request, result=result, state=self._state)
-            return result
+            return self._publish_motion_result(
+                request=request,
+                result=result,
+                event_type=MotionEventType.COMPLETED,
+            )
 
         if self._uses_vts_composition:
             if self._capability.adapter_status is not MotionAdapterStatus.CONFIGURED:
                 result, event_type = self._capability_failure_result(request)
-                self._state = result.state
-                self._emit(event_type, request=request, result=result, state=self._state)
-                return result
+                return self._publish_motion_result(
+                    request=request,
+                    result=result,
+                    event_type=event_type,
+                )
 
             if not self._vts_preflight_ready or self._vts_composition is None:
                 result = MotionResult(
@@ -902,9 +1309,11 @@ class MotionSession:
                         "intent": request.intent.value,
                     },
                 )
-                self._state = result.state
-                self._emit(MotionEventType.FAILED, request=request, result=result, state=self._state)
-                return result
+                return self._publish_motion_result(
+                    request=request,
+                    result=result,
+                    event_type=MotionEventType.FAILED,
+                )
 
             resolution = self._vts_composition.resolve_request(request)
             if not resolution.resolved:
@@ -939,9 +1348,11 @@ class MotionSession:
                         "provider_call_executed": False,
                     },
                 )
-                self._state = result.state
-                self._emit(MotionEventType.UNSUPPORTED, request=request, result=result, state=self._state)
-                return result
+                return self._publish_motion_result(
+                    request=request,
+                    result=result,
+                    event_type=MotionEventType.UNSUPPORTED,
+                )
 
             transport_result = self._vts_composition.trigger(
                 resolution.request
@@ -958,13 +1369,19 @@ class MotionSession:
             if event_type is MotionEventType.SESSION_CLOSED:
                 self._emit_closed_once(request=request, result=result)
             else:
-                self._emit(event_type, request=request, result=result, state=self._state)
+                return self._publish_motion_result(
+                    request=request,
+                    result=result,
+                    event_type=event_type,
+                )
             return result
 
         result, event_type = self._capability_failure_result(request)
-        self._state = result.state
-        self._emit(event_type, request=request, result=result, state=self._state)
-        return result
+        return self._publish_motion_result(
+            request=request,
+            result=result,
+            event_type=event_type,
+        )
 
     def _state_for_request(self, request: MotionRequest) -> MotionState:
         if request.intent is MotionIntent.EXPRESSION or request.intent is MotionIntent.EMOTION:
@@ -986,6 +1403,7 @@ class MotionSession:
         if self._vts_composition is not None:
             self._vts_composition.close()
         self._emit_closed_once()
+        self._release_realtime_subscriptions()
 
     def dispose(self) -> None:
         self.close()

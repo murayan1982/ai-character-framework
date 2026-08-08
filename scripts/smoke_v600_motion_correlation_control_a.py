@@ -123,7 +123,16 @@ def check_docs() -> None:
             "common stale guard / VTS suppression adoption: DEFERRED TO CONTROL B",
         ):
             _require(phrase in text, f"missing contract phrase in {relative}: {phrase}")
-    print("[OK] Control A docs preserve compatibility and defer sequence/stale adoption")
+    for relative in (
+        "docs/app_integration_contract.md",
+        "docs/public_facade.md",
+    ):
+        text = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
+        _require(
+            "FW-RT6-8a-B-MOTION-COORDINATION" in text,
+            f"missing Control B coordination marker: {relative}",
+        )
+    print("[OK] accepted Control A correlation remains compatible with Control B")
 
 
 def main() -> None:
@@ -135,15 +144,15 @@ def main() -> None:
         check_repository_contract()
     check_runtime_contract()
     check_docs()
-    print("v600_rt6_8a_control_a_status: implemented-awaiting-review")
+    print("v600_rt6_8a_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_8a_control_a_exact_surface: 6 files")
     print("v600_rt6_8a_request_context: optional turn/generation / PASS")
     print("v600_rt6_8a_result_event_context: propagated / PASS")
     print("v600_rt6_8a_request_id_compatibility: PASS")
     print("v600_rt6_8a_session_id_compatibility: PASS")
     print("v600_rt6_8a_standalone_identity_invented: False / PASS")
-    print("v600_rt6_8a_unified_event_sequence: DEFERRED_TO_CONTROL_B")
-    print("v600_rt6_8a_common_stale_guard: DEFERRED_TO_CONTROL_B")
+    print("v600_rt6_8a_unified_event_sequence: ADOPTED_BY_CONTROL_B / PASS")
+    print("v600_rt6_8a_common_stale_guard: ADOPTED_BY_CONTROL_B / PASS")
     print("v600_rt6_8a_vts_generation_suppression_changed: False")
     print("v600_rt6_8a_task_count: 0 / 5 CLOSED")
     print("v600_rt6_8a_commit_push: NOT_AUTHORIZED")

@@ -2779,3 +2779,71 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8a-A-MOTION-CORRELATION:END -->
+
+<!-- FW-RT6-8a-B-MOTION-COORDINATION:BEGIN -->
+## FW-RT6-8a Control B — unified motion ordering and freshness
+
+`MotionSession` now has an additive `on_realtime_event(callback)` registration
+point for canonical motion events. The Framework binds the session internally to
+the same provider-neutral `RealtimeEventHub` and `RealtimeGenerationGate` that
+own the unified turn. The host does not construct, import, or pass either
+internal owner, and the existing `create_motion_session(...)` signature remains
+unchanged.
+
+The binding is single-owner and does not create a second sequence or freshness
+domain. A callback may be registered before binding; canonical delivery begins
+only after the Framework owner is bound. An unbound standalone `MotionSession`
+keeps the v5.5 mapping callback behavior and allocates no `EventSequence`.
+
+For a bound session, selected existing mapping events have these canonical
+counterparts on the shared sequencer:
+
+| Motion mapping event | Canonical event |
+|---|---|
+| `motion.requested` | `realtime.motion.requested` |
+| `motion.started` | `realtime.motion.started` |
+| `motion.completed` | `realtime.motion.completed` |
+| `motion.failed`, `motion.unsupported`, `motion.interrupted` | `realtime.motion.failed` |
+
+Canonical motion events carry `MotionEventPayload`, the existing motion-session
+identity, the request's optional turn/generation correlation, and the sequence
+allocated by the shared hub. The v5.5 mapping callback remains sequence-free and
+keeps its existing JSON-safe `session_id`, `request_id`, `turn_id`, and
+`generation_id` representation.
+
+When both request correlation IDs are present, the bound common generation gate
+must admit the terminal result before it is published. `MotionSession` neither
+starts nor advances the unified generation and cannot replace an unknown or
+retired generation. A rejected completion becomes a correlated
+`MotionOutcome.INTERRUPTED` result, emits one canonical
+`realtime.stale_result.dropped` diagnostic and one legacy
+`motion.interrupted` projection, and emits no completed event.
+
+The VTube Studio transport's existing lifecycle-generation check remains the
+lower-level close/late-task defense. Its result is additionally subject to the
+same common gate at the motion-session boundary. Consequently a VTS completion
+that arrives after unified generation retirement cannot be delivered as motion
+success even when the lower transport itself was not closed. This is completion
+suppression, not provider hard cancellation or a new cancel/clear API; those
+capabilities remain FW-RT6-8c scope.
+
+```text
+exact Control B surface: 7 files
+unified EventSequence owner: shared RealtimeEventHub / PASS
+separate local motion sequencer: False / PASS
+common freshness owner: shared RealtimeGenerationGate / PASS
+MotionSession starts or advances unified generation: False / PASS
+late motion completion delivered: False / PASS
+VTS lifecycle-generation guard replaced: False / PASS
+legacy mapping callback sequence field added: False / PASS
+create_motion_session signature changed: False / PASS
+root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-8a aggregate tasks: 0 / 5 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+Control C aggregate review: DEFERRED
+FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8a-B-MOTION-COORDINATION:END -->

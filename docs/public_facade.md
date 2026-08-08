@@ -3309,3 +3309,54 @@ Control B: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8a-A-MOTION-CORRELATION:END -->
+
+<!-- FW-RT6-8a-B-MOTION-COORDINATION:BEGIN -->
+## FW-RT6-8a Control B — canonical motion event and stale-result bridge
+
+`MotionSession.on_realtime_event(callback)` is additive to the existing
+`on_event(callback)` mapping contract. The canonical callback is activated when
+Framework composition binds the motion session to the unified turn's existing
+event hub and generation gate. This private composition seam does not add a
+root-public type, change the public factory parameters, or require a host to
+construct Framework internals.
+
+Canonical `MOTION_REQUESTED`, `MOTION_STARTED`, `MOTION_COMPLETED`, and
+`MOTION_FAILED` envelopes receive their `EventSequence` from that shared hub and
+use `MotionEventPayload`. They retain the motion-session `SessionId` and the
+request's optional `TurnId`/`GenerationId`. The existing mapping callback still
+emits its original motion vocabulary without a sequence key.
+
+An unbound standalone session does not invent a unified owner or allocate a
+local canonical sequence. Registration before binding is retained and becomes
+active after the Framework supplies the one shared owner. Binding the same pair
+again is idempotent; replacing either owner is rejected.
+
+For correlated terminal results the common generation gate is authoritative.
+Current results are delivered normally. Retired, unknown, or turn-mismatched
+results are normalized to a correlated interrupted result and produce a typed
+`STALE_RESULT_DROPPED` diagnostic. Neither the canonical nor mapping callback
+receives the late completed result. The active owner is not replaced and the
+motion session never starts or retires its generation.
+
+The accepted VTube Studio lifecycle-generation check remains intact as the
+transport-local close defense. Control B layers common turn freshness above it;
+it does not claim provider cancellation, add a motion cancel/clear method, or
+execute real VTS/network work in acceptance verification.
+
+```text
+exact change surface: 7 files
+shared EventSequence continuity: PASS
+typed canonical motion payload: PASS
+legacy mapping callback compatibility: PASS
+common stale admission: PASS
+late motion completion delivered: False / PASS
+standalone local canonical sequence: False / PASS
+public factory signature: UNCHANGED
+root-public names: 127 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+FW-RT6-8a task count: 0 / 5 CLOSED
+Control B: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8a-B-MOTION-COORDINATION:END -->

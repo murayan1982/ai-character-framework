@@ -203,18 +203,20 @@ class MotionCorrelationControlATests(unittest.TestCase):
         self.assertEqual(result.turn_id, turn_id)
         self.assertEqual(result.generation_id, generation_id)
 
-    def test_control_a_does_not_adopt_sequence_or_common_stale_guard(self) -> None:
+    def test_control_a_mapping_remains_legacy_under_control_b_bridge(self) -> None:
         turn_id, generation_id = self._context()
         events = []
+        realtime_events = []
         session = framework.create_motion_session()
         session.on_event(events.append)
+        session.on_realtime_event(realtime_events.append)
         session.apply_motion(
             MotionRequest.expression_change(
                 "smile", turn_id=turn_id, generation_id=generation_id
             )
         )
         self.assertNotIn("sequence", events[0])
-        self.assertFalse(hasattr(session, "on_realtime_event"))
+        self.assertEqual(realtime_events, [])
         self.assertEqual(len(framework.__all__), 127)
         self.assertEqual(session.info.api_version, "5.5.0")
 
