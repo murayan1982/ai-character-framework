@@ -2995,3 +2995,71 @@ provider/network/audio/microphone/real VTS execution: False / PASS
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:END -->
+
+<!-- FW-RT6-8c-A-MOTION-CONTROL:BEGIN -->
+## FW-RT6-8c Control A — typed motion cancel/stop reach
+
+Control A adds the stable explicit package `framework.motion_control`. It
+defines public-safe result facts only; it does not track an active motion,
+invoke `MotionStage.cancel`, execute `MotionRequest.stop_motion`, or change
+`RealtimeSession.interrupt()` execution.
+
+```python
+from framework.motion_control import (
+    MotionControlOutcome,
+    MotionControlResult,
+)
+```
+
+`MotionControlOutcome` contains the exact values `REQUESTED`, `COMPLETED`,
+`NOT_ACTIVE`, `ALREADY_TERMINAL`, `UNSUPPORTED`, `TIMED_OUT`,
+`ALREADY_CLOSED`, and `FAILED`. A result carries existing session, turn,
+generation, and request correlation plus separate facts for request cancel,
+explicit stop motion, and future-delivery suppression.
+
+```text
+request cancel != STOP_MOTION
+cancel accepted != cancel completed
+provider stop completion inferred from cancel acceptance: False
+unsupported stop reports stop_motion_applied: False
+```
+
+`InterruptResult.motion_result` is an optional trailing field. Its default is
+`None`, so the established nine-field positional prefix and all existing
+constructor helpers retain their prior behavior. A supplied result must be a
+typed `MotionControlResult`; when both sides identify a turn, their turn IDs
+must match.
+
+`RealtimeMotionCapability.stop_motion_supported` is also an optional trailing
+field with default `False`. It is independent of the existing
+`request_cancel_supported`: a stage may support cooperative cancellation of an
+in-flight request without proving that the adapter can execute an explicit
+`STOP_MOTION` intent.
+
+Control B may later adopt these facts by tracking active/pending motion,
+requesting stage cancellation outside the long-running session operation lock,
+installing a one-way late-delivery barrier, and returning motion reach from a
+whole-turn interrupt. Control A does none of that runtime work.
+
+The aggregate `InterruptResult.outcome` remains unchanged in Control A and
+Control B must not claim that one reached motion stage completes a whole-turn
+interrupt. Cross-stage aggregation, partial completion, and final coordinator
+outcomes remain FW-RT6-9a work.
+
+```text
+exact Control A surface: 7 files
+stable explicit package: framework.motion_control
+InterruptResult legacy prefix: 9 fields / SAME ORDER
+RealtimeMotionCapability legacy prefix: 5 fields / SAME ORDER
+aggregate interrupt outcome changed by Control A: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+whole-turn aggregate coordinator: DEFERRED TO FW-RT6-9a
+FW-RT6-8c aggregate tasks: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8c-A-MOTION-CONTROL:END -->

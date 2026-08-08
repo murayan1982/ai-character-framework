@@ -11,9 +11,12 @@ from .public_safety import public_mapping as _recursive_public_mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
 from .identity import TurnId, normalize_turn_id
+
+if TYPE_CHECKING:
+    from .motion_control import MotionControlResult
 
 
 _SECRET_KEY_FRAGMENTS = (
@@ -143,6 +146,7 @@ class InterruptResult:
     provider_cancel_supported: bool = False
     queue_flush_supported: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    motion_result: "MotionControlResult | None" = None
 
     def __post_init__(self) -> None:
         outcome = self.outcome if isinstance(self.outcome, InterruptOutcome) else InterruptOutcome(str(self.outcome))
@@ -153,6 +157,17 @@ class InterruptResult:
         object.__setattr__(self, "reason", reason)
         object.__setattr__(self, "turn_id", normalize_turn_id(self.turn_id))
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        if self.motion_result is not None:
+            from .motion_control import MotionControlResult
+
+            if not isinstance(self.motion_result, MotionControlResult):
+                raise TypeError("motion_result must be a MotionControlResult or None")
+            if (
+                self.turn_id is not None
+                and self.motion_result.turn_id is not None
+                and self.turn_id != self.motion_result.turn_id
+            ):
+                raise ValueError("motion_result turn_id must match interrupt turn_id")
 
     @property
     def accepted(self) -> bool:

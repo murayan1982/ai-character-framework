@@ -361,6 +361,7 @@ class RealtimeMotionCapability:
     completion_event_supported: bool = False
     provider_neutral_intent_supported: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    stop_motion_supported: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.runtime, RuntimeCapabilityState):
@@ -380,6 +381,11 @@ class RealtimeMotionCapability:
             "provider_neutral_intent_supported",
             bool(self.provider_neutral_intent_supported),
         )
+        object.__setattr__(
+            self,
+            "stop_motion_supported",
+            bool(self.stop_motion_supported),
+        )
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
 
     def as_dict(self) -> Mapping[str, Any]:
@@ -392,6 +398,7 @@ class RealtimeMotionCapability:
                     self.provider_neutral_intent_supported
                 ),
                 "public_metadata": dict(self.public_metadata),
+                "stop_motion_supported": self.stop_motion_supported,
             }
         )
 

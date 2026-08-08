@@ -3602,3 +3602,68 @@ FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-8c-A-MOTION-CONTROL:BEGIN -->
+## FW-RT6-8c Control A — explicit motion-control result package
+
+Motion cancellation reach is available from the stable explicit package rather
+than the Framework root:
+
+```python
+from framework.motion_control import (
+    MotionControlOutcome,
+    MotionControlResult,
+)
+```
+
+The package contains no provider adapter and performs no runtime operation.
+`MotionControlResult` represents one resolved attempt using existing
+session/turn/generation/request correlation. Its fields deliberately keep two
+control channels distinct:
+
+```text
+request cancel != STOP_MOTION
+cancel_requested / cancel_accepted / cancel_completed
+stop_motion_requested / stop_motion_supported / stop_motion_applied
+future_delivery_suppressed
+```
+
+An accepted `MotionStage.cancel()` request must not be presented as provider
+stop completion. `stop_motion_applied=True` is valid only when stop motion was
+requested, capability reported support, and a later runtime control has proof
+of application.
+
+```text
+provider stop completion inferred from cancel acceptance: False
+unsupported stop applies provider motion: False
+```
+
+The existing root-public `InterruptResult` gains only an optional trailing
+`motion_result` field. Existing callers receive `None`; all established fields,
+constructor helpers, and aggregate outcomes retain their prior meaning.
+`RealtimeMotionCapability` similarly adds only trailing
+`stop_motion_supported=False`, independently of request cancellation support.
+
+Control A does not add `cancel_motion()` to `RealtimeSession` or
+`MotionSession`, does not modify a factory/config signature, and does not call
+`MotionStage.cancel()`. Active/pending ownership, duplicate convergence, late
+completion suppression, and whole-turn motion reach are deferred to Control B.
+Final cross-stage interrupt aggregation remains FW-RT6-9a.
+
+```text
+exact Control A surface: 7 files
+explicit exports: MotionControlOutcome / MotionControlResult
+InterruptResult legacy prefix: 9 fields / SAME ORDER
+RealtimeMotionCapability legacy prefix: 5 fields / SAME ORDER
+aggregate interrupt outcome changed by Control A: False
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+aggregate coordinator: DEFERRED TO FW-RT6-9a
+FW-RT6-8c aggregate tasks: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8c-A-MOTION-CONTROL:END -->
