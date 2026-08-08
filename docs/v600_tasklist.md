@@ -5111,3 +5111,61 @@ This sync authorizes only Control B exact contract review after the sync
 commit/push is remotely verified. It does not authorize Control B
 implementation.
 <!-- FW-RT6-7c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-7c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7c Control B — result/callback bridge acceptance sync
+
+```text
+checkpoint: FW-RT6-7c Control B
+baseline head: 60d1f1b1ac770e8b220c7e7488f536f2332acfb7
+implementation commit: 60d1f1b1ac770e8b220c7e7488f536f2332acfb7
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 6 files
+dedicated gate: PASS
+focused Control B result/callback compatibility tests: 8 / PASS
+focused Control A result-correlation compatibility tests: 8 / PASS
+focused FW-RT6-7b lifecycle/privacy tests: 6 / PASS
+focused FW-RT6-7b abort/stale/privacy tests: 7 / PASS
+full Framework unit suite: 319 / PASS
+accepted Control A and FW-RT6-7a/7b regressions: PASS
+listen_result correlation: session / turn / generation / PASS
+text_fallback_result correlation: session / turn / generation / PASS
+legacy mapping callback source: selected canonical v6 events / PASS
+legacy mapping shape: type / session_type / payload / PRESERVED
+listen legacy mapping order: started / unavailable / PRESERVED
+text fallback legacy mapping: text_fallback / PRESERVED
+host-audio legacy mapping callback changed: False / PASS
+close canonical event: SESSION_CLOSED / exactly once / PASS
+close legacy mapping event: voice_input.closed / exactly once / PASS
+post-close listen/text/audio rejection: unified session-only CLOSED / PASS
+post-close turn/generation admitted: False / PASS
+framework root-public names: 127 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+provider/network/audio/microphone execution: False / PASS
+FW-RT6-7c aggregate: NOT_COMPLETED
+FW-RT6-7c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the remaining result/callback compatibility bridge. Open
+`listen_result()` and `text_fallback_result()` operations now carry the same
+Framework-owned session/turn/generation context as their canonical v6 events.
+The existing mapping callback contract is maintained by an explicit projection
+from selected canonical events without adding a host-audio mapping flow.
+
+The first close produces one canonical `SESSION_CLOSED` event and one legacy
+`voice_input.closed` projection. Later listen, text-fallback and host-audio
+result operations share one safe session-only closed rejection and admit no
+turn or generation.
+
+Control A and Control B together satisfy the FW-RT6-7c runtime compatibility
+work, but the five aggregate task checkboxes remain open until Control C
+aggregate acceptance. This sync authorizes only Control C exact contract review
+after the sync commit/push is remotely verified. It does not authorize Control
+C implementation or any later FW-RT6-8/P1 work.
+<!-- FW-RT6-7c-B-ACCEPTANCE-SYNC:END -->
