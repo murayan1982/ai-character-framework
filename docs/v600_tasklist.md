@@ -2777,12 +2777,12 @@ False
 
 **Tasks:**
 
-- [ ] lifecycle-to-motion hook interfaceを追加する。
-- [ ] listening/thinking/speaking/interrupted/completed/failed phaseを通知可能にする。
-- [ ] Framework coreがcharacter固有mappingを決めない。
-- [ ] host/pluginがprovider-neutral intentを返す。
-- [ ] unsupported intentをtypedに処理する。
-- [ ] hook failureがconversation terminalを必ずしもfailさせないpolicyを固定する。
+- [x] lifecycle-to-motion hook interfaceを追加する。
+- [x] listening/thinking/speaking/interrupted/completed/failed phaseを通知可能にする。
+- [x] Framework coreがcharacter固有mappingを決めない。
+- [x] host/pluginがprovider-neutral intentを返す。
+- [x] unsupported intentをtypedに処理する。
+- [x] hook failureがconversation terminalを必ずしもfailさせないpolicyを固定する。
 
 **Acceptance:**
 
@@ -5722,3 +5722,75 @@ Control C aggregate review. This sync authorizes only Control C exact contract
 review after the sync commit/push is remotely verified. It does not authorize
 Control C implementation or any FW-RT6-8c motion cancel/clear work.
 <!-- FW-RT6-8b-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8b Control C — motion lifecycle extension aggregate acceptance
+
+```text
+checkpoint: FW-RT6-8b Control C aggregate acceptance candidate
+baseline head: a67af1caa45cc3a4f98fb324ce84d5f23ee060c1
+Control A implementation: 6903b5a8ac96ea7e0e7bbd1b0108d7eb9f9f8dd7
+Control A acceptance sync: 7e8afe4955c23d89924227dba269714ad71aed09
+Control B implementation: c07d8d23723229118c95b2f2b1a292e6ce3f6129
+Control B acceptance sync: a67af1caa45cc3a4f98fb324ce84d5f23ee060c1
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused Control A motion-lifecycle tests: 13 / PASS
+focused Control B motion-lifecycle tests: 15 / PASS
+full Framework unit suite: 364 / PASS
+stable explicit hook package exports: 6 / PASS
+public registration: RealtimeSession.set_motion_lifecycle_hook / PASS
+factory/config hook parameter added: False / PASS
+lifecycle source mapping: 7 canonical sources / PASS
+hook signal vocabulary: 6 EXACT / PASS
+source canonical event published before hook: True / PASS
+provider-neutral mapped request: MotionRequest / PASS
+product-specific mapping in Framework core: False / PASS
+hook skip/failure starts MotionStage: False / PASS
+mapped request uses injected MotionStage: True / PASS
+canonical motion sequence owner: shared RealtimeEventHub / PASS
+transient completion freshness owner: shared RealtimeGenerationGate / PASS
+motion lifecycle starts/advances generation: False / PASS
+terminal motion begins after terminal commit/publication: True / PASS
+terminal motion reopens retired generation: False / PASS
+conversation terminal replaced/duplicated by motion: False / PASS
+missing MotionStage: MotionOutcome.NOT_CONFIGURED / PASS
+failed MotionStage preflight: MotionOutcome.UNAVAILABLE / PASS
+stage exception/malformed/correlation mismatch: PUBLIC-SAFE FAILED / PASS
+unsupported adapter outcome: MotionOutcome.UNSUPPORTED / PRESERVED / PASS
+callback/hook close starts MotionStage afterward: False / PASS
+MotionStage close ownership: RealtimeSession / IDEMPOTENT / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+FW-RT6-8b tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-8b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted provider-neutral hook contract and runtime
+adoption. The hook retains existing session, turn, generation, and canonical
+source-sequence correlation while host/plugin code remains the sole owner of
+character- or product-specific mapping.
+
+Mapped requests execute through the existing injected `MotionStage`. Canonical
+motion events use the session's shared sequencer, and transient completions use
+the existing common freshness gate. Terminal-triggered motion remains a
+post-terminal side effect validated against the accepted terminal source and
+cannot reopen generation ownership or replace/duplicate conversation terminal
+state.
+
+Control C changes no runtime source. It adds the aggregate regression gate and
+closes the six task checkboxes only as aggregate acceptance candidates. Final
+`COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED` status remains
+deferred to a reviewed, committed, pushed, and remotely verified one-file final
+acceptance sync. FW-RT6-8c motion cancel/clear work remains not authorized.
+<!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:END -->

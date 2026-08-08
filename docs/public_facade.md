@@ -3537,3 +3537,68 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8b-B-MOTION-LIFECYCLE-ADOPTION:END -->
+
+<!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8b Control C — aggregate lifecycle-to-motion acceptance
+
+The accepted extension combines Control A's explicit provider-neutral hook
+package with Control B's `RealtimeSession` adoption:
+
+```text
+host/plugin mapping owner:
+MotionLifecycleHook
+
+mapped operation:
+MotionRequest through injected MotionStage
+
+canonical ordering owner:
+existing RealtimeEventHub
+
+transient completion freshness:
+existing RealtimeGenerationGate
+
+terminal motion:
+post-terminal side effect without generation reopen or terminal replacement
+```
+
+The session publishes the canonical lifecycle source before invoking the hook.
+The notification retains its source sequence and existing session, turn, and
+generation identity. Framework core does not choose a character, expression,
+emotion, gesture, model, hotkey, or provider-specific mapping.
+
+Hook skip/failure starts no stage. Missing or failed-preflight stages and stage
+exception, malformed envelope, or correlation mismatch remain typed public-safe
+motion failures. An adapter-returned `MotionOutcome.UNSUPPORTED` remains
+unsupported rather than becoming a hook failure. None of these paths changes or
+duplicates the conversation terminal.
+
+Transient stage results pass the existing common generation gate. Terminal
+motion begins only after terminal-registry commit and canonical terminal
+publication; it is validated as a post-terminal side effect and never starts,
+advances, or reopens a unified generation.
+
+Control C changes no runtime source, root-public manifest, public factory/config
+surface, or API version. Aggregate verification imports no pyvts/WebSocket SDK
+and executes no provider, network, audio, microphone, or real VTS operation.
+
+```text
+Control C exact surface: 3 files
+Control A focused tests: 13 / PASS
+Control B focused tests: 15 / PASS
+full Framework unit suite: 364 / PASS
+product-specific mapping in Framework core: False / PASS
+shared canonical sequence: PASS
+common transient stale guard: PASS
+terminal generation reopened: False / PASS
+conversation terminal changed/duplicated: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime source changed by Control C: False
+FW-RT6-8b tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-8b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-8b-C-AGGREGATE-ACCEPTANCE:END -->
