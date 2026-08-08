@@ -5229,3 +5229,60 @@ This candidate changes no runtime source. It does not authorize FW-RT6-8a
 motion correlation, partial transcript/audio streaming, provider execution, or
 any new microphone/audio ownership.
 <!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-7c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-7c — voice-input result compatibility final acceptance sync
+
+```text
+checkpoint: FW-RT6-7c final acceptance
+baseline head: e88be7a138676d1acdadb9c52459902d0864f8ab
+Control A implementation: 28b298f1ee70bb114f13782d40c54b536a8174a7
+Control A acceptance sync: 4dc3d1284f548748e59070bda4e03e8a434d16d8
+Control B implementation: 60d1f1b1ac770e8b220c7e7488f536f2332acfb7
+Control B acceptance sync: dfcdc137ba8d04bde09f62fe0ced04086886dbfe
+Control C aggregate implementation: e88be7a138676d1acdadb9c52459902d0864f8ab
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A result-correlation compatibility tests: 8 / PASS
+focused Control B result/callback compatibility tests: 8 / PASS
+focused FW-RT6-7b lifecycle/privacy tests: 6 / PASS
+focused FW-RT6-7b abort/stale/privacy tests: 7 / PASS
+full Framework unit suite: 319 / PASS
+accepted FW-RT6-7a/7b regressions: PASS
+legacy VoiceInputResult prefix: 9 fields / SAME ORDER / PASS
+additive optional correlation suffix: session_id / turn_id / generation_id / PASS
+existing factory compatibility: PASS
+transcribe/listen/text-fallback result correlation: PASS
+adapter-provided correlation authority: session-owned / PASS
+legacy mapping source: selected canonical v6 events / PASS
+legacy mapping shape and names: PRESERVED / PASS
+host-audio legacy mapping callback changed: False / PASS
+post-close listen/text/audio rejection: unified session-only CLOSED / PASS
+duplicate close events after close: False / PASS
+framework root-public names: 127 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+runtime source changed by Control C: False
+provider/network/audio/microphone execution: False / PASS
+FW-RT6-7c tasks: 5 / 5 ACCEPTED
+FW-RT6-7c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-8a exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-8a implementation: NOT_AUTHORIZED
+partial transcript/audio streaming: DEFERRED_TO_P1
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-7c is accepted as the provider-neutral voice-input result compatibility
+boundary. It preserves the original result fields and factories, adds optional
+Framework-owned correlation, maintains selected legacy mapping callbacks from
+canonical v6 events, and unifies post-close result rejection without adding a
+host-audio mapping flow.
+
+This sync closes FW-RT6-7c only. It authorizes FW-RT6-8a exact contract review
+after the sync commit/push is remotely verified, not FW-RT6-8a implementation.
+Partial transcript/audio streaming remains deferred P1 scope.
+<!-- FW-RT6-7c-FINAL-ACCEPTANCE-SYNC:END -->
