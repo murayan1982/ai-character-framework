@@ -5641,3 +5641,84 @@ checkboxes stay open. This sync authorizes only Control B exact contract review
 after the sync commit/push is remotely verified; it does not authorize Control
 B implementation or any FW-RT6-8c motion cancel/clear work.
 <!-- FW-RT6-8b-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8b Control B — motion lifecycle runtime adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-8b Control B
+baseline head: c07d8d23723229118c95b2f2b1a292e6ce3f6129
+Control A implementation: 6903b5a8ac96ea7e0e7bbd1b0108d7eb9f9f8dd7
+Control A acceptance sync: 7e8afe4955c23d89924227dba269714ad71aed09
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B implementation: c07d8d23723229118c95b2f2b1a292e6ce3f6129
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 5 files
+dedicated Control B gate: PASS
+focused Control A motion-lifecycle tests: 13 / PASS
+focused Control B motion-lifecycle tests: 15 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a aggregate regression: PASS
+full Framework unit suite: 364 / PASS
+public registration: RealtimeSession.set_motion_lifecycle_hook / PASS
+factory/config hook parameter added: False / PASS
+lifecycle source mapping: 7 canonical sources / PASS
+hook signal vocabulary: 6 EXACT / PASS
+source canonical event published before hook: True / PASS
+provider-neutral mapped request: MotionRequest / PASS
+product-specific mapping in Framework core: False / PASS
+hook skip/failure starts MotionStage: False / PASS
+mapped request uses injected MotionStage: True / PASS
+canonical motion sequence owner: shared RealtimeEventHub / PASS
+transient completion freshness owner: shared RealtimeGenerationGate / PASS
+motion lifecycle starts/advances generation: False / PASS
+terminal motion begins after terminal commit/publication: True / PASS
+terminal motion reopens retired generation: False / PASS
+conversation terminal replaced/duplicated by motion: False / PASS
+missing MotionStage: MotionOutcome.NOT_CONFIGURED / PASS
+failed MotionStage preflight: MotionOutcome.UNAVAILABLE / PASS
+stage exception/malformed/correlation mismatch: PUBLIC-SAFE FAILED / PASS
+unsupported adapter outcome: MotionOutcome.UNSUPPORTED / PRESERVED / PASS
+callback/hook close starts MotionStage afterward: False / PASS
+MotionStage close ownership: RealtimeSession / IDEMPOTENT / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-8b aggregate: NOT_COMPLETED
+FW-RT6-8b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts explicit session-owned lifecycle-hook registration and the
+runtime bridge from the accepted provider-neutral hook contract to the existing
+injected `MotionStage`. Framework core still does not select a character,
+expression, emotion, gesture, model, hotkey, or provider-specific mapping.
+
+The hook runs only after its canonical lifecycle source is sequenced and
+published. A mapped request emits typed canonical motion events on the existing
+shared `RealtimeEventHub`; skipped or failed hook resolution starts no motion.
+Missing, unavailable, exceptional, malformed, mismatched, and unsupported stage
+results remain typed and public-safe without changing the conversation terminal.
+
+Transient completions are admitted by the existing shared
+`RealtimeGenerationGate`. Terminal-triggered motion starts after the terminal
+registry commit and canonical terminal publication and remains a post-terminal
+side effect. It neither starts nor advances a generation, reopens a retired
+generation, replaces the accepted conversation outcome, nor creates a second
+conversation terminal.
+
+Control A and Control B together cover the six FW-RT6-8b tasks as aggregate
+acceptance candidates, but the task checkboxes remain `0 / 6 CLOSED` until
+Control C aggregate review. This sync authorizes only Control C exact contract
+review after the sync commit/push is remotely verified. It does not authorize
+Control C implementation or any FW-RT6-8c motion cancel/clear work.
+<!-- FW-RT6-8b-B-ACCEPTANCE-SYNC:END -->
