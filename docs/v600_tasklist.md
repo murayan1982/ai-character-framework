@@ -5946,3 +5946,85 @@ five FW-RT6-8c task checkboxes stay open. This sync authorizes only Control B
 exact contract review after the sync commit/push is remotely verified; it does
 not authorize Control B implementation or FW-RT6-9a aggregate interrupt work.
 <!-- FW-RT6-8c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8c Control B — RealtimeSession motion-control adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-8c Control B
+baseline head: 2750fc3c584aa2cca238a10e2ed596639bd113d9
+Control A implementation: 1fcff27a9b2f89cd0682cf613b351b3f4b35c60b
+Control A acceptance sync: 538b1baae3ff6e0ad2c1add3a8d667f9d107d474
+Control B implementation: 2750fc3c584aa2cca238a10e2ed596639bd113d9
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 5 files
+dedicated Control A gate: PASS
+dedicated Control B gate: PASS
+focused Control A motion-control tests: 12 / PASS
+focused Control B motion-control tests: 11 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8b aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a aggregate regression: PASS
+full Framework unit suite: 387 / PASS
+active/pending lifecycle motion owner: RealtimeSession / PASS
+MotionStage.cancel outside long session operation lock: PASS
+accepted cancel late-delivery barrier: PASS
+cancel requested equals cancel accepted: False / PASS
+cancel accepted equals cancel completed: False / PASS
+request cancel equals STOP_MOTION: False / PASS
+cached construction preflight owns stop capability: True / PASS
+provider STOP_MOTION overclaim: False / PASS
+duplicate stage cancel execution: AT_MOST_ONCE / PASS
+duplicate provider stop execution: AT_MOST_ONCE / PASS
+target mismatch cancels another turn: False / PASS
+InterruptResult additive motion_result: PASS
+aggregate InterruptResult outcome changed: False / PASS
+new public cancel_motion method: False / PASS
+standalone MotionSession public contract changed: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-8c aggregate: NOT_COMPLETED
+FW-RT6-8c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-9a aggregate interrupt: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the `RealtimeSession`-owned bridge from the accepted typed
+motion-control contract to one correlated pending or active lifecycle motion.
+An interrupt reaches motion through the existing additive
+`InterruptResult.motion_result`; no new root export, factory argument,
+registration callback, or public `cancel_motion()` method is introduced.
+
+The session invokes `MotionStage.cancel` outside the long session operation
+lock. Accepted cancellation arms a one-way late-delivery barrier before the
+interrupt waits for that lock, so the original in-flight motion cannot publish
+a late completion or failure. Request, acceptance, and actual completion remain
+separate observed facts.
+
+Explicit provider-neutral `STOP_MOTION` remains independent. The cached
+construction preflight is the sole capability source, and provider application
+is reported only after a typed, correlated `MotionOutcome.COMPLETED` result.
+Unsupported capability, exceptions, malformed or mismatched results, and
+non-completed outcomes never overclaim a physical stop. Duplicate stage cancel
+and stop execution is linearized per active work item, and a mismatched turn
+target never cancels another turn's motion.
+
+Control B intentionally leaves the established aggregate interrupt outcome
+unchanged. Cross-stage LLM, TTS, queued output, artifact, partial completion,
+timeout, and whole-request duplicate coordination remain FW-RT6-9a/FW-RT6-9b
+work. Therefore all five FW-RT6-8c aggregate task checkboxes stay open. This
+sync authorizes only Control C aggregate exact contract review after the sync
+commit/push is remotely verified; it does not authorize Control C
+implementation or FW-RT6-9a aggregate interrupt work.
+<!-- FW-RT6-8c-B-ACCEPTANCE-SYNC:END -->
