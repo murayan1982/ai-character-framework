@@ -3360,3 +3360,47 @@ FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-8a-B-MOTION-COORDINATION:END -->
+
+<!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8a Control C — aggregate motion correlation acceptance
+
+The accepted motion boundary combines Control A's additive request/result
+correlation with Control B's shared realtime ordering and freshness bridge:
+
+```text
+legacy MotionRequest / MotionResult prefixes and factories:
+preserved
+
+optional turn / generation correlation:
+preserved through result, canonical event, and legacy mapping projection
+
+canonical motion ordering:
+existing shared RealtimeEventHub owner
+
+terminal-result freshness:
+existing shared RealtimeGenerationGate owner
+
+late motion completion delivered:
+False
+```
+
+An unbound standalone session still produces its legacy mapping events without
+inventing a turn, generation, canonical event owner, or local sequence. When
+Framework composition binds the session, canonical motion events use typed
+`MotionEventPayload` values and the shared sequence. The public factory does not
+expose the event hub or generation gate and the motion session never starts or
+advances a unified generation.
+
+Current correlated terminal results are admitted normally. Retired, unknown, or
+turn-mismatched completions normalize to a correlated interrupted result and
+emit `STALE_RESULT_DROPPED` plus the legacy `motion.interrupted` projection.
+Neither callback surface receives a late completed event. The existing VTube
+Studio lifecycle-generation guard remains transport-local defense; this
+contract does not claim provider hard cancellation.
+
+Control C changes no runtime source. It records aggregate acceptance without
+adding root-public names, changing `MOTION_API_VERSION`, changing the public
+factory signature, or executing pyvts/WebSocket/provider/network/audio/
+microphone/real VTS work. FW-RT6-8b lifecycle hooks and FW-RT6-8c motion
+cancel/clear remain not authorized.
+<!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:END -->

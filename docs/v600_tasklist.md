@@ -2752,11 +2752,11 @@ PASS
 
 **Tasks:**
 
-- [ ] motion requestへoptional turn/generation contextを追加する。
-- [ ] result/eventへturn/generationを追加する。
-- [ ] existing request_id/session_id compatibilityを維持する。
-- [ ] event sequenceをunified sequencerへbridgeする。
-- [ ] current VTS generation suppressionをcommon stale guardへ接続する。
+- [x] motion requestへoptional turn/generation contextを追加する。
+- [x] result/eventへturn/generationを追加する。
+- [x] existing request_id/session_id compatibilityを維持する。
+- [x] event sequenceをunified sequencerへbridgeする。
+- [x] current VTS generation suppressionをcommon stale guardへ接続する。
 
 **Acceptance:**
 
@@ -5430,3 +5430,71 @@ until Control C aggregate review. This sync authorizes only Control C exact
 contract review after the sync commit/push is remotely verified. It does not
 authorize Control C implementation or FW-RT6-8b/FW-RT6-8c work.
 <!-- FW-RT6-8a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-8a Control C — aggregate motion correlation acceptance
+
+```text
+checkpoint: FW-RT6-8a Control C aggregate acceptance candidate
+baseline head: 38405956b1646e33a82b366256c5e95b819d7dc8
+Control A implementation: f99f540c8534bbfeee8e1be049d3559b81c24b8c
+Control A acceptance sync: d3d4166a99b946c4a5976032bf6580ca821b953f
+Control B implementation: a06d7a3371ebeec69bce9a7265a2d01af7b89322
+Control B acceptance sync: 38405956b1646e33a82b366256c5e95b819d7dc8
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused Control A motion-correlation tests: 9 / PASS
+focused Control B motion-coordination tests: 8 / PASS
+full Framework unit suite: 336 / PASS
+legacy MotionRequest prefix: 11 fields / SAME ORDER / PASS
+legacy MotionResult prefix: 9 fields / SAME ORDER / PASS
+additive optional correlation suffix: turn_id / generation_id / PASS
+existing request_id/session_id compatibility: PRESERVED / PASS
+mock result/event correlation: PASS
+shared EventSequence owner: RealtimeEventHub / PASS
+separate local motion sequencer: False / PASS
+typed canonical motion payload: MotionEventPayload / PASS
+legacy mapping callback shape/sequence: PRESERVED / PASS
+common freshness owner: RealtimeGenerationGate / PASS
+MotionSession starts or advances unified generation: False / PASS
+retired motion completion delivered: False / PASS
+stale canonical diagnostic: STALE_RESULT_DROPPED / PASS
+stale legacy terminal projection: motion.interrupted / PASS
+late motion completed event emitted: False / PASS
+VTS transport lifecycle-generation guard preserved: True / PASS
+provider hard cancellation claimed: False / PASS
+create_motion_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+FW-RT6-8a tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-8a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-8b lifecycle extension hook: NOT_AUTHORIZED
+FW-RT6-8c motion cancel/clear: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted Control A correlation foundation and Control B
+unified ordering/freshness bridge. Motion request/result correlation remains
+additive, the existing `request_id` and `session_id` meanings remain unchanged,
+and canonical motion events use the existing shared realtime owner rather than
+a motion-local sequence.
+
+The shared generation gate admits current correlated terminal results and
+rejects retired, unknown, or turn-mismatched completions. A rejected completion
+remains correlated, normalizes to interrupted, emits the typed stale diagnostic
+and legacy interrupted projection, and does not emit a completed event. The
+transport-local VTube Studio lifecycle-generation check remains an additional
+close defense; no provider hard-cancellation guarantee is introduced.
+
+Control C changes no runtime source. It adds the aggregate regression gate and
+closes the five task checkboxes only as aggregate acceptance candidates. Final
+`COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED` status remains
+deferred to a reviewed, committed, pushed, and remotely verified one-file final
+acceptance sync. This control does not authorize FW-RT6-8b or FW-RT6-8c work.
+<!-- FW-RT6-8a-C-AGGREGATE-ACCEPTANCE:END -->
