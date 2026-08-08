@@ -5286,3 +5286,71 @@ This sync closes FW-RT6-7c only. It authorizes FW-RT6-8a exact contract review
 after the sync commit/push is remotely verified, not FW-RT6-8a implementation.
 Partial transcript/audio streaming remains deferred P1 scope.
 <!-- FW-RT6-7c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8a Control A — motion correlation acceptance sync
+
+```text
+checkpoint: FW-RT6-8a Control A
+baseline head: f99f540c8534bbfeee8e1be049d3559b81c24b8c
+implementation commit: f99f540c8534bbfeee8e1be049d3559b81c24b8c
+status: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 6 files
+dedicated gate: PASS
+focused Control A motion-correlation tests: 9 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+full Framework unit suite: 328 / PASS
+legacy MotionRequest prefix: 11 fields / SAME ORDER / PASS
+legacy MotionResult prefix: 9 fields / SAME ORDER / PASS
+additive optional request suffix: turn_id / generation_id / PASS
+additive optional result suffix: turn_id / generation_id / PASS
+existing request/result factory compatibility: PASS
+typed Framework identity normalization: PASS
+legacy non-Framework turn strings: PRESERVED / PASS
+generation without turn accepted: False / PASS
+correlated result without session accepted: False / PASS
+MotionRequest request_id changed: False / PASS
+GenerationId promoted from request_id: False / PASS
+MotionResult session_id compatibility: PRESERVED / PASS
+standalone correlation identity invented: False / PASS
+mock result/event correlation: PASS
+guarded/unavailable result/event correlation: PASS
+closed result/event correlation: PASS
+in-memory VTS transport-result correlation: PASS
+mapping callback turn/generation serialization: JSON STRING / PASS
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+framework root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+unified EventSequence bridge: DEFERRED_TO_CONTROL_B
+common stale guard adoption: DEFERRED_TO_CONTROL_B
+VTS lifecycle-generation suppression changed: False / PASS
+FW-RT6-8a aggregate: NOT_COMPLETED
+FW-RT6-8a tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the additive motion request/result correlation foundation.
+The original request/result field prefixes and factories remain compatible,
+while an existing unified turn/generation context is preserved through mock,
+guarded, closed, and VTube Studio transport-result projection paths. Existing
+`request_id` and `session_id` semantics remain independent and unchanged.
+
+Mapping callbacks expose only JSON-safe string correlation when it is present.
+A standalone motion operation does not invent a turn or generation, and the
+acceptance verification imports no actual VTS/WebSocket runtime and executes no
+provider, network, audio, microphone, or real motion operation.
+
+The unified `EventSequence` bridge and common stale guard/VTS suppression
+adoption remain Control B work. Therefore all five FW-RT6-8a aggregate task
+checkboxes stay open. This sync authorizes only Control B exact contract review
+after the sync commit/push is remotely verified; it does not authorize Control
+B implementation or FW-RT6-8b/FW-RT6-8c work.
+<!-- FW-RT6-8a-A-ACCEPTANCE-SYNC:END -->
