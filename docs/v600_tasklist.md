@@ -5875,3 +5875,74 @@ Studio execution.
 This sync closes FW-RT6-8b only. It authorizes FW-RT6-8c exact contract review
 after the sync commit/push is remotely verified, not FW-RT6-8c implementation.
 <!-- FW-RT6-8b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8c Control A — typed motion cancel/stop contract acceptance sync
+
+```text
+checkpoint: FW-RT6-8c Control A
+baseline head: 1fcff27a9b2f89cd0682cf613b351b3f4b35c60b
+Control A implementation: 1fcff27a9b2f89cd0682cf613b351b3f4b35c60b
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 7 files
+dedicated Control A gate: PASS
+focused Control A motion-control tests: 12 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8b aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a aggregate regression: PASS
+full Framework unit suite: 376 / PASS
+explicit package: framework.motion_control / PASS
+typed motion-control outcomes: 8 EXACT / PASS
+InterruptResult additive motion_result: PASS
+legacy InterruptResult positional prefix: UNCHANGED / PASS
+RealtimeMotionCapability additive stop_motion_supported: PASS
+legacy RealtimeMotionCapability positional prefix: UNCHANGED / PASS
+request cancel equals STOP_MOTION: False / PASS
+cancel requested equals cancel accepted: False / PASS
+cancel accepted equals cancel completed: False / PASS
+provider STOP_MOTION overclaim: False / PASS
+motion result session/turn/generation/request correlation: PASS
+interrupt/motion turn mismatch accepted: False / PASS
+motion result public-safe metadata: PASS
+root import loads framework.motion_control eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+RealtimeSession runtime motion-control adoption: DEFERRED_TO_CONTROL_B
+MotionSession runtime motion-control adoption: DEFERRED_TO_CONTROL_B
+active/pending motion tracking: DEFERRED_TO_CONTROL_B
+whole-turn aggregate interrupt outcome: DEFERRED_TO_FW_RT6_9A
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-8c aggregate: NOT_COMPLETED
+FW-RT6-8c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-9a aggregate interrupt: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the explicit provider-neutral typed result boundary for
+motion request cancellation and explicit `STOP_MOTION` reach. Request cancel,
+cancel acceptance, cancel completion, and provider-side stop application remain
+separate facts; no provider capability or physical stop is inferred from a
+local request alone.
+
+The additive `InterruptResult.motion_result` projection preserves the existing
+interrupt positional prefix and rejects conflicting turn identity. The
+additive `RealtimeMotionCapability.stop_motion_supported` flag remains distinct
+from request-cancel support and preserves its existing positional prefix. The
+new contract stays in explicit `framework.motion_control`; root imports, public
+names, factory signatures, and realtime/motion API versions remain unchanged.
+
+Runtime active/pending motion tracking and adoption by `RealtimeSession` and
+`MotionSession` remain Control B work. Cross-stage aggregation of LLM, TTS,
+artifact, and motion interrupt results remains FW-RT6-9a work. Therefore all
+five FW-RT6-8c task checkboxes stay open. This sync authorizes only Control B
+exact contract review after the sync commit/push is remotely verified; it does
+not authorize Control B implementation or FW-RT6-9a aggregate interrupt work.
+<!-- FW-RT6-8c-A-ACCEPTANCE-SYNC:END -->
