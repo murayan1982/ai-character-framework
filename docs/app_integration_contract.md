@@ -2663,3 +2663,33 @@ correlation, or unified close rejection. Additive `VoiceInputResult`
 correlation and close compatibility remain FW-RT6-7c; partial streaming remains
 P1 scope.
 <!-- FW-RT6-7b-B-ABORT-STALE-GATE:END -->
+
+<!-- FW-RT6-7c-A-RESULT-CORRELATION:BEGIN -->
+## FW-RT6-7c Control A — host use of correlated voice-input results
+
+Hosts may read `session_id`, `turn_id`, and `generation_id` directly from a
+`VoiceInputResult` returned by `transcribe_audio_result()`. These identities
+match the canonical events for that operation, including an interrupted result
+whose provider completion arrived after abort or after a newer input started.
+
+```text
+result/session event correlation:
+same Framework-owned IDs
+
+adapter-supplied correlation:
+replaced by session-owned IDs
+
+legacy factory call without IDs:
+preserved; correlation fields are None
+```
+
+The new fields are appended to the existing result shape. Existing factory
+names, positional result fields, outcomes, error codes, safe messages and
+metadata behavior remain compatible. Serialized Framework IDs are validated;
+non-Framework legacy session/turn strings remain accepted for direct host
+construction.
+
+This control does not yet attach correlation to `listen_result()` or text
+fallback, adapt legacy mapping callbacks from canonical v6 events, or unify
+closed-session result rejection. Those remain FW-RT6-7c Control B.
+<!-- FW-RT6-7c-A-RESULT-CORRELATION:END -->

@@ -13,6 +13,14 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from .identity import (
+    GenerationId,
+    SessionId,
+    TurnId,
+    normalize_session_id,
+    normalize_turn_id,
+)
+
 
 _SECRET_KEY_FRAGMENTS = (
     "api_key",
@@ -28,6 +36,18 @@ _SECRET_KEY_FRAGMENTS = (
 def _public_mapping(values: Mapping[str, Any] | None) -> Mapping[str, Any]:
     """Delegate to the common recursive public-safety utility."""
     return _recursive_public_mapping(values)
+
+
+def _normalize_generation_id(
+    value: GenerationId | str | None,
+) -> GenerationId | None:
+    if value is None:
+        return None
+    if isinstance(value, GenerationId):
+        return value
+    if not isinstance(value, str):
+        raise TypeError("generation_id must be a GenerationId, string, or None")
+    return GenerationId.parse(value)
 
 
 class VoiceInputOutcome(str, Enum):
@@ -99,6 +119,9 @@ class VoiceInputResult:
     safe_message: str = ""
     retryable: bool = False
     public_metadata: Mapping[str, Any] = field(default_factory=dict)
+    session_id: SessionId | str | None = None
+    turn_id: TurnId | str | None = None
+    generation_id: GenerationId | str | None = None
 
     def __post_init__(self) -> None:
         outcome = self.outcome if isinstance(self.outcome, VoiceInputOutcome) else VoiceInputOutcome(str(self.outcome))
@@ -113,9 +136,20 @@ class VoiceInputResult:
         if self.duration_ms is not None and self.duration_ms < 0:
             raise ValueError("duration_ms must be non-negative when provided")
 
+        session_id = normalize_session_id(self.session_id)
+        turn_id = normalize_turn_id(self.turn_id)
+        generation_id = _normalize_generation_id(self.generation_id)
+        if turn_id is not None and session_id is None:
+            raise ValueError("turn_id requires session_id")
+        if generation_id is not None and turn_id is None:
+            raise ValueError("generation_id requires turn_id")
+
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "public_error_code", error_code)
         object.__setattr__(self, "public_metadata", _public_mapping(self.public_metadata))
+        object.__setattr__(self, "session_id", session_id)
+        object.__setattr__(self, "turn_id", turn_id)
+        object.__setattr__(self, "generation_id", generation_id)
 
     @property
     def is_completed(self) -> bool:
@@ -141,6 +175,9 @@ class VoiceInputResult:
         confidence: float | None = None,
         duration_ms: int | None = None,
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.COMPLETED,
@@ -149,24 +186,47 @@ class VoiceInputResult:
             confidence=confidence,
             duration_ms=duration_ms,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
-    def no_input(cls, *, safe_message: str = "No voice input was detected.") -> "VoiceInputResult":
+    def no_input(
+        cls,
+        *,
+        safe_message: str = "No voice input was detected.",
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
+    ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.NO_INPUT,
             public_error_code=VoiceInputErrorCode.NO_INPUT,
             safe_message=safe_message,
             retryable=True,
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
-    def interrupted(cls, *, safe_message: str = "Voice input was interrupted.") -> "VoiceInputResult":
+    def interrupted(
+        cls,
+        *,
+        safe_message: str = "Voice input was interrupted.",
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
+    ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.INTERRUPTED,
             public_error_code=VoiceInputErrorCode.INTERRUPTED,
             safe_message=safe_message,
             retryable=True,
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -176,6 +236,9 @@ class VoiceInputResult:
         safe_message: str = "Voice input is unavailable.",
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.UNAVAILABLE,
@@ -183,6 +246,9 @@ class VoiceInputResult:
             safe_message=safe_message,
             retryable=retryable,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
@@ -193,6 +259,9 @@ class VoiceInputResult:
         safe_message: str = "Voice input failed.",
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
     ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.FAILED,
@@ -200,13 +269,26 @@ class VoiceInputResult:
             safe_message=safe_message,
             retryable=retryable,
             public_metadata=public_metadata or {},
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )
 
     @classmethod
-    def closed(cls, *, safe_message: str = "Voice input session is closed.") -> "VoiceInputResult":
+    def closed(
+        cls,
+        *,
+        safe_message: str = "Voice input session is closed.",
+        session_id: SessionId | str | None = None,
+        turn_id: TurnId | str | None = None,
+        generation_id: GenerationId | str | None = None,
+    ) -> "VoiceInputResult":
         return cls(
             outcome=VoiceInputOutcome.CLOSED,
             public_error_code=VoiceInputErrorCode.SESSION_CLOSED,
             safe_message=safe_message,
             retryable=False,
+            session_id=session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
         )

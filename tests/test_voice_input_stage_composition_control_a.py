@@ -132,7 +132,7 @@ class VoiceInputStageCompositionControlATests(unittest.TestCase):
         self.assertEqual(failed.safe_message, "Voice input failed.")
         self.assertNotIn("private/provider", repr(failed.as_v6_dict()))
 
-    def test_audio_source_is_not_retained_and_result_shape_is_unchanged(self) -> None:
+    def test_audio_source_is_not_retained_and_result_shape_is_additive(self) -> None:
         session = framework.create_voice_input_session()
         source = _opaque_source()
         result_fields = tuple(framework.VoiceInputResult.__dataclass_fields__)
@@ -140,7 +140,7 @@ class VoiceInputStageCompositionControlATests(unittest.TestCase):
         session.transcribe_audio_result(source)
 
         self.assertEqual(
-            result_fields,
+            result_fields[:9],
             (
                 "outcome",
                 "text",
@@ -152,6 +152,10 @@ class VoiceInputStageCompositionControlATests(unittest.TestCase):
                 "retryable",
                 "public_metadata",
             ),
+        )
+        self.assertEqual(
+            result_fields[9:],
+            ("session_id", "turn_id", "generation_id"),
         )
         self.assertFalse(any(value is source for value in vars(session).values()))
         self.assertFalse(any("audio_source" in name for name in vars(session)))

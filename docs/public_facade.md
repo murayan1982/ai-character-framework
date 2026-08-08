@@ -3160,3 +3160,37 @@ bridge remain FW-RT6-7c. Partial transcript/audio streaming remains P1 scope.
 Control C changes no runtime source; it records aggregate acceptance and adds
 the dedicated aggregate regression gate.
 <!-- FW-RT6-7b-C-AGGREGATE-ACCEPTANCE:END -->
+
+<!-- FW-RT6-7c-A-RESULT-CORRELATION:BEGIN -->
+## FW-RT6-7c Control A — additive voice-input result correlation
+
+`VoiceInputResult` now ends with three optional provider-neutral correlation
+fields:
+
+```text
+session_id: SessionId | legacy string | None
+turn_id: TurnId | legacy string | None
+generation_id: GenerationId | serialized GenerationId | None
+```
+
+The original nine fields remain in their existing order. Existing direct
+construction and every existing factory call remain valid; when no correlation
+arguments are supplied, all three new fields are `None`.
+
+Every terminal result returned by an open-session
+`transcribe_audio_result()` operation carries the same Framework-owned
+session/turn/generation context as its canonical realtime events. This includes
+completed and non-completed adapter results as well as interrupted results for
+retired generations. Correlation supplied by an adapter is replaced by the
+session-owned operation context.
+
+Framework-prefixed serialized identities are validated and normalized to their
+typed public identity classes. A turn requires a session, and a generation
+requires both a session and turn. Non-Framework legacy session/turn strings
+remain compatible.
+
+Control A does not change `listen_result()`, text-fallback, legacy mapping
+callback payloads, or closed-session rejection behavior. Their unified v6
+adapter/close bridge remains Control B. The root-public names and
+`VOICE_INPUT_API_VERSION` compatibility value remain unchanged.
+<!-- FW-RT6-7c-A-RESULT-CORRELATION:END -->

@@ -11,7 +11,7 @@ from . import voice_input_composition as _voice_input_composition
 from .voice_input_audio import VoiceInputAudioSource
 from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceInputProviderAdapter
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from threading import RLock
 from types import MappingProxyType
@@ -289,9 +289,28 @@ class VoiceInputSession:
         self._active_input_context = None
 
     @staticmethod
-    def _stale_input_result() -> VoiceInputResult:
+    def _correlate_input_result(
+        result: VoiceInputResult,
+        context: _VoiceInputTurnContext,
+    ) -> VoiceInputResult:
+        if not isinstance(result, VoiceInputResult):
+            raise TypeError("voice-input adapter must return a VoiceInputResult")
+        return replace(
+            result,
+            session_id=context.session_id,
+            turn_id=context.turn_id,
+            generation_id=context.generation_id,
+        )
+
+    @staticmethod
+    def _stale_input_result(
+        context: _VoiceInputTurnContext,
+    ) -> VoiceInputResult:
         return VoiceInputResult.interrupted(
-            safe_message="Stale voice input completion was dropped."
+            safe_message="Stale voice input completion was dropped.",
+            session_id=context.session_id,
+            turn_id=context.turn_id,
+            generation_id=context.generation_id,
         )
 
     def abort_input(self) -> bool:
@@ -507,7 +526,11 @@ class VoiceInputSession:
                 public_metadata=event_metadata,
             )
             if not self._input_context_is_current(context):
-                return VoiceInputResult.interrupted()
+                return VoiceInputResult.interrupted(
+                    session_id=context.session_id,
+                    turn_id=context.turn_id,
+                    generation_id=context.generation_id,
+                )
             self._emit_realtime_event(
                 RealtimeEventType.LISTENING_STARTED,
                 state=RealtimeState.LISTENING,
@@ -517,7 +540,11 @@ class VoiceInputSession:
                 public_metadata=event_metadata,
             )
             if not self._input_context_is_current(context):
-                return VoiceInputResult.interrupted()
+                return VoiceInputResult.interrupted(
+                    session_id=context.session_id,
+                    turn_id=context.turn_id,
+                    generation_id=context.generation_id,
+                )
 
         effective_request = request or VoiceInputRequest(
             language=audio_source.language,
@@ -542,6 +569,7 @@ class VoiceInputSession:
                     capability_reason=str(reason),
                     capability_safe_message=self._capabilities.safe_message,
                 )
+            result = self._correlate_input_result(result, context)
         except Exception:
             with self._input_operation_lock:
                 decision = self._admit_input_completion(
@@ -553,7 +581,7 @@ class VoiceInputSession:
                         context=context,
                         decision=decision,
                     )
-                    return self._stale_input_result()
+                    return self._stale_input_result(context)
                 self._emit_realtime_event(
                     RealtimeEventType.VOICE_INPUT_FAILED,
                     state=RealtimeState.FAILED,
@@ -577,7 +605,7 @@ class VoiceInputSession:
                     context=context,
                     decision=decision,
                 )
-                return self._stale_input_result()
+                return self._stale_input_result(context)
 
             if result.is_completed:
                 self._emit_realtime_event(
@@ -597,7 +625,7 @@ class VoiceInputSession:
                         context=context,
                         decision=stale,
                     )
-                    return self._stale_input_result()
+                    return self._stale_input_result(context)
                 self._emit_realtime_event(
                     RealtimeEventType.TRANSCRIPT_FINAL,
                     state=RealtimeState.TRANSCRIBING,
