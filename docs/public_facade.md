@@ -3231,3 +3231,39 @@ capture, audio streaming, or root-public names. `VOICE_INPUT_API_VERSION`
 remains compatible. Aggregate FW-RT6-7c task closure and final acceptance remain
 Control C work.
 <!-- FW-RT6-7c-B-COMPATIBILITY-BRIDGE:END -->
+
+<!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7c Control C — aggregate result compatibility acceptance
+
+The accepted voice-input result boundary combines the Control A additive
+correlation foundation with the Control B result/callback bridge:
+
+```text
+legacy VoiceInputResult prefix and factories:
+preserved
+
+open transcribe/listen/text-fallback result correlation:
+Framework-owned session / turn / generation
+
+legacy mapping callbacks:
+projected from selected canonical v6 events
+
+post-close result operations:
+one session-only CLOSED rejection; no turn/generation admission
+```
+
+Canonical realtime events remain authoritative for typed payloads, identity,
+sequence and state. The existing mapping callback names and three-key shape are
+retained for listen, text fallback and close. Host-audio transcription remains
+mapping-callback silent, preserving its accepted compatibility behavior.
+
+The first close emits one canonical `SESSION_CLOSED` event and one legacy
+`voice_input.closed` projection. Repeated close calls and result operations
+after close emit no duplicate close event.
+
+Control C changes no runtime source. It adds the aggregate regression gate and
+records acceptance without adding root-public names, changing
+`VOICE_INPUT_API_VERSION`, or executing provider/network/audio/microphone work.
+Motion correlation remains FW-RT6-8a, and partial transcript/audio streaming
+remains deferred P1 scope.
+<!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:END -->

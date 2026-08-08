@@ -2728,11 +2728,11 @@ False
 
 **Tasks:**
 
-- [ ] existing `VoiceInputResult`へcorrelation contextをadditiveに追加する。
-- [ ] existing factory methodsを維持する。
-- [ ] existing `listen_result` / `transcribe_audio_result` compatibilityを維持する。
-- [ ] existing mapping callbacksをv6 event adapterで維持する。
-- [ ] close後resultを統一rejectionへ接続する。
+- [x] existing `VoiceInputResult`へcorrelation contextをadditiveに追加する。
+- [x] existing factory methodsを維持する。
+- [x] existing `listen_result` / `transcribe_audio_result` compatibilityを維持する。
+- [x] existing mapping callbacksをv6 event adapterで維持する。
+- [x] close後resultを統一rejectionへ接続する。
 
 **Acceptance:**
 
@@ -5169,3 +5169,63 @@ aggregate acceptance. This sync authorizes only Control C exact contract review
 after the sync commit/push is remotely verified. It does not authorize Control
 C implementation or any later FW-RT6-8/P1 work.
 <!-- FW-RT6-7c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-7c Control C — aggregate result compatibility acceptance
+
+```text
+checkpoint: FW-RT6-7c Control C aggregate acceptance
+baseline head: dfcdc137ba8d04bde09f62fe0ced04086886dbfe
+Control A implementation: 28b298f1ee70bb114f13782d40c54b536a8174a7
+Control A acceptance sync: 4dc3d1284f548748e59070bda4e03e8a434d16d8
+Control B implementation: 60d1f1b1ac770e8b220c7e7488f536f2332acfb7
+Control B acceptance sync: dfcdc137ba8d04bde09f62fe0ced04086886dbfe
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files
+aggregate gate: PASS expected
+focused Control A result-correlation compatibility tests: 8 / PASS expected
+focused Control B result/callback compatibility tests: 8 / PASS expected
+focused FW-RT6-7b lifecycle/privacy tests: 6 / PASS expected
+focused FW-RT6-7b abort/stale/privacy tests: 7 / PASS expected
+full Framework unit suite: 319 / PASS expected
+accepted FW-RT6-7a/7b regressions: PASS expected
+legacy VoiceInputResult prefix: 9 fields / SAME ORDER / PASS expected
+additive optional correlation suffix: session_id / turn_id / generation_id / PASS expected
+existing factory compatibility: PASS expected
+transcribe/listen/text-fallback result correlation: PASS expected
+adapter-provided correlation authority: session-owned / PASS expected
+legacy mapping source: selected canonical v6 events / PASS expected
+legacy mapping shape and names: PRESERVED / PASS expected
+host-audio legacy mapping callback changed: False / PASS expected
+post-close listen/text/audio rejection: unified session-only CLOSED / PASS expected
+duplicate close events after close: False / PASS expected
+framework root-public names: 127 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+runtime source changed by Control C: False
+provider/network/audio/microphone execution: False / PASS expected
+FW-RT6-7c tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-7c aggregate: IMPLEMENTED_AWAITING_REVIEW
+FW-RT6-7c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-8a motion correlation: NOT_AUTHORIZED
+partial transcript/audio streaming: DEFERRED_TO_P1
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted additive result-correlation foundation and
+the accepted result/callback compatibility bridge. Together they preserve the
+legacy result prefix and factory behavior while correlating all open-session
+result paths with Framework-owned identities, maintaining selected legacy
+mapping callbacks through canonical v6 events, and unifying post-close result
+rejection.
+
+All five FW-RT6-7c tasks close here as aggregate acceptance candidates. Final
+`COMPLETED / VERIFIED / ACCEPTED / CLOSED` status is deferred to the one-file
+final acceptance sync after this candidate is reviewed, committed, pushed, and
+remotely verified.
+
+This candidate changes no runtime source. It does not authorize FW-RT6-8a
+motion correlation, partial transcript/audio streaming, provider execution, or
+any new microphone/audio ownership.
+<!-- FW-RT6-7c-C-AGGREGATE-ACCEPTANCE:END -->
