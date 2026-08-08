@@ -6103,3 +6103,84 @@ candidates. Final `COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED /
 CLOSED` status remains deferred to a reviewed, committed, pushed, and remotely
 verified one-file final acceptance sync. FW-RT6-9a remains not authorized.
 <!-- FW-RT6-8c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-8c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8c — motion cancel/clear final acceptance sync
+
+```text
+checkpoint: FW-RT6-8c final acceptance
+baseline head: 4dced68bda2b6362b7df1d6ceeaf853cd8881c61
+Control A implementation: 1fcff27a9b2f89cd0682cf613b351b3f4b35c60b
+Control A acceptance sync: 538b1baae3ff6e0ad2c1add3a8d667f9d107d474
+Control B implementation: 2750fc3c584aa2cca238a10e2ed596639bd113d9
+Control B acceptance sync: b1710ba1398cbbaf982d0fa436f41ba43d707e96
+Control C aggregate implementation: 4dced68bda2b6362b7df1d6ceeaf853cd8881c61
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A motion-control tests: 12 / PASS
+focused Control B motion-control tests: 11 / PASS
+full Framework unit suite: 387 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+typed MotionControlOutcome vocabulary: 8 EXACT / PASS
+pending/active lifecycle motion owner: RealtimeSession / PASS
+request cancel capability source: cached construction preflight / PASS
+MotionStage.cancel outside long session operation lock: PASS
+cancel request/accept/completion facts separated: True / PASS
+accepted cancel late-delivery barrier: PASS
+late motion terminal event delivered: False / PASS
+request cancel equals STOP_MOTION: False / PASS
+stop_motion unsupported overclaim: False / PASS
+provider stop application requires correlated COMPLETED: True / PASS
+duplicate stage cancel execution: AT_MOST_ONCE / PASS
+duplicate provider stop execution: AT_MOST_ONCE / PASS
+turn mismatch cancels another motion: False / PASS
+whole-turn motion reach: InterruptResult.motion_result / PASS
+aggregate InterruptResult outcome changed: False
+no active / terminal / closed outcomes: TYPED / PASS
+new public cancel_motion method: False / PASS
+standalone MotionSession public contract changed: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+FW-RT6-8c tasks: 5 / 5 ACCEPTED
+FW-RT6-8c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-9a exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-9a implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-8c is accepted as the provider-neutral motion cancel and explicit stop
+reach boundary. One `RealtimeSession`-owned pending or active lifecycle motion
+retains the correlation required to report typed control facts through the
+additive `InterruptResult.motion_result` projection.
+
+`MotionStage.cancel` executes outside the long session operation lock, and an
+accepted cancellation arms a one-way late-delivery barrier. Cancel request,
+acceptance, actual completion, and explicit provider-neutral stop application
+remain distinct observations. Provider-side stop is claimed only after a
+typed, correlated completed result; unavailable, exceptional, malformed,
+mismatched, and non-completed results remain truthful.
+
+Duplicate stage cancel and provider stop execution is limited to at most once
+per active work item. A mismatched target cannot reach another turn's motion,
+and no-active, terminal, and closed cases remain distinct typed results. The
+accepted boundary does not change the established aggregate interrupt outcome,
+add a public `cancel_motion()` method, or change the standalone `MotionSession`
+contract.
+
+This sync closes FW-RT6-8c only. It authorizes FW-RT6-9a exact contract review
+after the sync commit/push is remotely verified, not FW-RT6-9a implementation.
+<!-- FW-RT6-8c-FINAL-ACCEPTANCE-SYNC:END -->
