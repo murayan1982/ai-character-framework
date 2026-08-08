@@ -5354,3 +5354,79 @@ checkboxes stay open. This sync authorizes only Control B exact contract review
 after the sync commit/push is remotely verified; it does not authorize Control
 B implementation or FW-RT6-8b/FW-RT6-8c work.
 <!-- FW-RT6-8a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-8a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-8a Control B — unified motion coordination acceptance sync
+
+```text
+checkpoint: FW-RT6-8a Control B
+baseline head: a06d7a3371ebeec69bce9a7265a2d01af7b89322
+implementation commit: a06d7a3371ebeec69bce9a7265a2d01af7b89322
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 7 files
+dedicated gate: PASS
+focused Control A motion-correlation tests: 9 / PASS
+focused Control B motion-coordination tests: 8 / PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+full Framework unit suite: 336 / PASS
+accepted Control A correlation regression: PASS
+shared EventSequence owner: RealtimeEventHub / PASS
+separate local motion sequencer: False / PASS
+typed canonical motion payload: MotionEventPayload / PASS
+canonical motion callback registration before bind: PASS
+single shared owner binding: PASS
+owner replacement accepted: False / PASS
+legacy mapping callback shape/sequence: PRESERVED / PASS
+common freshness owner: RealtimeGenerationGate / PASS
+MotionSession starts unified generation: False / PASS
+MotionSession advances unified generation: False / PASS
+unknown generation replaces active owner: False / PASS
+retired mock completion delivered: False / PASS
+retired VTS completion delivered: False / PASS
+stale canonical diagnostic: STALE_RESULT_DROPPED / PASS
+stale legacy terminal projection: motion.interrupted / PASS
+late motion completed event emitted: False / PASS
+VTS transport lifecycle-generation guard preserved: True / PASS
+provider hard cancellation claimed: False / PASS
+post-close scoped subscriber retained: False / PASS
+create_motion_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-8a aggregate: NOT_COMPLETED
+FW-RT6-8a tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-8b / FW-RT6-8c: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the one-owner bridge from the existing v5.5 motion session to
+the unified realtime ordering and freshness domains. Canonical motion events use
+the shared `RealtimeEventHub` sequence, while the existing mapping callback
+remains sequence-free and preserves its public shape. An unbound standalone
+session does not create a competing canonical sequence.
+
+The shared `RealtimeGenerationGate` is authoritative for correlated terminal
+motion results. `MotionSession` neither starts nor advances that generation and
+cannot replace an unknown or retired owner. A rejected mock or VTube Studio
+completion becomes one correlated interrupted result, emits the typed stale
+diagnostic and legacy interrupted projection, and never emits a completed event.
+
+The accepted VTube Studio lifecycle-generation check remains the transport-local
+close defense underneath the common turn-level stale guard. Control B adds no
+provider hard cancellation, cancel/clear capability, lifecycle-to-motion hook,
+provider execution, network execution, or real motion operation.
+
+Control A and Control B together cover the five FW-RT6-8a runtime tasks as
+aggregate acceptance candidates, but the task checkboxes remain `0 / 5 CLOSED`
+until Control C aggregate review. This sync authorizes only Control C exact
+contract review after the sync commit/push is remotely verified. It does not
+authorize Control C implementation or FW-RT6-8b/FW-RT6-8c work.
+<!-- FW-RT6-8a-B-ACCEPTANCE-SYNC:END -->
