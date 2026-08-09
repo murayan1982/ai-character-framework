@@ -3910,3 +3910,87 @@ FW-RT6-10b implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-10a-B-RECOVERY-EXECUTION:END -->
+
+
+<!-- FW-RT6-10b-A-SESSION-CLOSE:BEGIN -->
+## FW-RT6-10b Control A — public-session close/dispose planning boundary
+
+All public sessions retain their existing `close()`, `dispose()`, context
+manager, and typed post-close operation behavior in Control A. The checkpoint
+adds one explicit provider-neutral package for the facts and results that a
+later session-owned close must record:
+
+```python
+from framework.session_close import build_session_close_plan
+
+plan = build_session_close_plan(
+    active_turn_terminal_required=True,
+    stage_cleanup_required=True,
+    callback_hub_close_required=True,
+    execution_bridge_shutdown_required=True,
+)
+```
+
+Planning is not execution. The public session remains the close owner; the
+plan does not invoke a provider, stage, callback, bridge, thread, event, or
+generation transition. Text, voice-input, voice-output, realtime, and motion
+session adoption is separately reviewed Control B work.
+
+The canonical cleanup targets are `active_turn`, `stage`, `provider_client`,
+`callback_hub`, and `execution_bridge`. Each target records exactly one typed
+outcome: `not_required`, `completed`, `already_closed`, `timed_out`, or
+`failed`. A repeated session close is the aggregate `already_closed` outcome
+and attempts no target again.
+
+An active realtime turn must ultimately enter the existing terminal registry
+with `TurnOutcome.CLOSED`. It must not be abandoned by merely clearing the
+active context. The final close path emits one `SESSION_CLOSED` event in total;
+when a turn is active, that one event also carries its closed terminal context.
+The callback hub is sealed and callback references are removed only after the
+final close event delivery completes.
+
+Stage, provider/client, and execution-bridge cleanup have finite positive
+deadlines in the immutable plan. Control B must report a deadline overrun as
+`timed_out`, verify bridge stop before claiming completion, and never convert
+a raw cleanup exception into public metadata. Cleanup failure or timeout can
+produce `closed_with_cleanup_failures`, but cannot reopen the session or
+permit another cleanup attempt through duplicate `close()`.
+
+`SessionCloseResult.diagnostics` is count-only. It reports required,
+attempted, completed, timed-out, failed, and active-turn-terminalized counts.
+It contains no credential, provider payload, transcript, audio, private path,
+raw exception, implementation object, callback, thread, or client identity.
+
+```text
+checkpoint: FW-RT6-10b Control A
+baseline head: ffb67d8cf089cf0b9e0d0c517614517186201a17
+FW-RT6-10a final acceptance: ffb67d8cf089cf0b9e0d0c517614517186201a17
+exact Control A surface: 5 files
+stable explicit package: framework.session_close
+close execution owner: PUBLIC SESSION / REUSED
+second lifecycle/close owner introduced: False / PASS
+active turn terminal outcome: TurnOutcome.CLOSED / REQUIRED
+SESSION_CLOSED event count: EXACTLY 1 / REQUIRED
+cleanup targets and outcomes: TYPED / PASS
+stage cleanup timeout: REQUIRED / NOT EXECUTED IN CONTROL A
+provider/client cleanup result: TYPED / NOT EXECUTED IN CONTROL A
+callback hub close: AFTER FINAL SESSION_CLOSED DELIVERY
+bridge stopped confirmation: REQUIRED / NOT EXECUTED IN CONTROL A
+cleanup failure reopens session: False
+repeated close: already_closed / NO RE-CLEANUP
+post-close operation rejection: EXISTING TYPED CONTRACT / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+FW-RT6-10b aggregate tasks: 0 / 7 CLOSED
+Control B implementation: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Applications require no migration in Control A. Existing session methods and
+return types remain unchanged until the session-by-session adoption contract
+is reviewed and explicitly authorized.
+<!-- FW-RT6-10b-A-SESSION-CLOSE:END -->

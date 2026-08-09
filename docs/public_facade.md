@@ -4925,3 +4925,96 @@ separate one-file acceptance sync after this candidate is reviewed, committed,
 pushed, and remotely verified. This candidate does not authorize FW-RT6-10b
 implementation.
 <!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10b-A-SESSION-CLOSE:BEGIN -->
+## FW-RT6-10b Control A — explicit session close/dispose contract
+
+Control A defines one stable explicit package for later adoption by every
+public session:
+
+```python
+from framework.session_close import (
+    SessionCleanupOutcome,
+    SessionCleanupResult,
+    SessionCleanupTarget,
+    SessionCloseOutcome,
+    SessionClosePlan,
+    SessionCloseResult,
+    build_session_close_plan,
+)
+```
+
+`SessionClosePlan` is immutable and side-effect free. It records whether an
+active turn, injected stage, provider/client, callback hub, or execution bridge
+requires close handling and carries finite positive deadlines for stage,
+provider/client, and bridge cleanup. Constructing a plan never closes a
+session, imports or invokes a provider, emits an event, advances a generation,
+or starts or stops a thread.
+
+`SessionCleanupResult` records exactly one target and one outcome. Its outcome
+is `not_required`, `completed`, `already_closed`, `timed_out`, or `failed`.
+`SessionCloseResult` contains one result for each canonical target and derives
+the aggregate `closed`, `already_closed`, or
+`closed_with_cleanup_failures` outcome. Required targets cannot claim
+`not_required`; non-required targets cannot claim execution; failed or timed
+out cleanup cannot be labeled successful.
+
+The existing public session remains the sole close execution owner. Control B
+must reuse `RealtimeTerminalRegistry`, `RealtimeGenerationGate`,
+`RealtimeEventHub`, and `_RealtimeExecutionBridge`; it must not add a parallel
+turn registry, generation registry, callback hub, or background lifecycle
+owner.
+
+An active turn closes through the existing atomic terminal registry with
+`TurnOutcome.CLOSED`. Session close produces exactly one `SESSION_CLOSED`
+event. If a turn is active, the same event is its terminal close event. The
+callback hub is sealed after that final delivery so no callback is retained
+and no post-close active event can be accepted.
+
+Finite cleanup deadlines are planning facts in Control A. Control B must
+enforce or truthfully classify them, record provider/client and bridge results,
+and confirm that the bridge stopped before reporting completed cleanup. A
+cleanup timeout or failure still leaves the public session closed and is
+count-observable without exposing raw exceptions or private resource data.
+Repeated close produces `already_closed` and does not repeat cleanup.
+
+Control A does not change `close()` return annotations, `dispose()` aliases,
+context-manager behavior, operation-specific closed results, root exports,
+factory signatures, event vocabulary, or API versions. Runtime and all five
+public-session integrations remain Control B work.
+
+```text
+checkpoint: FW-RT6-10b Control A
+baseline head: ffb67d8cf089cf0b9e0d0c517614517186201a17
+FW-RT6-10a final acceptance: ffb67d8cf089cf0b9e0d0c517614517186201a17
+exact Control A surface: 5 files
+stable explicit package: framework.session_close
+close execution owner: PUBLIC SESSION / REUSED
+second lifecycle/close owner introduced: False / PASS
+active turn terminal outcome: TurnOutcome.CLOSED / REQUIRED
+SESSION_CLOSED event count: EXACTLY 1 / REQUIRED
+cleanup targets and outcomes: TYPED / PASS
+stage cleanup timeout: REQUIRED / NOT EXECUTED IN CONTROL A
+provider/client cleanup result: TYPED / NOT EXECUTED IN CONTROL A
+callback hub close: AFTER FINAL SESSION_CLOSED DELIVERY
+bridge stopped confirmation: REQUIRED / NOT EXECUTED IN CONTROL A
+cleanup failure reopens session: False
+repeated close: already_closed / NO RE-CLEANUP
+post-close operation rejection: EXISTING TYPED CONTRACT / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+FW-RT6-10b aggregate tasks: 0 / 7 CLOSED
+Control B implementation: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A fixes only the planning, result, and count-only diagnostic
+vocabulary. Public-session adoption, active-turn close execution, bounded
+cleanup, callback release, bridge shutdown reporting, and post-close runtime
+coordination remain separately reviewed Control B work.
+<!-- FW-RT6-10b-A-SESSION-CLOSE:END -->
