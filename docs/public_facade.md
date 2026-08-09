@@ -4409,3 +4409,78 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:BEGIN -->
+## FW-RT6-9d Control A — atomic stale-delivery ingress
+
+Control A extends the existing internal `RealtimeGenerationGate`; it does not
+introduce a second freshness registry, event owner, callback queue, or terminal
+owner. The additive internal operation is:
+
+```python
+decision = gate.apply_completion(envelope, deliver=apply_value)
+```
+
+Freshness classification and the bounded internal `deliver(value)` callback
+run in the same gate lock section. If generation admission wins first, the
+callback runs exactly once before a competing generation advance. If
+interrupt, cancel, close, reset, terminal retirement, or a new turn wins first,
+the callback is never invoked. The rejected decision retains the existing
+typed `stale_reason`, optional `retired_by`, and current-generation projection.
+
+Control A fixes the later end-to-end delivery vocabulary exercised by the
+provider-free gate:
+
+```text
+text_generation_delta
+voice_input_transcript
+voice_output_artifact
+motion_completion
+```
+
+`apply_completion(...)` reuses the accepted count-only diagnostics. It adds no
+diagnostic key and changes neither `generation_diagnostics` nor
+`admit_completion(...)`. Accepted application increments the existing
+`accepted_completion_count`; every freshness rejection increments the existing
+`stale_completion_count` and retains its exact drop reason in the returned
+`GenerationAdmissionDecision`. A delivery callback failure propagates without
+automatic retry and is not relabeled as stale.
+
+The callback is an internal bounded state/publication application boundary. It
+must not perform provider, network, host playback, microphone, or other
+unbounded work while the freshness lock is held. Reentrant generation advance
+is safe because the accepted gate already owns a reentrant lock.
+
+Control A adds the atomic primitive and provider-free contract gate only. It
+does not yet replace the current text, transcript, TTS-artifact, or motion
+delivery paths. That exact runtime adoption remains Control B work, so none of
+the six FW-RT6-9d aggregate task checkboxes close in Control A.
+
+```text
+checkpoint: FW-RT6-9d Control A
+baseline head: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+exact Control A surface: 5 files
+existing freshness owner reused: RealtimeGenerationGate
+second generation registry introduced: False
+atomic freshness check + bounded delivery: PASS
+competing generation advance excluded during delivery: PASS
+reentrant generation advance: PASS
+retired completion delivered: False
+unknown completion delivered: False
+turn-mismatched completion delivered: False
+stale count: EXISTING stale_completion_count
+drop reason: EXISTING typed GenerationAdmissionDecision
+generation diagnostics keys changed: False
+admit_completion behavior changed: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-9d aggregate tasks: 0 / 6 CLOSED
+Control A status: IMPLEMENTED / AWAITING_REVIEW
+Control B runtime adoption: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:END -->

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from threading import RLock
 from types import MappingProxyType
-from typing import Generic, Mapping, TypeVar
+from typing import Callable, Generic, Mapping, TypeVar
 
 from .identity import GenerationId, TurnId, normalize_turn_id
 
@@ -235,58 +235,92 @@ class RealtimeGenerationGate:
             raise TypeError("envelope must be a RealtimeStageCompletionEnvelope")
 
         with self._lock:
-            retired = self._retired.get(envelope.generation_id)
-            if retired is not None:
-                self._stale_completion_count += 1
-                return GenerationAdmissionDecision(
-                    accepted=False,
-                    envelope=envelope,
-                    stale_reason=StaleCompletionReason.RETIRED_GENERATION,
-                    retired_by=retired.retired_by,
-                    current_generation_id=(
-                        self._active.generation_id
-                        if self._active is not None
-                        else None
-                    ),
-                )
+            return self._admit_completion_locked(envelope)
 
-            active = self._active
-            known_turn = self._known_turns.get(envelope.generation_id)
-            if known_turn is None or active is None:
-                self._stale_completion_count += 1
-                return GenerationAdmissionDecision(
-                    accepted=False,
-                    envelope=envelope,
-                    stale_reason=StaleCompletionReason.UNKNOWN_GENERATION,
-                    current_generation_id=(
-                        active.generation_id if active is not None else None
-                    ),
-                )
+    def apply_completion(
+        self,
+        envelope: RealtimeStageCompletionEnvelope[CompletionT],
+        *,
+        deliver: Callable[[CompletionT], None],
+    ) -> GenerationAdmissionDecision[CompletionT]:
+        """Admit and deliver one completion in the same freshness lock section.
 
-            if envelope.generation_id != active.generation_id:
-                self._stale_completion_count += 1
-                return GenerationAdmissionDecision(
-                    accepted=False,
-                    envelope=envelope,
-                    stale_reason=StaleCompletionReason.UNKNOWN_GENERATION,
-                    current_generation_id=active.generation_id,
-                )
+        The gate remains the only freshness owner.  A current completion calls
+        ``deliver`` exactly once while generation advancement is excluded.  A
+        stale completion never calls it and retains the same typed rejection
+        reason and count-only diagnostics as :meth:`admit_completion`.
 
-            if envelope.turn_id != active.turn_id:
-                self._stale_completion_count += 1
-                return GenerationAdmissionDecision(
-                    accepted=False,
-                    envelope=envelope,
-                    stale_reason=StaleCompletionReason.TURN_MISMATCH,
-                    current_generation_id=active.generation_id,
-                )
+        ``deliver`` is an internal, bounded application callback.  It must not
+        perform provider, network, playback, or other unbounded host work.
+        """
 
-            self._accepted_completion_count += 1
+        if not isinstance(envelope, RealtimeStageCompletionEnvelope):
+            raise TypeError("envelope must be a RealtimeStageCompletionEnvelope")
+        if not callable(deliver):
+            raise TypeError("deliver must be callable")
+
+        with self._lock:
+            decision = self._admit_completion_locked(envelope)
+            if decision.accepted:
+                deliver(envelope.value)
+            return decision
+
+    def _admit_completion_locked(
+        self,
+        envelope: RealtimeStageCompletionEnvelope[CompletionT],
+    ) -> GenerationAdmissionDecision[CompletionT]:
+        retired = self._retired.get(envelope.generation_id)
+        if retired is not None:
+            self._stale_completion_count += 1
             return GenerationAdmissionDecision(
-                accepted=True,
+                accepted=False,
                 envelope=envelope,
+                stale_reason=StaleCompletionReason.RETIRED_GENERATION,
+                retired_by=retired.retired_by,
+                current_generation_id=(
+                    self._active.generation_id
+                    if self._active is not None
+                    else None
+                ),
+            )
+
+        active = self._active
+        known_turn = self._known_turns.get(envelope.generation_id)
+        if known_turn is None or active is None:
+            self._stale_completion_count += 1
+            return GenerationAdmissionDecision(
+                accepted=False,
+                envelope=envelope,
+                stale_reason=StaleCompletionReason.UNKNOWN_GENERATION,
+                current_generation_id=(
+                    active.generation_id if active is not None else None
+                ),
+            )
+
+        if envelope.generation_id != active.generation_id:
+            self._stale_completion_count += 1
+            return GenerationAdmissionDecision(
+                accepted=False,
+                envelope=envelope,
+                stale_reason=StaleCompletionReason.UNKNOWN_GENERATION,
                 current_generation_id=active.generation_id,
             )
+
+        if envelope.turn_id != active.turn_id:
+            self._stale_completion_count += 1
+            return GenerationAdmissionDecision(
+                accepted=False,
+                envelope=envelope,
+                stale_reason=StaleCompletionReason.TURN_MISMATCH,
+                current_generation_id=active.generation_id,
+            )
+
+        self._accepted_completion_count += 1
+        return GenerationAdmissionDecision(
+            accepted=True,
+            envelope=envelope,
+            current_generation_id=active.generation_id,
+        )
 
     def _retire_active_locked(
         self,

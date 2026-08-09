@@ -3615,3 +3615,70 @@ FW-RT6-9d: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9c-B-BARGE-IN-EXECUTION:END -->
+
+
+<!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:BEGIN -->
+## FW-RT6-9d Control A — atomic stale-delivery application boundary
+
+FW-RT6-9d reuses the existing session-owned generation gate. Control A adds no
+new public host call and no second stale-result owner. Its internal contract is:
+
+```python
+decision = generation_gate.apply_completion(
+    completion_envelope,
+    deliver=apply_current_value,
+)
+```
+
+The generation check and the bounded internal application callback share one
+gate lock section. A current generation can apply its value once. An old
+callback retired by a new turn, interrupt, cancel, close, reset, or terminal
+cannot call the application callback. Unknown and turn-mismatched generations
+are also rejected before application.
+
+The four later runtime delivery sites use these canonical stage labels:
+
+```text
+text_generation_delta
+voice_input_transcript
+voice_output_artifact
+motion_completion
+```
+
+Control A retains the existing diagnostic contract. `stale_completion_count`
+records every rejected admission and the returned typed decision retains
+`retired_generation`, `unknown_generation`, or `turn_mismatch`, plus the stable
+retirement reason where applicable. No existing diagnostics mapping key,
+public event, callback shape, result model, root export, factory parameter, or
+API version changes.
+
+The `deliver` callback is Framework-internal and bounded. Host callbacks,
+provider requests, network calls, microphone access, playback, and real motion
+must execute outside this lock-held boundary. Callback exceptions propagate
+without retry and do not become false stale observations.
+
+Control A does not yet wire the four stage owners. Text delta, transcript, TTS
+artifact, and motion completion adoption is the separately reviewed Control B
+surface. Host applications require no migration for Control A.
+
+```text
+checkpoint: FW-RT6-9d Control A
+baseline head: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+exact Control A surface: 5 files
+existing freshness owner reused: True
+atomic generation check before bounded delivery: PASS
+old callback application after new turn/interrupt/cancel/close/reset: False
+stale count/drop reason retained: PASS
+generation diagnostics keys changed: False
+public host migration required: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-9d aggregate tasks: 0 / 6 CLOSED
+Control A status: IMPLEMENTED / AWAITING_REVIEW
+Control B runtime adoption: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:END -->
