@@ -3937,3 +3937,70 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:END -->
+
+
+<!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9a Control C — interrupt coordinator aggregate acceptance
+
+Control C changes no runtime source. It verifies the accepted explicit
+coordination models and the `RealtimeSession` runtime composition as one
+provider-neutral whole-turn interrupt boundary.
+
+The private active-stage registry remains the sole owner of in-flight text and
+TTS generation calls. Public interrupt scope and additive flags resolve in the
+stable order below, and no stage method executes while the long operation lock
+or short registry locks are held:
+
+```text
+TEXT_GENERATION -> TTS_GENERATION -> TTS_QUEUE -> AUDIO_ARTIFACT -> MOTION
+```
+
+Text and TTS generation use cooperative stage cancellation. TTS pending queue
+clear, completed artifact invalidation, and motion control remain separate
+capability-gated observations. The accepted `MotionControlResult` projection is
+reused; Control C adds no second motion owner or control path.
+
+An accepted cooperative cancellation arms a one-way late-delivery barrier
+before bounded completion waiting. An explicit positive
+`InterruptRequest.timeout_seconds` is the request budget; otherwise the
+internal 0.25 second safety bound applies while the public projection stays
+`None`. Timed-out, failed, unsupported, inactive, terminal, unknown, and closed
+results do not claim effects that were not observed.
+
+`InterruptAggregateResult.from_results(...)` remains authoritative for the
+aggregate. Uniform subsystem results map to their matching typed aggregate;
+mixed runtime observations map to `PARTIAL`. The accepted trailing
+`InterruptResult.coordination_result` exposes those facts without changing the
+outer v5.2 enum, public factory, root exports, event vocabulary, or API
+versions.
+
+The nine FW-RT6-9a task checkboxes close only as aggregate
+accepted-candidate work. Control C deliberately does not implement
+whole-request duplicate convergence, interrupt/completion/close race ordering,
+flush ordering, or new-turn-during-interrupt behavior; those remain
+FW-RT6-9b. Barge-in decision/execution remains FW-RT6-9c.
+
+```text
+Control C exact surface: 3 files
+runtime source changed by Control C: False
+interrupt subsystems: 5 / EXACT
+subsystem outcomes: 8 / EXACT
+aggregate outcomes: 9 / EXACT
+active-stage registry: RealtimeSession PRIVATE / PASS
+stable target order: PASS
+LLM/TTS/queue/artifact/motion reach: PASS
+bounded completion wait: PASS
+late-delivery barrier: PASS
+runtime partial result: PASS
+unsupported overclaim: False
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+FW-RT6-9a tasks: 9 / 9 ACCEPTED-CANDIDATE
+FW-RT6-9a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9b duplicate/race ordering: NOT_AUTHORIZED
+FW-RT6-9c barge-in execution: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:END -->

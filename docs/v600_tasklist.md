@@ -2827,15 +2827,15 @@ True
 
 **Tasks:**
 
-- [ ] active stage registryを追加する。
-- [ ] interrupt target validationを実装する。
-- [ ] turn terminal/not-found/closed結果を実装する。
-- [ ] LLM cancelを呼ぶ。
-- [ ] TTS generation cancel/pending clearを呼ぶ。
-- [ ] artifact invalidationを呼ぶ。
-- [ ] motion cancel/clearを呼ぶ。
-- [ ] aggregate resultを構築する。
-- [ ] timeout/partial completionを処理する。
+- [x] active stage registryを追加する。
+- [x] interrupt target validationを実装する。
+- [x] turn terminal/not-found/closed結果を実装する。
+- [x] LLM cancelを呼ぶ。
+- [x] TTS generation cancel/pending clearを呼ぶ。
+- [x] artifact invalidationを呼ぶ。
+- [x] motion cancel/clearを呼ぶ。
+- [x] aggregate resultを構築する。
+- [x] timeout/partial completionを処理する。
 
 **Acceptance:**
 
@@ -6353,3 +6353,81 @@ decision and execution remains FW-RT6-9c. This sync authorizes only Control C
 exact contract review after the sync commit/push is remotely verified; it does
 not authorize Control C, FW-RT6-9b, or FW-RT6-9c implementation.
 <!-- FW-RT6-9a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9a Control C — interrupt coordinator aggregate acceptance
+
+```text
+checkpoint: FW-RT6-9a Control C aggregate acceptance candidate
+baseline head: a013d04092d04ad94ac9be915da8b93f0e063c01
+Control A implementation: 712a03e27db1ea6c2229f6907c54d581680bb208
+Control A acceptance sync: 3aaef5e6335c2c184450525a17d36f1783345268
+Control B implementation: 09752474a3178021a5153f8fdaa94aea59c4e5e8
+Control B acceptance sync: a013d04092d04ad94ac9be915da8b93f0e063c01
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused Control A interrupt-coordination tests: 17 / PASS
+focused Control B interrupt-coordination tests: 15 / PASS
+full Framework unit suite: 419 / PASS
+interrupt subsystems: 5 EXACT / PASS
+subsystem outcomes: 8 EXACT / PASS
+aggregate outcomes: 9 EXACT / PASS
+active-stage registry owner: RealtimeSession PRIVATE / PASS
+interrupt target dispatch order: STABLE / PASS
+turn terminal/not-found/closed outcomes: TYPED / PASS
+LLM cooperative cancel reach: PASS
+TTS generation cancel reach: PASS
+TTS pending clear reach: PASS
+audio artifact invalidation reach: PASS
+accepted motion-control projection reused: PASS
+aggregate result source: InterruptAggregateResult.from_results / PASS
+aggregate partial result: PASS
+bounded timeout result: PASS
+accepted cancel late-delivery barrier: PASS
+unsupported overclaim: False / PASS
+outer v5.2 interrupt compatibility: PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+whole-request duplicate/race ordering changed: False
+barge-in decision/execution changed: False
+FW-RT6-9a tasks: 9 / 9 ACCEPTED-CANDIDATE
+FW-RT6-9a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9b duplicate/race ordering: NOT_AUTHORIZED
+FW-RT6-9c barge-in execution: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted explicit coordination models and their
+`RealtimeSession` runtime adoption. One private active-stage registry owns
+in-flight text and TTS generation work, and each public request resolves its
+five possible targets in stable text, TTS generation, pending queue, artifact,
+and motion order.
+
+Cancellation executes outside the long session operation lock. Accepted
+cooperative cancellation arms a one-way late-delivery barrier, while bounded
+waiting preserves distinct requested, completed, timed-out, failed, and
+unsupported observations. TTS generation, pending clear, artifact
+invalidation, and the accepted motion-control projection remain separate
+capability-gated facts.
+
+`InterruptAggregateResult.from_results(...)` remains the sole aggregate
+outcome source. Uniform subsystem observations map to their corresponding
+typed aggregate, while mixed observations remain `PARTIAL`; unsupported or
+incomplete work cannot be relabeled completed. Terminal, unknown, inactive,
+and closed targets preserve the existing outer v5.2 interrupt compatibility.
+
+Control C changes no runtime source. It adds the aggregate regression gate and
+closes the nine FW-RT6-9a task checkboxes only as aggregate acceptance
+candidates. Final `COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED /
+CLOSED` status remains deferred to a reviewed, committed, pushed, and remotely
+verified one-file final acceptance sync. Whole-request duplicate and race
+ordering remains FW-RT6-9b, and barge-in decision/execution remains FW-RT6-9c.
+<!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:END -->
