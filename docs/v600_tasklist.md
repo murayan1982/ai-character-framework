@@ -7215,3 +7215,81 @@ and introduces no FW-RT6-9d stale-result enforcement. It authorizes FW-RT6-9d
 exact contract review after this one-file sync is committed, pushed, and
 remotely verified; it does not authorize FW-RT6-9d implementation.
 <!-- FW-RT6-9c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9d-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9d Control A — atomic stale-delivery ingress acceptance sync
+
+```text
+checkpoint: FW-RT6-9d Control A
+baseline head: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+FW-RT6-9c final acceptance: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+Control A implementation: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A implementation surface: 5 files
+dedicated Control A source gate: PASS
+focused Control A stale-delivery tests: 13 / PASS
+full Framework unit suite: 479 / PASS
+existing freshness owner: RealtimeGenerationGate / REUSED / PASS
+second freshness registry introduced: False / PASS
+atomic operation: RealtimeGenerationGate.apply_completion / PASS
+freshness check and bounded delivery lock section: SAME / PASS
+current completion delivery: EXACTLY ONCE / PASS
+retired completion delivered: False / PASS
+unknown completion delivered: False / PASS
+turn-mismatched completion delivered: False / PASS
+competing generation advance during delivery: EXCLUDED / PASS
+reentrant generation advance: SAFE / PASS
+delivery callback failure automatically retried: False / PASS
+delivery callback failure relabeled stale: False / PASS
+stale count: EXISTING stale_completion_count / PASS
+drop reason: EXISTING typed GenerationAdmissionDecision / PASS
+generation diagnostics keys changed: False / PASS
+admit_completion behavior changed: False / PASS
+Control A delivery vocabulary: 4 EXACT / PASS
+text_generation_delta primitive: READY / PASS
+voice_input_transcript primitive: READY / PASS
+voice_output_artifact primitive: READY / PASS
+motion_completion primitive: READY / PASS
+root-public generation-gate names added: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime stage delivery paths changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+FW-RT6-9d aggregate: NOT_COMPLETED
+FW-RT6-9d tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the atomic application ingress on the existing
+`RealtimeGenerationGate`. Freshness classification and one bounded internal
+delivery callback execute in the same reentrant gate lock section. A current
+completion is applied once before a competing generation advance can proceed;
+if a new turn, interrupt, cancel, reset, close, or terminal retirement wins
+first, the rejected completion cannot call the delivery callback.
+
+The existing gate remains the sole freshness registry and decision owner.
+Control A adds no second generation registry, event sequencer, callback queue,
+terminal registry, or provider owner. The existing count-only diagnostics keys
+remain unchanged: accepted application uses `accepted_completion_count`, stale
+application uses `stale_completion_count`, and the returned typed admission
+decision retains the exact stale and retirement reasons.
+
+The accepted primitive fixes four later runtime delivery labels:
+`text_generation_delta`, `voice_input_transcript`, `voice_output_artifact`, and
+`motion_completion`. Control A does not yet replace those existing stage
+delivery paths. Exact adoption by text, transcript, TTS-artifact, and motion
+owners remains separately reviewed Control B work.
+
+Therefore Control A closes none of the six FW-RT6-9d aggregate task
+checkboxes. This one-file sync authorizes only Control B exact contract review
+after it is committed, pushed, and remotely verified. It does not authorize
+Control B implementation or FW-RT6-10a recovery/reset implementation.
+<!-- FW-RT6-9d-A-ACCEPTANCE-SYNC:END -->
