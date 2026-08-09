@@ -7474,3 +7474,75 @@ Final closed status remains deferred to a reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync. FW-RT6-10a implementation
 remains not authorized.
 <!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9d-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9d — end-to-end stale enforcement final acceptance sync
+
+```text
+checkpoint: FW-RT6-9d final acceptance
+baseline head: b88cf455ca9bc6a458a7cce6d5cea8a153d53495
+FW-RT6-9c final acceptance: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+Control A implementation: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+Control A acceptance sync: d01476a02586940dc7950ae18f7c8f2e96f706fe
+Control B implementation: c09aa53d262308ceeb8652c29b198898cb94c9c6
+Control B acceptance sync: 41ec997f1060a010e9f8d9339f0d9e40177c989f
+Control C aggregate implementation: b88cf455ca9bc6a458a7cce6d5cea8a153d53495
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A+B stale-delivery tests: 27 / PASS
+full Framework unit suite: 493 / PASS
+existing freshness owner: RealtimeGenerationGate / REUSED / PASS
+second freshness registry introduced: False / PASS
+atomic generation check and bounded application: PASS
+four runtime delivery owners adopted: 4 / 4 / PASS
+text delta late delivery: False / PASS
+final transcript late delivery: False / PASS
+TTS artifact late handoff: False / PASS
+motion completion late publication: False / PASS
+close/reset/new turn old callback drop: PASS
+all stage late-result scenarios: PASS
+silent corruption: False / PASS
+stale count and typed drop reason retained: PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+existing tests changed by Control C/final sync: False
+FW-RT6-9d tasks: 6 / 6 ACCEPTED
+FW-RT6-9d aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-10a exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-10a implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-9d closes the provider-neutral end-to-end stale-result enforcement
+boundary. `RealtimeGenerationGate` remains the sole freshness owner, and the
+accepted text, transcript, voice-output, and motion delivery owners remain the
+only runtime application boundaries.
+
+Every correlated value reaches its existing host-visible boundary only after
+the accepted atomic generation check and bounded owner-state application. A
+retired generation therefore cannot mutate stream history, emit a final
+transcript, expose an audio handoff, or publish a completed motion event.
+
+Existing accepted and stale counters, typed drop reasons, generation
+diagnostics, event vocabulary, public exports, factory parameters, and API
+versions remain authoritative and unchanged. Provider, network, microphone,
+playback, and VTube Studio execution remain outside the bounded gate callback.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source or existing test. It formally completes, verifies, accepts, commits,
+pushes, and closes all three controls and all six FW-RT6-9d aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely
+verified, FW-RT6-10a exact contract review is authorized. This sync does not
+authorize FW-RT6-10a implementation.
+<!-- FW-RT6-9d-FINAL-ACCEPTANCE-SYNC:END -->
