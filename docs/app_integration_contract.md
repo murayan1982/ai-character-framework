@@ -3406,6 +3406,13 @@ Both return the exact owner `InterruptResult` object and neither emits another
 interrupt event or repeats a subsystem effect. `interrupt(...)` and
 `cancel_current_turn(...)` share this same private admission path.
 
+The owner prepares that immutable terminal `InterruptResult` before any
+synchronous Framework interrupt callback is delivered. A same-owner reentrant
+`interrupt(...)` or `cancel_current_turn(...)` from such a callback therefore
+replays the exact prepared object immediately instead of waiting on its own
+completion event. This preserves callback reentrancy without a self-deadlock or
+an additional interrupt effect.
+
 The owner reserves the turn terminal atomically with its registry admission.
 The central terminal commit path consults that reservation, so a normal
 completion admitted first remains authoritative, while a later normal terminal
@@ -3427,6 +3434,10 @@ When `InterruptRequest.flush_output` is true, the sole owner executes one typed
 output flush before its turn terminal. A standalone `flush_output(...)`
 admitted while that owner is active waits outside the operation lock and reuses
 the owner's flush result for the same turn, so it cannot repeat the owner effect.
+The owner likewise prepares its typed flush result before the synchronous
+`OUTPUT_FLUSH_REQUESTED` callback. A same-owner reentrant `flush_output(...)`
+for that turn returns the prepared result and cannot recursively execute or emit
+a second flush.
 A genuinely new turn admitted during active interrupt work is rejected
 immediately with the existing typed `RealtimeTurnStartResult` / rejected
 `RealtimeTurnResult` and public-safe reason `interrupt_in_progress`. Repeating
@@ -3440,7 +3451,8 @@ root-import gate remains valid. Factory parameters, root-public names, event
 types, realtime/motion API versions, and provider/network boundaries are
 unchanged. Deterministic provider-free tests cover owner/duplicate replay,
 normal-terminal and close races, owner/standalone flush ordering, typed new-turn
-rejection, and the shared cancel/interrupt owner.
+rejection, the shared cancel/interrupt owner, same-owner interrupt callback
+replay, and same-owner flush callback reuse.
 
 ```text
 exact Control B surface: 5 files
@@ -3449,16 +3461,19 @@ idempotency key: (session_id, resolved_turn_id) / PASS
 duplicate wait outside operation lock: True / PASS
 duplicate exact InterruptResult identity: True / PASS
 repeat subsystem/flush/event effects: False / PASS
+reentrant interrupt callback: REENTRANT CALLBACK REPLAY / EXACT OWNER RESULT / PASS
+reentrant interrupt callback deadlock: False / PASS
 normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
 unsupported interrupt overclaims turn terminal: False / PASS
 close race: FIRST ADMISSION WINS / PASS
 owner flush before terminal: True / PASS
 standalone flush repeats owner effect: False / PASS
+reentrant owner flush: REENTRANT OWNER FLUSH REUSE / SINGLE EFFECT / PASS
 new turn during interrupt: interrupt_in_progress typed reject / PASS
 root-public names: 127 / UNCHANGED
 REALTIME_API_VERSION: 5.2.0 / UNCHANGED
 MOTION_API_VERSION: 5.5.0 / UNCHANGED
-focused Control B tests: 9 / PASS
+focused Control B tests: 11 / PASS
 FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
 Control C: NOT_AUTHORIZED
 FW-RT6-9c: NOT_AUTHORIZED

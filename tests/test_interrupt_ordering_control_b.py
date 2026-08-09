@@ -117,13 +117,13 @@ class _CompletionRaceSession(framework.RealtimeSession):
         )
 
 class _FlushCountingSession(framework.RealtimeSession):
-    def __init__(self, *, text_generation_stage) -> None:
+    def __init__(self, *, text_generation_stage=None) -> None:
         super().__init__(text_generation_stage=text_generation_stage)
         self.flush_count = 0
 
-    def _flush_output_serialized(self, request=None):
+    def _flush_output_serialized(self, request=None, **kwargs):
         self.flush_count += 1
-        return super()._flush_output_serialized(request)
+        return super()._flush_output_serialized(request, **kwargs)
 
 
 class _NormalReservationSession(framework.RealtimeSession):
@@ -389,6 +389,79 @@ class InterruptOrderingControlBTests(unittest.TestCase):
             thread.join(timeout=3.0)
         self.assertIs(cancel[0], owner[0])
         self.assertEqual(stage.cancel_count, 1)
+
+    def test_reentrant_interrupt_callback_replays_prepared_owner_result(self) -> None:
+        session = _CompletionRaceSession()
+        session.interrupt_release.set()
+        started = session.start_turn(input_text="reentrant interrupt callback")
+        callback_results = []
+
+        def callback(event) -> None:
+            if (
+                event.type is framework.RealtimeEventType.INTERRUPT_REQUESTED
+                and not callback_results
+            ):
+                callback_results.append(session.cancel_current_turn())
+
+        session.on_event(callback)
+        owner_thread, owner = _thread_call(
+            lambda: session.interrupt(
+                InterruptRequest(turn_id=started.turn_id)
+            )
+        )
+        owner_thread.join(timeout=3.0)
+
+        self.assertFalse(owner_thread.is_alive())
+        self.assertEqual(len(owner), 1)
+        self.assertEqual(len(callback_results), 1)
+        self.assertIs(callback_results[0], owner[0])
+        event_types = [event.type for event in session.event_history]
+        self.assertEqual(
+            event_types.count(framework.RealtimeEventType.INTERRUPT_REQUESTED),
+            1,
+        )
+        self.assertEqual(
+            event_types.count(framework.RealtimeEventType.TURN_INTERRUPTED),
+            1,
+        )
+
+    def test_reentrant_owner_flush_callback_reuses_prepared_result(self) -> None:
+        session = _FlushCountingSession()
+        started = session.start_turn(input_text="reentrant owner flush callback")
+        callback_results = []
+
+        def callback(event) -> None:
+            if (
+                event.type is framework.RealtimeEventType.OUTPUT_FLUSH_REQUESTED
+                and not callback_results
+            ):
+                callback_results.append(
+                    session.flush_output(
+                        OutputFlushRequest(turn_id=started.turn_id)
+                    )
+                )
+
+        session.on_event(callback)
+        session.interrupt(
+            InterruptRequest(
+                turn_id=started.turn_id,
+                flush_output=True,
+            )
+        )
+
+        work = session._interrupt_requests[(started.session_id, started.turn_id)]
+        self.assertEqual(session.flush_count, 1)
+        self.assertEqual(len(callback_results), 1)
+        self.assertIs(callback_results[0], work.flush_result)
+        event_types = [event.type for event in session.event_history]
+        self.assertEqual(
+            event_types.count(framework.RealtimeEventType.OUTPUT_FLUSH_REQUESTED),
+            1,
+        )
+        self.assertEqual(
+            event_types.count(framework.RealtimeEventType.OUTPUT_FLUSH_COMPLETED),
+            1,
+        )
 
     def test_public_factory_versions_and_root_surface_remain_unchanged(self) -> None:
         self.assertEqual(

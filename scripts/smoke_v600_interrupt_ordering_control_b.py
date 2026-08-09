@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_BASELINE_HEAD = "e92f6929fd673c1c1b53cbcb19a2c5a23e446e56"
+EXPECTED_BASELINE_HEAD = "6b9a9629239f969a51325cbf35d0e4be444c5689"
 EXPECTED_SURFACE = {
     "docs/app_integration_contract.md",
     "docs/public_facade.md",
@@ -56,11 +56,11 @@ def _run(*args: str) -> None:
 def check_repository_contract() -> None:
     _require(
         _git("rev-parse", "HEAD") == EXPECTED_BASELINE_HEAD,
-        "unexpected FW-RT6-9b Control B baseline",
+        "unexpected FW-RT6-9b Control B corrective baseline",
     )
     _require(
         _git("rev-parse", "origin/main") == EXPECTED_BASELINE_HEAD,
-        "origin/main drifted from the accepted Control A baseline",
+        "origin/main drifted from the committed Control B baseline",
     )
     _require(
         _changed_paths() == EXPECTED_SURFACE,
@@ -129,9 +129,13 @@ def check_source_contract() -> None:
         "def _resolve_interrupt_terminal_reservation(",
         "def _complete_interrupt_request(",
         "def _ordered_interrupt(",
+        "owner_work.result = prepared_result",
+        "work.owner_thread_id == get_ident()",
         "work.completion_event.wait()",
         "interrupt_in_progress",
         "owner_work.flush_result = self._flush_output_serialized(",
+        "_interrupt_owner=owner_work",
+        "_interrupt_owner.flush_result = result",
         "return self._ordered_interrupt(request, advance_reason=\"interrupt\")",
         "return self._ordered_interrupt(request, advance_reason=\"cancel\")",
     ):
@@ -166,6 +170,8 @@ def check_docs() -> None:
             "FIRST TERMINAL RESERVATION WINS",
             "FIRST ADMISSION WINS",
             "OWNER FLUSH BEFORE TERMINAL",
+            "REENTRANT CALLBACK REPLAY",
+            "REENTRANT OWNER FLUSH REUSE",
             "interrupt_in_progress",
             "FW-RT6-9b aggregate tasks: 0 / 7 CLOSED",
             "FW-RT6-9c: NOT_AUTHORIZED",
@@ -195,13 +201,18 @@ def main() -> None:
     print("v600_rt6_9b_idempotency_key: session_id+resolved_turn_id / PASS")
     print("v600_rt6_9b_duplicate_exact_result: True / PASS")
     print("v600_rt6_9b_duplicate_side_effects: False / PASS")
+    print("v600_rt6_9b_reentrant_callback_replay: EXACT_OWNER_RESULT / PASS")
+    print("v600_rt6_9b_reentrant_interrupt_deadlock: False / PASS")
     print("v600_rt6_9b_normal_terminal_race: FIRST_RESERVATION / PASS")
     print("v600_rt6_9b_close_race: FIRST_ADMISSION / PASS")
     print("v600_rt6_9b_owner_flush_before_terminal: True / PASS")
+    print("v600_rt6_9b_reentrant_owner_flush_reuse: True / PASS")
+    print("v600_rt6_9b_reentrant_owner_flush_effect_count: 1 / PASS")
     print("v600_rt6_9b_new_turn_reason: interrupt_in_progress / PASS")
     print("v600_rt6_9b_root_public_names: 127 / UNCHANGED")
     print("v600_rt6_9b_realtime_api_version: 5.2.0 / UNCHANGED")
     print("v600_rt6_9b_motion_api_version: 5.5.0 / UNCHANGED")
+    print("v600_rt6_9b_focused_tests: 11 / PASS")
     print("v600_rt6_9b_task_count: 0 / 7 CLOSED")
     print("v600_rt6_9b_control_c: NOT_AUTHORIZED")
     print("v600_rt6_9c: NOT_AUTHORIZED")

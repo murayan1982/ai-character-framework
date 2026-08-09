@@ -4023,6 +4023,12 @@ terminal before subsystem work; concurrent and later duplicates wait for and
 return the exact same owner `InterruptResult` without another cancel, queue,
 artifact, motion, flush, interrupt event, or turn-terminal event.
 
+Before synchronous Framework interrupt callbacks run, the owner stores its
+immutable final `InterruptResult` in the private work entry. A same-owner
+reentrant `interrupt(...)` or `cancel_current_turn(...)` callback therefore
+returns that exact object immediately and never waits on its own completion
+event.
+
 The reservation participates in the existing terminal registry rather than
 replacing it. A normal terminal committed first remains authoritative. When
 the interrupt reservation wins, a later normal terminal publication is paused
@@ -4036,6 +4042,9 @@ existing closed result; interrupt admitted first completes its owner result
 before close finishes. An owner-requested output flush executes once before
 the owner terminal. A standalone flush admitted during that work waits and,
 for the same turn, reuses the owner flush result instead of repeating it.
+The typed owner flush result is stored before `OUTPUT_FLUSH_REQUESTED` callback
+delivery, so a same-owner reentrant `flush_output(...)` returns the stored result
+without a recursive flush effect or a second flush event.
 
 Starting a genuinely new turn while an interrupt owner is active returns the
 existing typed rejected start/terminal result immediately. Its public-safe
@@ -4053,15 +4062,18 @@ exact Control B surface: 5 files
 whole-request owner: RealtimeSession PRIVATE / PASS
 duplicate result: EXACT OWNER OBJECT / PASS
 duplicate side effects/events: False / PASS
+reentrant interrupt callback: REENTRANT CALLBACK REPLAY / EXACT OWNER RESULT / PASS
+reentrant interrupt callback deadlock: False / PASS
 normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
 close race: FIRST ADMISSION WINS / PASS
 flush race: OWNER FLUSH BEFORE TERMINAL / PASS
+reentrant owner flush: REENTRANT OWNER FLUSH REUSE / SINGLE EFFECT / PASS
 new turn during interrupt: TYPED REJECT interrupt_in_progress / PASS
 multiple turn terminal events: False / PASS
 root-public names: 127 / UNCHANGED
 Realtime API version: 5.2.0 / UNCHANGED
 Motion API version: 5.5.0 / UNCHANGED
-focused Control B tests: 9 / PASS
+focused Control B tests: 11 / PASS
 FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
 Control C: NOT_AUTHORIZED
 FW-RT6-9c: NOT_AUTHORIZED

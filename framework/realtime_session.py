@@ -3267,6 +3267,15 @@ class RealtimeSession:
                 coordination_attempt,
                 stage_results=stage_results,
             )
+            prepared_result: InterruptResult | None = None
+            if owner_work is not None:
+                prepared_result = self._prepare_interrupt_result(
+                    request,
+                    motion_result=motion_result,
+                    coordination_result=coordination_result,
+                )
+                with self._interrupt_request_lock:
+                    owner_work.result = prepared_result
             if owner_work is not None and request.flush_output:
                 owner_work.flush_result = self._flush_output_serialized(
                     OutputFlushRequest(
@@ -3275,7 +3284,8 @@ class RealtimeSession:
                         public_metadata={
                             "boundary": "interrupt_owner_flush",
                         },
-                    )
+                    ),
+                    _interrupt_owner=owner_work,
                 )
             result = self._interrupt_serialized(
                 request,
@@ -3283,6 +3293,7 @@ class RealtimeSession:
                 motion_result=motion_result,
                 coordination_result=coordination_result,
                 _owner_work=owner_work,
+                _prepared_result=prepared_result,
             )
             if owner_work is not None:
                 self._resolve_interrupt_terminal_reservation(
@@ -3310,6 +3321,23 @@ class RealtimeSession:
         if admission == "duplicate":
             if work is None:
                 raise AssertionError("duplicate interrupt must retain owner work")
+            if work.owner_thread_id == get_ident():
+                if work.result is None:
+                    return InterruptResult(
+                        outcome="failed",
+                        scope=request.scope,
+                        reason=request.reason,
+                        turn_id=work.turn_id,
+                        safe_message=(
+                            "Reentrant interrupt replay is not ready yet."
+                        ),
+                        retryable=True,
+                        public_metadata={
+                            "boundary": "interrupt",
+                            "reason": "reentrant_owner_result_pending",
+                        },
+                    )
+                return work.result
             work.completion_event.wait()
             if work.result is None:
                 raise AssertionError("interrupt owner must retain its exact result")
@@ -3348,6 +3376,42 @@ class RealtimeSession:
         request = request or InterruptRequest()
         return self._ordered_interrupt(request, advance_reason="interrupt")
 
+    def _prepare_interrupt_result(
+        self,
+        request: InterruptRequest,
+        *,
+        motion_result: MotionControlResult | None = None,
+        coordination_result: InterruptAggregateResult | None = None,
+    ) -> InterruptResult:
+        """Prepare the immutable owner result before synchronous callbacks."""
+
+        if self._closed or self._close_requested:
+            result = InterruptResult.already_closed(request=request)
+        else:
+            current_turn_id = (
+                self._generation_gate.current_turn_id
+                or self._active_turn_id
+            )
+            no_active_turn = current_turn_id is None and request.turn_id is None
+            result = (
+                self._coordinated_interrupt_result(
+                    request=request,
+                    current_turn_id=current_turn_id,
+                    coordination_result=coordination_result,
+                )
+                if coordination_result is not None
+                else (
+                    InterruptResult.no_active_turn(request=request)
+                    if no_active_turn
+                    else InterruptResult.not_implemented(request=request)
+                )
+            )
+        return self._attach_motion_control_result(
+            result,
+            motion_result,
+            coordination_result,
+        )
+
     def _interrupt_serialized(
         self,
         request: InterruptRequest | None = None,
@@ -3356,6 +3420,7 @@ class RealtimeSession:
         motion_result: MotionControlResult | None = None,
         coordination_result: InterruptAggregateResult | None = None,
         _owner_work: _InterruptRequestWork | None = None,
+        _prepared_result: InterruptResult | None = None,
     ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
@@ -3366,10 +3431,10 @@ class RealtimeSession:
 
         request = request or InterruptRequest()
         if self._closed or self._close_requested:
-            return self._attach_motion_control_result(
-                InterruptResult.already_closed(request=request),
-                motion_result,
-                coordination_result,
+            return _prepared_result or self._prepare_interrupt_result(
+                request,
+                motion_result=motion_result,
+                coordination_result=coordination_result,
             )
 
         current_turn_id = (
@@ -3377,18 +3442,10 @@ class RealtimeSession:
             or self._active_turn_id
         )
         no_active_turn = current_turn_id is None and request.turn_id is None
-        result = (
-            self._coordinated_interrupt_result(
-                request=request,
-                current_turn_id=current_turn_id,
-                coordination_result=coordination_result,
-            )
-            if coordination_result is not None
-            else (
-                InterruptResult.no_active_turn(request=request)
-                if no_active_turn
-                else InterruptResult.not_implemented(request=request)
-            )
+        result = _prepared_result or self._prepare_interrupt_result(
+            request,
+            motion_result=motion_result,
+            coordination_result=coordination_result,
         )
         resolved_turn_id = request.turn_id or current_turn_id
         self._advance_generation(
@@ -3429,11 +3486,7 @@ class RealtimeSession:
                         "interrupt_outcome": result.outcome.value,
                     },
                 )
-                return self._attach_motion_control_result(
-                    result,
-                    motion_result,
-                    coordination_result,
-                )
+                return result
 
             if result.outcome.value == "accepted":
                 self._transition(
@@ -3518,11 +3571,7 @@ class RealtimeSession:
 
                 self._set_phase(RealtimePhase.IDLE)
                 self._state = RealtimeState.IDLE
-                return self._attach_motion_control_result(
-                    result,
-                    motion_result,
-                    coordination_result,
-                )
+                return result
 
             if result.outcome.value == "failed":
                 self._transition(
@@ -3554,11 +3603,7 @@ class RealtimeSession:
                 )
                 self._set_phase(RealtimePhase.IDLE)
                 self._state = RealtimeState.IDLE
-                return self._attach_motion_control_result(
-                    result,
-                    motion_result,
-                    coordination_result,
-                )
+                return result
 
             next_phase = (
                 RealtimePhase.RECOVERING
@@ -3584,6 +3629,8 @@ class RealtimeSession:
                 },
             )
         except _LateNonTerminalRejected:
+            if _prepared_result is not None:
+                return _prepared_result
             return self._attach_motion_control_result(
                 InterruptResult.no_active_turn(
                     request=request,
@@ -3595,11 +3642,7 @@ class RealtimeSession:
 
         self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
-        return self._attach_motion_control_result(
-            result,
-            motion_result,
-            coordination_result,
-        )
+        return result
 
     def cancel_current_turn(
         self,
@@ -3748,12 +3791,33 @@ class RealtimeSession:
         request = request or OutputFlushRequest()
         with self._interrupt_request_lock:
             interrupt_work = self._active_interrupt_request
-            should_wait = (
+            interrupt_active = (
                 interrupt_work is not None
                 and not interrupt_work.completion_event.is_set()
-                and interrupt_work.owner_thread_id != get_ident()
             )
+            same_turn = bool(
+                interrupt_work is not None
+                and (
+                    request.turn_id is None
+                    or request.turn_id == interrupt_work.turn_id
+                )
+            )
+            reentrant_owner = bool(
+                interrupt_active
+                and same_turn
+                and interrupt_work is not None
+                and interrupt_work.owner_thread_id == get_ident()
+            )
+            if (
+                reentrant_owner
+                and interrupt_work is not None
+                and interrupt_work.flush_result is not None
+            ):
+                return interrupt_work.flush_result
+            should_wait = bool(interrupt_active and not reentrant_owner)
         if should_wait:
+            if interrupt_work is None:
+                raise AssertionError("active interrupt flush must retain owner work")
             interrupt_work.completion_event.wait()
             if (
                 interrupt_work.flush_result is not None
@@ -3764,11 +3828,20 @@ class RealtimeSession:
             ):
                 return interrupt_work.flush_result
         with self._serialized_operation():
-            return self._flush_output_serialized(request)
+            return self._flush_output_serialized(
+                request,
+                _interrupt_owner=(
+                    interrupt_work
+                    if reentrant_owner and interrupt_work is not None
+                    else None
+                ),
+            )
 
     def _flush_output_serialized(
         self,
         request: OutputFlushRequest | None = None,
+        *,
+        _interrupt_owner: _InterruptRequestWork | None = None,
     ) -> OutputFlushResult:
         """Request a provider-neutral output flush.
 
@@ -3781,6 +3854,15 @@ class RealtimeSession:
             return OutputFlushResult.closed(request=request)
 
         resolved_turn_id = request.turn_id or self._active_turn_id
+        queue_state = self.get_tts_queue_state()
+        result = (
+            OutputFlushResult.nothing_to_flush(request=request)
+            if queue_state.queued_count == 0 and not queue_state.is_playing
+            else OutputFlushResult.not_implemented(request=request)
+        )
+        if _interrupt_owner is not None:
+            with self._interrupt_request_lock:
+                _interrupt_owner.flush_result = result
         try:
             self._transition(
                 RealtimeEventType.OUTPUT_FLUSH_REQUESTED,
@@ -3793,7 +3875,6 @@ class RealtimeSession:
                 },
             )
 
-            queue_state = self.get_tts_queue_state()
             host_stop_event = None
             if request.stop_playback and queue_state.playback_stop_required:
                 host_stop_event = self._request_host_playback_stop_serialized(
@@ -3802,7 +3883,6 @@ class RealtimeSession:
                 )
 
             if queue_state.queued_count == 0 and not queue_state.is_playing:
-                result = OutputFlushResult.nothing_to_flush(request=request)
                 self._transition(
                     RealtimeEventType.OUTPUT_FLUSH_COMPLETED,
                     self._state,
@@ -3817,7 +3897,6 @@ class RealtimeSession:
                 )
                 return result
 
-            result = OutputFlushResult.not_implemented(request=request)
             self._transition(
                 RealtimeEventType.OUTPUT_FLUSH_UNSUPPORTED,
                 self._state,
@@ -3833,6 +3912,8 @@ class RealtimeSession:
             )
             return result
         except _LateNonTerminalRejected:
+            if _interrupt_owner is not None:
+                return result
             return OutputFlushResult.nothing_to_flush(
                 request=request,
                 safe_message="Realtime turn is already terminal.",
