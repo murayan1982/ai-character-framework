@@ -3866,3 +3866,74 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:END -->
+
+
+<!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:BEGIN -->
+## FW-RT6-9a Control B — runtime interrupt aggregation
+
+The root-public facade remains unchanged. Runtime coordination is adopted
+inside `RealtimeSession`, while the five typed subsystem and aggregate models
+remain explicit imports from `framework.interrupt_coordination`.
+
+One private active-stage registry owns in-flight text-generation and
+voice-output calls. The private `_execute_interruptible_stage(...)` boundary
+installs one correlated owner, executes the injected stage, and clears that
+owner on every exit. An accepted cooperative cancel arms a permanent
+late-delivery barrier for that work, so a later provider return is not delivered
+by Framework.
+
+Public request scope and additive flags resolve in deterministic subsystem
+order:
+
+```text
+TEXT_GENERATION -> TTS_GENERATION -> TTS_QUEUE -> AUDIO_ARTIFACT -> MOTION
+```
+
+Stage cancellation and the accepted motion control boundary are reached
+outside the long session operation lock. No stage method runs while the short
+active-stage registry lock is held. Boolean cooperative cancellation uses a
+bounded completion wait. `InterruptRequest.timeout_seconds` supplies the
+positive request budget when present; otherwise an internal 0.25 second bound
+is applied while the public field remains `None`.
+
+TTS generation cancellation, pending queue clear, and completed artifact
+invalidation remain three separate results. Each call requires its accepted
+capability flag and a matching callable boundary. Provider hard-cancel support
+is reported separately from actual application. Unsupported capability,
+configured-but-idle work, terminal turn, closed session, timeout, malformed
+result, and exception paths do not claim effects they did not observe.
+
+The existing `MotionControlResult` is projected into the common `MOTION`
+result, then `InterruptAggregateResult.from_results(...)` derives the aggregate.
+Mixed outcomes therefore remain `PARTIAL`. `InterruptResult` exposes that
+aggregate through the accepted trailing `coordination_result` projection while
+preserving the v5.2 outer enum and legacy no-active/unknown/closed outcomes.
+
+An accepted current-turn coordination emits the established interrupt event
+sequence before the existing first-terminal registry commits
+`TURN_INTERRUPTED`. Public factory parameters, root exports, event types, and
+API versions do not change.
+
+Control B intentionally defers whole-request duplicate/race convergence to
+FW-RT6-9b and barge-in plan/execution to FW-RT6-9c.
+
+```text
+exact Control B surface: 5 files
+active-stage registry: PRIVATE / PASS
+outside the long session operation lock: PASS
+bounded completion wait: PASS
+late-delivery barrier: PASS
+typed runtime aggregate: PASS
+runtime partial result: PASS
+unsupported overclaim: False
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+FW-RT6-9a aggregate tasks: 0 / 9 CLOSED
+Control C: NOT_AUTHORIZED
+FW-RT6-9b: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:END -->

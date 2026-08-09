@@ -3212,3 +3212,90 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9a-A-INTERRUPT-COORDINATION:END -->
+
+
+<!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:BEGIN -->
+## FW-RT6-9a Control B — interrupt coordination runtime adoption
+
+`RealtimeSession` now owns a private active-stage registry for the
+provider-neutral text-generation and voice-output execution boundaries. The
+registry retains only the stage object plus public-safe session, turn, and
+generation correlation. It does not expose provider request objects, response
+text, audio bytes, artifact paths, credentials, or provider clients.
+
+The internal `_execute_interruptible_stage(...)` boundary installs exactly one
+owner for `text_generation` or `tts_generation`, executes the injected stage,
+then clears the owner and signals completion. Once cooperative cancellation is
+accepted, a one-way late-delivery barrier suppresses the eventual stage
+envelope even when provider work returns later.
+
+`RealtimeSession.interrupt(...)` and `cancel_current_turn(...)` expand the
+accepted request scope and additive flags into a stable order:
+
+```text
+TEXT_GENERATION -> TTS_GENERATION -> TTS_QUEUE -> AUDIO_ARTIFACT -> MOTION
+```
+
+Active text/TTS cancellation and motion control are dispatched outside the
+long session operation lock. The short registry locks are not held while a
+stage method executes. Text and boolean-returning TTS stages use a bounded
+completion wait; an explicit positive `timeout_seconds` supplies the request
+budget, while `None` applies an internal 0.25 second safety bound without
+changing the public request projection.
+
+Voice-output reach remains capability-gated and fact-separated:
+
+```text
+generation_cancel_supported -> VoiceOutputStage.cancel(context=...)
+pending_flush_supported -> clear_pending(context=...)
+active_audio_invalidation_supported -> invalidate_completed(context)
+provider_hard_cancel_supported != provider_hard_cancel_applied
+```
+
+Missing stages and unsupported capabilities never trigger control calls.
+Malformed results and stage exceptions map to typed `FAILED`; accepted but
+incomplete cooperative cancellation maps to `TIMED_OUT`; configured idle work,
+terminal turns, unknown targets, and closed sessions remain distinct. Pending
+clear counts and artifact invalidation counts are reported independently.
+
+The accepted FW-RT6-8c `MotionControlResult` remains the single motion-control
+source and is projected into the `MOTION` subsystem result. The five typed
+results are then passed to `InterruptAggregateResult.from_results(...)`, so a
+mixed runtime observation derives `PARTIAL` and cannot be relabeled completed.
+The additive aggregate is exposed through `InterruptResult.coordination_result`.
+The established outer `InterruptOutcome` maps accepted/effective work to
+`ACCEPTED`, bounded failure/timeout to `FAILED`, and preserves legacy idle,
+explicit-unknown, terminal, and closed behavior where no effect occurred.
+
+Accepted runtime coordination emits `INTERRUPT_REQUESTED`,
+`INTERRUPT_ACCEPTED`, and, for a terminal aggregate,
+`INTERRUPT_COMPLETED`, before committing the current turn's existing
+`TURN_INTERRUPTED` terminal boundary. Existing first-terminal and generation
+freshness gates remain authoritative.
+
+Control B does not add a root-public symbol, constructor/factory parameter, or
+version bump. It does not implement whole-request duplicate convergence,
+interrupt/completion/close race ordering, or new-turn-during-interrupt rules;
+those remain FW-RT6-9b. It also does not execute barge-in decisions; that
+remains FW-RT6-9c.
+
+```text
+exact Control B surface: 5 files
+active-stage registry: RealtimeSession PRIVATE
+stage control outside the long session operation lock: True
+bounded completion wait: True
+late-delivery barrier: True
+runtime subsystem reach observable: True
+runtime partial result: PASS
+unsupported overclaim: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-9a aggregate tasks: 0 / 9 CLOSED
+Control C: NOT_AUTHORIZED
+FW-RT6-9b: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:END -->

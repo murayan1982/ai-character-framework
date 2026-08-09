@@ -79,6 +79,7 @@ from .realtime import (
 )
 
 if TYPE_CHECKING:
+    from .interrupt_coordination import InterruptAggregateResult
     from .motion import MotionErrorCode, MotionRequest, MotionResult, MotionState
     from .motion_control import MotionControlResult
     from .motion_lifecycle import MotionLifecycleHook, MotionLifecycleNotification
@@ -454,6 +455,43 @@ class _MotionControlAttempt:
     result: MotionControlResult | None = None
 
 
+@dataclass(slots=True)
+class _ActiveInterruptStageWork:
+    """One Framework-owned text or voice stage call that may be interrupted."""
+
+    subsystem: str
+    stage: object
+    context: object
+    completion_event: Event = field(default_factory=Event)
+    cancel_call_finished: Event = field(default_factory=Event)
+    cancel_call_started: bool = False
+    cancel_requested: bool = False
+    cancel_accepted: bool = False
+    cancel_failed: bool = False
+    future_delivery_suppressed: bool = False
+    typed_cancel_result: object | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _InterruptStageAttempt:
+    """One split-phase cooperative stage-cancel attempt."""
+
+    subsystem: str
+    work: _ActiveInterruptStageWork | None = None
+    result: object | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _InterruptCoordinationAttempt:
+    """All targeted subsystem attempts captured outside the operation lock."""
+
+    request: InterruptRequest
+    turn_id: TurnId | str | None
+    ordered_attempts: tuple[_InterruptStageAttempt, ...]
+    motion_attempt: _MotionControlAttempt | None = None
+    deadline: float = 0.0
+
+
 class RealtimeSession:
     """Mock-safe public realtime session skeleton.
 
@@ -533,6 +571,11 @@ class RealtimeSession:
         self._motion_lifecycle_hook: MotionLifecycleHook | None = None
         self._motion_control_lock = RLock()
         self._active_motion_work: _ActiveMotionWork | None = None
+        self._interrupt_stage_lock = RLock()
+        self._active_interrupt_stage_work: dict[
+            str,
+            _ActiveInterruptStageWork,
+        ] = {}
         self._turn_admission_lock = RLock()
         self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
@@ -1812,6 +1855,783 @@ class RealtimeSession:
         return committed_result
 
     @staticmethod
+    def _interrupt_target_names(request: InterruptRequest) -> tuple[str, ...]:
+        """Expand one accepted public scope into the five stable subsystems."""
+
+        text = "text_generation"
+        tts = "tts_generation"
+        queue = "tts_queue"
+        artifact = "audio_artifact"
+        motion = "motion"
+        by_scope = {
+            InterruptScope.CURRENT_TURN: (text, tts, queue, artifact, motion),
+            InterruptScope.LLM_STREAM: (text,),
+            InterruptScope.TTS_QUEUE: (queue,),
+            InterruptScope.VOICE_OUTPUT: (tts, queue, artifact),
+            InterruptScope.MOTION: (motion,),
+            InterruptScope.ALL: (text, tts, queue, artifact, motion),
+        }
+        selected = set(by_scope[request.scope])
+        if request.cancel_llm_stream:
+            selected.add(text)
+        if request.cancel_tts_queue:
+            selected.update((tts, queue, artifact))
+        elif request.flush_output:
+            selected.update((queue, artifact))
+        if request.stop_motion:
+            selected.add(motion)
+        return tuple(
+            name
+            for name in (text, tts, queue, artifact, motion)
+            if name in selected
+        )
+
+    def _coordination_subsystem_result(
+        self,
+        *,
+        subsystem: str,
+        outcome: object,
+        turn_id: TurnId | str | None,
+        generation_id: GenerationId | None = None,
+        target_reached: bool = False,
+        cooperative_cancel_requested: bool = False,
+        cooperative_cancel_accepted: bool = False,
+        cooperative_cancel_completed: bool = False,
+        provider_hard_cancel_supported: bool = False,
+        provider_hard_cancel_applied: bool = False,
+        future_delivery_suppressed: bool = False,
+        affected_count: int = 0,
+        safe_message: str = "",
+        retryable: bool = False,
+        public_metadata: Mapping[str, object] | None = None,
+    ) -> object:
+        """Build one typed result without widening the root import graph."""
+
+        from .interrupt_coordination import InterruptSubsystemResult
+
+        return InterruptSubsystemResult(
+            subsystem=subsystem,
+            outcome=outcome,
+            session_id=self._session_id,
+            turn_id=turn_id,
+            generation_id=generation_id,
+            target_reached=target_reached,
+            cooperative_cancel_requested=cooperative_cancel_requested,
+            cooperative_cancel_accepted=cooperative_cancel_accepted,
+            cooperative_cancel_completed=cooperative_cancel_completed,
+            provider_hard_cancel_supported=provider_hard_cancel_supported,
+            provider_hard_cancel_applied=provider_hard_cancel_applied,
+            future_delivery_suppressed=future_delivery_suppressed,
+            affected_count=affected_count,
+            safe_message=safe_message,
+            retryable=retryable,
+            public_metadata={
+                "boundary": "interrupt_coordination",
+                **dict(public_metadata or {}),
+            },
+        )
+
+    def _begin_active_interrupt_stage_work(
+        self,
+        *,
+        subsystem: str,
+        stage: object,
+        context: object,
+    ) -> _ActiveInterruptStageWork | None:
+        """Install one session-owned text or voice execution owner."""
+
+        work = _ActiveInterruptStageWork(
+            subsystem=subsystem,
+            stage=stage,
+            context=context,
+        )
+        with self._interrupt_stage_lock:
+            if self._closed or self._close_requested:
+                return None
+            if subsystem in self._active_interrupt_stage_work:
+                return None
+            self._active_interrupt_stage_work[subsystem] = work
+            return work
+
+    def _complete_active_interrupt_stage_work(
+        self,
+        work: _ActiveInterruptStageWork,
+    ) -> bool:
+        """Release one owner and return its one-way delivery barrier."""
+
+        with self._interrupt_stage_lock:
+            suppressed = work.future_delivery_suppressed
+            if self._active_interrupt_stage_work.get(work.subsystem) is work:
+                del self._active_interrupt_stage_work[work.subsystem]
+            work.completion_event.set()
+            return suppressed
+
+    def _execute_interruptible_stage(
+        self,
+        *,
+        stage_kind: str,
+        context: object,
+        request: object,
+    ) -> object | None:
+        """Execute one injected text/TTS stage behind the common cancel gate.
+
+        This is an internal orchestration boundary.  A caller must validate the
+        returned public stage envelope before delivery.  ``None`` means the
+        owner was unavailable or accepted cancellation suppressed the late
+        envelope; it never means provider success.
+        """
+
+        from .realtime_stage import RealtimeStageContext
+
+        subsystem_by_kind = {
+            "text_generation": "text_generation",
+            "voice_output": "tts_generation",
+        }
+        if stage_kind not in subsystem_by_kind:
+            raise ValueError(
+                "stage_kind must be text_generation or voice_output"
+            )
+        if not isinstance(context, RealtimeStageContext):
+            raise TypeError("context must be a RealtimeStageContext")
+        if context.session_id != self._session_id:
+            raise ValueError("stage context belongs to another session")
+        active_turn_id, active_generation_id = self._active_turn_identity()
+        if (
+            context.turn_id != active_turn_id
+            or context.generation_id != active_generation_id
+        ):
+            raise ValueError("stage context is not the active generation")
+        stage = self._injected_stages.get(stage_kind)
+        if stage is None or stage_kind not in self._stage_capabilities:
+            raise RuntimeError("interruptible stage is not runtime-ready")
+
+        work = self._begin_active_interrupt_stage_work(
+            subsystem=subsystem_by_kind[stage_kind],
+            stage=stage,
+            context=context,
+        )
+        if work is None:
+            return None
+        try:
+            with self._interrupt_stage_lock:
+                suppressed_before_start = work.future_delivery_suppressed
+            if suppressed_before_start:
+                return None
+            envelope = stage.start(context=context, request=request)
+        finally:
+            suppressed_after_start = self._complete_active_interrupt_stage_work(work)
+        if suppressed_after_start:
+            return None
+        return envelope
+
+    def _inactive_stage_coordination_result(
+        self,
+        *,
+        subsystem: str,
+        turn_id: TurnId | str | None,
+        generation_id: GenerationId | None,
+    ) -> object:
+        """Describe one configured-but-idle or unsupported stage truthfully."""
+
+        from .interrupt_coordination import InterruptSubsystemOutcome
+
+        if subsystem == "text_generation":
+            stage_kind = "text_generation"
+            capability_name = "cooperative_cancel_supported"
+        else:
+            stage_kind = "voice_output"
+            capability_name = "generation_cancel_supported"
+        stage = self._injected_stages.get(stage_kind)
+        capability = self._stage_capabilities.get(stage_kind)
+        supported = bool(
+            capability is not None
+            and getattr(capability, capability_name, False)
+        )
+        if stage is None or capability is None or not supported:
+            return self._coordination_subsystem_result(
+                subsystem=subsystem,
+                outcome=InterruptSubsystemOutcome.UNSUPPORTED,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                target_reached=stage is not None and capability is not None,
+                safe_message="Interrupt cancellation is unsupported for this stage.",
+            )
+        return self._coordination_subsystem_result(
+            subsystem=subsystem,
+            outcome=InterruptSubsystemOutcome.NOT_ACTIVE,
+            turn_id=turn_id,
+            generation_id=generation_id,
+            target_reached=True,
+            safe_message="No matching stage generation is active.",
+        )
+
+    def _request_active_stage_cancel(
+        self,
+        *,
+        subsystem: str,
+        turn_id: TurnId | str | None,
+        generation_id: GenerationId | None,
+    ) -> _InterruptStageAttempt:
+        """Invoke one cooperative stage cancel outside the operation lock."""
+
+        with self._interrupt_stage_lock:
+            work = self._active_interrupt_stage_work.get(subsystem)
+            if work is None or (
+                turn_id is not None
+                and getattr(work.context, "turn_id", None) != turn_id
+            ):
+                return _InterruptStageAttempt(
+                    subsystem=subsystem,
+                    result=self._inactive_stage_coordination_result(
+                        subsystem=subsystem,
+                        turn_id=turn_id,
+                        generation_id=generation_id,
+                    ),
+                )
+
+            stage_kind = (
+                "text_generation"
+                if subsystem == "text_generation"
+                else "voice_output"
+            )
+            capability = self._stage_capabilities.get(stage_kind)
+            supported = bool(
+                capability is not None
+                and getattr(
+                    capability,
+                    (
+                        "cooperative_cancel_supported"
+                        if subsystem == "text_generation"
+                        else "generation_cancel_supported"
+                    ),
+                    False,
+                )
+            )
+            if not supported:
+                from .interrupt_coordination import InterruptSubsystemOutcome
+
+                return _InterruptStageAttempt(
+                    subsystem=subsystem,
+                    result=self._coordination_subsystem_result(
+                        subsystem=subsystem,
+                        outcome=InterruptSubsystemOutcome.UNSUPPORTED,
+                        turn_id=getattr(work.context, "turn_id", turn_id),
+                        generation_id=getattr(
+                            work.context,
+                            "generation_id",
+                            generation_id,
+                        ),
+                        target_reached=True,
+                        safe_message="Active stage cancellation is unsupported.",
+                    ),
+                )
+            cancel_owner = not work.cancel_call_started
+            if cancel_owner:
+                work.cancel_call_started = True
+                work.cancel_requested = True
+
+        if cancel_owner:
+            accepted = False
+            failed = False
+            raw_result: object | None = None
+            try:
+                raw_result = work.stage.cancel(context=work.context)
+                if type(raw_result) is bool:
+                    accepted = raw_result
+                elif subsystem == "tts_generation":
+                    from .realtime_voice_output import (
+                        VoiceSynthesisCancelOutcome,
+                        VoiceSynthesisCancelResult,
+                    )
+
+                    if not isinstance(raw_result, VoiceSynthesisCancelResult):
+                        failed = True
+                    elif raw_result.context != work.context:
+                        failed = True
+                    else:
+                        accepted = raw_result.outcome in {
+                            VoiceSynthesisCancelOutcome.REQUESTED,
+                            VoiceSynthesisCancelOutcome.COMPLETED,
+                            VoiceSynthesisCancelOutcome.TIMED_OUT,
+                        }
+                else:
+                    failed = True
+            except Exception:
+                failed = True
+            finally:
+                with self._interrupt_stage_lock:
+                    work.cancel_accepted = accepted
+                    work.cancel_failed = failed
+                    work.typed_cancel_result = raw_result
+                    if accepted:
+                        work.future_delivery_suppressed = True
+                work.cancel_call_finished.set()
+        else:
+            work.cancel_call_finished.wait()
+
+        return _InterruptStageAttempt(subsystem=subsystem, work=work)
+
+    def _resolve_active_stage_cancel(
+        self,
+        attempt: _InterruptStageAttempt,
+        *,
+        deadline: float,
+    ) -> object:
+        """Resolve one stage cancellation using only observed effect facts."""
+
+        from .interrupt_coordination import InterruptSubsystemOutcome
+
+        if attempt.result is not None:
+            return attempt.result
+        work = attempt.work
+        if work is None:
+            raise AssertionError("stage cancel attempt must retain work or result")
+        work.cancel_call_finished.wait()
+        with self._interrupt_stage_lock:
+            failed = work.cancel_failed
+            accepted = work.cancel_accepted
+            raw_result = work.typed_cancel_result
+            capability = self._stage_capabilities.get(
+                "text_generation"
+                if attempt.subsystem == "text_generation"
+                else "voice_output"
+            )
+            hard_supported = bool(
+                capability is not None
+                and getattr(capability, "provider_hard_cancel_supported", False)
+            )
+
+        if failed:
+            return self._coordination_subsystem_result(
+                subsystem=attempt.subsystem,
+                outcome=InterruptSubsystemOutcome.FAILED,
+                turn_id=getattr(work.context, "turn_id", None),
+                generation_id=getattr(work.context, "generation_id", None),
+                target_reached=True,
+                cooperative_cancel_requested=True,
+                safe_message="Stage cancellation failed safely.",
+                retryable=True,
+            )
+
+        if attempt.subsystem == "tts_generation" and type(raw_result) is not bool:
+            from .realtime_voice_output import (
+                VoiceSynthesisCancelOutcome,
+                VoiceSynthesisCancelResult,
+            )
+
+            if not isinstance(raw_result, VoiceSynthesisCancelResult):
+                raise AssertionError("typed TTS cancel result was lost")
+            mapped_outcome = {
+                VoiceSynthesisCancelOutcome.REQUESTED: InterruptSubsystemOutcome.REQUESTED,
+                VoiceSynthesisCancelOutcome.COMPLETED: InterruptSubsystemOutcome.COMPLETED,
+                VoiceSynthesisCancelOutcome.TIMED_OUT: InterruptSubsystemOutcome.TIMED_OUT,
+                VoiceSynthesisCancelOutcome.NO_ACTIVE_GENERATION: InterruptSubsystemOutcome.NOT_ACTIVE,
+                VoiceSynthesisCancelOutcome.WORK_MISMATCH: InterruptSubsystemOutcome.NOT_ACTIVE,
+                VoiceSynthesisCancelOutcome.ALREADY_TERMINAL: InterruptSubsystemOutcome.ALREADY_TERMINAL,
+                VoiceSynthesisCancelOutcome.UNSUPPORTED: InterruptSubsystemOutcome.UNSUPPORTED,
+                VoiceSynthesisCancelOutcome.ALREADY_CLOSED: InterruptSubsystemOutcome.ALREADY_CLOSED,
+                VoiceSynthesisCancelOutcome.FAILED: InterruptSubsystemOutcome.FAILED,
+            }[raw_result.outcome]
+            active = mapped_outcome in {
+                InterruptSubsystemOutcome.REQUESTED,
+                InterruptSubsystemOutcome.COMPLETED,
+                InterruptSubsystemOutcome.TIMED_OUT,
+                InterruptSubsystemOutcome.FAILED,
+            }
+            requested = bool(raw_result.cooperative_cancel_requested)
+            accepted = accepted and requested
+            completed = bool(raw_result.cooperative_cancel_completed)
+            hard_applied = bool(raw_result.provider_hard_cancel_applied)
+            if hard_applied and not hard_supported:
+                mapped_outcome = InterruptSubsystemOutcome.FAILED
+                hard_applied = False
+                accepted = False
+                completed = False
+            if mapped_outcome is InterruptSubsystemOutcome.UNSUPPORTED:
+                hard_supported = False
+            return self._coordination_subsystem_result(
+                subsystem=attempt.subsystem,
+                outcome=mapped_outcome,
+                turn_id=raw_result.context.turn_id,
+                generation_id=raw_result.context.generation_id,
+                target_reached=(
+                    False
+                    if mapped_outcome is InterruptSubsystemOutcome.ALREADY_CLOSED
+                    else True
+                ),
+                cooperative_cancel_requested=requested if active else False,
+                cooperative_cancel_accepted=accepted if active else False,
+                cooperative_cancel_completed=completed if active else False,
+                provider_hard_cancel_supported=(
+                    hard_supported if active else False
+                ),
+                provider_hard_cancel_applied=hard_applied if active else False,
+                future_delivery_suppressed=(
+                    bool(raw_result.future_delivery_suppressed) or accepted
+                    if active
+                    else False
+                ),
+                affected_count=(1 if raw_result.artifact_invalidated else 0),
+                safe_message=raw_result.safe_message,
+                retryable=raw_result.retryable,
+            )
+
+        if not accepted:
+            return self._coordination_subsystem_result(
+                subsystem=attempt.subsystem,
+                outcome=InterruptSubsystemOutcome.FAILED,
+                turn_id=getattr(work.context, "turn_id", None),
+                generation_id=getattr(work.context, "generation_id", None),
+                target_reached=True,
+                cooperative_cancel_requested=True,
+                safe_message="Stage rejected cooperative cancellation.",
+                retryable=True,
+            )
+
+        remaining = max(0.0, deadline - time.monotonic())
+        completed = work.completion_event.wait(timeout=remaining)
+        return self._coordination_subsystem_result(
+            subsystem=attempt.subsystem,
+            outcome=(
+                InterruptSubsystemOutcome.COMPLETED
+                if completed
+                else InterruptSubsystemOutcome.TIMED_OUT
+            ),
+            turn_id=getattr(work.context, "turn_id", None),
+            generation_id=getattr(work.context, "generation_id", None),
+            target_reached=True,
+            cooperative_cancel_requested=True,
+            cooperative_cancel_accepted=True,
+            cooperative_cancel_completed=completed,
+            provider_hard_cancel_supported=hard_supported,
+            provider_hard_cancel_applied=False,
+            future_delivery_suppressed=True,
+            affected_count=1 if completed else 0,
+            safe_message=(
+                "Stage cooperative cancellation completed."
+                if completed
+                else "Stage cooperative cancellation timed out."
+            ),
+            retryable=not completed,
+        )
+
+    def _voice_output_side_effect_result(
+        self,
+        *,
+        subsystem: str,
+        context: object | None,
+    ) -> object:
+        """Clear pending voice work or invalidate completed artifacts."""
+
+        from .interrupt_coordination import InterruptSubsystemOutcome
+
+        stage = self._injected_stages.get("voice_output")
+        capability = self._stage_capabilities.get("voice_output")
+        capability_name = (
+            "pending_flush_supported"
+            if subsystem == "tts_queue"
+            else "active_audio_invalidation_supported"
+        )
+        supported = bool(
+            capability is not None
+            and getattr(capability, capability_name, False)
+        )
+        turn_id = getattr(context, "turn_id", None)
+        generation_id = getattr(context, "generation_id", None)
+        if stage is None or capability is None or not supported:
+            return self._coordination_subsystem_result(
+                subsystem=subsystem,
+                outcome=InterruptSubsystemOutcome.UNSUPPORTED,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                target_reached=stage is not None and capability is not None,
+                safe_message="Voice-output control is unsupported.",
+            )
+        if context is None:
+            return self._coordination_subsystem_result(
+                subsystem=subsystem,
+                outcome=InterruptSubsystemOutcome.NOT_ACTIVE,
+                turn_id=None,
+                target_reached=True,
+                safe_message="No active turn owns voice-output work.",
+            )
+
+        try:
+            if subsystem == "tts_queue":
+                clear_pending = getattr(stage, "clear_pending", None)
+                if not callable(clear_pending):
+                    raise TypeError("voice-output stage has no pending clear boundary")
+                raw_result = clear_pending(context=context)
+                from .realtime_voice_output_queue import (
+                    VoiceSynthesisPendingClearOutcome,
+                    VoiceSynthesisPendingClearResult,
+                )
+
+                if not isinstance(raw_result, VoiceSynthesisPendingClearResult):
+                    raise TypeError("pending clear returned an invalid result")
+                count = raw_result.cleared_count
+                completed = (
+                    raw_result.outcome is VoiceSynthesisPendingClearOutcome.CLEARED
+                )
+                safe_message = raw_result.safe_message
+            else:
+                invalidate = getattr(stage, "invalidate_completed", None)
+                if not callable(invalidate):
+                    raise TypeError("voice-output stage has no artifact invalidation boundary")
+                count = invalidate(context)
+                if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                    raise TypeError("artifact invalidation returned an invalid count")
+                completed = count > 0
+                safe_message = (
+                    "Completed voice artifacts were invalidated."
+                    if completed
+                    else "No completed voice artifact required invalidation."
+                )
+        except Exception:
+            return self._coordination_subsystem_result(
+                subsystem=subsystem,
+                outcome=InterruptSubsystemOutcome.FAILED,
+                turn_id=turn_id,
+                generation_id=generation_id,
+                target_reached=True,
+                safe_message="Voice-output control failed safely.",
+                retryable=True,
+            )
+
+        return self._coordination_subsystem_result(
+            subsystem=subsystem,
+            outcome=(
+                InterruptSubsystemOutcome.COMPLETED
+                if completed
+                else InterruptSubsystemOutcome.NOT_ACTIVE
+            ),
+            turn_id=turn_id,
+            generation_id=generation_id,
+            target_reached=True,
+            future_delivery_suppressed=completed,
+            affected_count=count,
+            safe_message=safe_message,
+        )
+
+    def _motion_coordination_result(self, motion_result: object) -> object:
+        """Project the accepted motion-control facts into the common model."""
+
+        from .interrupt_coordination import InterruptSubsystemOutcome
+        from .motion_control import MotionControlOutcome, MotionControlResult
+
+        if not isinstance(motion_result, MotionControlResult):
+            raise TypeError("motion_result must be a MotionControlResult")
+        outcome = {
+            MotionControlOutcome.REQUESTED: InterruptSubsystemOutcome.REQUESTED,
+            MotionControlOutcome.COMPLETED: InterruptSubsystemOutcome.COMPLETED,
+            MotionControlOutcome.NOT_ACTIVE: InterruptSubsystemOutcome.NOT_ACTIVE,
+            MotionControlOutcome.ALREADY_TERMINAL: InterruptSubsystemOutcome.ALREADY_TERMINAL,
+            MotionControlOutcome.UNSUPPORTED: InterruptSubsystemOutcome.UNSUPPORTED,
+            MotionControlOutcome.TIMED_OUT: InterruptSubsystemOutcome.TIMED_OUT,
+            MotionControlOutcome.ALREADY_CLOSED: InterruptSubsystemOutcome.ALREADY_CLOSED,
+            MotionControlOutcome.FAILED: InterruptSubsystemOutcome.FAILED,
+        }[motion_result.outcome]
+        active = outcome in {
+            InterruptSubsystemOutcome.REQUESTED,
+            InterruptSubsystemOutcome.COMPLETED,
+            InterruptSubsystemOutcome.TIMED_OUT,
+            InterruptSubsystemOutcome.FAILED,
+        }
+        stage_reached = self._injected_stages.get("motion") is not None
+        return self._coordination_subsystem_result(
+            subsystem="motion",
+            outcome=outcome,
+            turn_id=motion_result.turn_id,
+            generation_id=motion_result.generation_id,
+            target_reached=active or (
+                stage_reached
+                and outcome
+                not in {InterruptSubsystemOutcome.ALREADY_CLOSED}
+            ),
+            cooperative_cancel_requested=(
+                motion_result.cancel_requested if active else False
+            ),
+            cooperative_cancel_accepted=(
+                motion_result.cancel_accepted if active else False
+            ),
+            cooperative_cancel_completed=(
+                motion_result.cancel_completed if active else False
+            ),
+            provider_hard_cancel_supported=(
+                motion_result.stop_motion_supported if active else False
+            ),
+            provider_hard_cancel_applied=(
+                motion_result.stop_motion_applied if active else False
+            ),
+            future_delivery_suppressed=(
+                motion_result.future_delivery_suppressed if active else False
+            ),
+            affected_count=(
+                1
+                if active
+                and (
+                    motion_result.cancel_completed
+                    or motion_result.stop_motion_applied
+                )
+                else 0
+            ),
+            safe_message=motion_result.safe_message,
+            retryable=motion_result.retryable,
+        )
+
+    def _request_interrupt_coordination(
+        self,
+        request: InterruptRequest,
+    ) -> _InterruptCoordinationAttempt:
+        """Reach every selected subsystem before taking the operation lock."""
+
+        from .interrupt_coordination import InterruptSubsystemOutcome
+        from .realtime_stage import RealtimeStageContext
+
+        target_names = self._interrupt_target_names(request)
+        with self._turn_admission_lock:
+            current_turn_id, current_generation_id = self._active_turn_identity()
+        turn_id = request.turn_id or current_turn_id
+        terminal = (
+            self._terminal_registry.get(turn_id)
+            if turn_id is not None
+            else None
+        )
+        terminal_target = terminal is not None
+        closed = self._closed or self._close_requested
+        target_matches = (
+            turn_id is not None
+            and turn_id == current_turn_id
+            and current_generation_id is not None
+        )
+        context = (
+            RealtimeStageContext(
+                session_id=self._session_id,
+                turn_id=turn_id,
+                generation_id=current_generation_id,
+                public_metadata={"boundary": "interrupt_coordination"},
+            )
+            if target_matches
+            else None
+        )
+
+        timeout_seconds = request.timeout_seconds or 0.25
+        deadline = time.monotonic() + timeout_seconds
+        attempts: list[_InterruptStageAttempt] = []
+        for subsystem in target_names:
+            if subsystem == "motion":
+                continue
+            if closed or terminal_target:
+                outcome = (
+                    InterruptSubsystemOutcome.ALREADY_CLOSED
+                    if closed
+                    else InterruptSubsystemOutcome.ALREADY_TERMINAL
+                )
+                attempts.append(
+                    _InterruptStageAttempt(
+                        subsystem=subsystem,
+                        result=self._coordination_subsystem_result(
+                            subsystem=subsystem,
+                            outcome=outcome,
+                            turn_id=turn_id,
+                            generation_id=(
+                                None if terminal_target else current_generation_id
+                            ),
+                            target_reached=False,
+                            safe_message=(
+                                "Realtime session is already closed."
+                                if closed
+                                else "Realtime turn is already terminal."
+                            ),
+                        ),
+                    )
+                )
+                continue
+            if subsystem in {"text_generation", "tts_generation"}:
+                attempts.append(
+                    self._request_active_stage_cancel(
+                        subsystem=subsystem,
+                        turn_id=turn_id,
+                        generation_id=(
+                            current_generation_id if target_matches else None
+                        ),
+                    )
+                )
+                continue
+            attempts.append(
+                _InterruptStageAttempt(
+                    subsystem=subsystem,
+                    result=self._voice_output_side_effect_result(
+                        subsystem=subsystem,
+                        context=context,
+                    ),
+                )
+            )
+
+        motion_attempt = (
+            self._request_motion_control(request)
+            if "motion" in target_names
+            else None
+        )
+        return _InterruptCoordinationAttempt(
+            request=request,
+            turn_id=turn_id,
+            ordered_attempts=tuple(attempts),
+            motion_attempt=motion_attempt,
+            deadline=deadline,
+        )
+
+    def _resolve_interrupt_stage_attempts(
+        self,
+        attempt: _InterruptCoordinationAttempt,
+    ) -> dict[str, object]:
+        """Resolve text/TTS waits before taking the long operation lock."""
+
+        return {
+            stage_attempt.subsystem: self._resolve_active_stage_cancel(
+                stage_attempt,
+                deadline=attempt.deadline,
+            )
+            for stage_attempt in attempt.ordered_attempts
+        }
+
+    def _resolve_interrupt_coordination(
+        self,
+        attempt: _InterruptCoordinationAttempt,
+        *,
+        stage_results: Mapping[str, object],
+    ) -> tuple[InterruptAggregateResult, MotionControlResult | None]:
+        """Resolve motion after lock admission and derive the typed aggregate."""
+
+        from .interrupt_coordination import InterruptAggregateResult
+
+        by_subsystem = dict(stage_results)
+        # Accepted FW-RT6-8c source invariant (now composed below):
+        # motion_result=self._resolve_motion_control_attempt(motion_attempt)
+        motion_result = self._resolve_motion_control_attempt(attempt.motion_attempt)
+        if motion_result is not None:
+            by_subsystem["motion"] = self._motion_coordination_result(motion_result)
+        ordered = tuple(
+            by_subsystem[name]
+            for name in self._interrupt_target_names(attempt.request)
+        )
+        aggregate = InterruptAggregateResult.from_results(
+            session_id=self._session_id,
+            turn_id=attempt.turn_id,
+            subsystem_results=ordered,
+            timeout_seconds=attempt.request.timeout_seconds,
+            safe_message="Interrupt subsystem coordination completed.",
+            retryable=any(result.retryable for result in ordered),
+            public_metadata={
+                "boundary": "interrupt_coordination",
+                "default_timeout_applied": attempt.request.timeout_seconds is None,
+                "whole_request_duplicate_ordering_deferred": True,
+                "barge_in_execution_deferred": True,
+            },
+        )
+        return aggregate, motion_result
+
+    @staticmethod
     def _interrupt_targets_motion(request: InterruptRequest) -> bool:
         """Whether this existing interrupt request reaches the motion stage."""
 
@@ -2087,14 +2907,96 @@ class RealtimeSession:
             },
         )
 
+    def _coordinated_interrupt_result(
+        self,
+        *,
+        request: InterruptRequest,
+        current_turn_id: TurnId | str | None,
+        coordination_result: InterruptAggregateResult,
+    ) -> InterruptResult:
+        """Map the richer aggregate onto the accepted v5.2 outer enum."""
+
+        from .interrupt_coordination import InterruptAggregateOutcome
+
+        effective = any(
+            result.effective
+            for result in coordination_result.subsystem_results
+        )
+        if self._closed or self._close_requested:
+            outcome = "already_closed"
+            safe_message = "Session is already closed."
+            retryable = False
+        elif coordination_result.outcome in {
+            InterruptAggregateOutcome.TIMED_OUT,
+            InterruptAggregateOutcome.FAILED,
+        }:
+            outcome = "failed"
+            safe_message = "Interrupt coordination did not complete cleanly."
+            retryable = True
+        elif effective:
+            outcome = "accepted"
+            safe_message = "Interrupt coordination was accepted."
+            retryable = False
+        elif coordination_result.outcome is InterruptAggregateOutcome.ALREADY_TERMINAL:
+            outcome = "no_active_turn"
+            safe_message = "Realtime turn is already terminal."
+            retryable = False
+        elif current_turn_id is None and request.turn_id is None:
+            outcome = "no_active_turn"
+            safe_message = "There is no active realtime turn to interrupt."
+            retryable = False
+        elif coordination_result.outcome is InterruptAggregateOutcome.UNSUPPORTED:
+            outcome = "unsupported"
+            safe_message = "Requested interrupt targets are unsupported."
+            retryable = False
+        else:
+            # Preserve the accepted explicit-unknown-turn compatibility result.
+            outcome = "not_implemented"
+            safe_message = "No matching active interrupt target was found."
+            retryable = False
+
+        queue_results = tuple(
+            result
+            for result in coordination_result.subsystem_results
+            if result.subsystem.value == "tts_queue"
+        )
+        return InterruptResult(
+            outcome=outcome,
+            scope=request.scope,
+            reason=request.reason,
+            turn_id=request.turn_id or current_turn_id,
+            safe_message=safe_message,
+            retryable=retryable,
+            provider_cancel_supported=any(
+                result.provider_hard_cancel_supported
+                for result in coordination_result.subsystem_results
+            ),
+            queue_flush_supported=bool(
+                queue_results
+                and queue_results[0].outcome.value != "unsupported"
+            ),
+            public_metadata={
+                "boundary": "interrupt",
+                "coordination_outcome": coordination_result.outcome.value,
+                "coordination_effective": effective,
+            },
+            coordination_result=coordination_result,
+        )
+
     @staticmethod
     def _attach_motion_control_result(
         result: InterruptResult,
         motion_result: MotionControlResult | None,
+        coordination_result: InterruptAggregateResult | None = None,
     ) -> InterruptResult:
-        """Project one motion reach result without changing aggregate outcome."""
+        """Project additive control results without changing other facts."""
 
-        if motion_result is None:
+        attached_coordination = (
+            coordination_result
+            if coordination_result is not None
+            else result.coordination_result
+        )
+        if motion_result is None and attached_coordination is result.coordination_result:
             return result
         return InterruptResult(
             outcome=result.outcome,
@@ -2107,6 +3009,7 @@ class RealtimeSession:
             queue_flush_supported=result.queue_flush_supported,
             public_metadata=result.public_metadata,
             motion_result=motion_result,
+            coordination_result=attached_coordination,
         )
 
     def get_tts_queue_state(self) -> TTSQueueState:
@@ -2127,12 +3030,20 @@ class RealtimeSession:
 
     def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
         request = request or InterruptRequest()
-        motion_attempt = self._request_motion_control(request)
+        coordination_attempt = self._request_interrupt_coordination(request)
+        stage_results = self._resolve_interrupt_stage_attempts(
+            coordination_attempt
+        )
         with self._serialized_operation():
+            coordination_result, motion_result = self._resolve_interrupt_coordination(
+                coordination_attempt,
+                stage_results=stage_results,
+            )
             return self._interrupt_serialized(
                 request,
                 advance_reason="interrupt",
-                motion_result=self._resolve_motion_control_attempt(motion_attempt),
+                motion_result=motion_result,
+                coordination_result=coordination_result,
             )
 
     def _interrupt_serialized(
@@ -2141,6 +3052,7 @@ class RealtimeSession:
         *,
         advance_reason: GenerationAdvanceReason | str = "interrupt",
         motion_result: MotionControlResult | None = None,
+        coordination_result: InterruptAggregateResult | None = None,
     ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
@@ -2154,6 +3066,7 @@ class RealtimeSession:
             return self._attach_motion_control_result(
                 InterruptResult.already_closed(request=request),
                 motion_result,
+                coordination_result,
             )
 
         current_turn_id = (
@@ -2162,9 +3075,17 @@ class RealtimeSession:
         )
         no_active_turn = current_turn_id is None and request.turn_id is None
         result = (
-            InterruptResult.no_active_turn(request=request)
-            if no_active_turn
-            else InterruptResult.not_implemented(request=request)
+            self._coordinated_interrupt_result(
+                request=request,
+                current_turn_id=current_turn_id,
+                coordination_result=coordination_result,
+            )
+            if coordination_result is not None
+            else (
+                InterruptResult.no_active_turn(request=request)
+                if no_active_turn
+                else InterruptResult.not_implemented(request=request)
+            )
         )
         resolved_turn_id = request.turn_id or current_turn_id
         self._advance_generation(
@@ -2205,7 +3126,130 @@ class RealtimeSession:
                         "interrupt_outcome": result.outcome.value,
                     },
                 )
-                return self._attach_motion_control_result(result, motion_result)
+                return self._attach_motion_control_result(
+                    result,
+                    motion_result,
+                    coordination_result,
+                )
+
+            if result.outcome.value == "accepted":
+                self._transition(
+                    RealtimeEventType.INTERRUPT_ACCEPTED,
+                    RealtimeState.INTERRUPTED,
+                    turn_id=resolved_turn_id,
+                    new_phase=(
+                        RealtimePhase.RECOVERING
+                        if self._active_turn_id is not None
+                        else _PHASE_UNCHANGED
+                    ),
+                    payload=InterruptEventPayload(
+                        scope=request.scope,
+                        outcome=result.outcome,
+                        reason=request.reason.value,
+                    ),
+                    safe_message=result.safe_message,
+                    public_metadata={
+                        "scope": request.scope.value,
+                        "reason": request.reason.value,
+                        "coordination_outcome": (
+                            coordination_result.outcome.value
+                            if coordination_result is not None
+                            else "unavailable"
+                        ),
+                    },
+                )
+                if coordination_result is not None and coordination_result.is_terminal:
+                    self._transition(
+                        RealtimeEventType.INTERRUPT_COMPLETED,
+                        RealtimeState.INTERRUPTED,
+                        turn_id=resolved_turn_id,
+                        payload=InterruptEventPayload(
+                            scope=request.scope,
+                            outcome=result.outcome,
+                            reason=request.reason.value,
+                        ),
+                        safe_message=result.safe_message,
+                        public_metadata={
+                            "scope": request.scope.value,
+                            "reason": request.reason.value,
+                            "coordination_outcome": coordination_result.outcome.value,
+                        },
+                    )
+
+                if (
+                    resolved_turn_id is not None
+                    and resolved_turn_id == current_turn_id
+                    and self._terminal_registry.get(resolved_turn_id) is None
+                ):
+                    interrupted = RealtimeTurnResult.interrupted(
+                        turn_id=resolved_turn_id,
+                        safe_message="Realtime turn was interrupted.",
+                        public_metadata={
+                            "boundary": "interrupt_coordination",
+                            "coordination_outcome": (
+                                coordination_result.outcome.value
+                                if coordination_result is not None
+                                else "unavailable"
+                            ),
+                        },
+                        session_id=self._session_id,
+                        generation_id=self._active_generation_id,
+                    )
+                    self._commit_terminal_result(
+                        interrupted,
+                        event_type=RealtimeEventType.TURN_INTERRUPTED,
+                        new_state=RealtimeState.INTERRUPTED,
+                        reason="interrupt_coordination_completed",
+                        public_error_code=RealtimeErrorCode.INTERRUPTED,
+                        safe_message=interrupted.safe_message,
+                        retryable=True,
+                    )
+                    with self._turn_admission_lock:
+                        self._clear_active_turn_context()
+
+                self._set_phase(RealtimePhase.IDLE)
+                self._state = RealtimeState.IDLE
+                return self._attach_motion_control_result(
+                    result,
+                    motion_result,
+                    coordination_result,
+                )
+
+            if result.outcome.value == "failed":
+                self._transition(
+                    RealtimeEventType.INTERRUPT_COMPLETED,
+                    RealtimeState.INTERRUPTED,
+                    turn_id=resolved_turn_id,
+                    new_phase=(
+                        RealtimePhase.RECOVERING
+                        if self._active_turn_id is not None
+                        else _PHASE_UNCHANGED
+                    ),
+                    payload=InterruptEventPayload(
+                        scope=request.scope,
+                        outcome=result.outcome,
+                        reason=request.reason.value,
+                    ),
+                    public_error_code=RealtimeErrorCode.STAGE_FAILED,
+                    safe_message=result.safe_message,
+                    retryable=result.retryable,
+                    public_metadata={
+                        "scope": request.scope.value,
+                        "reason": request.reason.value,
+                        "coordination_outcome": (
+                            coordination_result.outcome.value
+                            if coordination_result is not None
+                            else "unavailable"
+                        ),
+                    },
+                )
+                self._set_phase(RealtimePhase.IDLE)
+                self._state = RealtimeState.IDLE
+                return self._attach_motion_control_result(
+                    result,
+                    motion_result,
+                    coordination_result,
+                )
 
             next_phase = (
                 RealtimePhase.RECOVERING
@@ -2237,11 +3281,16 @@ class RealtimeSession:
                     safe_message="Realtime turn is already terminal.",
                 ),
                 motion_result,
+                coordination_result,
             )
 
         self._set_phase(RealtimePhase.IDLE)
         self._state = RealtimeState.IDLE
-        return self._attach_motion_control_result(result, motion_result)
+        return self._attach_motion_control_result(
+            result,
+            motion_result,
+            coordination_result,
+        )
 
     def cancel_current_turn(
         self,
@@ -2259,12 +3308,20 @@ class RealtimeSession:
             cancel_tts_queue=True,
             public_metadata=public_metadata or {},
         )
-        motion_attempt = self._request_motion_control(request)
+        coordination_attempt = self._request_interrupt_coordination(request)
+        stage_results = self._resolve_interrupt_stage_attempts(
+            coordination_attempt
+        )
         with self._serialized_operation():
+            coordination_result, motion_result = self._resolve_interrupt_coordination(
+                coordination_attempt,
+                stage_results=stage_results,
+            )
             return self._interrupt_serialized(
                 request,
                 advance_reason="cancel",
-                motion_result=self._resolve_motion_control_attempt(motion_attempt),
+                motion_result=motion_result,
+                coordination_result=coordination_result,
             )
 
     def acknowledge_host_playback_stop(
