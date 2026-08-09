@@ -6935,3 +6935,96 @@ This sync authorizes only Control B exact contract review after the sync is
 committed, pushed, and remotely verified. It does not authorize Control B or
 FW-RT6-9d implementation.
 <!-- FW-RT6-9c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9c Control B — ordered barge-in execution acceptance sync
+
+```text
+checkpoint: FW-RT6-9c Control B
+baseline head: 99993eaedf9956a87c21799bce090ab224884e50
+FW-RT6-9b final acceptance: 42dcf194909504a1a09ea6612d81db1b56a008f9
+Control A implementation: f6921f1933f0d4efa1463bcf23710cd46f528280
+Control A acceptance sync: 4f1fdc0de949f236703c0e6d23a8d43abf8636e5
+Control B implementation: 99993eaedf9956a87c21799bce090ab224884e50
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B implementation surface: 7 files
+dedicated Control B source gate: PASS
+focused Control B barge-in execution tests: 12 / PASS
+focused Control A+B barge-in tests: 24 / PASS
+full Framework unit suite: 466 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-9a aggregate regression: PASS
+accepted FW-RT6-9b aggregate regression: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+stable explicit plan package: framework.barge_in_control / PASS
+RealtimeSession.execute_barge_in(plan): ADOPTED / PASS
+decision automatically executes: False / PASS
+exact coordinator request delegation: SAME OBJECT / PASS
+whole-request ordered interrupt owner reused: True / PASS
+second interrupt/terminal/flush owner introduced: False / PASS
+plan capability/session mismatch: REJECTED / PASS
+non-executing plan result: InterruptOutcome.UNSUPPORTED / PASS
+non-executing plan interrupt/flush/event effects: False / PASS
+unsupported flush execution: False / PASS
+unsupported hard cancel effective mode: soft_interrupt / PASS
+duplicate result: EXACT OWNER InterruptResult OBJECT / PASS
+duplicate subsystem/flush/event effects repeated: False / PASS
+barge-in event order: DECISION BEFORE INTERRUPT BEFORE TERMINAL / PASS
+multiple turn terminal events: False / PASS
+barge-in policy triggers microphone: False / PASS
+BargeInPolicy flush field/factory collision: FIXED / COMPATIBLE / PASS
+root import loads framework.barge_in_control eagerly: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+InterruptRequest / InterruptResult fields: UNCHANGED / PASS
+event vocabulary: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-9c aggregate: NOT_COMPLETED
+FW-RT6-9c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-9d implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts `RealtimeSession.execute_barge_in(plan)` as the explicit
+provider-neutral execution boundary. Host code remains responsible for
+microphone, speech-activity, and barge-in detection. A policy decision and its
+immutable control plan do not execute themselves; the host must explicitly
+submit the validated plan to the session.
+
+An executing plan hands its exact `coordinator_request` object to the accepted
+whole-request ordered interrupt owner. Control B adds no parallel coordinator,
+terminal registry, flush owner, or event sequencer. Concurrent and later
+execution for the same resolved turn therefore replays the exact owner
+`InterruptResult` without repeating stage cancellation, queue/output effects,
+interrupt events, or the single turn-terminal event.
+
+The plan's provider-hard-cancel and queue-flush capability facts must agree
+with the executing session. A mismatch is rejected rather than reinterpreted.
+Rejected, disabled, and unsupported flush-only plans carry no coordinator
+request and return a typed unsupported result without interrupt, flush, motion,
+terminal, or event effects. Unsupported hard cancel and turn takeover retain
+their truthful `soft_interrupt` downgrade and cannot claim provider execution.
+
+Existing barge-in decision events precede the existing ordered interrupt event
+sequence and its terminal event. No event type, root export, factory parameter,
+`InterruptRequest`/`InterruptResult` field, or API version changes. The
+`BargeInPolicy.flush_output()` factory remains compatible while its colliding
+instance field is restored to a truthful boolean default.
+
+Control B does not close any of the five FW-RT6-9c aggregate task checkboxes.
+Aggregate acceptance remains Control C work. This sync authorizes only Control
+C exact contract review after the sync is committed, pushed, and remotely
+verified; it does not authorize Control C or FW-RT6-9d implementation.
+<!-- FW-RT6-9c-B-ACCEPTANCE-SYNC:END -->
