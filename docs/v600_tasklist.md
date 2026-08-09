@@ -6761,3 +6761,94 @@ candidates. Final closed status remains deferred to a reviewed, committed,
 pushed, and remotely verified one-file final acceptance sync. FW-RT6-9c
 barge-in decision and execution remains not authorized.
 <!-- FW-RT6-9b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9b — interrupt ordering final acceptance sync
+
+```text
+checkpoint: FW-RT6-9b final acceptance
+baseline head: 92843ffb559f54e54c8f8b80c87f3fdec981e2aa
+Control A implementation: b2557a6aa08a3af89ea527413dc37ac85f458d05
+Control A acceptance sync: e92f6929fd673c1c1b53cbcb19a2c5a23e446e56
+Control B implementation: 6b9a9629239f969a51325cbf35d0e4be444c5689
+Control B corrective: 1f05e9d6da9ccbd29c198f577cf8155318b06486
+Control B acceptance sync: 941887a36e530be77aaa2406251913166b976734
+Control C aggregate implementation: 92843ffb559f54e54c8f8b80c87f3fdec981e2aa
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A interrupt-ordering tests: 12 / PASS
+focused Control B interrupt-ordering tests: 11 / PASS
+full Framework unit suite: 442 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-9a aggregate regression: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+explicit package: framework.interrupt_ordering / PASS
+ordering rules: 6 EXACT / PASS
+admission outcomes: 5 EXACT / PASS
+public interrupt request ID introduced: False / ACCEPTED
+idempotency key: (session_id, resolved_turn_id) / PASS
+whole-request owner: RealtimeSession PRIVATE / PASS
+duplicate wait outside operation lock: True / PASS
+duplicate result: EXACT OWNER InterruptResult OBJECT / PASS
+duplicate subsystem/flush/event effects repeated: False / PASS
+same-owner interrupt callback replay: EXACT PREPARED OWNER RESULT / PASS
+same-owner interrupt callback self-deadlock: False / PASS
+normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
+unsupported interrupt overclaims turn terminal: False / PASS
+close race: FIRST ADMISSION WINS / PASS
+owner flush before terminal: True / PASS
+standalone flush repeats owner effect: False / PASS
+same-owner reentrant flush: PREPARED RESULT REUSE / PASS
+same-owner reentrant flush effect count: 1 / PASS
+new turn during interrupt: TYPED REJECT interrupt_in_progress / PASS
+multiple turn terminal events: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+barge-in decision/execution changed: False
+FW-RT6-9b tasks: 7 / 7 ACCEPTED
+FW-RT6-9b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-9c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-9c implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-9b is accepted as the provider-neutral whole-request interrupt-ordering
+boundary. The existing Framework session identity and the turn resolved once at
+admission form the sole idempotency key; no second public interrupt request ID
+is introduced. The first admission owns subsystem execution and the interrupt
+terminal reservation. Concurrent and later duplicates wait outside the
+operation lock and replay the exact owner `InterruptResult` without repeating
+subsystem, flush, interrupt-event, or turn-terminal effects.
+
+The immutable owner result is prepared before synchronous Framework interrupt
+callbacks, so a same-owner reentrant interrupt or cancel returns that exact
+result without waiting on its own completion event. The typed owner flush result
+is likewise prepared before the synchronous flush callback, so reentrant and
+standalone same-turn flush requests cannot repeat the owner effect.
+
+Normal completion versus interrupt remains first terminal reservation wins,
+while close versus interrupt remains first admission wins. An owner-requested
+flush completes before the interrupt terminal. A genuinely new turn during
+active interrupt work receives the existing typed `interrupt_in_progress`
+rejection. Unsupported paths do not claim an unobserved terminal or physical
+effect, and exactly one turn-terminal event remains authoritative.
+
+This sync closes FW-RT6-9b only. It changes no runtime source and does not add
+barge-in decision or execution behavior. It authorizes FW-RT6-9c exact contract
+review after this sync is committed, pushed, and remotely verified, not
+FW-RT6-9c implementation.
+<!-- FW-RT6-9b-FINAL-ACCEPTANCE-SYNC:END -->
