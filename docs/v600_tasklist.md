@@ -7889,3 +7889,74 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-10b exact contract review is authorized. This sync does not authorize
 FW-RT6-10b implementation.
 <!-- FW-RT6-10a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10b Control A — session close/dispose control-plan acceptance sync
+
+```text
+checkpoint: FW-RT6-10b Control A
+baseline head: d0e977193faafbcc60e17436f4c2b5bb5547683a
+FW-RT6-10a final acceptance: ffb67d8cf089cf0b9e0d0c517614517186201a17
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A implementation surface: 5 files
+dedicated Control A source gate: PASS
+focused Control A session-close tests: 12 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 532 / PASS
+stable explicit package: framework.session_close / PASS
+session close owner: public session / REUSED / PASS
+second close owner introduced: False / PASS
+active turn terminal outcome: TurnOutcome.CLOSED / TYPED / PASS
+cleanup targets: 5 / TYPED / PASS
+stage cleanup timeout: PLANNED / NOT_EXECUTED
+provider-client cleanup timeout: PLANNED / NOT_EXECUTED
+execution-bridge cleanup timeout: PLANNED / NOT_EXECUTED
+callback-hub cleanup: TYPED / NOT_EXECUTED
+duplicate close outcome: already_closed / PASS
+duplicate close re-runs cleanup: False / PASS
+cleanup failure reopens session: False / PASS
+cleanup diagnostics: COUNT_ONLY / PUBLIC_SAFE / PASS
+plan automatically executes: False / PASS
+runtime close/dispose adoption: DEFERRED_TO_CONTROL_B
+root import loads framework.session_close eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10b aggregate: NOT_COMPLETED
+FW-RT6-10b tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts `framework.session_close` as the stable explicit planning
+and result package for unified close/dispose semantics. The public session
+remains the lifecycle owner. The plan does not introduce a second close owner,
+invoke a session method, terminate a turn, close a callback hub, call a
+provider, or shut down an execution bridge.
+
+An active nonterminal turn is planned to reach the existing typed
+`TurnOutcome.CLOSED` terminal outcome before session cleanup completes. Stage,
+provider-client, callback-hub, and execution-bridge cleanup remain distinct
+typed targets. Stage, provider-client, and bridge cleanup carry finite planned
+deadlines, while actual timeout enforcement remains deferred to Control B.
+
+A successful first close is distinct from `already_closed`. Repeated close is
+idempotent and plans no repeated cleanup. Cleanup timeout or failure remains a
+truthful typed result but never reopens the session. Diagnostics retain only
+bounded public-safe counts and messages; they retain no raw provider exception,
+payload, credential, transcript, path, or application-private value.
+
+Control A changes no existing runtime close path and closes none of the seven
+FW-RT6-10b aggregate task checkboxes. This one-file sync authorizes only
+Control B exact contract review after it is committed, pushed, and remotely
+verified. It does not authorize Control B runtime implementation or Control C.
+<!-- FW-RT6-10b-A-ACCEPTANCE-SYNC:END -->
