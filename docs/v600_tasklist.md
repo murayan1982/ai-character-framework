@@ -7546,3 +7546,78 @@ After this one-file sync is reviewed, committed, pushed, and remotely
 verified, FW-RT6-10a exact contract review is authorized. This sync does not
 authorize FW-RT6-10a implementation.
 <!-- FW-RT6-9d-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10a Control A — recovery/reset control-plan acceptance sync
+
+```text
+checkpoint: FW-RT6-10a Control A
+baseline head: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A implementation surface: 5 files
+dedicated Control A source gate: PASS
+focused Control A recovery/reset tests: 13 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 506 / PASS
+stable explicit package: framework.recovery_control / PASS
+existing recovery vocabulary: RecoveryAction / REUSED / PASS
+second recovery owner introduced: False / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reset planning requires generation advance: True / PASS
+turn reset provider-context loss: DOCUMENTED / PASS
+session reset provider-context loss: DOCUMENTED / PASS
+reconnect required disposition: TYPED / PASS
+close required disposition: TYPED / PASS
+permanently failed disposition: TYPED / PASS
+reset failure result: RecoveryResetResult / TYPED / PASS
+reset failure error: RecoveryResetErrorCode / PUBLIC_SAFE / PASS
+applied reset distinct generations required: True / PASS
+failed reset claims generation advance: False / PASS
+decision automatically executes: False / PASS
+RealtimeSession.reset exists: False / PASS
+root import loads framework.recovery_control eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-10a aggregate: NOT_COMPLETED
+FW-RT6-10a tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts `framework.recovery_control` as the stable explicit planning
+package. The existing root-public `RecoveryAction` remains the sole recovery
+decision vocabulary; the plan adds no parallel recovery owner and does not
+reinterpret a terminal turn result.
+
+`reset_turn` and `reset_session` project to the explicit `turn_only` and
+`session` scopes. Both plans truthfully require a generation advance before a
+new correlated value may be accepted. Control A does not perform that advance,
+allocate a replacement generation, mutate session state, call a provider, or
+add `RealtimeSession.reset()`.
+
+Turn-only reset documents loss of active-turn provider and in-flight stage
+context. Session reset additionally documents loss of provider conversation
+and provider-session context. Reconnect, close, and permanent failure retain
+separate typed dispositions and cannot be relabeled as successful reset.
+
+`RecoveryResetResult` fixes the later execution result vocabulary. Applied
+reset requires distinct previous/current generation identities. Failed reset
+requires a public-safe `RecoveryResetErrorCode` and cannot claim generation
+advance. No raw provider exception, payload, credential, transcript, path, or
+application-private value is retained.
+
+Control A closes none of the seven FW-RT6-10a aggregate task checkboxes. This
+one-file sync authorizes only Control B exact contract review after it is
+committed, pushed, and remotely verified. It does not authorize Control B
+runtime implementation or FW-RT6-10b implementation.
+<!-- FW-RT6-10a-A-ACCEPTANCE-SYNC:END -->
