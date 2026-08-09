@@ -4591,3 +4591,101 @@ open. Aggregate closure and final acceptance remain separately reviewed
 Control C and final-sync work after an exact one-file Control B acceptance
 sync is committed, pushed, and remotely verified.
 <!-- FW-RT6-9d-B-RUNTIME-ADOPTION:END -->
+
+
+<!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9d Control C — aggregate end-to-end stale enforcement boundary
+
+Control C accepts one freshness owner and four runtime delivery owners as the
+complete provider-neutral stale-result boundary:
+
+```text
+freshness owner: RealtimeGenerationGate
+text generation owner: ProviderNeutralTextGenerationStream
+voice input owner: VoiceInputSession
+voice output owner: CancelableProviderNeutralVoiceSynthesisStage
+motion owner: MotionSession / RealtimeSession motion lifecycle
+```
+
+Every correlated runtime value is submitted through the existing atomic
+application operation before it crosses its owner boundary:
+
+```python
+decision = generation_gate.apply_completion(
+    RealtimeStageCompletionEnvelope(
+        turn_id=turn_id,
+        generation_id=generation_id,
+        stage=stage,
+        value=value,
+    ),
+    deliver=apply_bounded_owner_state,
+)
+```
+
+The accepted exact stage vocabulary remains `text_generation_delta`,
+`voice_input_transcript`, `voice_output_artifact`, and `motion_completion`.
+Freshness classification and the bounded application callback execute under
+the same reentrant gate lock. A current application therefore finishes before
+a competing generation advance; when retirement wins first, the callback is
+not invoked.
+
+Text generation checks before delta indexing, delivery counting, return, and
+completed-history accumulation. A retired delta closes the correlated stream
+without exposing the old value. Standalone provider-neutral streams preserve
+their accepted gate-less construction behavior.
+
+Voice input checks after listening completion and before `TRANSCRIPT_FINAL`.
+An abort or close that retires the in-flight generation first returns the
+existing interrupted result and typed stale diagnostic without publishing the
+old transcript. Provider and microphone execution remain outside the bounded
+callback.
+
+Voice output checks before publishing an FW-owned artifact handoff. Stale
+results expose neither an artifact reference nor an audio URL. If provider work
+already created an unbound FW artifact, suppression binds it only long enough
+to invalidate it deterministically; playback and provider work remain outside
+the gate.
+
+Motion checks before changing owner state to completed or publishing
+`MOTION_COMPLETED`. A retired completion retains the existing interrupted
+result and typed stale diagnostic. The existing motion/event owners and the
+central `RealtimeSession` ingress remain authoritative.
+
+The existing `accepted_completion_count` and `stale_completion_count` remain
+the only completion counters. `GenerationAdmissionDecision` retains the exact
+`stale_reason`, `retired_by`, and current-generation facts. No host-side
+generation comparison or second freshness registry is required.
+
+Control C changes no Framework runtime source, existing test, generation
+diagnostic key, event type, result field, root export, factory parameter, or
+API version. It adds the aggregate regression gate and marks the six
+FW-RT6-9d tasks as accepted candidates. Final closure remains a separate
+one-file acceptance sync, and FW-RT6-10a recovery/reset implementation remains
+not authorized.
+
+```text
+exact Control C surface: 3 files
+existing freshness owner reused: RealtimeGenerationGate / PASS
+second freshness registry introduced: False / PASS
+atomic generation check and bounded application: PASS
+four runtime delivery owners adopted: 4 / 4 / PASS
+text delta late delivery: False / PASS
+final transcript late delivery: False / PASS
+TTS artifact late handoff: False / PASS
+motion completion late publication: False / PASS
+close/reset/new turn old callback drop: PASS
+provider-created stale FW artifact invalidated: True / PASS
+stale count and typed drop reason retained: PASS
+generation diagnostics keys changed: False / PASS
+framework root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-9d tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-9d final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:END -->

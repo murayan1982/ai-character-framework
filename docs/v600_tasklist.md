@@ -2908,12 +2908,12 @@ True
 
 **Tasks:**
 
-- [ ] text delta delivery前にgeneration checkする。
-- [ ] transcript delivery前にcheckする。
-- [ ] TTS artifact publish前にcheckする。
-- [ ] motion completion publish前にcheckする。
-- [ ] close/reset/new turn後のold callbackをdropする。
-- [ ] stale count/drop reasonをdiagnosticsへ記録する。
+- [x] text delta delivery前にgeneration checkする。
+- [x] transcript delivery前にcheckする。
+- [x] TTS artifact publish前にcheckする。
+- [x] motion completion publish前にcheckする。
+- [x] close/reset/new turn後のold callbackをdropする。
+- [x] stale count/drop reasonをdiagnosticsへ記録する。
 
 **Acceptance:**
 
@@ -7388,3 +7388,89 @@ This one-file sync authorizes only Control C exact contract review after it is
 committed, pushed, and remotely verified. It does not authorize Control C
 implementation or FW-RT6-10a recovery/reset implementation.
 <!-- FW-RT6-9d-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9d Control C — end-to-end stale enforcement aggregate acceptance
+
+```text
+checkpoint: FW-RT6-9d Control C aggregate acceptance candidate
+baseline head: 41ec997f1060a010e9f8d9339f0d9e40177c989f
+FW-RT6-9c final acceptance: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+Control A implementation: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+Control A acceptance sync: d01476a02586940dc7950ae18f7c8f2e96f706fe
+Control B implementation: c09aa53d262308ceeb8652c29b198898cb94c9c6
+Control B acceptance sync: 41ec997f1060a010e9f8d9339f0d9e40177c989f
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+dedicated Control C aggregate gate: PASS
+focused Control A stale-delivery tests: 13 / PASS
+focused Control B stale-delivery tests: 14 / PASS
+focused Control A+B stale-delivery tests: 27 / PASS
+full Framework unit suite: 493 / PASS
+existing freshness owner: RealtimeGenerationGate / REUSED / PASS
+second freshness registry introduced: False / PASS
+atomic operation: RealtimeGenerationGate.apply_completion / PASS
+generation check and bounded application lock section: SAME / PASS
+four runtime delivery owners adopted: 4 / 4 / PASS
+text delta delivery before generation check: False / PASS
+transcript delivery before generation check: False / PASS
+TTS artifact publication before generation check: False / PASS
+motion completion publication before generation check: False / PASS
+new turn old text delta delivered: False / PASS
+abort/close old transcript delivered: False / PASS
+retired TTS audio handoff exposed: False / PASS
+retired motion completed event published: False / PASS
+provider-created stale FW artifact invalidated: True / PASS
+close/reset/new turn old callback drop: PASS
+all stage late-result scenarios: PASS
+silent corruption: False / PASS
+stale count: EXISTING stale_completion_count / PASS
+drop reason: EXISTING typed GenerationAdmissionDecision / PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+root-public generation-gate names added: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-9d tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-9d final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted atomic freshness/application boundary and
+its four exact runtime owners. `RealtimeGenerationGate` remains the sole
+generation registry and admission owner. Text delta, final transcript,
+voice-output artifact, and motion completion values cross their existing
+host-visible boundaries only through the accepted `apply_completion(...)`
+operation.
+
+For a current generation, one bounded owner-state application completes while
+the gate lock still excludes a competing generation advance. If a new turn,
+abort, close, interrupt, cancel, reset, or terminal retirement wins first, the
+exact typed decision rejects the stale envelope before its value can change
+stream history, emit a final transcript, expose an audio handoff, or publish a
+completed motion event.
+
+Provider, network, microphone, playback, and VTube Studio work remain outside
+the bounded gate callback. A provider-created stale FW voice artifact is
+invalidated without exposing its handoff. Existing standalone text-stream
+composition remains compatible when no common gate is supplied.
+
+The existing accepted/stale completion counters and typed drop facts remain
+authoritative. No generation-diagnostic key, event type, result field, root
+export, factory parameter, or API version changes. Control C adds no second
+freshness owner and no recovery/reset API.
+
+Control C changes no runtime source or existing test. It adds the aggregate
+regression gate and marks the six FW-RT6-9d tasks as acceptance candidates.
+Final closed status remains deferred to a reviewed, committed, pushed, and
+remotely verified one-file final acceptance sync. FW-RT6-10a implementation
+remains not authorized.
+<!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:END -->
