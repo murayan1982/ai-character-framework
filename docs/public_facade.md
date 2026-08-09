@@ -3939,6 +3939,81 @@ commit / push: NOT_AUTHORIZED
 <!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:END -->
 
 
+<!-- FW-RT6-9b-A-INTERRUPT-ORDERING:BEGIN -->
+## FW-RT6-9b Control A — explicit interrupt ordering models
+
+Applications and contract tests may inspect the future whole-request ordering
+policy through an explicit import. These names are intentionally absent from
+the Framework root in Control A.
+
+```python
+from framework.interrupt_ordering import (
+    DEFAULT_INTERRUPT_ORDERING_POLICY,
+    InterruptAdmissionOutcome,
+    InterruptOrderingDecision,
+    InterruptOrderingKey,
+    InterruptOrderingPolicy,
+    InterruptOrderingRule,
+)
+```
+
+The policy does not add a public interrupt request ID. Whole-turn interruption
+already converges on one session-local turn terminal, so the stable identity is
+the accepted session plus the turn resolved once at admission.
+
+```text
+public interrupt request ID introduced: False
+idempotency key: (session_id, resolved_turn_id)
+```
+
+The six exact rules select turn identity, owner-result replay, first terminal
+reservation for completion races, first admission for close races, owner flush
+before its terminal, and typed rejection of a new turn during interrupting.
+Only an `OWNER` decision may execute interrupt work and reserve the terminal.
+`DUPLICATE_REPLAY` must reuse the owner's terminal result and is explicitly
+side-effect-free. Existing-terminal and closed decisions also claim no effect.
+
+The intended Control B public behavior is fixed as follows:
+
+```text
+duplicate result: REPLAY OWNER TERMINAL RESULT
+normal completion race: FIRST TERMINAL RESERVATION WINS
+close race: FIRST ADMISSION WINS
+flush race: OWNER FLUSH BEFORE TERMINAL
+new turn during interrupt: TYPED REJECT
+multiple turn terminal events: False
+```
+
+Control A changes neither root-public `InterruptRequest` nor `InterruptResult`.
+It also changes no `RealtimeSession` source, public factory parameter, event
+type, or API version. The private owner registry, duplicate wait/replay,
+terminal reservation, runtime flush/close/turn admission ordering, and
+deterministic fake race tests remain Control B work. The seven FW-RT6-9b tasks
+therefore stay open, and FW-RT6-9c barge-in execution remains outside scope.
+
+```text
+exact Control A surface: 5 files
+explicit package exports: 6 / EXACT
+ordering rules: 6 / EXACT
+admission outcomes: 5 / EXACT
+public interrupt request ID introduced: False
+idempotency key: (session_id, resolved_turn_id)
+duplicate result: REPLAY OWNER TERMINAL RESULT
+multiple turn terminal events: False
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+deterministic fake race execution: DEFERRED TO CONTROL B
+FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9b-A-INTERRUPT-ORDERING:END -->
+
+
 <!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
 ## FW-RT6-9a Control C — interrupt coordinator aggregate acceptance
 

@@ -3299,3 +3299,92 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9a-B-INTERRUPT-COORDINATION-ADOPTION:END -->
+
+
+<!-- FW-RT6-9b-A-INTERRUPT-ORDERING:BEGIN -->
+## FW-RT6-9b Control A — duplicate interrupt and race ordering contract
+
+Control A fixes the provider-neutral ordering policy in the explicit-only
+`framework.interrupt_ordering` package. It adds models and validation only;
+`RealtimeSession` does not import the package yet and no runtime lock, owner,
+wait, terminal reservation, flush, close, or turn-admission behavior changes.
+
+```python
+from framework.interrupt_ordering import (
+    DEFAULT_INTERRUPT_ORDERING_POLICY,
+    InterruptAdmissionOutcome,
+    InterruptOrderingDecision,
+    InterruptOrderingKey,
+)
+```
+
+The accepted request identity decision is deliberately small:
+
+```text
+public interrupt request ID introduced: False
+idempotency key: (session_id, resolved_turn_id)
+```
+
+One resolved turn already has exactly one Framework terminal boundary. A
+second public request ID would allow callers to describe multiple independent
+interrupt operations for the same terminal turn and would weaken whole-turn
+idempotency. An interrupt without an explicit `turn_id` must therefore resolve
+the current turn once at admission; that resolved identity, together with the
+session identity, is the stable key for the entire operation.
+
+Control B must adopt the following order without reinterpretation:
+
+1. The first interrupt admission for a key becomes the sole owner and reserves
+   that turn's interrupt terminal before any long-running subsystem control.
+2. A concurrent or later duplicate waits for and reuses the owner's exact
+   terminal `InterruptResult`. It emits no second interrupt/turn-terminal event
+   and does not repeat cancel, queue, artifact, motion, or flush effects.
+3. Normal completion versus interrupt is decided by the first terminal
+   reservation. A pre-existing normal terminal wins without interrupt effects;
+   an interrupt reservation suppresses a later normal terminal publication.
+4. Close versus interrupt is decided by first admission. Close admitted first
+   yields the existing closed result; an interrupt owner admitted first
+   finalizes its result before close finishes.
+5. A flush requested by the interrupt owner executes once before that owner's
+   terminal result. A standalone flush admitted during interrupting is
+   serialized after the owner and cannot repeat the owner's flush.
+6. A new turn requested while an interrupt owner is active returns the existing
+   typed rejected turn result with public-safe reason `interrupt_in_progress`;
+   it does not block and cannot become the active turn implicitly.
+
+`InterruptOrderingDecision` reports only admission facts. `OWNER` is the sole
+decision allowed to execute interrupt work and reserve the terminal;
+`DUPLICATE_REPLAY` is required to reuse the owner result without side effects.
+Existing-terminal, closed, and new-turn-rejected decisions cannot claim
+execution. These models do not claim that Control B runtime adoption already
+exists.
+
+The accepted root `InterruptRequest` and `InterruptResult` field inventories,
+factory signature, root-public exports, event vocabulary, and API versions stay
+unchanged. Deterministic fake runtime race execution remains Control B work, so
+none of the seven aggregate tasklist checkboxes close in Control A. Barge-in
+decision/execution remains FW-RT6-9c.
+
+```text
+exact Control A surface: 5 files
+stable explicit package: framework.interrupt_ordering
+public interrupt request ID introduced: False
+idempotency key: (session_id, resolved_turn_id)
+duplicate result: REPLAY OWNER TERMINAL RESULT
+normal completion race: FIRST TERMINAL RESERVATION WINS
+close race: FIRST ADMISSION WINS
+flush race: OWNER FLUSH BEFORE TERMINAL
+new turn during interrupt: TYPED REJECT
+multiple turn terminal events: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+deterministic fake race execution: DEFERRED TO CONTROL B
+FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9b-A-INTERRUPT-ORDERING:END -->
