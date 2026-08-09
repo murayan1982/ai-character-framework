@@ -31,6 +31,7 @@ from .output_control import (
     BargeInDecision,
     BargeInPolicy,
     BargeInPolicyMode,
+    InterruptOutcome,
     InterruptReason,
     InterruptRequest,
     InterruptResult,
@@ -79,6 +80,7 @@ from .realtime import (
 )
 
 if TYPE_CHECKING:
+    from .barge_in_control import BargeInControlPlan
     from .interrupt_coordination import InterruptAggregateResult
     from .motion import MotionErrorCode, MotionRequest, MotionResult, MotionState
     from .motion_control import MotionControlResult
@@ -4499,6 +4501,69 @@ class RealtimeSession:
                 policy=self._barge_in_policy,
                 safe_message="Realtime turn is already terminal.",
             )
+
+    def execute_barge_in(self, plan: BargeInControlPlan) -> InterruptResult:
+        """Execute one accepted control plan through the interrupt owner.
+
+        Detection and policy decision remain host-owned and separate.  This
+        method neither rebuilds nor broadens the plan: an executing plan's
+        exact ``coordinator_request`` is handed to the accepted ordered
+        interrupt path, while a non-executing plan returns a typed unsupported
+        result without emitting interrupt effects.
+        """
+
+        from .barge_in_control import BargeInControlPlan
+
+        if not isinstance(plan, BargeInControlPlan):
+            raise TypeError("plan must be a BargeInControlPlan")
+
+        capabilities = self._capability_snapshot
+        if (
+            plan.provider_hard_cancel_supported
+            is not capabilities.hard_cancel_supported
+            or plan.queue_flush_supported
+            is not capabilities.tts_queue_flush_supported
+        ):
+            raise ValueError(
+                "barge-in plan capabilities must match the executing session"
+            )
+
+        request = plan.coordinator_request
+        if request is not None:
+            return self._ordered_interrupt(request, advance_reason="interrupt")
+
+        result_request = plan.decision.interrupt_request or InterruptRequest(
+            scope=plan.decision.policy.interrupt_scope,
+            reason=InterruptReason.USER_BARGE_IN,
+            public_metadata={
+                "boundary": "barge_in_execution",
+                "requested_policy_mode": plan.requested_mode.value,
+                "effective_policy_mode": plan.effective_mode.value,
+                "capability_downgraded": plan.capability_downgraded,
+            },
+        )
+        if self._closed or self._close_requested:
+            return InterruptResult.already_closed(request=result_request)
+        return InterruptResult(
+            outcome=InterruptOutcome.UNSUPPORTED,
+            scope=result_request.scope,
+            reason=result_request.reason,
+            turn_id=result_request.turn_id,
+            safe_message=(
+                "Barge-in control plan has no supported interrupt execution."
+            ),
+            retryable=False,
+            provider_cancel_supported=plan.provider_hard_cancel_supported,
+            queue_flush_supported=plan.queue_flush_supported,
+            public_metadata={
+                "boundary": "barge_in_execution",
+                "requested_policy_mode": plan.requested_mode.value,
+                "effective_policy_mode": plan.effective_mode.value,
+                "capability_downgraded": plan.capability_downgraded,
+                "delegated_to_interrupt_coordinator": False,
+                "microphone_detection_required": False,
+            },
+        )
 
     def _close_injected_stages(self) -> None:
         if self._injected_stages_closed:

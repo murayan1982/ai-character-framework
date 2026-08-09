@@ -223,10 +223,10 @@ class BargeInControlATests(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             plan.execute_interrupt = False  # type: ignore[misc]
 
-    def test_control_a_does_not_adopt_runtime_or_import_provider_modules(self) -> None:
+    def test_control_models_do_not_import_provider_modules(self) -> None:
         from framework.realtime_session import RealtimeSession
 
-        self.assertFalse(hasattr(RealtimeSession, "execute_barge_in"))
+        self.assertTrue(hasattr(RealtimeSession, "decide_barge_in"))
         for module_name in (
             "pyvts",
             "websockets",

@@ -424,14 +424,6 @@ class BargeInPolicy:
         return cls(mode=BargeInPolicyMode.SOFT_INTERRUPT, interrupt_scope=InterruptScope.CURRENT_TURN)
 
     @classmethod
-    def flush_output(cls) -> "BargeInPolicy":
-        return cls(
-            mode=BargeInPolicyMode.FLUSH_OUTPUT,
-            interrupt_scope=InterruptScope.TTS_QUEUE,
-            flush_output=True,
-        )
-
-    @classmethod
     def hard_cancel(cls) -> "BargeInPolicy":
         return cls(
             mode=BargeInPolicyMode.HARD_CANCEL,
@@ -449,6 +441,27 @@ class BargeInPolicy:
             cancel_current_turn=True,
             allow_turn_takeover=True,
         )
+
+
+def _flush_output_barge_in_policy(cls: type[BargeInPolicy]) -> BargeInPolicy:
+    """Build the flush policy without shadowing the dataclass field default.
+
+    ``flush_output`` is both the accepted instance fact and the historical
+    class-level factory name.  Installing the factory after ``@dataclass`` has
+    captured the boolean default preserves both public call shapes without
+    turning the instance default into a bound method.
+    """
+
+    return cls(
+        mode=BargeInPolicyMode.FLUSH_OUTPUT,
+        interrupt_scope=InterruptScope.TTS_QUEUE,
+        flush_output=True,
+    )
+
+
+BargeInPolicy.flush_output = classmethod(  # type: ignore[assignment]
+    _flush_output_barge_in_policy
+)
 
 
 @dataclass(frozen=True)

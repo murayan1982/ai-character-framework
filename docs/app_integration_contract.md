@@ -3541,3 +3541,77 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9c-A-BARGE-IN-CONTROL:END -->
+
+
+<!-- FW-RT6-9c-B-BARGE-IN-EXECUTION:BEGIN -->
+## FW-RT6-9c Control B — barge-in plan execution adoption
+
+Control B adds one provider-neutral session method:
+
+```python
+result = session.execute_barge_in(plan)
+```
+
+The caller still owns microphone, speech-activity, and barge-in detection. It
+first obtains a pure `BargeInDecision`, builds a `BargeInControlPlan` against
+the session's immutable `capabilities`, and then explicitly supplies that plan
+for execution. `decide_barge_in(...)` does not call `execute_barge_in(...)` and
+does not execute an interrupt.
+
+`execute_barge_in(...)` accepts only a validated `BargeInControlPlan`. The hard
+cancel and queue-flush capability facts stored in that plan must match the
+executing session. A mismatch is rejected rather than reinterpreted or silently
+downgraded against a different runtime snapshot.
+
+An executing plan delegates the exact same `plan.coordinator_request` object to
+the accepted ordered interrupt owner. The method adds no second coordinator,
+terminal owner, flush owner, event sequencer, or duplicate registry. Therefore
+concurrent and later execution of the same turn plan inherits the accepted
+single-owner behavior and replays the same `InterruptResult` without repeating
+stage cancellation, flush, interrupt events, or the turn terminal event.
+
+A rejected, disabled, or unsupported flush-only plan carries no coordinator
+request. Execution returns a typed `InterruptOutcome.UNSUPPORTED` result and
+emits no interrupt or flush effect. A closed session returns the accepted
+`ALREADY_CLOSED` result. Hard-cancel and turn-takeover intent without advertised
+provider support remains the Control A `soft_interrupt` downgrade; only its
+supported request reaches the coordinator.
+
+Control B introduces no event type. For an executing accepted plan, existing
+barge-in decision events precede the existing interrupt requested/accepted/
+completed events and the single turn terminal. Non-executing plans add no
+interrupt event. Root exports, factory parameters, `InterruptRequest` and
+`InterruptResult` fields, and API versions stay unchanged.
+
+The implementation also repairs the historical `BargeInPolicy.flush_output`
+field/factory name collision. `BargeInPolicy.flush_output()` remains the
+accepted factory, while every instance now retains a real boolean
+`flush_output` field and the default, disabled, and soft policies are truthfully
+`False`.
+
+```text
+exact Control B surface: 7 files
+RealtimeSession.execute_barge_in(plan): ADOPTED
+decision automatically executes: False
+decision != execution: True
+plan capability/session mismatch: TYPED REJECT
+exact coordinator request delegation: True
+second interrupt owner introduced: False
+non-executing plan interrupt effects: False
+unsupported flush execution: False
+duplicate result: EXACT OWNER InterruptResult OBJECT
+barge-in event order: DECISION BEFORE INTERRUPT BEFORE TERMINAL
+microphone detection in core: False
+hard-cancel downgrade: soft_interrupt
+BargeInPolicy flush field/factory collision: FIXED / COMPATIBLE
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-9c aggregate tasks: 0 / 5 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+Control C: NOT_AUTHORIZED
+FW-RT6-9d: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9c-B-BARGE-IN-EXECUTION:END -->
