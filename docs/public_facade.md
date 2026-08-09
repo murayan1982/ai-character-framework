@@ -4689,3 +4689,73 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9d-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10a-A-RECOVERY-CONTROL:BEGIN -->
+## FW-RT6-10a Control A — explicit recovery/reset control plan
+
+Control A reuses the existing root-public `RecoveryAction` vocabulary and
+projects it into a stable explicit package without adding a second recovery
+owner:
+
+```python
+from framework.recovery_control import build_recovery_control_plan
+
+plan = build_recovery_control_plan(turn_result.recovery_action)
+```
+
+The plan is immutable and side-effect free. A recovery action, control plan,
+and later runtime reset execution remain distinct operations. Control A does
+not add `RealtimeSession.reset()`, advance a generation, call a provider reset,
+reconnect a client, or close a session.
+
+The exact reset scopes are `turn_only` and `session`. `reset_turn` plans a
+turn-only reset; it discards active-turn provider context and in-flight stage
+context while retaining the session-level boundary. `reset_session` plans a
+session reset; it additionally discards provider conversation and provider
+session context. Control B must retire the old generation and establish one
+distinct replacement generation before any new correlated value is admitted.
+
+`reconnect`, `close_session`, and `permanent_failure` never masquerade as
+successful reset. They become `reconnect_required`, `close_required`, and
+`permanently_failed` dispositions. A permanent failure also requires session
+closure and cannot claim reconnect or reset execution.
+
+`RecoveryResetResult` reserves the typed execution result contract. Applied
+reset results require distinct previous/current generation IDs. Failed reset
+results require a public-safe `RecoveryResetErrorCode` and cannot claim a
+generation advance. Provider errors, payloads, credentials, transcripts,
+paths, and raw exceptions are not retained.
+
+```text
+checkpoint: FW-RT6-10a Control A
+baseline head: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+exact Control A surface: 5 files
+stable explicit package: framework.recovery_control
+existing recovery vocabulary reused: RecoveryAction / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reset planning requires generation advance: True / PASS
+provider context loss: DOCUMENTED / PASS
+reconnect required: TYPED / PASS
+close required: TYPED / PASS
+permanently failed: TYPED / PASS
+reset failure result: RecoveryResetResult / TYPED / PASS
+decision != execution: True / PASS
+RealtimeSession.reset exists: False
+runtime adoption: DEFERRED TO CONTROL B
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-10a aggregate tasks: 0 / 7 CLOSED
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A fixes only the decision and result vocabulary. Generation retirement,
+replacement generation allocation, active-turn coordination, provider-context
+reset, and session method adoption remain separately reviewed Control B work.
+<!-- FW-RT6-10a-A-RECOVERY-CONTROL:END -->

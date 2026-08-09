@@ -3757,3 +3757,71 @@ FW-RT6-10a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9d-B-RUNTIME-ADOPTION:END -->
+
+
+<!-- FW-RT6-10a-A-RECOVERY-CONTROL:BEGIN -->
+## FW-RT6-10a Control A — host recovery/reset planning boundary
+
+Hosts continue to consume the existing `RealtimeTurnResult.recovery_action`.
+Control A adds an explicit provider-neutral planning package:
+
+```python
+from framework.recovery_control import build_recovery_control_plan
+
+plan = build_recovery_control_plan(result.recovery_action)
+```
+
+Planning does not execute recovery. `none` and `reuse_session` require no
+reset. `reset_turn` selects the explicit `turn_only` scope; `reset_session`
+selects `session`. Both reset plans truthfully require a generation advance,
+but Control A does not yet perform it.
+
+A turn-only reset loses the active-turn provider context and any in-flight
+stage context. A session reset additionally loses provider conversation and
+provider session context. Applications must not assume that provider memory,
+conversation history, connection affinity, or pending provider work survives
+a session reset.
+
+`reconnect`, `close_session`, and `permanent_failure` are not reset aliases.
+Their plans require reconnect, close, or permanent-failure handling
+respectively. A permanent failure also requires close and is never retryable by
+inventing a reset.
+
+The typed `RecoveryResetResult` contract distinguishes applied, not-required,
+reconnect-required, close-required, permanently-failed, and failed outcomes.
+Applied resets require distinct old/new generation IDs. Reset failure uses one
+public-safe `RecoveryResetErrorCode`; it does not publish raw provider errors
+or claim that generation advance succeeded.
+
+```text
+checkpoint: FW-RT6-10a Control A
+baseline head: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+exact Control A surface: 5 files
+stable explicit package: framework.recovery_control
+existing recovery vocabulary reused: RecoveryAction / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reset planning requires generation advance: True / PASS
+provider context loss: DOCUMENTED / PASS
+reconnect required: TYPED / PASS
+close required: TYPED / PASS
+permanently failed: TYPED / PASS
+reset failure result: RecoveryResetResult / TYPED / PASS
+decision != execution: True / PASS
+RealtimeSession.reset exists: False
+runtime adoption: DEFERRED TO CONTROL B
+public host reset call: NOT_AVAILABLE IN CONTROL A
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-10a aggregate tasks: 0 / 7 CLOSED
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Applications require no migration in Control A. Runtime execution remains an
+explicit later host/session call after separately reviewed Control B adoption.
+<!-- FW-RT6-10a-A-RECOVERY-CONTROL:END -->
