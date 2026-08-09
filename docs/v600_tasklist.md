@@ -6270,3 +6270,86 @@ Control B exact contract review after the sync commit/push is remotely
 verified; it does not authorize Control B, FW-RT6-9b, or FW-RT6-9c
 implementation.
 <!-- FW-RT6-9a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9a Control B — interrupt coordination runtime adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-9a Control B
+baseline head: 09752474a3178021a5153f8fdaa94aea59c4e5e8
+Control A implementation: 712a03e27db1ea6c2229f6907c54d581680bb208
+Control A acceptance sync: 3aaef5e6335c2c184450525a17d36f1783345268
+Control B implementation: 09752474a3178021a5153f8fdaa94aea59c4e5e8
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B surface: 5 files
+dedicated Control B gate: PASS
+focused Control B interrupt-coordination tests: 15 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+full Framework unit suite: 419 / PASS
+active-stage registry: RealtimeSession PRIVATE / PASS
+interrupt target dispatch and validation: PASS
+interrupt subsystems: 5 EXACT / PASS
+text-generation cancel reach: True / PASS
+TTS-generation cancel reach: True / PASS
+TTS pending-queue clear reach: True / PASS
+audio-artifact invalidation reach: True / PASS
+accepted motion-control projection reused: True / PASS
+stage control outside long session operation lock: PASS
+short registry locks held across stage calls: False / PASS
+accepted cancel late-delivery barrier: PASS
+bounded completion wait: PASS
+default internal completion bound: 0.25 seconds / PASS
+runtime partial result: PASS
+unsupported overclaim: False / PASS
+aggregate outcome derived from subsystem results: True / PASS
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+whole-request duplicate/race ordering: DEFERRED_TO_FW_RT6_9B
+barge-in decision/execution: DEFERRED_TO_FW_RT6_9C
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-9a aggregate: NOT_COMPLETED
+FW-RT6-9a tasklist: 0 / 9 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-9b implementation: NOT_AUTHORIZED
+FW-RT6-9c implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts `RealtimeSession` as the private runtime owner of active
+text-generation and TTS-generation stage work. Interrupt targets are resolved
+in stable `TEXT_GENERATION -> TTS_GENERATION -> TTS_QUEUE -> AUDIO_ARTIFACT ->
+MOTION` order, and the accepted motion-control result is reused rather than
+duplicated.
+
+Stage cancellation and motion control execute outside the long session
+operation lock, and no stage call executes while a short registry lock is
+held. Once cooperative cancellation is accepted, the one-way late-delivery
+barrier prevents the eventual provider return from reaching Framework output.
+An explicit positive request timeout supplies the completion budget; otherwise
+the internal 0.25 second safety bound applies without changing the public
+request projection.
+
+TTS generation cancellation, pending queue clearing, artifact invalidation,
+and motion remain separate capability-gated observations. Their typed results
+are combined only through `InterruptAggregateResult.from_results(...)`, so
+mixed observations remain truthful `PARTIAL` outcomes and unsupported paths do
+not overclaim effects. The existing v5.2 outer interrupt behavior, factory and
+root-public surfaces, and realtime and motion API versions remain unchanged.
+
+Control B does not close any of the nine FW-RT6-9a aggregate task checkboxes.
+Whole-request duplicate and race convergence remains FW-RT6-9b, while barge-in
+decision and execution remains FW-RT6-9c. This sync authorizes only Control C
+exact contract review after the sync commit/push is remotely verified; it does
+not authorize Control C, FW-RT6-9b, or FW-RT6-9c implementation.
+<!-- FW-RT6-9a-B-ACCEPTANCE-SYNC:END -->
