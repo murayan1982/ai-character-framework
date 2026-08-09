@@ -3388,3 +3388,81 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9b-A-INTERRUPT-ORDERING:END -->
+
+<!-- FW-RT6-9b-B-INTERRUPT-ORDERING-ADOPTION:BEGIN -->
+## FW-RT6-9b Control B — whole-request interrupt ordering adoption
+
+Control B adopts the accepted Control A ordering rules inside
+`RealtimeSession` without adding a public request ID or changing the existing
+interrupt request/result fields. The session owns one private registry keyed
+by the accepted `(session_id, resolved_turn_id)` identity. Admission resolves
+an omitted turn once, and the first matching active-turn request is the only
+owner allowed to reach cancellation, queue, artifact, motion, flush, or
+interrupt-event effects.
+
+A concurrent duplicate waits outside the long session operation lock. A later
+duplicate with the same resolved turn key also reuses the retained owner entry.
+Both return the exact owner `InterruptResult` object and neither emits another
+interrupt event or repeats a subsystem effect. `interrupt(...)` and
+`cancel_current_turn(...)` share this same private admission path.
+
+The owner reserves the turn terminal atomically with its registry admission.
+The central terminal commit path consults that reservation, so a normal
+completion admitted first remains authoritative, while a later normal terminal
+publication pauses outside the session lock until the interrupt owner resolves.
+An accepted owner publishes the single `TURN_INTERRUPTED` terminal and
+suppresses the deferred normal terminal. If the aggregate interrupt is not
+accepted, the reservation is released and any already prepared normal terminal
+is published instead; unsupported control therefore does not overclaim an
+interruption.
+
+Close uses the same first-admission boundary. A close admitted first keeps the
+existing closed result and blocks later interrupt effects. If the interrupt
+owner was admitted first, close waits without holding the session operation
+lock and completes only after the owner result is finalized. A reentrant close
+from the owner thread is deferred until owner completion, avoiding callback
+deadlock.
+
+When `InterruptRequest.flush_output` is true, the sole owner executes one typed
+output flush before its turn terminal. A standalone `flush_output(...)`
+admitted while that owner is active waits outside the operation lock and reuses
+the owner's flush result for the same turn, so it cannot repeat the owner effect.
+A genuinely new turn admitted during active interrupt work is rejected
+immediately with the existing typed `RealtimeTurnStartResult` / rejected
+`RealtimeTurnResult` and public-safe reason `interrupt_in_progress`. Repeating
+the already active turn identity remains an idempotent start and allocates no
+new work.
+
+The explicit `framework.interrupt_ordering` model package remains absent from
+the Framework root and is not eagerly imported. Runtime composition mirrors
+its accepted rules with private session state so the accepted Control A lazy
+root-import gate remains valid. Factory parameters, root-public names, event
+types, realtime/motion API versions, and provider/network boundaries are
+unchanged. Deterministic provider-free tests cover owner/duplicate replay,
+normal-terminal and close races, owner/standalone flush ordering, typed new-turn
+rejection, and the shared cancel/interrupt owner.
+
+```text
+exact Control B surface: 5 files
+private owner registry: RealtimeSession / PASS
+idempotency key: (session_id, resolved_turn_id) / PASS
+duplicate wait outside operation lock: True / PASS
+duplicate exact InterruptResult identity: True / PASS
+repeat subsystem/flush/event effects: False / PASS
+normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
+unsupported interrupt overclaims turn terminal: False / PASS
+close race: FIRST ADMISSION WINS / PASS
+owner flush before terminal: True / PASS
+standalone flush repeats owner effect: False / PASS
+new turn during interrupt: interrupt_in_progress typed reject / PASS
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+focused Control B tests: 9 / PASS
+FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
+Control C: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9b-B-INTERRUPT-ORDERING-ADOPTION:END -->

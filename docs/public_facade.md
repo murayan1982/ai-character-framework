@@ -4013,6 +4013,62 @@ commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9b-A-INTERRUPT-ORDERING:END -->
 
+<!-- FW-RT6-9b-B-INTERRUPT-ORDERING-ADOPTION:BEGIN -->
+## FW-RT6-9b Control B — ordered interrupt facade adoption
+
+`RealtimeSession.interrupt(...)` and `cancel_current_turn(...)` now converge on
+one private owner per accepted `(session_id, resolved_turn_id)` key. No public
+interrupt request ID is added. The first active-turn admission reserves its
+terminal before subsystem work; concurrent and later duplicates wait for and
+return the exact same owner `InterruptResult` without another cancel, queue,
+artifact, motion, flush, interrupt event, or turn-terminal event.
+
+The reservation participates in the existing terminal registry rather than
+replacing it. A normal terminal committed first remains authoritative. When
+the interrupt reservation wins, a later normal terminal publication is paused
+outside the long session operation lock. An accepted owner publishes the one
+`TURN_INTERRUPTED` result; an unsupported or otherwise unaccepted owner releases
+the reservation and allows the prepared normal terminal to publish, preventing
+effect overclaim.
+
+Close is ordered by first admission. Close admitted first preserves the
+existing closed result; interrupt admitted first completes its owner result
+before close finishes. An owner-requested output flush executes once before
+the owner terminal. A standalone flush admitted during that work waits and,
+for the same turn, reuses the owner flush result instead of repeating it.
+
+Starting a genuinely new turn while an interrupt owner is active returns the
+existing typed rejected start/terminal result immediately. Its public-safe
+reason is `interrupt_in_progress`, it allocates no generation, and it cannot
+replace the current turn. A same-turn idempotent start remains compatible.
+
+The public facade is otherwise unchanged: `InterruptRequest` and
+`InterruptResult` retain their accepted fields, the factory signature and event
+vocabulary do not grow, root-public exports remain 127, and API versions remain
+5.2.0 and 5.5.0. The explicit ordering package stays lazy and non-root-public;
+no provider, network, audio, microphone, or real VTS execution is introduced.
+
+```text
+exact Control B surface: 5 files
+whole-request owner: RealtimeSession PRIVATE / PASS
+duplicate result: EXACT OWNER OBJECT / PASS
+duplicate side effects/events: False / PASS
+normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
+close race: FIRST ADMISSION WINS / PASS
+flush race: OWNER FLUSH BEFORE TERMINAL / PASS
+new turn during interrupt: TYPED REJECT interrupt_in_progress / PASS
+multiple turn terminal events: False / PASS
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+focused Control B tests: 9 / PASS
+FW-RT6-9b aggregate tasks: 0 / 7 CLOSED
+Control C: NOT_AUTHORIZED
+FW-RT6-9c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9b-B-INTERRUPT-ORDERING-ADOPTION:END -->
+
 
 <!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
 ## FW-RT6-9a Control C — interrupt coordinator aggregate acceptance

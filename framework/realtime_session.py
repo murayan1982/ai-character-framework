@@ -11,7 +11,7 @@ import asyncio
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Event, RLock
+from threading import Event, RLock, get_ident
 import time
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Mapping
@@ -492,6 +492,45 @@ class _InterruptCoordinationAttempt:
     deadline: float = 0.0
 
 
+@dataclass(frozen=True, slots=True)
+class _DeferredTurnTerminal:
+    """One normal terminal publication paused behind an interrupt owner."""
+
+    result: RealtimeTurnResult
+    event_type: RealtimeEventType
+    new_state: RealtimeState
+    reason: str
+    public_error_code: RealtimeErrorCode
+    safe_message: str
+    retryable: bool
+    public_metadata: Mapping[str, Any] | None
+
+
+@dataclass(slots=True)
+class _InterruptRequestWork:
+    """Private sole-owner state for one resolved session/turn interrupt."""
+
+    key: tuple[SessionId | str, TurnId | str]
+    turn_id: TurnId | str
+    generation_id: GenerationId | None
+    owner_thread_id: int
+    completion_event: Event = field(default_factory=Event)
+    result: InterruptResult | None = None
+    reserved_terminal: RealtimeTurnResult | None = None
+    deferred_terminal: _DeferredTurnTerminal | None = None
+    reservation_active: bool = True
+    flush_result: OutputFlushResult | None = None
+    close_after_completion: bool = False
+
+
+class _InterruptTerminalReserved(RuntimeError):
+    """Move a normal terminal wait outside the long session operation lock."""
+
+    def __init__(self, work: _InterruptRequestWork) -> None:
+        self.work = work
+        super().__init__("interrupt terminal reservation won admission")
+
+
 class RealtimeSession:
     """Mock-safe public realtime session skeleton.
 
@@ -576,6 +615,16 @@ class RealtimeSession:
             str,
             _ActiveInterruptStageWork,
         ] = {}
+        self._interrupt_request_lock = RLock()
+        self._interrupt_requests: dict[
+            tuple[SessionId | str, TurnId | str],
+            _InterruptRequestWork,
+        ] = {}
+        self._normal_terminal_reservations: set[
+            tuple[SessionId | str, TurnId | str]
+        ] = set()
+        self._active_interrupt_request: _InterruptRequestWork | None = None
+        self._close_admission_requested = False
         self._turn_admission_lock = RLock()
         self._active_turn_context: _ActiveTurnContext | None = None
         self._active_turn_id: TurnId | str | None = None
@@ -925,18 +974,41 @@ class RealtimeSession:
         safe_message: str = "",
         retryable: bool = False,
         public_metadata: Mapping[str, Any] | None = None,
+        _interrupt_owner: _InterruptRequestWork | None = None,
     ) -> RealtimeTurnResult:
         """Commit one terminal result and let only the first owner emit."""
 
-        decision: TerminalCommitDecision[RealtimeTurnResult] = (
-            self._terminal_registry.commit(
-                result.turn_id,
-                result.outcome,
-                recovery_action=result.recovery_action,
-                reason=reason,
-                result=result,
+        key = (self._session_id, result.turn_id)
+        with self._interrupt_request_lock:
+            interrupt_work = self._interrupt_requests.get(key)
+            if (
+                interrupt_work is not None
+                and interrupt_work is not _interrupt_owner
+                and interrupt_work.reservation_active
+                and not interrupt_work.completion_event.is_set()
+            ):
+                if interrupt_work.deferred_terminal is None:
+                    interrupt_work.deferred_terminal = _DeferredTurnTerminal(
+                        result=result,
+                        event_type=event_type,
+                        new_state=new_state,
+                        reason=reason,
+                        public_error_code=public_error_code,
+                        safe_message=safe_message,
+                        retryable=retryable,
+                        public_metadata=public_metadata,
+                    )
+                raise _InterruptTerminalReserved(interrupt_work)
+
+            decision: TerminalCommitDecision[RealtimeTurnResult] = (
+                self._terminal_registry.commit(
+                    result.turn_id,
+                    result.outcome,
+                    recovery_action=result.recovery_action,
+                    reason=reason,
+                    result=result,
+                )
             )
-        )
         if decision.accepted:
             self._advance_generation(
                 "turn_terminal",
@@ -1466,6 +1538,28 @@ class RealtimeSession:
             if self._closed or self._close_requested:
                 return self._closed_turn_start_result(turn)
 
+            with self._interrupt_request_lock:
+                interrupt_work = self._active_interrupt_request
+                interrupt_active = (
+                    interrupt_work is not None
+                    and not interrupt_work.completion_event.is_set()
+                )
+            if (
+                interrupt_active
+                and interrupt_work is not None
+                and turn.turn_id != interrupt_work.turn_id
+            ):
+                return self._rejected_turn_start_result(
+                    turn,
+                    public_error_code=RealtimeErrorCode.REJECTED,
+                    safe_message=(
+                        "A new realtime turn cannot start while an interrupt "
+                        "is in progress."
+                    ),
+                    reason="interrupt_in_progress",
+                    retryable=True,
+                )
+
             if turn.session_id != self._session_id:
                 return self._rejected_turn_start_result(
                     turn,
@@ -1626,29 +1720,56 @@ class RealtimeSession:
     ) -> RealtimeTurnResult:
         """Execute one admitted turn on the session-owned runtime loop."""
 
-        with self._serialized_operation():
-            existing_terminal = self._duplicate_terminal_result(turn.turn_id)
-            if existing_terminal is not None:
-                return existing_terminal
-
-            active_turn_id, active_generation_id = self._active_turn_identity()
-            if (
-                active_turn_id != turn.turn_id
-                or active_generation_id != admitted_generation_id
-            ):
-                existing = self._terminal_registry.get(turn.turn_id)
-                if existing is not None and existing.result is not None:
-                    return existing.result
-                raise RuntimeError(
-                    "accepted realtime turn lost its active admission context"
-                )
-
-            return self._run_turn_serialized(
-                turn,
-                input_text=input_text,
-                public_metadata=public_metadata,
-                admitted_generation_id=admitted_generation_id,
+        terminal_key = (self._session_id, turn.turn_id)
+        with self._interrupt_request_lock:
+            existing_interrupt = self._interrupt_requests.get(terminal_key)
+            normal_terminal_reserved = (
+                existing_interrupt is None
+                or existing_interrupt.completion_event.is_set()
             )
+            if normal_terminal_reserved:
+                self._normal_terminal_reservations.add(terminal_key)
+
+        reserved_work: _InterruptRequestWork | None = None
+        try:
+            try:
+                with self._serialized_operation():
+                    existing_terminal = self._duplicate_terminal_result(turn.turn_id)
+                    if existing_terminal is not None:
+                        return existing_terminal
+
+                    active_turn_id, active_generation_id = self._active_turn_identity()
+                    if (
+                        active_turn_id != turn.turn_id
+                        or active_generation_id != admitted_generation_id
+                    ):
+                        existing = self._terminal_registry.get(turn.turn_id)
+                        if existing is not None and existing.result is not None:
+                            return existing.result
+                        raise RuntimeError(
+                            "accepted realtime turn lost its active admission context"
+                        )
+
+                    return self._run_turn_serialized(
+                        turn,
+                        input_text=input_text,
+                        public_metadata=public_metadata,
+                        admitted_generation_id=admitted_generation_id,
+                    )
+            except _InterruptTerminalReserved as reservation:
+                reserved_work = reservation.work
+
+            await asyncio.to_thread(reserved_work.completion_event.wait)
+            terminal = self._terminal_registry.get(turn.turn_id)
+            if terminal is None or terminal.result is None:
+                raise AssertionError(
+                    "resolved terminal reservation must retain a turn result"
+                )
+            return terminal.result
+        finally:
+            if normal_terminal_reserved:
+                with self._interrupt_request_lock:
+                    self._normal_terminal_reservations.discard(terminal_key)
 
     def _raise_if_blocking_turn_execution_forbidden(self) -> None:
         """Reject blocking turn execution from event-loop/runtime threads."""
@@ -3028,8 +3149,115 @@ class RealtimeSession:
             },
         )
 
-    def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
-        request = request or InterruptRequest()
+    def _claim_interrupt_request(
+        self,
+        request: InterruptRequest,
+    ) -> tuple[str, _InterruptRequestWork | None]:
+        """Choose a sole active-turn owner before any subsystem side effect."""
+
+        with self._turn_admission_lock:
+            current_turn_id, current_generation_id = self._active_turn_identity()
+            resolved_turn_id = request.turn_id or current_turn_id
+            with self._interrupt_request_lock:
+                if resolved_turn_id is not None:
+                    key = (self._session_id, resolved_turn_id)
+                    existing = self._interrupt_requests.get(key)
+                    if existing is not None:
+                        return "duplicate", existing
+                if self._close_admission_requested and not self._closed:
+                    return "close_won", None
+                if self._closed or self._close_requested:
+                    return "legacy", None
+                if (
+                    resolved_turn_id is None
+                    or current_turn_id is None
+                    or resolved_turn_id != current_turn_id
+                ):
+                    return "legacy", None
+
+                key = (self._session_id, resolved_turn_id)
+                if key in self._normal_terminal_reservations:
+                    return "legacy", None
+                if self._terminal_registry.get(resolved_turn_id) is not None:
+                    return "legacy", None
+
+                reserved_terminal = RealtimeTurnResult.interrupted(
+                    turn_id=resolved_turn_id,
+                    safe_message="Realtime turn was interrupted.",
+                    public_metadata={
+                        "boundary": "interrupt_coordination",
+                        "terminal_reserved": True,
+                    },
+                    session_id=self._session_id,
+                    generation_id=current_generation_id,
+                )
+                work = _InterruptRequestWork(
+                    key=key,
+                    turn_id=resolved_turn_id,
+                    generation_id=current_generation_id,
+                    owner_thread_id=get_ident(),
+                    reserved_terminal=reserved_terminal,
+                )
+                self._interrupt_requests[key] = work
+                self._active_interrupt_request = work
+                return "owner", work
+
+    def _resolve_interrupt_terminal_reservation(
+        self,
+        work: _InterruptRequestWork,
+        *,
+        interrupt_won: bool,
+    ) -> None:
+        """Publish only the winning terminal after the owner resolves."""
+
+        with self._interrupt_request_lock:
+            work.reservation_active = False
+            deferred = work.deferred_terminal
+            work.deferred_terminal = None
+        if interrupt_won or deferred is None:
+            return
+        self._commit_terminal_result(
+            deferred.result,
+            event_type=deferred.event_type,
+            new_state=deferred.new_state,
+            reason=deferred.reason,
+            public_error_code=deferred.public_error_code,
+            safe_message=deferred.safe_message,
+            retryable=deferred.retryable,
+            public_metadata=deferred.public_metadata,
+            _interrupt_owner=work,
+        )
+        with self._turn_admission_lock:
+            context = self._active_turn_context
+            if context is not None and context.turn_id == deferred.result.turn_id:
+                self._clear_active_turn_context()
+
+    def _complete_interrupt_request(
+        self,
+        work: _InterruptRequestWork,
+        result: InterruptResult,
+    ) -> None:
+        """Publish one owner result to every waiter, then honor deferred close."""
+
+        with self._interrupt_request_lock:
+            work.result = result
+            work.reservation_active = False
+            if self._active_interrupt_request is work:
+                self._active_interrupt_request = None
+            close_after_completion = work.close_after_completion
+            work.completion_event.set()
+        if close_after_completion:
+            self.close()
+
+    def _execute_interrupt_once(
+        self,
+        request: InterruptRequest,
+        *,
+        advance_reason: GenerationAdvanceReason | str,
+        owner_work: _InterruptRequestWork | None = None,
+    ) -> InterruptResult:
+        """Execute the established aggregate path for one admitted owner."""
+
         coordination_attempt = self._request_interrupt_coordination(request)
         stage_results = self._resolve_interrupt_stage_attempts(
             coordination_attempt
@@ -3039,12 +3267,86 @@ class RealtimeSession:
                 coordination_attempt,
                 stage_results=stage_results,
             )
-            return self._interrupt_serialized(
+            if owner_work is not None and request.flush_output:
+                owner_work.flush_result = self._flush_output_serialized(
+                    OutputFlushRequest(
+                        scope=request.scope,
+                        turn_id=owner_work.turn_id,
+                        public_metadata={
+                            "boundary": "interrupt_owner_flush",
+                        },
+                    )
+                )
+            result = self._interrupt_serialized(
                 request,
-                advance_reason="interrupt",
+                advance_reason=advance_reason,
                 motion_result=motion_result,
                 coordination_result=coordination_result,
+                _owner_work=owner_work,
             )
+            if owner_work is not None:
+                self._resolve_interrupt_terminal_reservation(
+                    owner_work,
+                    interrupt_won=result.outcome.value == "accepted",
+                )
+            return result
+
+    def _ordered_interrupt(
+        self,
+        request: InterruptRequest,
+        *,
+        advance_reason: GenerationAdvanceReason | str,
+    ) -> InterruptResult:
+        """Converge one resolved turn on a sole whole-request owner."""
+
+        admission, work = self._claim_interrupt_request(request)
+        if admission == "close_won":
+            return InterruptResult.already_closed(request=request)
+        if admission == "legacy":
+            return self._execute_interrupt_once(
+                request,
+                advance_reason=advance_reason,
+            )
+        if admission == "duplicate":
+            if work is None:
+                raise AssertionError("duplicate interrupt must retain owner work")
+            work.completion_event.wait()
+            if work.result is None:
+                raise AssertionError("interrupt owner must retain its exact result")
+            return work.result
+        if admission != "owner" or work is None:
+            raise AssertionError("interrupt admission must resolve to one owner")
+
+        try:
+            result = self._execute_interrupt_once(
+                request,
+                advance_reason=advance_reason,
+                owner_work=work,
+            )
+        except Exception:
+            result = InterruptResult(
+                outcome="failed",
+                scope=request.scope,
+                reason=request.reason,
+                turn_id=work.turn_id,
+                safe_message="Interrupt ordering failed safely.",
+                retryable=True,
+                public_metadata={
+                    "boundary": "interrupt",
+                    "reason": "ordering_failure",
+                },
+            )
+            with self._serialized_operation():
+                self._resolve_interrupt_terminal_reservation(
+                    work,
+                    interrupt_won=False,
+                )
+        self._complete_interrupt_request(work, result)
+        return result
+
+    def interrupt(self, request: InterruptRequest | None = None) -> InterruptResult:
+        request = request or InterruptRequest()
+        return self._ordered_interrupt(request, advance_reason="interrupt")
 
     def _interrupt_serialized(
         self,
@@ -3053,6 +3355,7 @@ class RealtimeSession:
         advance_reason: GenerationAdvanceReason | str = "interrupt",
         motion_result: MotionControlResult | None = None,
         coordination_result: InterruptAggregateResult | None = None,
+        _owner_work: _InterruptRequestWork | None = None,
     ) -> InterruptResult:
         """Request a provider-neutral interrupt.
 
@@ -3181,19 +3484,24 @@ class RealtimeSession:
                     and resolved_turn_id == current_turn_id
                     and self._terminal_registry.get(resolved_turn_id) is None
                 ):
-                    interrupted = RealtimeTurnResult.interrupted(
-                        turn_id=resolved_turn_id,
-                        safe_message="Realtime turn was interrupted.",
-                        public_metadata={
-                            "boundary": "interrupt_coordination",
-                            "coordination_outcome": (
-                                coordination_result.outcome.value
-                                if coordination_result is not None
-                                else "unavailable"
-                            ),
-                        },
-                        session_id=self._session_id,
-                        generation_id=self._active_generation_id,
+                    interrupted = (
+                        _owner_work.reserved_terminal
+                        if _owner_work is not None
+                        and _owner_work.reserved_terminal is not None
+                        else RealtimeTurnResult.interrupted(
+                            turn_id=resolved_turn_id,
+                            safe_message="Realtime turn was interrupted.",
+                            public_metadata={
+                                "boundary": "interrupt_coordination",
+                                "coordination_outcome": (
+                                    coordination_result.outcome.value
+                                    if coordination_result is not None
+                                    else "unavailable"
+                                ),
+                            },
+                            session_id=self._session_id,
+                            generation_id=self._active_generation_id,
+                        )
                     )
                     self._commit_terminal_result(
                         interrupted,
@@ -3203,6 +3511,7 @@ class RealtimeSession:
                         public_error_code=RealtimeErrorCode.INTERRUPTED,
                         safe_message=interrupted.safe_message,
                         retryable=True,
+                        _interrupt_owner=_owner_work,
                     )
                     with self._turn_admission_lock:
                         self._clear_active_turn_context()
@@ -3308,21 +3617,7 @@ class RealtimeSession:
             cancel_tts_queue=True,
             public_metadata=public_metadata or {},
         )
-        coordination_attempt = self._request_interrupt_coordination(request)
-        stage_results = self._resolve_interrupt_stage_attempts(
-            coordination_attempt
-        )
-        with self._serialized_operation():
-            coordination_result, motion_result = self._resolve_interrupt_coordination(
-                coordination_attempt,
-                stage_results=stage_results,
-            )
-            return self._interrupt_serialized(
-                request,
-                advance_reason="cancel",
-                motion_result=motion_result,
-                coordination_result=coordination_result,
-            )
+        return self._ordered_interrupt(request, advance_reason="cancel")
 
     def acknowledge_host_playback_stop(
         self,
@@ -3450,6 +3745,24 @@ class RealtimeSession:
             )
 
     def flush_output(self, request: OutputFlushRequest | None = None) -> OutputFlushResult:
+        request = request or OutputFlushRequest()
+        with self._interrupt_request_lock:
+            interrupt_work = self._active_interrupt_request
+            should_wait = (
+                interrupt_work is not None
+                and not interrupt_work.completion_event.is_set()
+                and interrupt_work.owner_thread_id != get_ident()
+            )
+        if should_wait:
+            interrupt_work.completion_event.wait()
+            if (
+                interrupt_work.flush_result is not None
+                and (
+                    request.turn_id is None
+                    or request.turn_id == interrupt_work.turn_id
+                )
+            ):
+                return interrupt_work.flush_result
         with self._serialized_operation():
             return self._flush_output_serialized(request)
 
@@ -4119,6 +4432,31 @@ class RealtimeSession:
                 self._stage_close_count += 1
 
     def close(self) -> None:
+        while True:
+            with self._interrupt_request_lock:
+                if (
+                    self._closed
+                    or self._close_requested
+                    or (
+                        self._close_admission_requested
+                        and self._active_interrupt_request is None
+                    )
+                ):
+                    return
+                interrupt_work = self._active_interrupt_request
+                if (
+                    interrupt_work is not None
+                    and not interrupt_work.completion_event.is_set()
+                ):
+                    if interrupt_work.owner_thread_id == get_ident():
+                        interrupt_work.close_after_completion = True
+                        return
+                    wait_for_interrupt = interrupt_work.completion_event
+                else:
+                    self._close_admission_requested = True
+                    break
+            wait_for_interrupt.wait()
+
         with self._motion_control_lock:
             active_motion = self._active_motion_work
             active_motion_turn_id = (
