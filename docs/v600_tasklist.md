@@ -6852,3 +6852,86 @@ barge-in decision or execution behavior. It authorizes FW-RT6-9c exact contract
 review after this sync is committed, pushed, and remotely verified, not
 FW-RT6-9c implementation.
 <!-- FW-RT6-9b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9c Control A — barge-in control-plan contract acceptance sync
+
+```text
+checkpoint: FW-RT6-9c Control A
+baseline head: f6921f1933f0d4efa1463bcf23710cd46f528280
+FW-RT6-9b final acceptance: 42dcf194909504a1a09ea6612d81db1b56a008f9
+Control A implementation: f6921f1933f0d4efa1463bcf23710cd46f528280
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 5 files
+dedicated Control A source gate: PASS
+focused Control A barge-in-control tests: 12 / PASS
+full Framework unit suite: 454 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-9a aggregate regression: PASS
+accepted FW-RT6-9b aggregate regression: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+stable explicit package: framework.barge_in_control / PASS
+explicit package exports: 2 EXACT / PASS
+decision != execution: True / ACCEPTED
+control plan side-effect-free: True / PASS
+barge-in policy triggers microphone: False / ACCEPTED
+rejected decision executes: False / PASS
+unsupported flush execution: False / PASS
+unsupported hard cancel effective mode: soft_interrupt / ACCEPTED
+capability downgrade truthful: True / ACCEPTED
+requested/supported/planned facts separated: True / PASS
+coordinator request reason: user_barge_in / PASS
+root import loads framework.barge_in_control eagerly: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime source changed by Control A: False
+provider/network/audio/microphone/real VTS execution: False / PASS
+RealtimeSession plan adoption: DEFERRED_TO_CONTROL_B
+actual execution delegation: DEFERRED_TO_CONTROL_B
+interrupt owner/coordinator reuse: DEFERRED_TO_CONTROL_B
+execution result and event ordering: DEFERRED_TO_CONTROL_B
+FW-RT6-9c aggregate: NOT_COMPLETED
+FW-RT6-9c tasklist: 0 / 5 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-9d implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the explicit provider-neutral boundary between a barge-in
+policy decision and its future runtime execution. `BargeInControlPlan` and
+`build_barge_in_control_plan(...)` remain explicit-package symbols rather than
+Framework root exports. Building or inspecting a plan cannot execute an
+interrupt, flush output, stop motion, call a provider, or acquire microphone
+input.
+
+One immutable `BargeInDecision` and one immutable
+`RealtimeCapabilitySnapshot` determine the exact plan. Requested, supported,
+and planned effects remain separate. Rejected and disabled decisions carry no
+coordinator request. An unsupported flush-only request becomes non-executing,
+while a hard-cancel or turn-takeover request without provider hard-cancel
+capability is truthfully downgraded to `soft_interrupt` without claiming a
+provider hard-cancel effect. A supported queue flush may remain in that weaker
+plan and every generated request retains the existing `user_barge_in` reason
+and resolved turn identity.
+
+Control A changes no `RealtimeSession` runtime source, factory signature, root
+public surface, event vocabulary, or API version. Host applications remain the
+owner of microphone/speech-activity detection. Runtime plan adoption, exact
+delegation to the accepted whole-request interrupt owner/coordinator, and
+execution result/event ordering remain Control B work. Therefore all five
+FW-RT6-9c aggregate task checkboxes stay open.
+
+This sync authorizes only Control B exact contract review after the sync is
+committed, pushed, and remotely verified. It does not authorize Control B or
+FW-RT6-9d implementation.
+<!-- FW-RT6-9c-A-ACCEPTANCE-SYNC:END -->
