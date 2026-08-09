@@ -6602,3 +6602,87 @@ sync authorizes only Control B exact contract review after the sync commit/push
 is remotely verified; it does not authorize Control B implementation or
 FW-RT6-9c barge-in execution.
 <!-- FW-RT6-9b-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9b Control B — interrupt ordering runtime adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-9b Control B
+baseline head: 1f05e9d6da9ccbd29c198f577cf8155318b06486
+Control A implementation: b2557a6aa08a3af89ea527413dc37ac85f458d05
+Control A acceptance sync: e92f6929fd673c1c1b53cbcb19a2c5a23e446e56
+Control B implementation: 6b9a9629239f969a51325cbf35d0e4be444c5689
+Control B corrective: 1f05e9d6da9ccbd29c198f577cf8155318b06486
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B implementation surface: 5 files
+dedicated Control B source gate: PASS
+focused Control B interrupt-ordering tests: 11 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-9a aggregate regression: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+full Framework unit suite: 442 / PASS
+whole-request owner: RealtimeSession PRIVATE / PASS
+idempotency key: (session_id, resolved_turn_id) / PASS
+duplicate wait outside operation lock: True / PASS
+duplicate result: EXACT OWNER InterruptResult OBJECT / PASS
+duplicate subsystem/flush/event effects repeated: False / PASS
+same-owner interrupt callback replay: EXACT PREPARED OWNER RESULT / PASS
+same-owner interrupt callback self-deadlock: False / PASS
+normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
+unsupported interrupt overclaims turn terminal: False / PASS
+close race: FIRST ADMISSION WINS / PASS
+owner flush before terminal: True / PASS
+standalone flush repeats owner effect: False / PASS
+same-owner reentrant flush: PREPARED RESULT REUSE / PASS
+same-owner reentrant flush effect count: 1 / PASS
+new turn during interrupt: TYPED REJECT interrupt_in_progress / PASS
+multiple turn terminal events: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-9b aggregate: NOT_COMPLETED
+FW-RT6-9b tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-9c implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts `RealtimeSession` as the private whole-request interrupt
+owner. The first admission for the resolved session and turn key executes the
+coordination work and reserves the interrupt terminal. Concurrent and later
+duplicates wait outside the operation lock and replay the exact owner
+`InterruptResult` without repeating cancellation, queue clearing, artifact
+invalidation, motion control, output flush, interrupt events, or the turn
+terminal event. `interrupt(...)` and `cancel_current_turn(...)` share this
+single admission path.
+
+The owner stores its immutable final result before synchronous Framework
+interrupt callbacks run. A same-owner reentrant interrupt or cancel callback
+therefore returns that exact prepared object immediately and cannot wait on its
+own completion event. The owner also stores its typed flush result before the
+synchronous output-flush callback, so a same-owner reentrant flush reuses that
+result without recursion, a second flush effect, or a second flush event.
+
+The interrupt reservation participates in the accepted terminal registry.
+Normal completion versus interrupt is resolved by first terminal reservation,
+while close versus interrupt is resolved by first admission. An owner-requested
+flush completes before the interrupt terminal, and a standalone same-turn flush
+cannot repeat that owner effect. A genuinely new turn admitted during active
+interrupt work is rejected through the existing typed result with public-safe
+reason `interrupt_in_progress`.
+
+Control B does not close any of the seven FW-RT6-9b aggregate task checkboxes.
+Aggregate acceptance remains Control C work. This sync authorizes only Control
+C exact contract review after the sync commit/push is remotely verified; it
+does not authorize Control C implementation or FW-RT6-9c barge-in execution.
+<!-- FW-RT6-9b-B-ACCEPTANCE-SYNC:END -->
