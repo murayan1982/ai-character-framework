@@ -192,7 +192,7 @@ class RecoveryControlATests(unittest.TestCase):
         self.assertTrue(result.retryable)
         self.assertNotIn("exception", result.safe_message.lower())
 
-    def test_plan_is_immutable_public_safe_and_runtime_adoption_is_deferred(self) -> None:
+    def test_plan_is_immutable_public_safe_and_runtime_adoption_is_explicit(self) -> None:
         plan = build_recovery_control_plan(
             RecoveryAction.RESET_SESSION,
             public_metadata={"secret": "should-not-leak"},
@@ -205,7 +205,7 @@ class RecoveryControlATests(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             plan.execute_reset = False  # type: ignore[misc]
 
-        self.assertFalse(hasattr(framework.RealtimeSession, "reset"))
+        self.assertTrue(hasattr(framework.RealtimeSession, "reset"))
         self.assertEqual(framework.RealtimeSessionInfo().api_version, "5.2.0")
         self.assertEqual(framework.MotionSessionInfo().api_version, "5.5.0")
         for module_name in ("pyvts", "websockets", "pyaudio", "sounddevice"):

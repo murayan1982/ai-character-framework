@@ -4759,3 +4759,80 @@ Control A fixes only the decision and result vocabulary. Generation retirement,
 replacement generation allocation, active-turn coordination, provider-context
 reset, and session method adoption remain separately reviewed Control B work.
 <!-- FW-RT6-10a-A-RECOVERY-CONTROL:END -->
+
+
+<!-- FW-RT6-10a-B-RECOVERY-EXECUTION:BEGIN -->
+## FW-RT6-10a Control B — explicit reset execution boundary
+
+Applications execute an accepted recovery plan explicitly:
+
+```python
+from framework.recovery_control import build_recovery_control_plan
+
+plan = build_recovery_control_plan(turn_result.recovery_action)
+result = realtime_session.reset(plan)
+```
+
+`reset()` accepts only a `RecoveryControlPlan` and returns the accepted typed
+`RecoveryResetResult`. It never rebuilds or broadens the plan. Non-reset plans
+return their truthful not-required, reconnect-required, close-required, or
+permanently-failed outcomes without automatically reconnecting or closing.
+
+For `turn_only` and `session`, the existing session generation gate owns the
+whole reset boundary. The old active generation is retired by `reset`, one
+distinct replacement is created, and old correlated completions remain stale.
+An active non-terminal turn reuses its exact turn identity with the replacement
+generation. After a terminal result, the replacement is reserved for the next
+new turn; the terminal turn is not reopened.
+
+Reset and completion application are serialized by the same session operation
+lock. A completion admitted first finishes its bounded value application before
+reset. A reset admitted first prevents the old completion from reaching its
+delivery callback.
+
+The result is typed when reset cannot run. Closed sessions return
+`session_closed`; a session without a previous generation returns
+`generation_mismatch`; in-flight interrupt, stage, or motion control returns
+retryable `active_operation`. None can claim a generation advance. Raw provider
+exceptions and private values are not exposed.
+
+Control B emits no reset event and performs no provider, network, microphone,
+audio, playback, or VTube Studio operation. Root imports remain lazy, recovery
+models stay explicit-package-only, and existing public versions and factory
+signatures remain unchanged.
+
+```text
+checkpoint: FW-RT6-10a Control B
+baseline head: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+exact Control B surface: 10 files
+focused Control B recovery/reset tests: 14 / PASS
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+explicit execution boundary: RealtimeSession.reset(plan) / ADOPTED
+exact plan object retained: True / PASS
+existing freshness owner reused: RealtimeGenerationGate / PASS
+second recovery/freshness owner introduced: False / PASS
+active old generation retired by: reset / PASS
+replacement generation count: 1 / PASS
+terminal reset replacement consumed by next turn: EXACT / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+old completion after reset delivered: False / PASS
+completion/reset race linearization: PASS
+non-reset disposition side effects: False / PASS
+closed/missing-generation/active-operation failure: TYPED / PASS
+provider reset execution: False / PASS
+new reset event type: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-10a aggregate tasks: 0 / 7 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-10a-B-RECOVERY-EXECUTION:END -->

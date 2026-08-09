@@ -90,6 +90,7 @@ if TYPE_CHECKING:
         GenerationAdvanceReason,
         RealtimeStageCompletionEnvelope,
     )
+    from .recovery_control import RecoveryControlPlan, RecoveryResetResult
     from .realtime_stage import (
         MotionStage,
         TextGenerationStage,
@@ -4570,6 +4571,140 @@ class RealtimeSession:
                 "microphone_detection_required": False,
             },
         )
+
+    def _reset_has_active_operation(self) -> bool:
+        """Return whether a reset would collide with in-flight stage control."""
+
+        with self._interrupt_request_lock:
+            interrupt_work = self._active_interrupt_request
+            if (
+                interrupt_work is not None
+                and not interrupt_work.completion_event.is_set()
+            ):
+                return True
+        with self._interrupt_stage_lock:
+            if self._active_interrupt_stage_work:
+                return True
+        with self._motion_control_lock:
+            return self._active_motion_work is not None
+
+    def reset(self, plan: RecoveryControlPlan) -> RecoveryResetResult:
+        """Execute one explicit recovery plan through the generation owner.
+
+        Planning and execution remain separate.  Non-reset dispositions are
+        projected to their typed result without side effects.  A reset reuses
+        the session's sole ``RealtimeGenerationGate`` to retire the previous
+        generation and reserve one distinct replacement.  If the turn remains
+        active, the replacement is immediately rebound to that exact turn;
+        otherwise the next admitted turn consumes the reserved generation.
+
+        Provider/network work is never performed here.  In-flight stage or
+        interrupt ownership is rejected as a typed retryable conflict rather
+        than being raced or silently reinterpreted.
+        """
+
+        from .recovery_control import (
+            RecoveryControlPlan,
+            RecoveryResetErrorCode,
+            RecoveryResetResult,
+        )
+
+        if not isinstance(plan, RecoveryControlPlan):
+            raise TypeError("plan must be a RecoveryControlPlan")
+        if not plan.execute_reset:
+            return RecoveryResetResult.for_non_reset_plan(plan)
+
+        with self._serialized_operation():
+            with self._turn_admission_lock:
+                with self._interrupt_request_lock:
+                    close_admitted = self._close_admission_requested
+                if self._closed or self._close_requested or close_admitted:
+                    return RecoveryResetResult.failed(
+                        plan,
+                        error_code=RecoveryResetErrorCode.SESSION_CLOSED,
+                        safe_message="Realtime session is closed.",
+                    )
+                if self._reset_has_active_operation():
+                    return RecoveryResetResult.failed(
+                        plan,
+                        error_code=RecoveryResetErrorCode.ACTIVE_OPERATION,
+                        safe_message=(
+                            "Realtime reset cannot run while stage control is active."
+                        ),
+                        retryable=True,
+                    )
+
+                active_turn_id = self._generation_gate.current_turn_id
+                active_generation_id = self._generation_gate.current_generation_id
+                context = self._active_turn_context
+                if context is not None and active_generation_id is not None:
+                    if (
+                        context.turn_id != active_turn_id
+                        or context.generation_id != active_generation_id
+                    ):
+                        return RecoveryResetResult.failed(
+                            plan,
+                            error_code=(
+                                RecoveryResetErrorCode.GENERATION_MISMATCH
+                            ),
+                            safe_message=(
+                                "Realtime reset generation context does not match."
+                            ),
+                        )
+
+                reset_generations = self._generation_gate.reset_generation()
+                if reset_generations is None:
+                    return RecoveryResetResult.failed(
+                        plan,
+                        error_code=RecoveryResetErrorCode.GENERATION_MISMATCH,
+                        safe_message=(
+                            "Realtime reset requires a previous generation."
+                        ),
+                    )
+                previous_generation_id, replacement_generation_id = (
+                    reset_generations
+                )
+
+                reusable_turn = (
+                    active_turn_id is not None
+                    and active_generation_id == previous_generation_id
+                    and self._terminal_registry.get(active_turn_id) is None
+                )
+                if reusable_turn:
+                    current_generation_id = self._generation_gate.start_generation(
+                        active_turn_id
+                    )
+                    if current_generation_id != replacement_generation_id:
+                        raise AssertionError(
+                            "reset replacement generation must be reused exactly"
+                        )
+                    if context is not None and context.turn_id == active_turn_id:
+                        self._bind_active_turn_context(
+                            context.turn,
+                            current_generation_id,
+                        )
+                    else:
+                        self._active_turn_id = active_turn_id
+                        self._active_generation_id = current_generation_id
+                else:
+                    current_generation_id = replacement_generation_id
+                    self._clear_active_turn_context()
+
+                for registry in (
+                    self._host_playback_stop_requests,
+                    self._host_playback_stop_acknowledgements,
+                ):
+                    for key in tuple(registry):
+                        if key[1] == previous_generation_id:
+                            del registry[key]
+
+                self._state = RealtimeState.IDLE
+                self._phase = RealtimePhase.IDLE
+                return RecoveryResetResult.applied(
+                    plan,
+                    previous_generation_id=previous_generation_id,
+                    current_generation_id=current_generation_id,
+                )
 
     def _close_injected_stages(self) -> None:
         if self._injected_stages_closed:

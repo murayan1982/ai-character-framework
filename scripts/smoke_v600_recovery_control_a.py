@@ -152,18 +152,18 @@ def check_model_contract() -> None:
         encoding="utf-8"
     )
     _require(
-        "recovery_control" not in runtime_source,
-        "runtime plan adoption occurred before Control B",
+        "from .recovery_control import" in runtime_source,
+        "accepted recovery plan is not adopted lazily by Control B",
     )
     _require(
-        "def reset(" not in runtime_source,
-        "RealtimeSession reset execution occurred before Control B",
+        "def reset(" in runtime_source,
+        "RealtimeSession reset execution boundary is missing",
     )
     for module_name in ("pyvts", "websockets", "pyaudio", "sounddevice"):
         _require(module_name not in sys.modules, f"runtime import escaped: {module_name}")
     print("[OK] explicit reset scopes and recovery dispositions conform")
     print("[OK] typed reset result and generation-advance contract conform")
-    print("[OK] root-public/version/runtime compatibility remains unchanged")
+    print("[OK] root-public/version and explicit Control B adoption remain compatible")
 
 
 def check_docs_and_task_boundary() -> None:

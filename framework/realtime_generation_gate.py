@@ -153,6 +153,8 @@ class RealtimeGenerationGate:
     def __init__(self) -> None:
         self._lock = RLock()
         self._active: _ActiveGeneration | None = None
+        self._pending_generation_id: GenerationId | None = None
+        self._latest_generation_id: GenerationId | None = None
         self._retired: dict[GenerationId, _RetiredGeneration] = {}
         self._known_turns: dict[GenerationId, TurnId | str] = {}
         self._generation_start_count = 0
@@ -173,6 +175,20 @@ class RealtimeGenerationGate:
     def current_turn_id(self) -> TurnId | str | None:
         with self._lock:
             return self._active.turn_id if self._active is not None else None
+
+    @property
+    def pending_generation_id(self) -> GenerationId | None:
+        """Return the reset replacement reserved for the next admitted turn."""
+
+        with self._lock:
+            return self._pending_generation_id
+
+    @property
+    def latest_generation_id(self) -> GenerationId | None:
+        """Return the latest active, pending, or retired generation identity."""
+
+        with self._lock:
+            return self._latest_generation_id
 
     @property
     def diagnostics(self) -> Mapping[str, int]:
@@ -202,14 +218,50 @@ class RealtimeGenerationGate:
             if self._active is not None:
                 self._retire_active_locked(GenerationAdvanceReason.NEW_TURN)
 
-            generation_id = GenerationId.new()
+            generation_id = self._pending_generation_id
+            if generation_id is None:
+                generation_id = GenerationId.new()
+                self._generation_start_count += 1
+            else:
+                self._pending_generation_id = None
             self._active = _ActiveGeneration(
                 turn_id=resolved_turn_id,
                 generation_id=generation_id,
             )
             self._known_turns[generation_id] = resolved_turn_id
-            self._generation_start_count += 1
+            self._latest_generation_id = generation_id
             return generation_id
+
+    def reset_generation(self) -> tuple[GenerationId, GenerationId] | None:
+        """Advance the sole generation owner across one reset boundary.
+
+        An active generation is retired with the stable ``reset`` reason.  If
+        the previous turn is already terminal, its latest generation remains
+        the previous identity.  In both cases one distinct replacement is
+        reserved and is consumed by the next ``start_generation`` call.
+
+        The pending replacement is not an active turn generation.  A stage
+        completion cannot be accepted against it until a turn is explicitly
+        admitted and binds that exact identity.
+        """
+
+        with self._lock:
+            active = self._active
+            if active is not None:
+                previous_generation_id = active.generation_id
+                self._retire_active_locked(GenerationAdvanceReason.RESET)
+            else:
+                previous_generation_id = (
+                    self._pending_generation_id or self._latest_generation_id
+                )
+            if previous_generation_id is None:
+                return None
+
+            replacement_generation_id = GenerationId.new()
+            self._pending_generation_id = replacement_generation_id
+            self._latest_generation_id = replacement_generation_id
+            self._generation_start_count += 1
+            return previous_generation_id, replacement_generation_id
 
     def advance(
         self,

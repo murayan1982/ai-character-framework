@@ -3825,3 +3825,88 @@ commit / push: NOT_AUTHORIZED
 Applications require no migration in Control A. Runtime execution remains an
 explicit later host/session call after separately reviewed Control B adoption.
 <!-- FW-RT6-10a-A-RECOVERY-CONTROL:END -->
+
+
+<!-- FW-RT6-10a-B-RECOVERY-EXECUTION:BEGIN -->
+## FW-RT6-10a Control B — session-owned recovery/reset execution
+
+Control B adopts the accepted immutable plan through one explicit host call:
+
+```python
+plan = build_recovery_control_plan(turn_result.recovery_action)
+reset_result = session.reset(plan)
+```
+
+The exact `plan` object is retained by the typed `RecoveryResetResult`.
+Planning still performs no effects. `none` and `reuse_session` return
+`not_required`; reconnect, close, and permanent-failure plans retain their
+typed non-reset outcomes without advancing a generation or executing their
+later lifecycle actions.
+
+Executing reset plans reuse the session-owned `RealtimeGenerationGate`; no
+second recovery or freshness owner is introduced. The gate retires an active
+generation with the stable `reset` reason and allocates exactly one distinct
+replacement. A non-terminal active turn is rebound to that replacement. If
+the previous turn is already terminal, the replacement remains pending and
+is consumed exactly by the next explicitly admitted turn. A terminal turn ID
+is never reopened.
+
+The reset and atomic completion-application boundaries share the existing
+reentrant session operation lock. Whichever operation wins completes first:
+
+```text
+completion wins:
+current value applied once, then reset advances generation
+
+reset wins:
+old completion rejected, deliver callback not called
+```
+
+Both `turn_only` and `session` remain explicit result scopes. Framework-owned
+active-turn, in-flight, conversation, and provider-session context named by
+the plan must be treated as lost across the reset boundary. Control B performs
+no provider/network reset call and retains no raw provider exception. A
+colliding interrupt, motion, or stage-control owner returns retryable
+`active_operation`; a closed session or missing prior generation returns a
+public-safe typed failure without claiming generation advance.
+
+Reset emits no new event. It changes no event vocabulary, root export,
+`RealtimeSessionInfo` field, factory parameter, or API version. Provider,
+network, audio, microphone, playback, and real VTube Studio execution remain
+outside this boundary.
+
+```text
+checkpoint: FW-RT6-10a Control B
+baseline head: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+exact Control B surface: 10 files
+focused Control B recovery/reset tests: 14 / PASS
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+explicit execution boundary: RealtimeSession.reset(plan) / ADOPTED
+exact plan object retained: True / PASS
+existing freshness owner reused: RealtimeGenerationGate / PASS
+second recovery/freshness owner introduced: False / PASS
+active old generation retired by: reset / PASS
+replacement generation count: 1 / PASS
+terminal reset replacement consumed by next turn: EXACT / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+old completion after reset delivered: False / PASS
+completion/reset race linearization: PASS
+non-reset disposition side effects: False / PASS
+closed/missing-generation/active-operation failure: TYPED / PASS
+provider reset execution: False / PASS
+new reset event type: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-10a aggregate tasks: 0 / 7 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-10a-B-RECOVERY-EXECUTION:END -->

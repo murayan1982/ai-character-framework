@@ -330,8 +330,8 @@ def check_public_compatibility_and_provider_isolation() -> None:
         "generation diagnostics key drift",
     )
     _require(
-        not hasattr(framework.RealtimeSession, "reset"),
-        "FW-RT6-10a reset API escaped into Control C",
+        hasattr(framework.RealtimeSession, "reset"),
+        "accepted FW-RT6-10a reset boundary is missing",
     )
     for module_name in ("pyvts", "websockets", "pyaudio", "sounddevice"):
         _require(module_name not in sys.modules, f"runtime import escaped: {module_name}")

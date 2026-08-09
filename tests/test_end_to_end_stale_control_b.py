@@ -465,7 +465,7 @@ class EndToEndStaleControlBTests(unittest.TestCase):
         self.assertEqual(len(framework.__all__), 127)
         self.assertEqual(framework.RealtimeSessionInfo().api_version, "5.2.0")
         self.assertEqual(framework.MotionSessionInfo().api_version, "5.5.0")
-        self.assertFalse(hasattr(framework.RealtimeSession, "reset"))
+        self.assertTrue(hasattr(framework.RealtimeSession, "reset"))
 
 
 if __name__ == "__main__":
