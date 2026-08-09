@@ -3481,3 +3481,63 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9b-B-INTERRUPT-ORDERING-ADOPTION:END -->
+
+
+<!-- FW-RT6-9c-A-BARGE-IN-CONTROL:BEGIN -->
+## FW-RT6-9c Control A — barge-in decision-to-control-plan contract
+
+Control A introduces the explicit provider-neutral
+`framework.barge_in_control` package. It does not change the accepted root
+public facade. `BargeInControlPlan` and `build_barge_in_control_plan(...)` are
+available only through that explicit package, keeping `import framework` lazy
+and the accepted 127-name root surface unchanged.
+
+`decide_barge_in(...)` remains a policy decision boundary. Neither an existing
+`BargeInDecision` nor the new plan builder executes an interrupt, flushes a
+queue, stops motion, invokes a provider, or acquires microphone input. The host
+application remains the owner of speech/activity detection and explicitly
+supplies the resulting decision to later execution code.
+
+The pure plan builder combines one immutable `BargeInDecision` with one
+immutable `RealtimeCapabilitySnapshot`. It keeps requested, supported, and
+planned facts separate. A rejected/disabled decision produces no coordinator
+request. A supported `flush_output` decision produces a queue-scoped request;
+an unsupported flush produces an effectively disabled, non-executing plan.
+
+A requested `hard_cancel` or `turn_takeover` remains visible as intent. When
+`hard_cancel_supported` is false, the effective mode is truthfully downgraded
+to `soft_interrupt` and the plan cannot claim provider hard-cancel execution.
+Supported queue flush may remain in that weaker plan, while unsupported queue
+flush is omitted and recorded in `capability_downgraded`. The generated
+`coordinator_request` contains only effects admitted by the capability
+snapshot and retains the existing `user_barge_in` reason and turn identity.
+
+Control A adds models and validation only. It does not modify
+`RealtimeSession`, add `execute_barge_in(...)`, submit a request to the
+interrupt coordinator, or publish runtime results. Control B may adopt the
+plan by delegating its exact `coordinator_request` to the accepted
+whole-request interrupt owner/coordinator. It must not bypass that owner or
+re-interpret unsupported capability claims. Therefore none of the five
+FW-RT6-9c aggregate task checkboxes close in Control A.
+
+```text
+exact Control A surface: 5 files
+stable explicit package: framework.barge_in_control
+barge-in policy triggers microphone: False
+decision != execution: True
+control plan side-effect-free: True
+rejected decision executes: False
+unsupported flush execution: False
+unsupported hard cancel effective mode: soft_interrupt
+capability downgrade truthful: True
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+FW-RT6-9c aggregate tasks: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-9d: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9c-A-BARGE-IN-CONTROL:END -->

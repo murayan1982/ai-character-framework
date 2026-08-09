@@ -4212,3 +4212,60 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9c-A-BARGE-IN-CONTROL:BEGIN -->
+## FW-RT6-9c Control A — explicit barge-in control planning boundary
+
+FW-RT6-9c Control A adds the explicit-only
+`framework.barge_in_control` planning package without adding a Framework root
+export. The accepted `BargeInPolicy`, `BargeInDecision`, `InterruptRequest`,
+`RealtimeSession` factory/signature, event vocabulary, and API versions remain
+unchanged.
+
+`build_barge_in_control_plan(...)` is a pure projection from an existing
+decision plus the session's immutable capability snapshot. Its immutable
+`BargeInControlPlan` distinguishes requested policy, effective policy,
+supported capability, and the exact request that a later runtime adopter may
+submit to the interrupt coordinator. Building or inspecting the plan performs
+no control action.
+
+The Framework does not detect a barge-in in Control A. It imports no microphone
+or audio-capture runtime and makes no network, provider, TTS, motion, or VTS
+call. Host code remains responsible for deciding that a user activity signal
+should be evaluated, while `decide_barge_in(...)` remains separate from any
+future execution method.
+
+Capability downgrade is explicit and monotonic. A hard-cancel or turn-takeover
+request with no advertised provider hard-cancel capability becomes an
+effective `soft_interrupt` plan. It does not set the provider hard-cancel
+planned fact. Queue flush is included only when both policy and snapshot allow
+it; a flush-only policy with no queue capability becomes non-executing rather
+than silently claiming a physical effect.
+
+Control B remains responsible for `RealtimeSession` runtime adoption. It may
+execute only by handing the plan's exact `coordinator_request` to the accepted
+interrupt ordering/coordinator path. Control A does not add
+`execute_barge_in(...)`, execute a plan, or close any FW-RT6-9c aggregate task.
+
+```text
+exact Control A surface: 5 files
+stable explicit package: framework.barge_in_control
+barge-in policy triggers microphone: False
+decision != execution: True
+control plan side-effect-free: True
+rejected decision executes: False
+unsupported flush execution: False
+unsupported hard cancel effective mode: soft_interrupt
+capability downgrade truthful: True
+root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime adoption: DEFERRED TO CONTROL B
+FW-RT6-9c aggregate tasks: 0 / 5 CLOSED
+Control B: NOT_AUTHORIZED
+FW-RT6-9d: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9c-A-BARGE-IN-CONTROL:END -->
