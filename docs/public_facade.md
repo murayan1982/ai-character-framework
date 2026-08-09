@@ -4836,3 +4836,92 @@ FW-RT6-10b implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-10a-B-RECOVERY-EXECUTION:END -->
+
+
+<!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10a Control C — aggregate recovery/reset contract
+
+Control C accepts the combined planning and execution boundary without adding
+a second recovery or generation owner. Applications continue to derive one
+immutable plan from the typed terminal result and submit it explicitly:
+
+```python
+from framework.recovery_control import build_recovery_control_plan
+
+plan = build_recovery_control_plan(turn_result.recovery_action)
+reset_result = realtime_session.reset(plan)
+```
+
+The existing `RecoveryAction` remains authoritative. `none` and
+`reuse_session` produce the typed `not_required` result. `reset_turn` and
+`reset_session` retain the exact `turn_only` and `session` scopes.
+Reset does not reinterpret reconnect, close, or permanent failure as
+successful reset and does not automatically perform those later lifecycle
+actions.
+
+Turn-only reset documents loss of active-turn provider context and in-flight
+stage context. Session reset additionally documents loss of provider
+conversation and provider-session context. Applications must treat every
+listed provider context as unavailable after the reset boundary even though
+the Framework performs no provider or network reset call.
+
+A reset advances generation by establishing exactly one distinct replacement
+`GenerationId`; generation is a typed identity, not a numeric counter exposed
+to applications. The sole session-owned `RealtimeGenerationGate` retires the
+previous generation with `reset`. A nonterminal turn retains its turn identity
+and binds the replacement generation. After a terminal turn, the replacement
+is reserved and consumed by the next explicitly admitted turn.
+
+Reset execution and correlated completion application share the existing
+serialized operation boundary. If reset wins, an old completion is rejected
+before its value reaches delivery. If completion wins, its bounded application
+finishes before reset advances the generation. Existing stale counts, typed
+drop reasons, and generation diagnostics remain authoritative.
+
+Reset failure remains a `RecoveryResetResult` with one public-safe
+`RecoveryResetErrorCode`. Missing generation context, closed-session
+admission, and active-operation conflicts cannot claim generation advance.
+No reset event, root export, factory parameter, result field, or API-version
+change is introduced.
+
+```text
+checkpoint: FW-RT6-10a Control C aggregate acceptance candidate
+baseline head: bcfb77922d219da56697430e42e21e95c3b6cd62
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control B implementation: d91430aff9aba804b37f3849fc7134e1eda19c6f
+Control B acceptance sync: bcfb77922d219da56697430e42e21e95c3b6cd62
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+existing recovery vocabulary: RecoveryAction / REUSED / PASS
+existing generation owner: RealtimeGenerationGate / REUSED / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reset provider-context loss: DOCUMENTED / PASS
+reconnect/close/permanent failure: TYPED / PASS
+reset generation advance: EXACTLY 1 / PASS
+old completion after reset delivered: False / PASS
+completion/reset race: LINEARIZED / PASS
+reset failure: TYPED / PASS
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10a tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-10a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C changes no runtime source or existing test. Final closure remains a
+separate one-file acceptance sync after this candidate is reviewed, committed,
+pushed, and remotely verified. This candidate does not authorize FW-RT6-10b
+implementation.
+<!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:END -->

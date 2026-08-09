@@ -2931,13 +2931,13 @@ False
 
 **Tasks:**
 
-- [ ] turn-only resetを定義する。
-- [ ] session resetを定義する。
-- [ ] reconnect requiredを定義する。
-- [ ] close required/permanently failedを定義する。
-- [ ] reset時generation incrementを実装する。
-- [ ] resetで失われるprovider contextを文書化する。
-- [ ] reset failureをtypedに返す。
+- [x] turn-only resetを定義する。
+- [x] session resetを定義する。
+- [x] reconnect requiredを定義する。
+- [x] close required/permanently failedを定義する。
+- [x] reset時generation incrementを実装する。
+- [x] resetで失われるprovider contextを文書化する。
+- [x] reset failureをtypedに返す。
 
 **Acceptance:**
 
@@ -7710,3 +7710,95 @@ one-file sync authorizes only Control C exact contract review after it is
 committed, pushed, and remotely verified. It does not authorize Control C
 aggregate implementation or FW-RT6-10b implementation.
 <!-- FW-RT6-10a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10a Control C — recovery/reset aggregate acceptance
+
+```text
+checkpoint: FW-RT6-10a Control C aggregate acceptance candidate
+baseline head: bcfb77922d219da56697430e42e21e95c3b6cd62
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control B implementation: d91430aff9aba804b37f3849fc7134e1eda19c6f
+Control B acceptance sync: bcfb77922d219da56697430e42e21e95c3b6cd62
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+dedicated Control C aggregate gate: PASS
+focused Control A recovery/reset tests: 13 / PASS
+focused Control B recovery/reset tests: 14 / PASS
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+stable explicit package: framework.recovery_control / PASS
+existing recovery vocabulary: RecoveryAction / REUSED / PASS
+second recovery owner introduced: False / PASS
+existing generation owner: RealtimeGenerationGate / REUSED / PASS
+second generation registry introduced: False / PASS
+interrupt recovery action: RecoveryAction.RESET_TURN / TYPED / PASS
+reusable disposition: not_required / TYPED / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reconnect required disposition: TYPED / PASS
+close required disposition: TYPED / PASS
+permanently failed disposition: TYPED / PASS
+reset provider-context loss: DOCUMENTED / PASS
+reset generation advance: EXACTLY 1 / PASS
+active nonterminal turn replacement binding: SAME TURN / PASS
+terminal turn replacement handoff: NEXT TURN / EXACT / PASS
+old completion after reset delivered: False / PASS
+reset retirement reason: GenerationAdvanceReason.RESET / PASS
+completion/reset race: LINEARIZED / PASS
+reset failure: TYPED / PASS
+failed reset claims generation advance: False / PASS
+non-reset disposition side effects: False / PASS
+provider reset/reconnect/close execution: False / PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+new reset event type: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-10a tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-10a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted recovery planning and session-owned reset
+execution contracts without changing runtime source. The existing root-public
+`RecoveryAction` remains the sole recovery decision vocabulary, and
+`framework.recovery_control` remains the stable explicit package for immutable
+plans and typed results.
+
+`reset_turn` and `reset_session` retain the explicit `turn_only` and `session`
+scopes. Turn reset documents loss of active-turn provider and in-flight stage
+context. Session reset additionally documents loss of provider conversation
+and provider-session context. `reconnect`, `close_session`, and
+`permanent_failure` remain typed non-reset dispositions and are not executed or
+relabeled as successful reset.
+
+`RealtimeSession.reset(plan)` reuses the sole `RealtimeGenerationGate`. One
+accepted reset retires the previous generation with the existing `RESET`
+reason and creates exactly one distinct replacement generation. A nonterminal
+turn is rebound to that replacement; after a terminal turn, the exact
+replacement is consumed by the next explicitly admitted turn.
+
+Reset and completion application remain serialized by the existing session
+operation boundary. A reset-retired completion cannot reach its delivery
+callback. Missing generation context, closed-session admission, and active
+operation conflicts retain public-safe typed failures and never claim a
+generation advance.
+
+Control C changes no runtime source or existing test. It adds the aggregate
+regression gate and marks all seven FW-RT6-10a tasks as acceptance candidates.
+Final closed status remains deferred to a reviewed, committed, pushed, and
+remotely verified one-file final acceptance sync. FW-RT6-10b implementation
+remains not authorized.
+<!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:END -->
