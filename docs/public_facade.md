@@ -4147,3 +4147,68 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9b Control C — interrupt ordering aggregate acceptance
+
+Control C changes no runtime source. It verifies the accepted explicit ordering
+policy, the `RealtimeSession` whole-request owner, and the reentrant corrective
+as one provider-neutral interrupt-ordering boundary.
+
+The accepted idempotency key remains `(session_id, resolved_turn_id)` and no
+second public interrupt request ID is introduced. The first admission is the
+sole owner of subsystem execution and terminal reservation. Concurrent and
+later duplicates wait outside the operation lock and replay the exact owner
+`InterruptResult` without another cancel, queue clear, artifact invalidation,
+motion request, flush, interrupt event, or turn-terminal event.
+
+The immutable owner result is prepared before synchronous Framework interrupt
+callbacks. A same-owner reentrant `interrupt(...)` or
+`cancel_current_turn(...)` therefore replays that exact result without waiting
+on its own completion event. The typed owner flush result is likewise stored
+before `OUTPUT_FLUSH_REQUESTED`; a same-owner reentrant `flush_output(...)`
+reuses it with one flush effect and one flush event sequence.
+
+Normal completion versus interrupt remains first terminal reservation wins.
+Close versus interrupt remains first admission wins. An owner-requested flush
+completes before the interrupt terminal, and a standalone same-turn flush
+cannot repeat it. A genuinely new turn during active interrupt work receives
+the existing typed rejection with public-safe reason `interrupt_in_progress`.
+Unsupported work does not overclaim a terminal or physical effect.
+
+The seven FW-RT6-9b task checkboxes close only as an aggregate
+accepted-candidate set. Final `COMPLETED / VERIFIED / ACCEPTED / COMMITTED /
+PUSHED / CLOSED` status remains deferred to a separately reviewed one-file
+final acceptance sync. FW-RT6-9c barge-in decision/execution remains outside
+this checkpoint.
+
+```text
+Control A: COMPLETED / VERIFIED / ACCEPTED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+focused interrupt-ordering tests: 12 + 11 / PASS
+whole-request owner: RealtimeSession PRIVATE / PASS
+idempotency key: (session_id, resolved_turn_id) / PASS
+duplicate result: EXACT OWNER InterruptResult OBJECT / PASS
+duplicate subsystem/flush/event effects repeated: False / PASS
+same-owner interrupt callback replay: EXACT PREPARED OWNER RESULT / PASS
+same-owner interrupt callback self-deadlock: False / PASS
+normal completion race: FIRST TERMINAL RESERVATION WINS / PASS
+close race: FIRST ADMISSION WINS / PASS
+owner flush before terminal: True / PASS
+same-owner reentrant flush effect count: 1 / PASS
+new turn during interrupt: TYPED REJECT interrupt_in_progress / PASS
+multiple turn terminal events: False / PASS
+framework root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime source changed by Control C: False
+FW-RT6-9b tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-9b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9c barge-in execution: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9b-C-AGGREGATE-ACCEPTANCE:END -->
