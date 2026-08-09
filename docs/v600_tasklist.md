@@ -7293,3 +7293,98 @@ checkboxes. This one-file sync authorizes only Control B exact contract review
 after it is committed, pushed, and remotely verified. It does not authorize
 Control B implementation or FW-RT6-10a recovery/reset implementation.
 <!-- FW-RT6-9d-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9d-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9d Control B — end-to-end stale-delivery runtime acceptance sync
+
+```text
+checkpoint: FW-RT6-9d Control B
+baseline head: c09aa53d262308ceeb8652c29b198898cb94c9c6
+FW-RT6-9c final acceptance: 9bb6571d3c29a2c5be444cc1b6a49a3ef94225ef
+Control A implementation: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+Control A acceptance sync: d01476a02586940dc7950ae18f7c8f2e96f706fe
+Control B implementation: c09aa53d262308ceeb8652c29b198898cb94c9c6
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B implementation surface: 10 files
+dedicated Control B source gate: PASS
+focused Control B stale-delivery tests: 14 / PASS
+accepted Control A atomic-ingress regression: 13 / PASS
+full Framework unit suite: 493 / PASS
+existing freshness owner: RealtimeGenerationGate / REUSED / PASS
+second freshness registry introduced: False / PASS
+atomic text delta application: PASS
+atomic voice-input transcript application: PASS
+atomic voice-output artifact application: PASS
+atomic motion completion application: PASS
+exact delivery vocabulary: 4 / PASS
+text_generation_delta: ADOPTED / PASS
+voice_input_transcript: ADOPTED / PASS
+voice_output_artifact: ADOPTED / PASS
+motion_completion: ADOPTED / PASS
+generation check and bounded application lock section: SAME / PASS
+competing generation advance during application: EXCLUDED / PASS
+new turn old text delta delivered: False / PASS
+abort/close old transcript delivered: False / PASS
+retired TTS audio handoff exposed: False / PASS
+retired motion completed event published: False / PASS
+provider-created stale FW artifact invalidated: True / PASS
+stale count: EXISTING stale_completion_count / PASS
+drop reason: EXISTING typed GenerationAdmissionDecision / PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+root-public generation-gate names added: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+FW-RT6-9d aggregate: NOT_COMPLETED
+FW-RT6-9d tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the existing four runtime delivery owners as exact adopters
+of the Control A atomic application ingress. Text delta, final transcript,
+voice-output artifact, and motion completion delivery all reuse the
+session-owned `RealtimeGenerationGate`; no second freshness registry, event
+sequencer, terminal owner, provider owner, artifact store, or motion
+coordinator is introduced.
+
+For a current generation, the bounded owner-state application completes under
+the same gate lock before a competing generation advance can proceed. If a new
+turn, abort, close, interrupt, cancel, reset, or terminal retirement wins
+first, the exact typed admission decision rejects the envelope and the stale
+value cannot cross its existing host-visible boundary.
+
+The provider-neutral text stream preserves standalone gate-less composition.
+When composed with the common gate, only accepted deltas update indexing,
+delivery counts, and completed history. Voice input keeps provider and
+microphone execution outside the gate and guards only final transcript
+application; session close retires any in-flight generation before a late
+provider result can emit `TRANSCRIPT_FINAL`.
+
+Voice synthesis likewise keeps provider work and playback outside the gate.
+The bounded callback publishes only an accepted FW-owned artifact handoff; an
+already-created stale artifact is bound only for deterministic invalidation
+and is never exposed. Motion reuses the existing state and event owners, so a
+rejected result cannot change the motion to completed or publish
+`MOTION_COMPLETED`.
+
+The existing completion counters, generation-diagnostic keys, typed stale and
+retirement reasons, event vocabulary, result fields, root exports, factory
+parameters, and API versions remain unchanged. Control B introduces no
+reset/recovery API and closes none of the six FW-RT6-9d aggregate task
+checkboxes.
+
+This one-file sync authorizes only Control C exact contract review after it is
+committed, pushed, and remotely verified. It does not authorize Control C
+implementation or FW-RT6-10a recovery/reset implementation.
+<!-- FW-RT6-9d-B-ACCEPTANCE-SYNC:END -->
