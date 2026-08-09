@@ -6517,3 +6517,88 @@ FW-RT6-9b. It authorizes FW-RT6-9b exact contract review after this sync is
 committed, pushed, and remotely verified, not FW-RT6-9b implementation.
 FW-RT6-9c barge-in execution remains not authorized.
 <!-- FW-RT6-9a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9b Control A — interrupt ordering contract acceptance sync
+
+```text
+checkpoint: FW-RT6-9b Control A
+baseline head: b2557a6aa08a3af89ea527413dc37ac85f458d05
+Control A implementation: b2557a6aa08a3af89ea527413dc37ac85f458d05
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A surface: 5 files
+dedicated Control A gate: PASS
+focused Control A interrupt-ordering tests: 12 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-9a aggregate regression: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+full Framework unit suite: 431 / PASS
+explicit package: framework.interrupt_ordering / PASS
+explicit package exports: 6 EXACT / PASS
+ordering rules: 6 EXACT / PASS
+admission outcomes: 5 EXACT / PASS
+public interrupt request ID introduced: False / ACCEPTED
+idempotency key: (session_id, resolved_turn_id) / ACCEPTED
+duplicate result: REPLAY OWNER TERMINAL RESULT / ACCEPTED
+normal completion race: FIRST TERMINAL RESERVATION WINS / ACCEPTED
+close race: FIRST ADMISSION WINS / ACCEPTED
+flush race: OWNER FLUSH BEFORE TERMINAL / ACCEPTED
+new turn during interrupt: TYPED REJECT / ACCEPTED
+multiple turn terminal events: False / CONTRACT
+owner is sole execute/reserve decision: True / PASS
+duplicate replay side effects: False / PASS
+root import loads framework.interrupt_ordering eagerly: False / PASS
+InterruptRequest fields changed: False / PASS
+InterruptResult fields changed: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime owner registry: DEFERRED_TO_CONTROL_B
+duplicate wait and terminal-result replay: DEFERRED_TO_CONTROL_B
+terminal reservation and completion race execution: DEFERRED_TO_CONTROL_B
+close/flush/new-turn runtime ordering: DEFERRED_TO_CONTROL_B
+deterministic fake race execution: DEFERRED_TO_CONTROL_B
+provider/network/audio/microphone/real VTS execution: False / PASS
+FW-RT6-9b aggregate: NOT_COMPLETED
+FW-RT6-9b tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+FW-RT6-9c implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the explicit provider-neutral identity and ordering contract
+for future whole-request interrupt convergence. A second public interrupt
+request ID is intentionally not introduced. One turn already owns exactly one
+Framework terminal boundary, so the accepted idempotency key is the existing
+session identity plus the turn resolved once at interrupt admission.
+
+The first admission for that key is the sole owner. A duplicate must reuse the
+owner's terminal result and cannot repeat cancellation, queue clearing,
+artifact invalidation, motion control, output flush, interrupt events, or the
+turn terminal event. Normal completion versus interrupt is fixed by first
+terminal reservation, while close versus interrupt is fixed by first
+admission. An interrupt-owned flush precedes its terminal, and a new turn
+during interrupting receives a typed rejection.
+
+`InterruptOrderingPolicy`, `InterruptOrderingKey`, and
+`InterruptOrderingDecision` validate these rules without changing the accepted
+root `InterruptRequest` or `InterruptResult` fields. The explicit package stays
+lazy and absent from the Framework root; factory signatures, event vocabulary,
+root-public names, and realtime and motion API versions remain unchanged.
+
+Control A adds contracts and validation only. The private runtime owner,
+duplicate waiting and result replay, terminal reservation, close/flush/turn
+admission ordering, and deterministic fake race execution remain Control B
+work. Therefore all seven FW-RT6-9b aggregate task checkboxes stay open. This
+sync authorizes only Control B exact contract review after the sync commit/push
+is remotely verified; it does not authorize Control B implementation or
+FW-RT6-9c barge-in execution.
+<!-- FW-RT6-9b-A-ACCEPTANCE-SYNC:END -->
