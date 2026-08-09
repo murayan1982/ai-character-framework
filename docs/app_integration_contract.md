@@ -3682,3 +3682,78 @@ FW-RT6-10a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:END -->
+
+
+<!-- FW-RT6-9d-B-RUNTIME-ADOPTION:BEGIN -->
+## FW-RT6-9d Control B — stale output cannot cross the host boundary
+
+Control B connects the accepted atomic generation check to the Framework
+owners that can hand text, transcript, audio, or motion completion to app code.
+Host applications do not add a second generation registry and do not compare
+generation IDs themselves.
+
+```text
+text delta: checked before stream delta state/return
+final transcript: checked after listening completion and before final event
+TTS artifact: checked before stage audio handoff publication
+motion completion: checked before completed state/event publication
+```
+
+For cancel-aware text streaming, the provider-neutral stream accepts an
+optional Framework `generation_gate` composition argument. Framework
+composition supplies the same common gate when the stream participates in a
+session-owned generation. Existing standalone, gate-less construction remains
+compatible. A rejected delta is not returned, does not increment the delivered
+count, and cannot enter completed conversation history.
+
+Voice input keeps microphone and provider execution outside the gate. Only the
+bounded final-result application is guarded. An abort, new input, or session
+close that retires the generation first prevents `TRANSCRIPT_FINAL`; the app
+receives the established interrupted result and typed stale diagnostic.
+
+Voice synthesis keeps provider execution and host playback outside the gate.
+The accepted bounded callback associates an opaque FW artifact with the current
+generation. A stale result exposes neither an artifact reference nor an audio
+URL. Any provider-created FW artifact is invalidated during suppression.
+
+Motion keeps the existing motion/event owners. Atomic result application wins
+before a competing generation advance or is rejected as stale; rejected work
+cannot publish `MOTION_COMPLETED`. Existing motion interrupted results and
+diagnostics are preserved.
+
+The four internal stage labels are exactly:
+
+```text
+text_generation_delta
+voice_input_transcript
+voice_output_artifact
+motion_completion
+```
+
+No new event type, public result field, root import, factory parameter, or API
+version is introduced. Existing count-only generation diagnostics remain
+unchanged and returned typed decisions preserve the exact stale/drop reason.
+Control B adds no reset/recovery method and does not authorize FW-RT6-10a.
+
+```text
+checkpoint: FW-RT6-9d Control B
+baseline head: d01476a02586940dc7950ae18f7c8f2e96f706fe
+exact Control B surface: 10 files
+four runtime delivery owners adopted: PASS
+generation owner reused: True
+late text/transcript/artifact/motion delivery: False / PASS
+focused Control B tests: 14 / PASS
+full Framework unit suite: 493 / PASS
+public host migration required: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-9d aggregate tasks: 0 / 6 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9d-B-RUNTIME-ADOPTION:END -->

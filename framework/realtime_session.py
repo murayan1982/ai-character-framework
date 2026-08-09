@@ -928,10 +928,11 @@ class RealtimeSession:
             raise TypeError("deliver must be callable")
 
         with self._serialized_operation():
-            decision = self._generation_gate.admit_completion(envelope)
-            if decision.accepted:
-                deliver(envelope.value)
-            elif not self._closed and not self._close_requested:
+            decision = self._generation_gate.apply_completion(
+                envelope,
+                deliver=deliver,
+            )
+            if not decision.accepted and not self._closed and not self._close_requested:
                 self._emit_stale_completion_diagnostic(decision)
             return decision
 
@@ -4338,18 +4339,23 @@ class RealtimeSession:
             completion = RealtimeStageCompletionEnvelope(
                 turn_id=notification.turn_id,
                 generation_id=notification.generation_id,
-                stage="motion_lifecycle",
+                stage="motion_completion",
                 value=result,
             )
-            decision = self._generation_gate.admit_completion(completion)
+            applied_results: list[MotionResult] = []
+            decision = self._apply_stage_completion(
+                completion,
+                deliver=applied_results.append,
+            )
             if not decision.accepted:
-                self._emit_stale_completion_diagnostic(decision)
                 result = self._motion_lifecycle_failure_result(
                     request=request,
                     reason="stale_generation",
                 )
                 if self._closed or self._close_requested:
                     return
+            else:
+                result = applied_results[0]
 
         result_event_type = (
             RealtimeEventType.MOTION_COMPLETED

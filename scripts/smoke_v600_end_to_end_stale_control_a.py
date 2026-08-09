@@ -163,13 +163,25 @@ def check_control_boundary() -> None:
         encoding="utf-8"
     )
     _require(
-        "_generation_gate.apply_completion(" not in runtime_source,
-        "Control B runtime adoption occurred inside Control A",
+        "_generation_gate.apply_completion(" in runtime_source,
+        "accepted atomic ingress is not adopted by Control B",
     )
+    owner_sources = {
+        "text_generation_delta": "framework/realtime_text_generation.py",
+        "voice_input_transcript": "framework/voice_input_session.py",
+        "voice_output_artifact": "framework/_realtime_voice_output_control.py",
+        "motion_completion": "framework/motion_session.py",
+    }
+    for stage, relative in owner_sources.items():
+        source = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
+        _require(
+            ".apply_completion(" in source and f'stage="{stage}"' in source,
+            f"Control B owner adoption is incomplete: {stage}",
+        )
     tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(encoding="utf-8")
     section = tasklist.split("## FW-RT6-9d", 1)[1].split("## FW-RT6-10a", 1)[0]
-    _require(section.count("- [ ]") == 6, "Control A closed an aggregate task")
-    print("[OK] four-stage runtime adoption remains isolated to Control B")
+    _require(section.count("- [ ]") == 6, "Control B closed an aggregate task")
+    print("[OK] accepted Control A primitive remains intact after Control B adoption")
 
 
 def check_docs() -> None:
@@ -208,7 +220,7 @@ def main() -> None:
     check_atomic_ingress_contract()
     check_control_boundary()
     check_docs()
-    print("v600_rt6_9d_control_a_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_9d_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_9d_control_a_exact_surface: 5 files")
     print("v600_rt6_9d_freshness_owner: RealtimeGenerationGate / REUSED")
     print("v600_rt6_9d_atomic_delivery_ingress: PASS")
@@ -219,9 +231,9 @@ def main() -> None:
     print("v600_rt6_9d_root_public_names: 127 / UNCHANGED")
     print("v600_rt6_9d_realtime_api_version: 5.2.0 / UNCHANGED")
     print("v600_rt6_9d_motion_api_version: 5.5.0 / UNCHANGED")
-    print("v600_rt6_9d_runtime_adoption: DEFERRED_TO_CONTROL_B")
+    print("v600_rt6_9d_runtime_adoption: ADOPTED_BY_CONTROL_B")
     print("v600_rt6_9d_task_count: 0 / 6 CLOSED")
-    print("v600_rt6_9d_control_b: NOT_AUTHORIZED")
+    print("v600_rt6_9d_control_b: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_10a: NOT_AUTHORIZED")
     print("v600_rt6_9d_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-9d Control A atomic stale-delivery gate passed")

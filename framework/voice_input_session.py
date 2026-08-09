@@ -240,19 +240,21 @@ class VoiceInputSession:
             and self._generation_gate.current_generation_id == context.generation_id
         )
 
-    def _admit_input_completion(
+    def _apply_input_completion(
         self,
         *,
         context: _VoiceInputTurnContext,
         value: object,
+        deliver: Callable[[object], None],
     ) -> GenerationAdmissionDecision[object]:
-        return self._generation_gate.admit_completion(
+        return self._generation_gate.apply_completion(
             RealtimeStageCompletionEnvelope(
                 turn_id=context.turn_id,
                 generation_id=context.generation_id,
-                stage="voice_input",
+                stage="voice_input_transcript",
                 value=value,
-            )
+            ),
+            deliver=deliver,
         )
 
     def _emit_stale_input_completion(
@@ -595,12 +597,27 @@ class VoiceInputSession:
                     turn_id=context.turn_id,
                     generation_id=context.generation_id,
                 )
+            applied_results: list[object] = []
+            decision = self._apply_input_completion(
+                context=context,
+                value=result,
+                deliver=applied_results.append,
+            )
+            if not decision.accepted:
+                self._emit_stale_input_completion(
+                    context=context,
+                    decision=decision,
+                )
+                return self._stale_input_result(context)
+            result = applied_results[0]
+            if not isinstance(result, VoiceInputResult):
+                raise AssertionError("voice input delivery must retain its result")
             self._emit_realtime_event(
                 RealtimeEventType.TRANSCRIPT_FINAL,
                 state=RealtimeState.TRANSCRIBING,
                 previous_state=RealtimeState.IDLE,
                 context=context,
-                payload=TranscriptEventPayload(text=text, is_final=True),
+                payload=TranscriptEventPayload(text=result.text, is_final=True),
                 public_metadata=event_metadata,
             )
             self._finish_input_context(context)
@@ -692,9 +709,10 @@ class VoiceInputSession:
             result = self._correlate_input_result(result, context)
         except Exception:
             with self._input_operation_lock:
-                decision = self._admit_input_completion(
+                decision = self._apply_input_completion(
                     context=context,
                     value=None,
+                    deliver=lambda _value: None,
                 )
                 if not decision.accepted:
                     self._emit_stale_input_completion(
@@ -716,17 +734,6 @@ class VoiceInputSession:
             raise
 
         with self._input_operation_lock:
-            decision = self._admit_input_completion(
-                context=context,
-                value=result,
-            )
-            if not decision.accepted:
-                self._emit_stale_input_completion(
-                    context=context,
-                    decision=decision,
-                )
-                return self._stale_input_result(context)
-
             if result.is_completed:
                 self._emit_realtime_event(
                     RealtimeEventType.LISTENING_COMPLETED,
@@ -736,29 +743,51 @@ class VoiceInputSession:
                     payload=LifecycleEventPayload(reason="voice_input_completed"),
                     public_metadata=event_metadata,
                 )
-                if not self._input_context_is_current(context):
-                    stale = self._admit_input_completion(
-                        context=context,
-                        value=result,
-                    )
+                applied_results: list[object] = []
+                decision = self._apply_input_completion(
+                    context=context,
+                    value=result,
+                    deliver=applied_results.append,
+                )
+                if not decision.accepted:
                     self._emit_stale_input_completion(
                         context=context,
-                        decision=stale,
+                        decision=decision,
                     )
                     return self._stale_input_result(context)
+                applied_result = applied_results[0]
+                if not isinstance(applied_result, VoiceInputResult):
+                    raise AssertionError("voice input delivery must retain its result")
                 self._emit_realtime_event(
                     RealtimeEventType.TRANSCRIPT_FINAL,
                     state=RealtimeState.TRANSCRIBING,
                     context=context,
                     payload=TranscriptEventPayload(
-                        text=result.text,
+                        text=applied_result.text,
                         is_final=True,
-                        confidence=result.confidence,
+                        confidence=applied_result.confidence,
                     ),
                     public_metadata=event_metadata,
                 )
                 self._finish_input_context(context)
-                return result
+                return applied_result
+
+            applied_results = []
+            decision = self._apply_input_completion(
+                context=context,
+                value=result,
+                deliver=applied_results.append,
+            )
+            if not decision.accepted:
+                self._emit_stale_input_completion(
+                    context=context,
+                    decision=decision,
+                )
+                return self._stale_input_result(context)
+            applied_result = applied_results[0]
+            if not isinstance(applied_result, VoiceInputResult):
+                raise AssertionError("voice input delivery must retain its result")
+            result = applied_result
 
             error_code = RealtimeErrorCode.STAGE_FAILED
             if result.public_error_code is VoiceInputErrorCode.UNAVAILABLE:
@@ -799,18 +828,21 @@ class VoiceInputSession:
         return self.transcribe_audio_result(audio_source, request=request, adapter=adapter)
 
     def close(self) -> None:
-        if self._closed:
-            return
-        self._closed = True
-        self._emit_realtime_event(
-            RealtimeEventType.SESSION_CLOSED,
-            state=RealtimeState.CLOSED,
-            previous_state=RealtimeState.IDLE,
-            payload=LifecycleEventPayload(reason="session_closed"),
-            public_error_code=RealtimeErrorCode.SESSION_CLOSED,
-            safe_message="Voice input session is closed.",
-            public_metadata={"input_mode": "session"},
-        )
+        with self._input_operation_lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._generation_gate.advance(GenerationAdvanceReason.SESSION_CLOSED)
+            self._active_input_context = None
+            self._emit_realtime_event(
+                RealtimeEventType.SESSION_CLOSED,
+                state=RealtimeState.CLOSED,
+                previous_state=RealtimeState.IDLE,
+                payload=LifecycleEventPayload(reason="session_closed"),
+                public_error_code=RealtimeErrorCode.SESSION_CLOSED,
+                safe_message="Voice input session is closed.",
+                public_metadata={"input_mode": "session"},
+            )
 
     def dispose(self) -> None:
         self.close()

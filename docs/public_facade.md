@@ -4484,3 +4484,110 @@ FW-RT6-10a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9d-A-ATOMIC-DELIVERY-INGRESS:END -->
+
+
+<!-- FW-RT6-9d-B-RUNTIME-ADOPTION:BEGIN -->
+## FW-RT6-9d Control B — end-to-end stale-delivery runtime adoption
+
+Control B adopts the accepted Control A atomic ingress at the existing four
+delivery owners. It adds no second generation registry, event sequencer,
+terminal owner, provider owner, artifact store, or motion coordinator:
+
+```text
+text generation owner: ProviderNeutralTextGenerationStream
+voice input owner: VoiceInputSession
+voice output owner: CancelableProviderNeutralVoiceSynthesisStage
+motion owner: MotionSession / RealtimeSession motion lifecycle
+freshness owner: RealtimeGenerationGate / REUSED
+```
+
+Each owner submits its correlated value through the exact accepted vocabulary:
+
+```python
+gate.apply_completion(
+    RealtimeStageCompletionEnvelope(
+        turn_id=turn_id,
+        generation_id=generation_id,
+        stage="text_generation_delta",  # or another exact Control A label
+        value=value,
+    ),
+    deliver=apply_bounded_owner_state,
+)
+```
+
+The four exact labels are `text_generation_delta`,
+`voice_input_transcript`, `voice_output_artifact`, and
+`motion_completion`. `RealtimeSession._apply_stage_completion(...)` now uses
+the same atomic operation, and its motion-lifecycle bridge uses the exact
+`motion_completion` label. No host callback, provider call, network operation,
+microphone read, playback operation, or VTube Studio operation is introduced
+inside the gate callback.
+
+The provider-neutral text stream accepts one additive optional
+`generation_gate` composition argument. With the common gate, delta indexing
+and completed-history accumulation occur only inside accepted application;
+retired deltas close the stream before the envelope leaves `__next__` and do
+not increment `delivered_delta_count`. Existing standalone streams without a
+gate preserve their accepted behavior and constructor call sites.
+
+Voice input performs atomic application after `LISTENING_COMPLETED` and before
+`TRANSCRIPT_FINAL`. A reentrant abort from the listening-completed callback can
+therefore retire the generation before transcript application. `close()` now
+retires any in-flight voice-input generation with the existing
+`session_closed` reason; a late provider callback becomes the existing typed
+stale diagnostic and never emits a final transcript.
+
+Voice synthesis applies the common gate before publishing its artifact handoff
+from the stage. For a current generation, the bounded callback associates the
+FW-owned artifact with that generation. For a stale generation, the public
+result is replaced with the existing non-audio stale result. If the provider
+already created an unbound FW artifact before returning, cleanup binds it only
+to invalidate it deterministically; the stale envelope never exposes the
+handoff. Existing cooperative-cancel invalidation remains unchanged.
+
+Motion applies the result at the existing `MotionSession` completion owner
+before changing motion state or publishing `MOTION_COMPLETED`. The
+`RealtimeSession` motion-lifecycle bridge reuses its central atomic ingress.
+Rejected motion results retain the existing interrupted result and typed stale
+diagnostic without publishing a completed event.
+
+The existing `accepted_completion_count` and `stale_completion_count` remain
+the only completion counters. The exact `GenerationAdmissionDecision` retains
+`stale_reason`, `retired_by`, and current-generation facts. No diagnostics key,
+event type, result field, root export, factory parameter, or API version is
+changed. Control B introduces no reset/recovery API; that later scope remains
+FW-RT6-10a and is not authorized.
+
+```text
+checkpoint: FW-RT6-9d Control B
+baseline head: d01476a02586940dc7950ae18f7c8f2e96f706fe
+Control A implementation: b3fe5c29eafad281c1887dc6989627fba74f6fd0
+Control A acceptance sync: d01476a02586940dc7950ae18f7c8f2e96f706fe
+exact Control B surface: 10 files
+existing freshness owner reused: RealtimeGenerationGate / PASS
+second freshness registry introduced: False / PASS
+atomic text delta application: PASS
+atomic final transcript application: PASS
+atomic TTS artifact handoff application: PASS
+atomic motion completion application: PASS
+close/new-turn/interrupt/cancel/reset stale suppression: PASS
+stale count and typed drop reason retained: PASS
+focused Control B tests: 14 / PASS
+full Framework unit suite: 493 / PASS
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False
+FW-RT6-9d aggregate tasks: 0 / 6 CLOSED
+Control B status: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-10a implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B deliberately leaves all six FW-RT6-9d aggregate task checkboxes
+open. Aggregate closure and final acceptance remain separately reviewed
+Control C and final-sync work after an exact one-file Control B acceptance
+sync is committed, pushed, and remotely verified.
+<!-- FW-RT6-9d-B-RUNTIME-ADOPTION:END -->

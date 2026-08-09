@@ -313,12 +313,6 @@ class CancelableProviderNeutralVoiceSynthesisStage(
                         "Voice synthesis work is not the active generation."
                     )
 
-                # Bind first so a just-produced FW artifact can be invalidated
-                # before any suppressed completion leaves this boundary.
-                self._bind_result_artifact(
-                    context=active.context,
-                    result=result,
-                )
                 envelope = VoiceSynthesisResultEnvelope(
                     context=active.context,
                     work_id=active.work_id,
@@ -328,17 +322,41 @@ class CancelableProviderNeutralVoiceSynthesisStage(
                 cancel_requested = (
                     self._cancel_requested_work == active.work_id
                 )
-                if not cancel_requested and self._generation_gate is not None:
-                    admission = self._generation_gate.admit_completion(
+                if cancel_requested:
+                    # Preserve the accepted cancellation cleanup contract for
+                    # provider-created FW artifacts that already exist.
+                    self._bind_result_artifact(
+                        context=active.context,
+                        result=result,
+                    )
+                elif self._generation_gate is not None:
+                    admission = self._generation_gate.apply_completion(
                         RealtimeStageCompletionEnvelope(
                             turn_id=active.turn_id,
                             generation_id=active.generation_id,
-                            stage="voice_output",
+                            stage="voice_output_artifact",
                             value=envelope,
-                        )
+                        ),
+                        deliver=lambda delivered: self._bind_result_artifact(
+                            context=delivered.context,
+                            result=delivered.result,
+                        ),
                     )
                     self._last_generation_admission = admission
                     stale_suppressed = not admission.accepted
+                    if stale_suppressed:
+                        # The provider may already have created an unbound FW
+                        # artifact. Bind only for deterministic invalidation;
+                        # the suppressed envelope never publishes its handoff.
+                        self._bind_result_artifact(
+                            context=active.context,
+                            result=result,
+                        )
+                else:
+                    self._bind_result_artifact(
+                        context=active.context,
+                        result=result,
+                    )
 
                 if cancel_requested or stale_suppressed:
                     artifact_invalidated = (

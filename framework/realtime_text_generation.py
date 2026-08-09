@@ -25,6 +25,10 @@ from .public_safety import (
 )
 from .realtime import RealtimeTurn
 from .realtime_capabilities import TextGenerationCapability
+from .realtime_generation_gate import (
+    RealtimeGenerationGate,
+    RealtimeStageCompletionEnvelope,
+)
 from .realtime_stage import RealtimeStageContext, RealtimeStageKind
 
 
@@ -304,7 +308,9 @@ class ProviderNeutralTextGenerationStream:
     The source yields legacy-compatible ``(text, emotion_tags)`` pairs. This
     wrapper owns correlation/indexing, cooperative future-delta suppression,
     at-most-once iterator cleanup, and exactly-once completed-history commit.
-    It does not claim provider transport hard cancellation.
+    An optional common generation gate atomically guards the final delta-state
+    application before the envelope leaves the stream. It does not claim
+    provider transport hard cancellation.
     """
 
     __slots__ = (
@@ -314,6 +320,7 @@ class ProviderNeutralTextGenerationStream:
         "_source",
         "_user_input",
         "_history_sink",
+        "_generation_gate",
         "_iteration_lock",
         "_state_lock",
         "_closed",
@@ -333,6 +340,7 @@ class ProviderNeutralTextGenerationStream:
         user_input: str,
         cancellation_token: TextGenerationCancellationToken | None = None,
         history_sink: TextGenerationHistorySink | None = None,
+        generation_gate: RealtimeGenerationGate | None = None,
     ) -> None:
         if not isinstance(context, RealtimeStageContext):
             raise TypeError("context must be a RealtimeStageContext")
@@ -350,6 +358,11 @@ class ProviderNeutralTextGenerationStream:
             raise TypeError("source must be an iterator")
         if history_sink is not None and not isinstance(history_sink, TextGenerationHistorySink):
             raise TypeError("history_sink must implement TextGenerationHistorySink")
+        if generation_gate is not None and not isinstance(
+            generation_gate,
+            RealtimeGenerationGate,
+        ):
+            raise TypeError("generation_gate must be a RealtimeGenerationGate or None")
 
         self._context = context
         self._capability = capability
@@ -357,6 +370,7 @@ class ProviderNeutralTextGenerationStream:
         self._source = source
         self._user_input = user_input
         self._history_sink = history_sink
+        self._generation_gate = generation_gate
         self._iteration_lock = threading.RLock()
         self._state_lock = threading.Lock()
         self._closed = False
@@ -421,6 +435,15 @@ class ProviderNeutralTextGenerationStream:
         if not all(isinstance(tag, str) for tag in normalized_tags):
             raise TypeError("source delta emotion_tags must contain only strings")
         return text, normalized_tags
+
+    def _apply_generation_delta_locked(
+        self,
+        delta: TextGenerationDeltaEnvelope,
+    ) -> None:
+        """Apply one admitted delta while the stream state lock is held."""
+
+        self._assistant_parts.append(delta.text)
+        self._next_delta_index += 1
 
     def _cleanup_source_once(self) -> TextGenerationStreamCloseResult:
         with self._state_lock:
@@ -509,6 +532,7 @@ class ProviderNeutralTextGenerationStream:
                 self._cleanup_source_once()
                 raise
 
+            delta: TextGenerationDeltaEnvelope | None = None
             with self._state_lock:
                 if self._closed or self._cancellation_token.cancel_requested:
                     self._closed = True
@@ -516,18 +540,36 @@ class ProviderNeutralTextGenerationStream:
                 else:
                     suppress = False
                     delta_index = self._next_delta_index
-                    self._next_delta_index += 1
-                    self._assistant_parts.append(text)
+                    delta = TextGenerationDeltaEnvelope(
+                        context=self._context,
+                        delta_index=delta_index,
+                        text=text,
+                        emotion_tags=emotion_tags,
+                    )
+                    generation_gate = self._generation_gate
+                    if generation_gate is None:
+                        self._next_delta_index += 1
+                        self._assistant_parts.append(text)
+                    else:
+                        decision = generation_gate.apply_completion(
+                            RealtimeStageCompletionEnvelope(
+                                turn_id=self._context.turn_id,
+                                generation_id=self._context.generation_id,
+                                stage="text_generation_delta",
+                                value=delta,
+                            ),
+                            deliver=self._apply_generation_delta_locked,
+                        )
+                        if not decision.accepted:
+                            self._closed = True
+                            suppress = True
             if suppress:
                 self._cleanup_source_once()
                 raise StopIteration
 
-            return TextGenerationDeltaEnvelope(
-                context=self._context,
-                delta_index=delta_index,
-                text=text,
-                emotion_tags=emotion_tags,
-            )
+            if delta is None:
+                raise AssertionError("accepted text delta must be constructed")
+            return delta
 
     def request_cancel(self, reason: TextGenerationCancelReason | str) -> bool:
         with self._state_lock:

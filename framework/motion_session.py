@@ -1109,13 +1109,14 @@ class MotionSession:
             MotionEventType.FAILED,
         )
 
-    def _admit_motion_completion(
+    def _apply_motion_completion(
         self,
         *,
         request: MotionRequest,
         result: MotionResult,
+        deliver: Callable[[MotionResult], None],
     ) -> GenerationAdmissionDecision[MotionResult] | None:
-        """Ask the bound common gate to admit one correlated terminal result."""
+        """Atomically apply one result through the bound common gate."""
 
         with self._realtime_coordination_lock:
             generation_gate = self._realtime_generation_gate
@@ -1124,14 +1125,16 @@ class MotionSession:
             or request.turn_id is None
             or request.generation_id is None
         ):
+            deliver(result)
             return None
-        return generation_gate.admit_completion(
+        return generation_gate.apply_completion(
             RealtimeStageCompletionEnvelope(
                 turn_id=request.turn_id,
                 generation_id=request.generation_id,
-                stage="motion",
+                stage="motion_completion",
                 value=result,
-            )
+            ),
+            deliver=deliver,
         )
 
     def _stale_motion_result(
@@ -1218,7 +1221,12 @@ class MotionSession:
         result: MotionResult,
         event_type: MotionEventType,
     ) -> MotionResult:
-        decision = self._admit_motion_completion(request=request, result=result)
+        applied_results: list[MotionResult] = []
+        decision = self._apply_motion_completion(
+            request=request,
+            result=result,
+            deliver=applied_results.append,
+        )
         if decision is not None and not decision.accepted:
             stale_result = self._stale_motion_result(
                 request=request,
@@ -1242,6 +1250,7 @@ class MotionSession:
             )
             return stale_result
 
+        result = applied_results[0]
         self._state = result.state
         self._emit(
             event_type,
