@@ -7621,3 +7621,92 @@ one-file sync authorizes only Control B exact contract review after it is
 committed, pushed, and remotely verified. It does not authorize Control B
 runtime implementation or FW-RT6-10b implementation.
 <!-- FW-RT6-10a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10a Control B — recovery/reset execution acceptance sync
+
+```text
+checkpoint: FW-RT6-10a Control B
+baseline head: d91430aff9aba804b37f3849fc7134e1eda19c6f
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control B implementation: d91430aff9aba804b37f3849fc7134e1eda19c6f
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control B implementation surface: 10 files
+dedicated Control B source gate: PASS
+focused Control B recovery/reset tests: 14 / PASS
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+stable explicit package: framework.recovery_control / PASS
+existing recovery vocabulary: RecoveryAction / REUSED / PASS
+second recovery owner introduced: False / PASS
+existing generation owner: RealtimeGenerationGate / REUSED / PASS
+second generation registry introduced: False / PASS
+explicit execution boundary: RealtimeSession.reset(plan) / ADOPTED / PASS
+decision automatically executes: False / PASS
+non-reset plan side effects: False / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+applied reset replacement generations: EXACTLY 1 / PASS
+active nonterminal turn replacement binding: SAME TURN / PASS
+terminal turn replacement handoff: NEXT TURN / EXACT / PASS
+reset-retired old completion delivered: False / PASS
+reset retirement reason: GenerationRetirementReason.RESET / PASS
+completion/reset race: LINEARIZED / PASS
+missing generation reset failure: TYPED / PASS
+closed session reset failure: TYPED / PASS
+active operation reset failure: TYPED / PASS
+failed reset claims generation advance: False / PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+root import loads framework.recovery_control eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10a aggregate: NOT_COMPLETED
+FW-RT6-10a tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-10b implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts `RealtimeSession.reset(plan)` as the explicit typed execution
+boundary for the accepted Control A recovery plan. A recovery decision and its
+immutable plan still do not execute themselves; host code must explicitly
+submit the plan to the session.
+
+The session reuses its sole `RealtimeGenerationGate`. Each applied reset
+retires the previous generation with the existing typed `RESET` reason and
+reserves exactly one replacement generation. An active nonterminal turn is
+rebound to that replacement; after a terminal turn, the exact replacement is
+held for and consumed by the next turn.
+
+Reset execution and completion admission share the existing serialized session
+operation boundary. A completion from the reset-retired generation therefore
+cannot cross its owner delivery boundary. The existing stale counter, typed
+drop reason, retirement facts, and generation diagnostics remain authoritative.
+
+Non-reset plans return their typed non-reset result without session effects.
+Missing generation context, closed-session admission, and active-operation
+conflicts return typed reset failures and cannot claim a generation advance.
+Control B adds no provider call, reconnect, close/dispose implementation,
+playback action, microphone action, or VTube Studio execution.
+
+No second recovery owner, generation registry, event type, root export, factory
+parameter, result field, or API version is introduced. The recovery package
+remains an explicit lazy import and the existing root-public surface remains
+unchanged.
+
+Control B closes none of the seven FW-RT6-10a aggregate task checkboxes. This
+one-file sync authorizes only Control C exact contract review after it is
+committed, pushed, and remotely verified. It does not authorize Control C
+aggregate implementation or FW-RT6-10b implementation.
+<!-- FW-RT6-10a-B-ACCEPTANCE-SYNC:END -->
