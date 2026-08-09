@@ -7802,3 +7802,90 @@ Final closed status remains deferred to a reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync. FW-RT6-10b implementation
 remains not authorized.
 <!-- FW-RT6-10a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10a — recovery/reset semantics final acceptance sync
+
+```text
+checkpoint: FW-RT6-10a final acceptance
+baseline head: d5738f6e7c24caa508cd82b63a772d662b0bdf73
+FW-RT6-9d final acceptance: 48b6554d79c78af95f825639e2a68e7a2f7493b3
+Control A implementation: dddcd3434bbb43be1c55c9d8a22b53d9ebddb6a0
+Control A acceptance sync: 2fe31e3c6a18f62696cd12f4f153c026d6f113a6
+Control B implementation: d91430aff9aba804b37f3849fc7134e1eda19c6f
+Control B acceptance sync: bcfb77922d219da56697430e42e21e95c3b6cd62
+Control C aggregate implementation: d5738f6e7c24caa508cd82b63a772d662b0bdf73
+Control C remote verification: PASS
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A+B recovery/reset tests: 27 / PASS
+accepted FW-RT6-9d aggregate regression: 27 / PASS
+full Framework unit suite: 520 / PASS
+stable explicit package: framework.recovery_control / PASS
+existing recovery vocabulary: RecoveryAction / REUSED / PASS
+second recovery owner introduced: False / PASS
+existing generation owner: RealtimeGenerationGate / REUSED / PASS
+second generation registry introduced: False / PASS
+interrupt recovery action: RecoveryAction.RESET_TURN / TYPED / PASS
+reusable disposition: not_required / TYPED / PASS
+turn-only reset scope: turn_only / PASS
+session reset scope: session / PASS
+reconnect required disposition: TYPED / PASS
+close required disposition: TYPED / PASS
+permanently failed disposition: TYPED / PASS
+reset provider-context loss: DOCUMENTED / PASS
+reset generation advance: EXACTLY 1 / PASS
+active nonterminal turn replacement binding: SAME TURN / PASS
+terminal turn replacement handoff: NEXT TURN / EXACT / PASS
+old completion after reset delivered: False / PASS
+reset retirement reason: GenerationAdvanceReason.RESET / PASS
+completion/reset race: LINEARIZED / PASS
+reset failure: TYPED / PASS
+failed reset claims generation advance: False / PASS
+non-reset disposition side effects: False / PASS
+provider reset/reconnect/close execution: False / PASS
+generation diagnostics keys changed: False / PASS
+event vocabulary changed: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+existing tests changed by Control C/final sync: False
+FW-RT6-10a tasks: 7 / 7 ACCEPTED
+FW-RT6-10a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-10b exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-10b implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-10a closes the provider-neutral recovery/reset boundary. The existing
+root-public `RecoveryAction` remains the sole recovery decision vocabulary,
+`framework.recovery_control` remains the stable explicit planning and result
+package, and `RealtimeGenerationGate` remains the sole generation owner.
+
+Turn-only and session reset retain their accepted explicit scopes and provider
+context-loss documentation. Reconnect, close, and permanent failure remain
+typed non-reset dispositions. One applied reset creates exactly one distinct
+replacement generation, and a reset-retired completion cannot reach its
+delivery boundary. Reset failure remains public-safe and cannot claim a
+generation advance.
+
+Existing diagnostics, event vocabulary, root exports, factory parameters, and
+API versions remain unchanged. Provider, network, audio, microphone, playback,
+and real VTube Studio execution remain outside this contract.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, aggregate gate, or existing test. It formally completes, verifies,
+accepts, commits, pushes, and closes all three controls and all seven
+FW-RT6-10a aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-10b exact contract review is authorized. This sync does not authorize
+FW-RT6-10b implementation.
+<!-- FW-RT6-10a-FINAL-ACCEPTANCE-SYNC:END -->
