@@ -4340,3 +4340,72 @@ provider/network/audio/microphone/real VTS execution: False
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-9c-B-BARGE-IN-EXECUTION:END -->
+
+
+<!-- FW-RT6-9c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9c Control C — aggregate barge-in acceptance boundary
+
+Control C accepts the complete explicit host flow without adding another
+runtime owner:
+
+```python
+decision = session.decide_barge_in(turn_id=turn_id)
+plan = build_barge_in_control_plan(
+    decision,
+    capabilities=session.capabilities,
+)
+result = session.execute_barge_in(plan)
+```
+
+These remain three distinct operations. The host observes microphone or speech
+activity outside Framework core and chooses when to request a decision.
+`decide_barge_in(...)` applies the configured provider-neutral policy and emits
+the existing decision events, but it does not interrupt, flush, cancel, stop
+motion, or reserve a turn terminal. Building the immutable plan is also a
+side-effect-free projection.
+
+Execution begins only when the host explicitly submits the plan. The exact
+`coordinator_request` fixed by the accepted plan is delegated to the existing
+whole-request ordered interrupt owner. Duplicate execution for the resolved
+session and turn therefore replays the exact owner `InterruptResult` and does
+not repeat cancellation, output, motion, flush, event, or terminal effects.
+
+Capability facts are never broadened during execution. Unsupported provider
+hard cancel and turn takeover retain their truthful `soft_interrupt` downgrade.
+Unsupported flush-only plans remain non-executing. A plan built from capability
+facts that disagree with the executing session is rejected before effects.
+
+Control C changes no Framework runtime source, existing test, root export,
+event type, public request/result field, factory parameter, or API version. It
+adds the aggregate regression gate and marks the five FW-RT6-9c tasks as
+accepted candidates. Final closure remains a separate one-file acceptance sync.
+
+```text
+exact Control C surface: 3 files
+decision != execution: True
+decision automatically executes: False
+control plan side-effect-free: True
+actual execution boundary: RealtimeSession.execute_barge_in(plan)
+exact coordinator request identity retained: True
+whole-request ordered owner reused: True
+duplicate result: EXACT OWNER InterruptResult OBJECT
+duplicate subsystem/flush/event effects repeated: False
+barge-in event order: DECISION BEFORE INTERRUPT BEFORE TERMINAL
+multiple turn terminal events: False
+microphone detection in core: False
+barge-in policy triggers microphone: False
+unsupported hard cancel effective mode: soft_interrupt
+unsupported flush execution: False
+capability mismatch execution: REJECTED
+framework root-public names: 127 / UNCHANGED
+Realtime API version: 5.2.0 / UNCHANGED
+Motion API version: 5.5.0 / UNCHANGED
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-9c tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-9c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9d implementation: NOT_AUTHORIZED
+provider/network/audio/microphone/real VTS execution: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-9c-C-AGGREGATE-ACCEPTANCE:END -->

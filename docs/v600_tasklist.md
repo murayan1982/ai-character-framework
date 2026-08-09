@@ -2883,11 +2883,11 @@ PASS
 
 **Tasks:**
 
-- [ ] `decide_barge_in()`をpure policy decisionとして維持する。
-- [ ] decisionからcontrol planを生成する。
-- [ ] actual executionはinterrupt coordinatorへ委譲する。
-- [ ] microphone detectionをcore scopeへ入れない。
-- [ ] hard-cancel policy選択時もcapability不足を正しくdowngradeする。
+- [x] `decide_barge_in()`をpure policy decisionとして維持する。
+- [x] decisionからcontrol planを生成する。
+- [x] actual executionはinterrupt coordinatorへ委譲する。
+- [x] microphone detectionをcore scopeへ入れない。
+- [x] hard-cancel policy選択時もcapability不足を正しくdowngradeする。
 
 **Acceptance:**
 
@@ -7028,3 +7028,91 @@ Aggregate acceptance remains Control C work. This sync authorizes only Control
 C exact contract review after the sync is committed, pushed, and remotely
 verified; it does not authorize Control C or FW-RT6-9d implementation.
 <!-- FW-RT6-9c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-9c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-9c Control C — barge-in decision/execution aggregate acceptance
+
+```text
+checkpoint: FW-RT6-9c Control C aggregate acceptance candidate
+baseline head: 080070b740c7178623f578b134945df3c0dd513f
+FW-RT6-9b final acceptance: 42dcf194909504a1a09ea6612d81db1b56a008f9
+Control A implementation: f6921f1933f0d4efa1463bcf23710cd46f528280
+Control A acceptance sync: 4f1fdc0de949f236703c0e6d23a8d43abf8636e5
+Control B implementation: 99993eaedf9956a87c21799bce090ab224884e50
+Control B acceptance sync: 080070b740c7178623f578b134945df3c0dd513f
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+dedicated Control C aggregate gate: PASS
+focused Control A barge-in tests: 12 / PASS
+focused Control B barge-in tests: 12 / PASS
+focused Control A+B barge-in tests: 24 / PASS
+full Framework unit suite: 466 / PASS
+stable explicit plan package: framework.barge_in_control / PASS
+decide_barge_in policy/execution effects: False / PASS
+decision automatically executes: False / PASS
+control plan side effects: False / PASS
+decision to control plan: EXPLICIT HOST STEP / PASS
+RealtimeSession.execute_barge_in(plan): ADOPTED / PASS
+exact coordinator request delegation: SAME OBJECT / PASS
+whole-request ordered interrupt owner reused: True / PASS
+second interrupt/terminal/flush owner introduced: False / PASS
+duplicate result: EXACT OWNER InterruptResult OBJECT / PASS
+duplicate subsystem/flush/event effects repeated: False / PASS
+barge-in event order: DECISION BEFORE INTERRUPT BEFORE TERMINAL / PASS
+multiple turn terminal events: False / PASS
+microphone detection in core: False / PASS
+barge-in policy triggers microphone: False / PASS
+provider hard cancel without capability: NOT_PLANNED / PASS
+unsupported hard cancel effective mode: soft_interrupt / PASS
+unsupported flush execution: False / PASS
+capability mismatch execution: REJECTED / PASS
+BargeInPolicy flush field/factory compatibility: PASS
+root import loads framework.barge_in_control eagerly: False / PASS
+create_realtime_session signature: UNCHANGED / PASS
+InterruptRequest / InterruptResult fields: UNCHANGED / PASS
+event vocabulary: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-9c tasks: 5 / 5 ACCEPTED-CANDIDATE
+FW-RT6-9c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-9d implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted provider-neutral decision model, immutable
+control-plan projection, and ordered runtime execution boundary. The host
+remains responsible for observing microphone or speech activity, explicitly
+requesting a policy decision, building a plan from the session capability
+snapshot, and submitting that plan for execution.
+
+Decision and planning remain non-executing. `decide_barge_in(...)` emits only
+the accepted decision events and does not interrupt, flush, cancel, stop
+motion, or reserve a terminal. Building `BargeInControlPlan` is a side-effect-
+free projection. Runtime work begins only when the host explicitly calls
+`execute_barge_in(plan)`.
+
+An executing plan hands its exact immutable `coordinator_request` to the sole
+whole-request ordered interrupt owner. Existing duplicate convergence, flush
+ordering, terminal reservation, close ordering, and event sequencing remain
+authoritative. No second coordinator, terminal registry, flush owner, or event
+sequencer is introduced.
+
+Capability downgrade remains truthful and monotonic. Unsupported provider hard
+cancel and turn takeover become `soft_interrupt` without provider-cancel or
+unsupported queue claims. An unsupported flush-only plan remains non-executing,
+and a plan whose capability facts disagree with the executing session is
+rejected before effects.
+
+Control C changes no runtime source or existing test. It adds the aggregate
+regression gate and closes the five FW-RT6-9c task checkboxes only as aggregate
+acceptance candidates. Final closed status remains deferred to a reviewed,
+committed, pushed, and remotely verified one-file final acceptance sync.
+FW-RT6-9d implementation remains not authorized.
+<!-- FW-RT6-9c-C-AGGREGATE-ACCEPTANCE:END -->
