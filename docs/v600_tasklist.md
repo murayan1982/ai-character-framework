@@ -6431,3 +6431,89 @@ CLOSED` status remains deferred to a reviewed, committed, pushed, and remotely
 verified one-file final acceptance sync. Whole-request duplicate and race
 ordering remains FW-RT6-9b, and barge-in decision/execution remains FW-RT6-9c.
 <!-- FW-RT6-9a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-9a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-9a — interrupt coordinator final acceptance sync
+
+```text
+checkpoint: FW-RT6-9a final acceptance
+baseline head: 5a7908cf3d7604b536277715d47178dd84969c39
+Control A implementation: 712a03e27db1ea6c2229f6907c54d581680bb208
+Control A acceptance sync: 3aaef5e6335c2c184450525a17d36f1783345268
+Control B implementation: 09752474a3178021a5153f8fdaa94aea59c4e5e8
+Control B acceptance sync: a013d04092d04ad94ac9be915da8b93f0e063c01
+Control C aggregate implementation: 5a7908cf3d7604b536277715d47178dd84969c39
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C exact surface: 3 files / PASS
+aggregate gate: PASS
+focused Control A interrupt-coordination tests: 17 / PASS
+focused Control B interrupt-coordination tests: 15 / PASS
+full Framework unit suite: 419 / PASS
+v5.2 interrupt/output-control public-contract gate: PASS
+accepted FW-RT6-8c aggregate regression: PASS
+accepted FW-RT6-8b lifecycle aggregate regression: PASS
+v5.2 motion public-contract gate: PASS
+v5.5 MotionSession real-adapter composition regression: PASS
+accepted FW-RT6-8a correlation regression: PASS
+interrupt subsystems: 5 EXACT / PASS
+subsystem outcomes: 8 EXACT / PASS
+aggregate outcomes: 9 EXACT / PASS
+active-stage registry owner: RealtimeSession PRIVATE / PASS
+interrupt target dispatch order: STABLE / PASS
+turn terminal/not-found/closed outcomes: TYPED / PASS
+LLM cooperative cancel reach: PASS
+TTS generation cancel reach: PASS
+TTS pending clear reach: PASS
+audio artifact invalidation reach: PASS
+accepted motion-control projection reused: PASS
+aggregate result source: InterruptAggregateResult.from_results / PASS
+aggregate partial result: PASS
+bounded timeout result: PASS
+accepted cancel late-delivery barrier: PASS
+unsupported overclaim: False / PASS
+outer v5.2 interrupt compatibility: PASS
+create_realtime_session signature: UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+actual pyvts/WebSocket import: False / PASS
+provider/network/audio/microphone/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+whole-request duplicate/race ordering changed: False
+barge-in decision/execution changed: False
+FW-RT6-9a tasks: 9 / 9 ACCEPTED
+FW-RT6-9a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-9b exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-9b implementation: NOT_AUTHORIZED
+FW-RT6-9c implementation: NOT_AUTHORIZED
+final acceptance-sync exact surface: 1 file
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-9a is accepted as the provider-neutral whole-turn interrupt
+coordinator. `RealtimeSession` privately owns active text and TTS generation
+work, validates the requested target, and reaches text generation, TTS
+generation, the pending TTS queue, audio artifacts, and motion in stable order.
+
+Stage cancellation and motion control remain outside the long session
+operation lock. Accepted cooperative cancellation arms the one-way
+late-delivery barrier before bounded completion waiting. Request, acceptance,
+completion, provider hard-cancel application, queue clearing, artifact
+invalidation, and motion effects remain separate truthful observations.
+
+`InterruptAggregateResult.from_results(...)` derives every aggregate outcome.
+Mixed observations remain `PARTIAL`, while inactive, terminal, unknown,
+unsupported, timed-out, failed, and closed paths preserve their typed facts and
+the accepted outer v5.2 compatibility behavior. No provider capability or
+physical effect is inferred without an observed result.
+
+This sync closes FW-RT6-9a only. It changes no runtime source and does not
+implement whole-request duplicate convergence, interrupt/completion/close race
+ordering, flush ordering, or new-turn-during-interrupt behavior. Those remain
+FW-RT6-9b. It authorizes FW-RT6-9b exact contract review after this sync is
+committed, pushed, and remotely verified, not FW-RT6-9b implementation.
+FW-RT6-9c barge-in execution remains not authorized.
+<!-- FW-RT6-9a-FINAL-ACCEPTANCE-SYNC:END -->
