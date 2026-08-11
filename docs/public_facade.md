@@ -5099,3 +5099,96 @@ Control C aggregate acceptance: NOT_AUTHORIZED
 This implementation candidate does not close aggregate task checkboxes and
 does not authorize Control C, an acceptance sync, commit, or push.
 <!-- FW-RT6-10b-B-SESSION-CLOSE:END -->
+
+
+<!-- FW-RT6-10b-C-SESSION-CLOSE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10b Control C — close/dispose aggregate acceptance
+
+Control C accepts the combined Control A planning vocabulary and Control B
+public-session adoption as one provider-neutral close/dispose lifecycle.
+`framework.session_close` remains an explicit lazy package, and the existing
+public session remains the sole execution owner. No second close coordinator,
+terminal registry, generation registry, callback hub, or cleanup service is
+introduced.
+
+The five public sessions keep their compatible `close() -> None`,
+`dispose() -> None`, and context-manager behavior. Each exposes the immutable
+read-only `last_close_result`; no ambiguous `close_result` property and no root
+session-close export are added.
+
+An active realtime turn reaches `TurnOutcome.CLOSED` exactly once through the
+existing `RealtimeTerminalRegistry`, and `RealtimeGenerationGate` remains the
+sole generation retirement owner. The correlated final `SESSION_CLOSED` event
+is delivered once before `RealtimeEventHub` and callback collections are
+sealed. Text-chat stream, voice-input generation, and motion callback state are
+released after final delivery, preventing an orphaned turn or a late
+host-visible result.
+
+Injected stage cleanup runs concurrently under one finite common deadline.
+Python cannot forcibly terminate arbitrary external synchronous code, so a
+slow external stage is isolated by a daemon worker and reported `timed_out`.
+Its late completion cannot mutate the immutable session result, callbacks, or
+event hub. Framework owns no persistent non-daemon cleanup worker.
+
+`_RealtimeExecutionBridge` cleanup is `completed` only after its worker is
+confirmed stopped. Provider/client cleanup is required only for a persistent
+owner and is mapped to a public-safe typed result. Voice output therefore
+reports `not_required`; motion maps its persistent VTube Studio composition
+and bridge results without real provider or network execution.
+
+Cleanup failure or timeout remains truthful and never reopens a session.
+Repeated close records `already_closed`, repeats no cleanup, and emits no
+second final event. Existing operation-specific post-close typed rejection is
+retained for realtime, text chat, voice input, voice output, and motion.
+Diagnostics expose only immutable counts and safe messages, never raw
+exceptions, credentials, provider payloads, transcripts, audio, private paths,
+callbacks, threads, clients, or other private identities.
+
+```text
+checkpoint: FW-RT6-10b Control C aggregate acceptance candidate
+baseline head: b7ae54f7a948704456ddd446f9ddc631b0d3d4ad
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A acceptance sync: 6153661b3960fbfa1130b2caef39e48717ad8e80
+Control B implementation: 98c6455640be1eed737478c195616b2ff12840bb
+Control B acceptance sync: b7ae54f7a948704456ddd446f9ddc631b0d3d4ad
+exact Control C surface: 3 files
+dedicated aggregate gate: scripts/check_v600_session_close_acceptance.py
+focused Control A+B session-close tests: 25 / PASS
+public close owner: PUBLIC SESSION / REUSED
+explicit package: framework.session_close / LAZY
+public session adoption: 5 / 5 PASS
+last close result: last_close_result / READ-ONLY
+ambiguous close_result property: False
+active realtime terminal: TurnOutcome.CLOSED / EXISTING REGISTRY
+active turn orphan after close: False
+generation retirement owner: RealtimeGenerationGate / REUSED
+SESSION_CLOSED event: EXACTLY 1 / FINAL DELIVERY BEFORE HUB CLOSE
+stage cleanup: PARALLEL / ONE FINITE COMMON DEADLINE
+stage timeout isolation: DAEMON / LATE SESSION MUTATION FALSE
+Framework persistent non-daemon cleanup thread added: False
+bridge completion: CONFIRMED STOP REQUIRED
+provider/client/bridge cleanup result: TRUTHFUL / TYPED
+voice-output persistent provider target: not_required
+callback and subscription release: AFTER FINAL DELIVERY
+cleanup failure reopens session: False
+repeated close: already_closed / NO RE-CLEANUP / NO SECOND EVENT
+post-close typed rejection: RETAINED
+cleanup diagnostics: COUNT_ONLY / PUBLIC_SAFE
+root session-close exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-10b tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-10b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10c implementation: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C changes only this public contract, the aggregate tasklist state, and
+the dedicated aggregate gate. Final closed status requires a separately
+reviewed, committed, pushed, and remotely verified one-file final acceptance
+sync.
+<!-- FW-RT6-10b-C-SESSION-CLOSE-ACCEPTANCE:END -->

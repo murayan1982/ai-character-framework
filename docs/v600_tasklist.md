@@ -2958,13 +2958,13 @@ rejected
 
 **Tasks:**
 
-- [ ]全public session close semanticsを統一する。
-- [ ] closeをidempotentにする。
-- [ ] active turn closeをterminalへ収束させる。
-- [ ] stage cleanup timeoutを実装する。
-- [ ] callback/event hubをcloseする。
-- [ ] provider/client/bridge cleanup resultをdiagnosticsへ記録する。
-- [ ] close後operationをtyped rejectionにする。
+- [x]全public session close semanticsを統一する。
+- [x] closeをidempotentにする。
+- [x] active turn closeをterminalへ収束させる。
+- [x] stage cleanup timeoutを実装する。
+- [x] callback/event hubをcloseする。
+- [x] provider/client/bridge cleanup resultをdiagnosticsへ記録する。
+- [x] close後operationをtyped rejectionにする。
 
 **Acceptance:**
 
@@ -8052,3 +8052,101 @@ reviewed, committed, pushed, and remotely verified, only Control C exact
 contract review becomes authorized. Control C implementation remains separately
 gated.
 <!-- FW-RT6-10b-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10b Control C — close/dispose aggregate acceptance
+
+```text
+checkpoint: FW-RT6-10b Control C aggregate acceptance candidate
+baseline head: b7ae54f7a948704456ddd446f9ddc631b0d3d4ad
+FW-RT6-10a final acceptance: ffb67d8cf089cf0b9e0d0c517614517186201a17
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A acceptance sync: 6153661b3960fbfa1130b2caef39e48717ad8e80
+Control B implementation: 98c6455640be1eed737478c195616b2ff12840bb
+Control B acceptance sync: b7ae54f7a948704456ddd446f9ddc631b0d3d4ad
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact surface: 3 files
+dedicated Control C aggregate gate: PASS
+focused Control A session-close tests: 12 / PASS
+focused Control B session-close tests: 13 / PASS
+focused Control A+B session-close tests: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 545 / PASS
+stable explicit package: framework.session_close / PASS
+public close owner: PUBLIC SESSION / REUSED / PASS
+public session adoption: 5 / 5 PASS
+last close result: last_close_result / READ-ONLY / PASS
+ambiguous close_result property introduced: False / PASS
+active realtime terminal: TurnOutcome.CLOSED / EXISTING REGISTRY / PASS
+active turn orphan after close: False / PASS
+generation retirement owner: RealtimeGenerationGate / REUSED / PASS
+SESSION_CLOSED event: EXACTLY 1 / FINAL DELIVERY BEFORE HUB CLOSE / PASS
+stage cleanup: PARALLEL / ONE FINITE COMMON DEADLINE / PASS
+stage timeout isolation: DAEMON / LATE SESSION MUTATION FALSE / PASS
+Framework persistent non-daemon cleanup thread added: False / PASS
+execution bridge completed only after confirmed stop: True / PASS
+persistent provider cleanup: TRUTHFUL / TYPED / PASS
+voice-output persistent provider target: not_required / PASS
+callback/subscription release: AFTER FINAL DELIVERY / PASS
+cleanup failure reopens session: False / PASS
+duplicate close outcome: already_closed / PASS
+duplicate close re-runs cleanup: False / PASS
+duplicate close emits another close event: False / PASS
+post-close typed rejection: RETAINED / PASS
+cleanup diagnostics: COUNT_ONLY / PUBLIC_SAFE / PASS
+raw exception/private value retained: False / PASS
+root import loads framework.session_close eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing tests changed by Control C: False
+FW-RT6-10b tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-10b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10c implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted close planning and public-session runtime
+adoption contracts without changing runtime source. `framework.session_close`
+remains the stable explicit package, while each existing public session remains
+its sole close execution owner and exposes only the read-only
+`last_close_result` observation.
+
+An active realtime turn reaches `TurnOutcome.CLOSED` through the existing
+terminal registry and its generation is retired by the existing generation
+owner. The one correlated `SESSION_CLOSED` event is delivered before the event
+hub and callback collections are sealed, so no active turn is orphaned and no
+post-close payload can cross the existing host-visible boundary.
+
+Injected stages close concurrently under one finite common deadline. A slow
+external synchronous cleanup is isolated in a daemon worker and is reported
+`timed_out`; its late return cannot mutate the immutable published result,
+event hub, or callbacks. The execution bridge reports `completed` only after
+its worker is confirmed stopped, and Framework adds no persistent non-daemon
+cleanup worker.
+
+Provider/client and bridge results remain truthful typed observations.
+Voice output owns no persistent provider target, while motion maps the
+persistent VTube Studio composition and bridge state without performing a real
+provider or network operation. Failure or timeout never reopens the session.
+
+Repeated close remains side-effect-free, records `already_closed`, repeats no
+cleanup, and emits no second final event. Existing operation-specific
+post-close typed rejection, root-public exports, factory signatures, event
+vocabulary, and API versions remain unchanged. Diagnostics retain no raw
+exception, credential, provider payload, transcript, audio, private path,
+callback, thread, or client identity.
+
+Control C changes no runtime source or existing test. It adds the aggregate
+regression gate and marks all seven FW-RT6-10b tasks as acceptance candidates.
+Final closed status remains deferred to a reviewed, committed, pushed, and
+remotely verified one-file final acceptance sync. FW-RT6-10c implementation
+remains not authorized.
+<!-- FW-RT6-10b-C-AGGREGATE-ACCEPTANCE:END -->
