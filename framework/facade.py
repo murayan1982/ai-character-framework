@@ -11,6 +11,7 @@ from config.prompt_builder import build_final_system_instruction
 
 if TYPE_CHECKING:
     from config.loader import RuntimeConfig
+    from framework.session_close import SessionCloseResult
 
 from framework.version import TEXT_CHAT_API_VERSION
 from framework.identity import EventSequence, GenerationId, SessionId, TurnId
@@ -89,7 +90,7 @@ class TextChatSessionInfo:
     supports_reset: bool = True
     supports_interrupt: bool = True
     supports_events: bool = True
-    supports_close: bool = False
+    supports_close: bool = True
     supports_voice_input: bool = False
     supports_voice_output: bool = False
     supports_live2d: bool = False
@@ -145,6 +146,8 @@ class TextChatSession:
         self._realtime_event_callbacks: list[Callable[[RealtimeEvent], None]] = []
         self._realtime_event_lock = RLock()
         self._active_realtime_turn_context: _TextChatRealtimeTurnContext | None = None
+        self._fw_public_closed = False
+        self._last_close_result: SessionCloseResult | None = None
 
     @property
     def session_id(self) -> SessionId:
@@ -166,6 +169,8 @@ class TextChatSession:
         if not callable(callback):
             raise TypeError("callback must be callable")
         with self._realtime_event_lock:
+            if self.is_closed:
+                raise RuntimeError("Text chat session is closed.")
             self._realtime_event_callbacks.append(callback)
         return callback
 
@@ -242,6 +247,8 @@ class TextChatSession:
         for external apps that want to observe text session events without
         importing runtime or plugin internals.
         """
+        if self.is_closed:
+            raise RuntimeError("Text chat session is closed.")
         self._event_callbacks.append(callback)
         return callback
 
@@ -250,6 +257,8 @@ class TextChatSession:
         callback: Callable[[TextChatStateChange], None],
     ) -> Callable[[TextChatStateChange], None]:
         """Register an app-facing state change callback and return it."""
+        if self.is_closed:
+            raise RuntimeError("Text chat session is closed.")
         self._state_change_callbacks.append(callback)
         return callback
 
@@ -319,7 +328,13 @@ class TextChatSession:
     def is_closed(self) -> bool:
         """Whether this public text chat session has been closed."""
 
-        return bool(getattr(self, "_fw_public_closed", False))
+        return self._fw_public_closed
+
+    @property
+    def last_close_result(self) -> SessionCloseResult | None:
+        """Return the latest immutable close observation."""
+
+        return self._last_close_result
 
     def close(self) -> None:
         """Close the public text chat session.
@@ -330,7 +345,83 @@ class TextChatSession:
         wired behind this method in later checkpoints.
         """
 
-        self._fw_public_closed = True
+        from framework.session_close import (
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            SessionCloseResult,
+            _runtime_close_result,
+            build_session_close_plan,
+        )
+
+        with self._realtime_event_lock:
+            if self._fw_public_closed:
+                self._last_close_result = SessionCloseResult.already_closed(
+                    public_metadata={"boundary": "text_chat"}
+                )
+                return
+            context = self._active_realtime_turn_context
+            plan = build_session_close_plan(
+                active_turn_terminal_required=context is not None,
+                callback_hub_close_required=context is not None,
+                public_metadata={"boundary": "text_chat"},
+            )
+            self._fw_public_closed = True
+            self._interrupt_requested = True
+
+        callback_result = SessionCleanupResult.not_required(
+            SessionCleanupTarget.CALLBACK_HUB
+        )
+        if context is not None:
+            callback_result = SessionCleanupResult.completed(
+                SessionCleanupTarget.CALLBACK_HUB
+            )
+            try:
+                if self._state != "closed":
+                    self._set_state("closed")
+                self._emit_event("closed")
+                self._emit_realtime_event(
+                    RealtimeEventType.SESSION_CLOSED,
+                    state=RealtimeState.CLOSED,
+                    previous_state=RealtimeState.THINKING,
+                    context=context,
+                    payload=LifecycleEventPayload(
+                        outcome=TurnOutcome.CLOSED,
+                        reason="session_closed",
+                    ),
+                    public_error_code=RealtimeErrorCode.SESSION_CLOSED,
+                    safe_message="Text chat session is closed.",
+                    public_metadata={"boundary": "text_chat"},
+                )
+            except Exception:
+                callback_result = SessionCleanupResult.failed_result(
+                    SessionCleanupTarget.CALLBACK_HUB,
+                    safe_message="Text chat callback cleanup failed.",
+                )
+            finally:
+                with self._realtime_event_lock:
+                    self._active_realtime_turn_context = None
+                    self._realtime_event_callbacks.clear()
+                self._event_callbacks.clear()
+                self._state_change_callbacks.clear()
+        first_result = _runtime_close_result(
+            plan,
+            observed={
+                SessionCleanupTarget.ACTIVE_TURN: (
+                    SessionCleanupResult.completed(
+                        SessionCleanupTarget.ACTIVE_TURN
+                    )
+                    if context is not None
+                    else SessionCleanupResult.not_required(
+                        SessionCleanupTarget.ACTIVE_TURN
+                    )
+                ),
+                SessionCleanupTarget.CALLBACK_HUB: callback_result,
+            },
+            active_turn_terminalized=context is not None,
+            public_metadata={"boundary": "text_chat"},
+        )
+        if self._last_close_result is None:
+            self._last_close_result = first_result
 
     def dispose(self) -> None:
         """Compatibility alias for ``close()``."""
@@ -388,6 +479,8 @@ class TextChatSession:
         )
     def ask_stream(self, text: str) -> Generator[str, None, None]:
         """Send one text turn and yield assistant response chunks."""
+        if self.is_closed:
+            return
         context = self._new_realtime_turn_context(text)
         self._active_realtime_turn_context = context
         self._interrupt_requested = False
@@ -418,6 +511,8 @@ class TextChatSession:
         delta_index = 0
         try:
             for chunk, _emotions in self._llm.ask_stream(text):
+                if self.is_closed:
+                    break
                 if self._interrupt_requested:
                     self._set_state("interrupted")
                     self._emit_realtime_event(
@@ -452,6 +547,8 @@ class TextChatSession:
                     self._emit_legacy_event_from_realtime_event(response_delta)
                     yield chunk
             else:
+                if self.is_closed:
+                    return
                 completed = True
                 response_completed = self._emit_realtime_event(
                     RealtimeEventType.RESPONSE_COMPLETED,
@@ -475,6 +572,8 @@ class TextChatSession:
                     ),
                 )
         except Exception as exc:
+            if self.is_closed:
+                raise
             self._set_state("error")
             classification = _classify_text_chat_exception(exc)
             failed = self._emit_realtime_event(
@@ -502,7 +601,10 @@ class TextChatSession:
         finally:
             if self._active_realtime_turn_context is context:
                 self._active_realtime_turn_context = None
-            if completed or self._state in {"responding", "interrupted", "error"}:
+            if (
+                not self.is_closed
+                and (completed or self._state in {"responding", "interrupted", "error"})
+            ):
                 self._set_state("idle")
 
     def reset(self) -> None:

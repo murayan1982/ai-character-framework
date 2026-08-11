@@ -78,7 +78,6 @@ from .realtime import (
     _public_mapping,
     _require_runtime_event_payload,
 )
-
 if TYPE_CHECKING:
     from .barge_in_control import BargeInControlPlan
     from .interrupt_coordination import InterruptAggregateResult
@@ -91,6 +90,12 @@ if TYPE_CHECKING:
         RealtimeStageCompletionEnvelope,
     )
     from .recovery_control import RecoveryControlPlan, RecoveryResetResult
+    from .session_close import (
+        SessionCleanupResult,
+        SessionCleanupTarget,
+        SessionClosePlan,
+        SessionCloseResult,
+    )
     from .realtime_stage import (
         MotionStage,
         TextGenerationStage,
@@ -118,6 +123,7 @@ _POST_TERMINAL_COORDINATION_EVENT_TYPES = frozenset(
     }
 )
 _EVENT_GENERATION_AUTO = object()
+_SESSION_CLOSE_TIMEOUT_SECONDS = 2.0
 _MOTION_LIFECYCLE_SOURCE_SIGNALS = {
     RealtimeEventType.LISTENING_STARTED: ("listening", None),
     RealtimeEventType.RESPONSE_STARTED: ("thinking", None),
@@ -575,6 +581,14 @@ class RealtimeSession:
         self._phase: RealtimePhase | None = RealtimePhase.IDLE
         self._closed = False
         self._close_requested = False
+        self._last_close_result: SessionCloseResult | None = None
+        self._pending_close_result: tuple[
+            SessionClosePlan,
+            dict[SessionCleanupTarget, SessionCleanupResult],
+            bool,
+        ] | None = None
+        self._close_finalized = Event()
+        self._duplicate_close_requested = False
         self._operation_lock = RLock()
         self._operation_depth = 0
         self._execution_bridge = _RealtimeExecutionBridge(
@@ -738,6 +752,12 @@ class RealtimeSession:
     @property
     def is_closed(self) -> bool:
         return self._closed
+
+    @property
+    def last_close_result(self) -> SessionCloseResult | None:
+        """Return the latest immutable close observation, if close was requested."""
+
+        return self._last_close_result
 
     @property
     def barge_in_policy(self) -> BargeInPolicy:
@@ -1058,7 +1078,7 @@ class RealtimeSession:
                         should_shutdown_bridge = True
         finally:
             if should_shutdown_bridge:
-                self._execution_bridge.shutdown()
+                self._finalize_close_result()
 
     def on_event(self, callback: RealtimeEventCallback) -> str:
         """Register a canonical callback and return its opaque removal token."""
@@ -4706,19 +4726,94 @@ class RealtimeSession:
                     current_generation_id=current_generation_id,
                 )
 
-    def _close_injected_stages(self) -> None:
+    def _close_injected_stages(
+        self,
+        *,
+        timeout_seconds: float,
+    ) -> SessionCleanupResult:
+        from .session_close import (
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            _run_bounded_cleanup_operations,
+        )
+
         if self._injected_stages_closed:
-            return
+            return SessionCleanupResult.already_closed(
+                SessionCleanupTarget.STAGE
+            )
         self._injected_stages_closed = True
-        for stage in self._injected_stages.values():
-            try:
-                stage.close()
-            except Exception:
-                self._stage_close_error_count += 1
-            else:
-                self._stage_close_count += 1
+        result, completed_count, error_count = _run_bounded_cleanup_operations(
+            (stage.close for stage in self._injected_stages.values()),
+            timeout_seconds=timeout_seconds,
+            target=SessionCleanupTarget.STAGE,
+            timeout_message="Realtime stage cleanup timed out.",
+            failure_message="Realtime stage cleanup failed.",
+        )
+        self._stage_close_count += completed_count
+        self._stage_close_error_count += error_count
+        return result
+
+    def _set_already_closed_result(self) -> None:
+        """Record one repeated close without re-running cleanup or events."""
+
+        from .session_close import SessionCloseResult
+
+        with self._operation_lock:
+            if self._closed:
+                if not self._close_finalized.is_set():
+                    self._duplicate_close_requested = True
+                else:
+                    self._last_close_result = SessionCloseResult.already_closed(
+                        public_metadata={"boundary": "realtime"}
+                    )
+
+    def _finalize_close_result(self) -> None:
+        """Stop the bridge after unlock, then publish the complete typed result."""
+
+        from .session_close import (
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            SessionCloseResult,
+            _runtime_close_result,
+        )
+
+        pending = self._pending_close_result
+        if pending is None:
+            return
+        plan, observed, active_turn_terminalized = pending
+        if plan.execution_bridge_shutdown_required:
+            bridge_stopped = self._execution_bridge.shutdown(
+                timeout_seconds=plan.bridge_shutdown_timeout_seconds
+            )
+            observed[SessionCleanupTarget.EXECUTION_BRIDGE] = (
+                SessionCleanupResult.completed(
+                    SessionCleanupTarget.EXECUTION_BRIDGE
+                )
+                if bridge_stopped
+                else SessionCleanupResult.timed_out_result(
+                    SessionCleanupTarget.EXECUTION_BRIDGE,
+                    safe_message="Realtime execution bridge shutdown timed out.",
+                )
+            )
+        first_result = _runtime_close_result(
+            plan,
+            observed=observed,
+            active_turn_terminalized=active_turn_terminalized,
+            public_metadata={"boundary": "realtime"},
+        )
+        self._last_close_result = (
+            SessionCloseResult.already_closed(
+                public_metadata={"boundary": "realtime"}
+            )
+            if self._duplicate_close_requested
+            else first_result
+        )
+        self._pending_close_result = None
+        self._close_finalized.set()
 
     def close(self) -> None:
+        from .session_close import SessionCloseResult
+
         while True:
             with self._interrupt_request_lock:
                 if (
@@ -4729,6 +4824,16 @@ class RealtimeSession:
                         and self._active_interrupt_request is None
                     )
                 ):
+                    duplicate = self._closed
+                    if duplicate:
+                        if self._close_finalized.is_set():
+                            self._last_close_result = (
+                                SessionCloseResult.already_closed(
+                                    public_metadata={"boundary": "realtime"}
+                                )
+                            )
+                        else:
+                            self._duplicate_close_requested = True
                     return
                 interrupt_work = self._active_interrupt_request
                 if (
@@ -4763,8 +4868,9 @@ class RealtimeSession:
         should_shutdown_bridge = False
         with self._operation_lock:
             if self._closed or self._close_requested:
+                if self._closed:
+                    self._set_already_closed_result()
                 return
-            self._advance_generation("session_closed")
             if self._operation_depth > 0:
                 self._close_requested = True
                 return
@@ -4772,21 +4878,74 @@ class RealtimeSession:
             should_shutdown_bridge = True
 
         if should_shutdown_bridge:
-            self._execution_bridge.shutdown()
+            self._finalize_close_result()
 
     def _close_now(self) -> None:
         if self._closed:
             return
+        from .session_close import (
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            build_session_close_plan,
+        )
+
+        active_turn_id = self._active_turn_id
+        active_generation_id = self._active_generation_id
+        active_turn_terminal_required = (
+            active_turn_id is not None
+            and self._terminal_registry.get(active_turn_id) is None
+        )
+        plan = build_session_close_plan(
+            active_turn_terminal_required=active_turn_terminal_required,
+            stage_cleanup_required=bool(self._injected_stages),
+            callback_hub_close_required=True,
+            execution_bridge_shutdown_required=True,
+            stage_cleanup_timeout_seconds=_SESSION_CLOSE_TIMEOUT_SECONDS,
+            bridge_shutdown_timeout_seconds=_SESSION_CLOSE_TIMEOUT_SECONDS,
+            public_metadata={"boundary": "realtime"},
+        )
+        observed: dict[SessionCleanupTarget, SessionCleanupResult] = {}
+        active_turn_terminalized = False
+
         self._close_requested = False
         self._closed = True
         self._motion_lifecycle_hook = None
+        if active_turn_terminal_required:
+            terminal = RealtimeTurnResult.closed(
+                turn_id=active_turn_id,
+                session_id=self._session_id,
+                generation_id=active_generation_id,
+                public_metadata={
+                    "boundary": "realtime",
+                    "reason": "session_closed",
+                },
+            )
+            decision = self._terminal_registry.commit(
+                active_turn_id,
+                terminal.outcome,
+                recovery_action=terminal.recovery_action,
+                reason="session_closed",
+                result=terminal,
+            )
+            active_turn_terminalized = decision.accepted
+            if not active_turn_terminalized:
+                raise AssertionError("active realtime turn must close exactly once")
+            observed[SessionCleanupTarget.ACTIVE_TURN] = (
+                SessionCleanupResult.completed(SessionCleanupTarget.ACTIVE_TURN)
+            )
+
+        self._advance_generation("session_closed", turn_id=active_turn_id)
         self._clear_active_turn_context()
         self._phase = None
-        self._close_injected_stages()
+        if plan.stage_cleanup_required:
+            observed[SessionCleanupTarget.STAGE] = self._close_injected_stages(
+                timeout_seconds=plan.stage_cleanup_timeout_seconds
+            )
         try:
             self._transition(
                 RealtimeEventType.SESSION_CLOSED,
                 RealtimeState.CLOSED,
+                turn_id=active_turn_id,
                 payload=LifecycleEventPayload(
                     outcome=TurnOutcome.CLOSED,
                     recovery_action=RecoveryAction.NONE,
@@ -4794,9 +4953,24 @@ class RealtimeSession:
                 ),
                 public_metadata={"reason": "session_closed"},
                 _allow_closed_event=True,
+                _event_generation_id=active_generation_id,
             )
         finally:
-            self._event_hub.close()
+            callback_closed = self._event_hub.close()
+            observed[SessionCleanupTarget.CALLBACK_HUB] = (
+                SessionCleanupResult.completed(SessionCleanupTarget.CALLBACK_HUB)
+                if callback_closed
+                else SessionCleanupResult.already_closed(
+                    SessionCleanupTarget.CALLBACK_HUB
+                )
+            )
+        self._pending_close_result = (
+            plan,
+            observed,
+            active_turn_terminalized,
+        )
+        if not plan.execution_bridge_shutdown_required:
+            self._finalize_close_result()
 
     def dispose(self) -> None:
         self.close()

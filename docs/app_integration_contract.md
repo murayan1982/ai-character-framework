@@ -3994,3 +3994,78 @@ Applications require no migration in Control A. Existing session methods and
 return types remain unchanged until the session-by-session adoption contract
 is reviewed and explicitly authorized.
 <!-- FW-RT6-10b-A-SESSION-CLOSE:END -->
+
+
+<!-- FW-RT6-10b-B-SESSION-CLOSE:BEGIN -->
+## FW-RT6-10b Control B — unified close/dispose integration behavior
+
+Host applications keep using the existing lifecycle methods:
+
+```python
+session.close()                 # returns None
+result = session.last_close_result
+session.dispose()               # idempotent compatibility alias
+```
+
+The five public session types expose `last_close_result` without adding a root
+export or changing a factory signature. It is `None` until close completes,
+contains the immutable first-close `SessionCloseResult`, and becomes the typed
+`already_closed` result after a repeated close request. Repeated requests do not
+run cleanup or emit a second final close event.
+
+For realtime sessions, an admitted active turn becomes the existing typed
+`TurnOutcome.CLOSED` terminal record. The one final `SESSION_CLOSED` event
+carries that turn and generation when present. It is delivered before the
+Framework callback hub is sealed. Injected stage closes share one deadline and
+run concurrently; bridge cleanup is successful only when the worker has
+actually stopped. A timeout or cleanup error is observable through count-only
+diagnostics while `is_closed` remains true.
+
+Text-chat and voice-input active work stops delivering application payloads
+after close. Their close event retains the current turn/generation context.
+Previously accepted compatibility behavior remains intact for an idle
+text-chat post-close interrupt result and for one voice-input stale-drop
+diagnostic that retires an in-flight provider completion. Those compatibility
+diagnostics do not reopen the session or deliver the stale transcript.
+
+Voice output has no persistent provider client, so close performs no provider
+call. Motion closes its persistent VTube Studio composition when one exists,
+maps the typed transport result, verifies that the bridge is no longer alive,
+and releases public callbacks and shared realtime subscriptions.
+
+Bounded cleanup of an arbitrary synchronous injected stage uses a daemon
+isolation worker. Python cannot forcibly stop external synchronous code, but a
+deadline overrun returns promptly and the late worker cannot mutate the
+published session result, final event, or callback collections.
+
+```text
+checkpoint: FW-RT6-10b Control B
+baseline head: 6153661b3960fbfa1130b2caef39e48717ad8e80
+exact Control B surface: 11 files
+public session types adopted: 5 / 5
+close/dispose/context-manager signatures: UNCHANGED
+last close result property: last_close_result / READ-ONLY
+active turn close outcome: TurnOutcome.CLOSED / TYPED
+cleanup targets: 5 / TYPED
+stage cleanup common deadline: ENFORCED
+provider cleanup timeout: ENFORCED WHEN PERSISTENT
+execution bridge stop: VERIFIED BEFORE COMPLETED
+callback cleanup: AFTER FINAL DELIVERY
+cleanup failure reopens session: False
+duplicate close re-runs cleanup: False
+post-close operation results: EXISTING TYPED CONTRACT / RETAINED
+root import loads framework.session_close eagerly: False
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+existing tests changed: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10b aggregate tasks: 0 / 7 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B commit / push: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+```
+
+No application migration is required. This candidate authorizes neither
+aggregate closure nor publishing.
+<!-- FW-RT6-10b-B-SESSION-CLOSE:END -->

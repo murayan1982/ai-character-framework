@@ -16,7 +16,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 import math
 from types import MappingProxyType
-from typing import Any, Iterable, Mapping
+from threading import Event, Lock, Thread
+import time
+from typing import Any, Callable, Iterable, Mapping
 
 from .public_safety import public_mapping
 
@@ -448,6 +450,143 @@ def build_session_close_plan(
         bridge_shutdown_timeout_seconds=bridge_shutdown_timeout_seconds,
         public_metadata=public_metadata or {},
     )
+
+
+def _results_for_plan(
+    plan: SessionClosePlan,
+    *,
+    observed: Mapping[SessionCleanupTarget, SessionCleanupResult] | None = None,
+) -> tuple[SessionCleanupResult, ...]:
+    """Build the canonical five-target result tuple for one runtime owner."""
+
+    if not isinstance(plan, SessionClosePlan):
+        raise TypeError("plan must be a SessionClosePlan")
+    observations = dict(observed or {})
+    required = set(plan.required_targets)
+    return tuple(
+        observations.get(
+            target,
+            (
+                SessionCleanupResult.completed(target)
+                if target in required
+                else SessionCleanupResult.not_required(target)
+            ),
+        )
+        for target in _TARGET_ORDER
+    )
+
+
+def _runtime_close_result(
+    plan: SessionClosePlan,
+    *,
+    observed: Mapping[SessionCleanupTarget, SessionCleanupResult] | None = None,
+    active_turn_terminalized: bool = False,
+    public_metadata: Mapping[str, Any] | None = None,
+) -> SessionCloseResult:
+    """Compose the immutable result owned by an existing public session."""
+
+    return SessionCloseResult.from_cleanup(
+        plan,
+        cleanup_results=_results_for_plan(plan, observed=observed),
+        active_turn_terminalized=active_turn_terminalized,
+        public_metadata=public_metadata,
+    )
+
+
+def _run_bounded_cleanup_operations(
+    operations: Iterable[Callable[[], Any]],
+    *,
+    timeout_seconds: float,
+    target: SessionCleanupTarget,
+    timeout_message: str,
+    failure_message: str,
+) -> tuple[SessionCleanupResult, int, int]:
+    """Run independent cleanup calls concurrently under one finite deadline.
+
+    Cleanup isolation workers are daemon threads because Python cannot forcibly
+    terminate an arbitrary external synchronous close method.  After the common
+    deadline, a late worker can update only this helper's private observation
+    slots; it cannot alter the returned session result or callback collections.
+    """
+
+    timeout = _positive_timeout(timeout_seconds, field_name="timeout_seconds")
+    callbacks = tuple(operations)
+    if any(not callable(operation) for operation in callbacks):
+        raise TypeError("operations must contain callables")
+    if not callbacks:
+        return SessionCleanupResult.completed(target), 0, 0
+
+    outcomes: list[str | None] = [None] * len(callbacks)
+    completions = tuple(Event() for _ in callbacks)
+    observation_lock = Lock()
+
+    def worker(index: int, operation: Callable[[], Any]) -> None:
+        outcome = "completed"
+        try:
+            operation()
+        except TimeoutError:
+            outcome = "timed_out"
+        except BaseException:  # cleanup boundary converts to bounded safe state
+            outcome = "failed"
+        with observation_lock:
+            outcomes[index] = outcome
+        completions[index].set()
+
+    for index, operation in enumerate(callbacks):
+        Thread(
+            target=worker,
+            args=(index, operation),
+            name=f"framework-session-close-{target.value}-{index}",
+            daemon=True,
+        ).start()
+
+    deadline = time.monotonic() + timeout
+    for completion in completions:
+        remaining = max(0.0, deadline - time.monotonic())
+        completion.wait(timeout=remaining)
+
+    with observation_lock:
+        snapshot = tuple(outcomes)
+    completed_count = sum(outcome == "completed" for outcome in snapshot)
+    failed_count = sum(outcome == "failed" for outcome in snapshot)
+    timed_out_count = sum(
+        outcome is None or outcome == "timed_out" for outcome in snapshot
+    )
+    error_count = failed_count + timed_out_count
+
+    if timed_out_count:
+        result = SessionCleanupResult.timed_out_result(
+            target,
+            safe_message=timeout_message,
+        )
+    elif failed_count:
+        result = SessionCleanupResult.failed_result(
+            target,
+            safe_message=failure_message,
+        )
+    else:
+        result = SessionCleanupResult.completed(target)
+    return result, completed_count, error_count
+
+
+def _run_bounded_cleanup(
+    operation: Callable[[], Any],
+    *,
+    timeout_seconds: float,
+    target: SessionCleanupTarget,
+    timeout_message: str,
+    failure_message: str,
+) -> SessionCleanupResult:
+    """Run one cleanup call under the shared runtime timeout discipline."""
+
+    result, _completed_count, _error_count = _run_bounded_cleanup_operations(
+        (operation,),
+        timeout_seconds=timeout_seconds,
+        target=target,
+        timeout_message=timeout_message,
+        failure_message=failure_message,
+    )
+    return result
 
 
 __all__ = [

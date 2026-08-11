@@ -16,7 +16,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from threading import RLock
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 
 from .voice_input import (
     VoiceInputErrorCode,
@@ -51,6 +51,9 @@ from .realtime_generation_gate import (
     RealtimeStageCompletionEnvelope,
 )
 from .version import VOICE_INPUT_API_VERSION
+
+if TYPE_CHECKING:
+    from .session_close import SessionCloseResult
 
 from .voice_input_capability import (
     VoiceInputCapabilities,
@@ -132,6 +135,9 @@ class VoiceInputSession:
         self._session_id = SessionId.new()
         self._next_realtime_event_sequence = EventSequence.first()
         self._realtime_event_callbacks: list[VoiceInputRealtimeCallback] = []
+        self._retired_realtime_event_callbacks: tuple[
+            VoiceInputRealtimeCallback, ...
+        ] = ()
         self._realtime_event_lock = RLock()
         self._input_operation_lock = RLock()
         self._generation_gate = RealtimeGenerationGate()
@@ -142,6 +148,7 @@ class VoiceInputSession:
         self._credential_env = credential_env
         self._closed = False
         self._callbacks: list[VoiceInputCallback] = []
+        self._last_close_result: SessionCloseResult | None = None
 
         capability_credential_env = _voice_input_composition.credential_presence_env(
             provider=provider,
@@ -208,6 +215,12 @@ class VoiceInputSession:
     def is_closed(self) -> bool:
         return self._closed
 
+    @property
+    def last_close_result(self) -> SessionCloseResult | None:
+        """Return the latest immutable close observation."""
+
+        return self._last_close_result
+
     def on_realtime_event(
         self,
         callback: VoiceInputRealtimeCallback,
@@ -217,6 +230,8 @@ class VoiceInputSession:
         if not callable(callback):
             raise TypeError("callback must be callable")
         with self._realtime_event_lock:
+            if self._closed:
+                raise RuntimeError("Voice input session is closed.")
             self._realtime_event_callbacks.append(callback)
         return callback
 
@@ -262,7 +277,7 @@ class VoiceInputSession:
         *,
         context: _VoiceInputTurnContext,
         decision: GenerationAdmissionDecision[object],
-    ) -> RealtimeEvent:
+    ) -> RealtimeEvent | None:
         if decision.accepted or decision.stale_reason is None:
             raise ValueError("stale voice-input diagnostic requires a rejected completion")
         metadata: dict[str, object] = {
@@ -272,7 +287,7 @@ class VoiceInputSession:
         }
         if decision.retired_by is not None:
             metadata["retired_by"] = decision.retired_by.value
-        return self._emit_realtime_event(
+        event = self._emit_realtime_event(
             RealtimeEventType.STALE_RESULT_DROPPED,
             state=RealtimeState.INTERRUPTED,
             previous_state=RealtimeState.LISTENING,
@@ -284,6 +299,10 @@ class VoiceInputSession:
             safe_message="Stale voice input completion was dropped.",
             public_metadata=metadata,
         )
+        if self._closed:
+            with self._realtime_event_lock:
+                self._retired_realtime_event_callbacks = ()
+        return event
 
     def _finish_input_context(self, context: _VoiceInputTurnContext) -> None:
         if not self._input_context_is_current(context):
@@ -423,7 +442,12 @@ class VoiceInputSession:
         with self._realtime_event_lock:
             sequence = self._next_realtime_event_sequence
             self._next_realtime_event_sequence = sequence.next()
-            callbacks = tuple(self._realtime_event_callbacks)
+            callbacks = (
+                self._retired_realtime_event_callbacks
+                if self._closed
+                and event_type is RealtimeEventType.STALE_RESULT_DROPPED
+                else tuple(self._realtime_event_callbacks)
+            )
 
         event = RealtimeEvent(
             type=event_type,
@@ -458,6 +482,8 @@ class VoiceInputSession:
 
         if not callable(callback):
             raise TypeError("callback must be callable")
+        if self._closed:
+            raise RuntimeError("Voice input session is closed.")
         self._callbacks.append(callback)
 
     def _unavailable_from_capability(
@@ -735,14 +761,15 @@ class VoiceInputSession:
 
         with self._input_operation_lock:
             if result.is_completed:
-                self._emit_realtime_event(
-                    RealtimeEventType.LISTENING_COMPLETED,
-                    state=RealtimeState.TRANSCRIBING,
-                    previous_state=RealtimeState.LISTENING,
-                    context=context,
-                    payload=LifecycleEventPayload(reason="voice_input_completed"),
-                    public_metadata=event_metadata,
-                )
+                if not self._closed:
+                    self._emit_realtime_event(
+                        RealtimeEventType.LISTENING_COMPLETED,
+                        state=RealtimeState.TRANSCRIBING,
+                        previous_state=RealtimeState.LISTENING,
+                        context=context,
+                        payload=LifecycleEventPayload(reason="voice_input_completed"),
+                        public_metadata=event_metadata,
+                    )
                 applied_results: list[object] = []
                 decision = self._apply_input_completion(
                     context=context,
@@ -828,21 +855,78 @@ class VoiceInputSession:
         return self.transcribe_audio_result(audio_source, request=request, adapter=adapter)
 
     def close(self) -> None:
+        from .session_close import (
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            SessionCloseResult,
+            _runtime_close_result,
+            build_session_close_plan,
+        )
+
         with self._input_operation_lock:
             if self._closed:
+                self._last_close_result = SessionCloseResult.already_closed(
+                    public_metadata={"boundary": "voice_input"}
+                )
                 return
+            context = self._active_input_context
+            plan = build_session_close_plan(
+                active_turn_terminal_required=context is not None,
+                callback_hub_close_required=True,
+                public_metadata={"boundary": "voice_input"},
+            )
             self._closed = True
             self._generation_gate.advance(GenerationAdvanceReason.SESSION_CLOSED)
             self._active_input_context = None
-            self._emit_realtime_event(
-                RealtimeEventType.SESSION_CLOSED,
-                state=RealtimeState.CLOSED,
-                previous_state=RealtimeState.IDLE,
-                payload=LifecycleEventPayload(reason="session_closed"),
-                public_error_code=RealtimeErrorCode.SESSION_CLOSED,
-                safe_message="Voice input session is closed.",
-                public_metadata={"input_mode": "session"},
+            callback_result = SessionCleanupResult.completed(
+                SessionCleanupTarget.CALLBACK_HUB
             )
+            try:
+                self._emit_realtime_event(
+                    RealtimeEventType.SESSION_CLOSED,
+                    state=RealtimeState.CLOSED,
+                    previous_state=(
+                        RealtimeState.LISTENING
+                        if context is not None
+                        else RealtimeState.IDLE
+                    ),
+                    context=context,
+                    payload=LifecycleEventPayload(reason="session_closed"),
+                    public_error_code=RealtimeErrorCode.SESSION_CLOSED,
+                    safe_message="Voice input session is closed.",
+                    public_metadata={"input_mode": "session"},
+                )
+            except Exception:
+                callback_result = SessionCleanupResult.failed_result(
+                    SessionCleanupTarget.CALLBACK_HUB,
+                    safe_message="Voice input callback cleanup failed.",
+                )
+            finally:
+                with self._realtime_event_lock:
+                    self._retired_realtime_event_callbacks = tuple(
+                        self._realtime_event_callbacks
+                    )
+                    self._realtime_event_callbacks.clear()
+                self._callbacks.clear()
+            first_result = _runtime_close_result(
+                plan,
+                observed={
+                    SessionCleanupTarget.ACTIVE_TURN: (
+                        SessionCleanupResult.completed(
+                            SessionCleanupTarget.ACTIVE_TURN
+                        )
+                        if context is not None
+                        else SessionCleanupResult.not_required(
+                            SessionCleanupTarget.ACTIVE_TURN
+                        )
+                    ),
+                    SessionCleanupTarget.CALLBACK_HUB: callback_result,
+                },
+                active_turn_terminalized=context is not None,
+                public_metadata={"boundary": "voice_input"},
+            )
+            if self._last_close_result is None:
+                self._last_close_result = first_result
 
     def dispose(self) -> None:
         self.close()

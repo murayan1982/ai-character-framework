@@ -10,9 +10,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 from ..version import VOICE_OUTPUT_BOUNDARY_VERSION
+
+if TYPE_CHECKING:
+    from ..session_close import SessionCloseResult
 
 
 @dataclass(frozen=True)
@@ -234,6 +237,7 @@ class VoiceOutputSession:
         self._real_tts_enabled = real_tts_enabled
         self._artifact_dir = artifact_dir
         self._fw_public_closed = False
+        self._last_close_result: SessionCloseResult | None = None
 
     def info(self) -> VoiceOutputSessionInfo:
         """Return app-safe metadata without provider-specific details."""
@@ -264,10 +268,34 @@ class VoiceOutputSession:
 
         return self._fw_public_closed
 
+    @property
+    def last_close_result(self) -> SessionCloseResult | None:
+        """Return the latest immutable close observation."""
+
+        return self._last_close_result
+
     def close(self) -> None:
         """Close the public voice output session idempotently."""
 
+        from ..session_close import (
+            SessionCloseResult,
+            _runtime_close_result,
+            build_session_close_plan,
+        )
+
+        if self._fw_public_closed:
+            self._last_close_result = SessionCloseResult.already_closed(
+                public_metadata={"boundary": "voice_output"}
+            )
+            return
         self._fw_public_closed = True
+        plan = build_session_close_plan(
+            public_metadata={"boundary": "voice_output"}
+        )
+        self._last_close_result = _runtime_close_result(
+            plan,
+            public_metadata={"boundary": "voice_output"},
+        )
 
     def dispose(self) -> None:
         """Compatibility alias for ``close()``."""

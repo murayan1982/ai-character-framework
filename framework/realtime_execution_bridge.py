@@ -160,8 +160,8 @@ class _RealtimeExecutionBridge:
             return not thread.is_alive()
         return self._stopped.wait(timeout=timeout_seconds)
 
-    def shutdown(self, *, timeout_seconds: float = 2.0) -> None:
-        """Stop the persistent loop without ever joining the runtime thread itself."""
+    def shutdown(self, *, timeout_seconds: float = 2.0) -> bool:
+        """Request shutdown and truthfully report whether the worker stopped."""
 
         with self._lock:
             already_closed = self._closed
@@ -171,7 +171,7 @@ class _RealtimeExecutionBridge:
 
         if thread is None:
             self._stopped.set()
-            return
+            return True
 
         if not already_closed and loop is not None and loop.is_running():
             try:
@@ -180,6 +180,7 @@ class _RealtimeExecutionBridge:
                 pass
 
         if thread.ident == threading.get_ident():
-            return
+            return not thread.is_alive()
 
         thread.join(timeout=timeout_seconds)
+        return not thread.is_alive()

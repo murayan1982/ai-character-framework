@@ -50,6 +50,7 @@ from .motion_adapter_execution import (
     resolve_motion_adapter_execution_config,
 )
 if TYPE_CHECKING:
+    from .session_close import SessionCloseResult
     from .vtube_studio_transport import VTubeStudioTransportResult
 
 
@@ -273,6 +274,8 @@ class MotionSession:
         self._closed = False
         self._closed_event_emitted = False
         self._closed_event_lock = threading.Lock()
+        self._close_lock = threading.RLock()
+        self._last_close_result: SessionCloseResult | None = None
         self._state = MotionState.IDLE
         self._callbacks: list[MotionEventCallback] = []
         self._realtime_coordination_lock = threading.RLock()
@@ -432,6 +435,12 @@ class MotionSession:
     @property
     def is_closed(self) -> bool:
         return self._closed
+
+    @property
+    def last_close_result(self) -> SessionCloseResult | None:
+        """Return the latest immutable close observation."""
+
+        return self._last_close_result
 
     def on_event(self, callback: MotionEventCallback) -> None:
         """Register a public motion event callback."""
@@ -1372,9 +1381,7 @@ class MotionSession:
             )
             self._state = result.state
             if result.outcome is MotionOutcome.CLOSED:
-                self._closed = True
-                self._vts_preflight_ready = False
-                self._vts_composition.close()
+                self.close()
             if event_type is MotionEventType.SESSION_CLOSED:
                 self._emit_closed_once(request=request, result=result)
             else:
@@ -1404,15 +1411,101 @@ class MotionSession:
         return MotionState.PREPARING
 
     def close(self) -> None:
-        if self._closed:
-            return
-        self._closed = True
-        self._state = MotionState.CLOSED
-        self._vts_preflight_ready = False
-        if self._vts_composition is not None:
-            self._vts_composition.close()
-        self._emit_closed_once()
-        self._release_realtime_subscriptions()
+        from .session_close import (
+            SessionCleanupOutcome,
+            SessionCleanupResult,
+            SessionCleanupTarget,
+            SessionCloseResult,
+            _run_bounded_cleanup,
+            _runtime_close_result,
+            build_session_close_plan,
+        )
+
+        with self._close_lock:
+            if self._closed:
+                self._last_close_result = SessionCloseResult.already_closed(
+                    public_metadata={"boundary": "motion"}
+                )
+                return
+            composition = self._vts_composition
+            plan = build_session_close_plan(
+                provider_client_cleanup_required=composition is not None,
+                callback_hub_close_required=True,
+                execution_bridge_shutdown_required=composition is not None,
+                provider_cleanup_timeout_seconds=self._vts_close_timeout_seconds,
+                bridge_shutdown_timeout_seconds=self._vts_close_timeout_seconds,
+                public_metadata={"boundary": "motion"},
+            )
+            self._closed = True
+            self._state = MotionState.CLOSED
+            self._vts_preflight_ready = False
+
+        observed: dict[SessionCleanupTarget, SessionCleanupResult] = {}
+        if composition is not None:
+            transport_observation: dict[str, str] = {}
+
+            def close_composition() -> None:
+                transport_result = composition.close()
+                transport_observation["outcome"] = str(
+                    getattr(transport_result.outcome, "value", transport_result.outcome)
+                )
+
+            bounded = _run_bounded_cleanup(
+                close_composition,
+                timeout_seconds=plan.provider_cleanup_timeout_seconds,
+                target=SessionCleanupTarget.PROVIDER_CLIENT,
+                timeout_message="Motion provider cleanup timed out.",
+                failure_message="Motion provider cleanup failed.",
+            )
+            if bounded.outcome is SessionCleanupOutcome.COMPLETED:
+                transport_outcome = transport_observation.get("outcome", "failed")
+                if transport_outcome == "timed_out":
+                    bounded = SessionCleanupResult.timed_out_result(
+                        SessionCleanupTarget.PROVIDER_CLIENT,
+                        safe_message="Motion provider cleanup timed out.",
+                    )
+                elif transport_outcome not in {"completed", "closed"}:
+                    bounded = SessionCleanupResult.failed_result(
+                        SessionCleanupTarget.PROVIDER_CLIENT,
+                        safe_message="Motion provider cleanup failed.",
+                    )
+            observed[SessionCleanupTarget.PROVIDER_CLIENT] = bounded
+            bridge_alive = bool(getattr(composition, "bridge_thread_alive", False))
+            observed[SessionCleanupTarget.EXECUTION_BRIDGE] = (
+                SessionCleanupResult.timed_out_result(
+                    SessionCleanupTarget.EXECUTION_BRIDGE,
+                    safe_message="Motion execution bridge shutdown timed out.",
+                )
+                if bridge_alive
+                else SessionCleanupResult.completed(
+                    SessionCleanupTarget.EXECUTION_BRIDGE
+                )
+            )
+
+        callback_result = SessionCleanupResult.completed(
+            SessionCleanupTarget.CALLBACK_HUB
+        )
+        try:
+            self._emit_closed_once()
+        except Exception:
+            callback_result = SessionCleanupResult.failed_result(
+                SessionCleanupTarget.CALLBACK_HUB,
+                safe_message="Motion callback cleanup failed.",
+            )
+        finally:
+            self._release_realtime_subscriptions()
+            with self._realtime_coordination_lock:
+                self._realtime_event_callbacks.clear()
+            self._callbacks.clear()
+        observed[SessionCleanupTarget.CALLBACK_HUB] = callback_result
+        first_result = _runtime_close_result(
+            plan,
+            observed=observed,
+            public_metadata={"boundary": "motion"},
+        )
+        with self._close_lock:
+            if self._last_close_result is None:
+                self._last_close_result = first_result
 
     def dispose(self) -> None:
         self.close()

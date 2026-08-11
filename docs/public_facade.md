@@ -5018,3 +5018,84 @@ vocabulary. Public-session adoption, active-turn close execution, bounded
 cleanup, callback release, bridge shutdown reporting, and post-close runtime
 coordination remain separately reviewed Control B work.
 <!-- FW-RT6-10b-A-SESSION-CLOSE:END -->
+
+
+<!-- FW-RT6-10b-B-SESSION-CLOSE:BEGIN -->
+## FW-RT6-10b Control B — public-session close/dispose runtime adoption
+
+Control B adopts the accepted `framework.session_close` result vocabulary in
+the existing public lifecycle owner. `RealtimeSession`, `TextChatSession`,
+`VoiceInputSession`, `VoiceOutputSession`, and `MotionSession` retain their
+`close() -> None`, `dispose() -> None`, and context-manager behavior. Each now
+exposes one read-only `last_close_result: SessionCloseResult | None`. The name
+is deliberately not `close_result`, and no session-close name is exported from
+the framework root.
+
+`RealtimeSession.close()` commits an active nonterminal turn to the existing
+`RealtimeTerminalRegistry` as `TurnOutcome.CLOSED`, retires its generation with
+the existing `session_closed` reason, and emits exactly one correlated
+`SESSION_CLOSED` event before sealing `RealtimeEventHub`. Injected stages close
+concurrently beneath one finite common deadline. A synchronous external stage
+that exceeds the deadline is isolated in a daemon worker and reported as
+`timed_out`; its late return cannot change the immutable session result, event
+hub, or callback state. Python does not forcibly terminate arbitrary external
+synchronous code.
+
+`_RealtimeExecutionBridge.shutdown()` now returns a truthful stopped boolean.
+An unstarted bridge is closed without starting a worker. A started bridge is
+reported `completed` only after its worker is confirmed stopped; a missed
+deadline is `timed_out`. Cleanup failure never reopens the session.
+
+Text-chat active streams and voice-input active generations carry their
+existing turn/generation context into the final close event. Active callback
+collections are released after final delivery, and later stream or transcript
+payload delivery is suppressed. Existing compatibility-only post-close
+interrupt results and the single stale voice-input drop diagnostic remain
+available where earlier accepted tests require them; the retired voice-input
+callback snapshot is discarded immediately after that diagnostic.
+
+Voice output owns no persistent provider client, so its provider target is
+truthfully `not_required`. Motion maps its persistent VTube Studio composition
+close result to provider cleanup and separately verifies the composition bridge
+thread. Motion callbacks and shared-hub subscriptions are released after its
+final close delivery.
+
+Repeated close records `already_closed`, emits no second close event, and does
+not repeat stage, provider, callback-hub, or bridge cleanup. All diagnostics
+remain count-only and public-safe.
+
+```text
+checkpoint: FW-RT6-10b Control B
+baseline head: 6153661b3960fbfa1130b2caef39e48717ad8e80
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A acceptance sync: 6153661b3960fbfa1130b2caef39e48717ad8e80
+exact Control B surface: 11 files
+public close owner: PUBLIC SESSION / REUSED
+last close result: last_close_result / READ-ONLY / FIVE SESSIONS
+active realtime terminal: TurnOutcome.CLOSED / EXISTING REGISTRY
+generation retirement owner: RealtimeGenerationGate / REUSED
+SESSION_CLOSED event: EXACTLY 1 / FINAL DELIVERY BEFORE HUB CLOSE
+stage cleanup: PARALLEL / ONE FINITE COMMON DEADLINE
+stage timeout isolation: DAEMON / LATE SESSION MUTATION FALSE
+bridge completion: CONFIRMED STOP REQUIRED
+provider cleanup: PERSISTENT OWNER ONLY / TRUTHFUL
+callback and subscription release: AFTER FINAL DELIVERY
+cleanup failure reopens session: False
+repeated close: already_closed / NO RE-CLEANUP
+existing post-close typed compatibility: RETAINED
+root session-close exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+existing tests changed: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10b aggregate tasks: 0 / 7 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B commit / push: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+```
+
+This implementation candidate does not close aggregate task checkboxes and
+does not authorize Control C, an acceptance sync, commit, or push.
+<!-- FW-RT6-10b-B-SESSION-CLOSE:END -->
