@@ -8255,3 +8255,81 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-10c exact contract review is authorized. This sync does not authorize
 FW-RT6-10c implementation.
 <!-- FW-RT6-10b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10c Control A — immutable public diagnostics acceptance sync
+
+```text
+checkpoint: FW-RT6-10c Control A
+baseline head: 53023cca67f0865f6454a311517889fdf26f91ab
+FW-RT6-10b final acceptance: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+exact Control A implementation surface: 5 files
+dedicated Control A source gate: PASS
+focused Control A diagnostics tests: 12 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 557 / PASS
+stable explicit package: framework.session_diagnostics / PASS
+explicit package exports: 4 / PASS
+terminal model: SessionTerminalSnapshot / FROZEN / SLOTTED / PASS
+session model: SessionDiagnosticsSnapshot / FROZEN / SLOTTED / PASS
+terminal projection retains source result: False / PASS
+session snapshot fields: 13 / TYPED / PASS
+active turn/generation pairing: ENFORCED / PASS
+closed active context: REJECTED / PASS
+active generation count: 0_OR_1 / PASS
+count booleans accepted: False / PASS
+negative counts accepted: False / PASS
+last safe error code: DERIVED / PASS
+no terminal safe error code: none / PASS
+as_dict output: PUBLIC_PRIMITIVES_ONLY / PASS
+private text/audio/provider payload/path retained: False / PASS
+runtime diagnostics_snapshot property: DEFERRED_TO_CONTROL_B
+existing lifecycle/counter owners changed: False / PASS
+root import loads framework.session_diagnostics eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10c aggregate: NOT_COMPLETED
+FW-RT6-10c tasklist: 0 / 9 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts `framework.session_diagnostics` as the stable explicit
+provider-neutral model and privacy-projection package for public diagnostics.
+It introduces no root export, runtime execution owner, provider dependency, or
+session mutation path.
+
+`SessionTerminalSnapshot` projects only public correlation IDs, terminal
+outcome, public error code, retryability, and recovery action. It never retains
+the source `RealtimeTurnResult`, so input/output text, transcripts, audio,
+artifacts, metadata, safe messages, raw exceptions, credentials, provider
+payloads, private paths, callbacks, threads, clients, and private identities
+cannot enter the terminal or session snapshot.
+
+`SessionDiagnosticsSnapshot` is frozen and slotted. It validates paired active
+turn/generation IDs, prohibits active context after close, restricts active
+generation count to zero or one, rejects boolean and negative counts, and
+derives the last safe error code from the redacted terminal projection.
+`as_dict()` exposes only JSON-friendly public primitives.
+
+Control A does not add `RealtimeSession.diagnostics_snapshot` and changes no
+existing registry or counter owner. Coherent runtime capture under the existing
+serialized session boundary remains deferred to Control B. None of the nine
+FW-RT6-10c aggregate task checkboxes close in this acceptance sync.
+
+This exact one-file sync authorizes only Control B exact contract review after
+it is reviewed, committed, pushed, and remotely verified. It does not authorize
+Control B implementation, Control C, or either later commit/push.
+<!-- FW-RT6-10c-A-ACCEPTANCE-SYNC:END -->
