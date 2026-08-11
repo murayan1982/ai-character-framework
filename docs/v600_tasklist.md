@@ -8150,3 +8150,108 @@ Final closed status remains deferred to a reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync. FW-RT6-10c implementation
 remains not authorized.
 <!-- FW-RT6-10b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10b — close/dispose lifecycle final acceptance sync
+
+```text
+checkpoint: FW-RT6-10b final acceptance sync
+baseline head: d226102aab07a70de1b71dab4070a63c375d2bfc
+FW-RT6-10a final acceptance: ffb67d8cf089cf0b9e0d0c517614517186201a17
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A acceptance sync: 6153661b3960fbfa1130b2caef39e48717ad8e80
+Control B implementation: 98c6455640be1eed737478c195616b2ff12840bb
+Control B acceptance sync: b7ae54f7a948704456ddd446f9ddc631b0d3d4ad
+Control C aggregate acceptance: d226102aab07a70de1b71dab4070a63c375d2bfc
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact Control B implementation surface: 11 files
+exact Control C aggregate surface: 3 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A session-close tests: 12 / PASS
+focused Control B session-close tests: 13 / PASS
+focused Control A+B session-close tests: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 545 / PASS
+stable explicit package: framework.session_close / PASS
+public close owner: PUBLIC SESSION / REUSED / PASS
+public session adoption: 5 / 5 PASS
+last close result: last_close_result / READ-ONLY / PASS
+ambiguous close_result property introduced: False / PASS
+active realtime terminal: TurnOutcome.CLOSED / EXISTING REGISTRY / PASS
+active turn orphan after close: False / PASS
+generation retirement owner: RealtimeGenerationGate / REUSED / PASS
+SESSION_CLOSED event: EXACTLY 1 / FINAL DELIVERY BEFORE HUB CLOSE / PASS
+stage cleanup: PARALLEL / ONE FINITE COMMON DEADLINE / PASS
+stage timeout isolation: DAEMON / LATE SESSION MUTATION FALSE / PASS
+Framework persistent non-daemon cleanup thread added: False / PASS
+execution bridge completed only after confirmed stop: True / PASS
+persistent provider cleanup: TRUTHFUL / TYPED / PASS
+voice-output persistent provider target: not_required / PASS
+callback/subscription release: AFTER FINAL DELIVERY / PASS
+cleanup failure reopens session: False / PASS
+duplicate close outcome: already_closed / PASS
+duplicate close re-runs cleanup: False / PASS
+duplicate close emits another close event: False / PASS
+post-close typed rejection: RETAINED / PASS
+cleanup diagnostics: COUNT_ONLY / PUBLIC_SAFE / PASS
+raw exception/private value retained: False / PASS
+root import loads framework.session_close eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+aggregate gate changed by final sync: False
+existing tests changed by Control C/final sync: False
+FW-RT6-10b tasks: 7 / 7 ACCEPTED
+FW-RT6-10b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-10c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-10c implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-10b closes the provider-neutral public-session close/dispose lifecycle.
+`framework.session_close` remains the stable explicit planning and result
+package, while each existing public session remains its sole close execution
+owner and exposes the immutable read-only `last_close_result`.
+
+An active realtime turn reaches `TurnOutcome.CLOSED` through the existing
+terminal registry, and `RealtimeGenerationGate` remains the sole generation
+retirement owner. Exactly one correlated `SESSION_CLOSED` event is delivered
+before callback collections and the event hub are sealed. No active turn is
+orphaned and no late result crosses its existing host-visible boundary.
+
+Injected stages close concurrently under one finite common deadline. Slow
+external synchronous cleanup is daemon-isolated and reported `timed_out`; its
+late return cannot alter the immutable result, callbacks, or event hub. The
+execution bridge reports completion only after confirmed stop, and Framework
+adds no persistent non-daemon cleanup worker.
+
+Provider/client and bridge observations remain truthful and typed. Voice
+output has no persistent provider target, while motion maps its persistent
+VTube Studio composition and bridge result without performing a real provider
+or network operation. Cleanup failure or timeout never reopens the session.
+
+Repeated close remains `already_closed`, repeats no cleanup, and emits no
+second final event. Existing operation-specific post-close typed rejection,
+root-public exports, factory signatures, event vocabulary, and API versions
+remain unchanged. Public diagnostics retain no raw exception, credential,
+provider payload, transcript, audio, private path, callback, thread, or client
+identity.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade contract, aggregate gate, or existing test. It formally
+completes, verifies, accepts, commits, pushes, and closes all three controls and
+all seven FW-RT6-10b aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-10c exact contract review is authorized. This sync does not authorize
+FW-RT6-10c implementation.
+<!-- FW-RT6-10b-FINAL-ACCEPTANCE-SYNC:END -->
