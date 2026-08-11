@@ -5192,3 +5192,68 @@ the dedicated aggregate gate. Final closed status requires a separately
 reviewed, committed, pushed, and remotely verified one-file final acceptance
 sync.
 <!-- FW-RT6-10b-C-SESSION-CLOSE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:BEGIN -->
+## FW-RT6-10c Control A — immutable public diagnostics contract
+
+Control A defines the provider-neutral observation models in the explicit,
+lazy `framework.session_diagnostics` package. It does not add a root export or
+a runtime property. Runtime adoption by `RealtimeSession` is deferred to an
+independently reviewed Control B.
+
+The package exports exactly:
+
+```python
+from framework.session_diagnostics import (
+    SessionDiagnosticsSnapshot,
+    SessionTerminalSnapshot,
+    build_session_diagnostics_snapshot,
+    build_session_terminal_snapshot,
+)
+```
+
+`SessionDiagnosticsSnapshot` contains only `session_id`, `state`, `phase`,
+`is_closed`, paired active turn/generation IDs, queue depth, active generation
+count, one redacted terminal projection, the derived last safe error code, and
+stale/duplicate/overflow counts. `SessionTerminalSnapshot` contains only
+session/turn/generation IDs, terminal outcome, public error code, retryability,
+and recovery action.
+
+Both types are frozen and slotted. Counts reject booleans and negative values;
+active generation count is exactly zero or one. Active turn and generation IDs
+must either both exist or both be absent, and a closed snapshot cannot retain
+an active context. `last_safe_error_code` is derived from the redacted terminal
+projection and is `none` when no terminal result exists.
+
+The projection never retains the source `RealtimeTurnResult`. Therefore text,
+transcripts, audio, artifacts, provider payloads, metadata, credentials, raw
+exceptions, safe messages, private paths, callbacks, threads, clients, and
+other private identities cannot enter either model or `as_dict()` output.
+
+```text
+checkpoint: FW-RT6-10c Control A
+baseline head: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+exact Control A surface: 5 files
+explicit package: framework.session_diagnostics / LAZY
+terminal model: SessionTerminalSnapshot / FROZEN / SLOTTED
+session model: SessionDiagnosticsSnapshot / FROZEN / SLOTTED
+terminal projection: PUBLIC-SAFE FIELDS ONLY
+runtime diagnostics_snapshot property: DEFERRED_TO_CONTROL_B
+existing lifecycle/counter owners: REUSED / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+existing tests changed: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10c aggregate tasks: 0 / 9 CLOSED
+Control A implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B implementation: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+Control A commit / push: NOT_AUTHORIZED
+```
+
+This contract introduces no execution owner and authorizes neither runtime
+adoption, aggregate closure, tasklist synchronization, commit, nor push.
+<!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:END -->

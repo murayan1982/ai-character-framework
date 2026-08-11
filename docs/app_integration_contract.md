@@ -4069,3 +4069,57 @@ Control C: NOT_AUTHORIZED
 No application migration is required. This candidate authorizes neither
 aggregate closure nor publishing.
 <!-- FW-RT6-10b-B-SESSION-CLOSE:END -->
+
+
+<!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:BEGIN -->
+## FW-RT6-10c Control A — public diagnostics model boundary
+
+Control A adds immutable, provider-neutral diagnostics vocabulary without
+changing an application-facing session method or factory signature. The new
+types are intentionally explicit-package-only:
+
+```python
+from framework.session_diagnostics import (
+    SessionDiagnosticsSnapshot,
+    SessionTerminalSnapshot,
+    build_session_diagnostics_snapshot,
+    build_session_terminal_snapshot,
+)
+```
+
+Applications do not migrate in Control A. In particular,
+`RealtimeSession.diagnostics_snapshot` does not exist yet; coherent capture
+under the existing serialized session operation boundary is reserved for
+Control B.
+
+The future operator view is constrained to current public state/phase, paired
+active turn and generation IDs, queue depth, active-generation count, a
+redacted terminal summary, derived public error code, and three integer
+counters for stale completion, duplicate terminal, and event-history overflow.
+It does not expose a provider response, transcript, prompt, output text, audio,
+artifact, metadata, exception, credential, safe message, filesystem path,
+callback, thread, client, or private object identity.
+
+`as_dict()` emits only JSON-friendly public primitives. A closed snapshot has
+no active context, active generation count is zero or one, and all counters are
+non-negative integers that reject boolean values.
+
+```text
+checkpoint: FW-RT6-10c Control A
+baseline head: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+exact implementation surface: 5 files
+runtime adoption: DEFERRED_TO_CONTROL_B
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10c aggregate tasks: 0 / 9 CLOSED
+Control B: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A is a model and privacy-projection contract only.
+<!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:END -->
