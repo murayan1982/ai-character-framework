@@ -7960,3 +7960,95 @@ FW-RT6-10b aggregate task checkboxes. This one-file sync authorizes only
 Control B exact contract review after it is committed, pushed, and remotely
 verified. It does not authorize Control B runtime implementation or Control C.
 <!-- FW-RT6-10b-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10b Control B — unified close/dispose runtime acceptance sync
+
+```text
+checkpoint: FW-RT6-10b Control B
+baseline head: 98c6455640be1eed737478c195616b2ff12840bb
+Control A implementation: d0e977193faafbcc60e17436f4c2b5bb5547683a
+Control A acceptance sync: 6153661b3960fbfa1130b2caef39e48717ad8e80
+Control B implementation: 98c6455640be1eed737478c195616b2ff12840bb
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control B implementation surface: 11 files
+dedicated Control B source gate: PASS
+focused Control B session-close tests: 13 / PASS
+focused Control A+B session-close tests: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 545 / PASS
+public session adoption: 5 / 5 PASS
+last close result: last_close_result / READ-ONLY / PASS
+ambiguous close_result property introduced: False / PASS
+active realtime terminal: TurnOutcome.CLOSED / EXISTING REGISTRY / PASS
+generation retirement owner: RealtimeGenerationGate / REUSED / PASS
+SESSION_CLOSED event: EXACTLY 1 / FINAL DELIVERY BEFORE HUB CLOSE / PASS
+stage cleanup: PARALLEL / ONE FINITE COMMON DEADLINE / PASS
+stage timeout isolation: DAEMON / LATE SESSION MUTATION FALSE / PASS
+Framework persistent cleanup thread added: False / PASS
+execution bridge completed only after confirmed stop: True / PASS
+persistent provider cleanup: TRUTHFUL / TYPED / PASS
+voice-output persistent provider target: not_required / PASS
+callback/subscription release: AFTER FINAL DELIVERY / PASS
+cleanup failure reopens session: False / PASS
+duplicate close outcome: already_closed / PASS
+duplicate close re-runs cleanup: False / PASS
+duplicate close emits another close event: False / PASS
+post-close typed compatibility: RETAINED / PASS
+cleanup diagnostics: COUNT_ONLY / PUBLIC_SAFE / PASS
+raw exception/private value retained: False / PASS
+root import loads framework.session_close eagerly: False / PASS
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+existing tests changed by Control B: False
+docs/v600_tasklist.md changed by Control B implementation: False
+FW-RT6-10b aggregate: NOT_COMPLETED
+FW-RT6-10b tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B adopts the accepted `framework.session_close` vocabulary through the
+existing public-session lifecycle owners. `RealtimeSession`,
+`TextChatSession`, `VoiceInputSession`, `VoiceOutputSession`, and
+`MotionSession` retain compatible `close()`, `dispose()`, and context-manager
+signatures while exposing the immutable read-only `last_close_result`.
+
+An active realtime turn reaches `TurnOutcome.CLOSED` through the existing
+terminal registry and its current generation is retired by the existing
+generation owner. The single final `SESSION_CLOSED` event retains active
+turn/generation context and is delivered before the callback hub is sealed.
+
+Injected stages close concurrently under one finite common deadline. An
+external synchronous stage that exceeds the deadline is isolated by a daemon
+worker and reported `timed_out`; a late return cannot mutate the published
+session result, event hub, or callback collections. Bridge cleanup reports
+`completed` only after the worker is confirmed stopped. Cleanup failure or
+timeout never reopens the session.
+
+Persistent provider cleanup is reported only where a session owns a persistent
+provider composition. Voice output therefore reports its provider target as
+`not_required`, while motion maps its persistent VTube Studio composition and
+bridge outcomes without executing a real provider or network operation.
+
+Repeated close remains idempotent, records `already_closed`, and repeats no
+cleanup or final event. Existing post-close typed compatibility behavior,
+root-public exports, factory signatures, event vocabulary, and API versions
+remain unchanged. Diagnostics retain no raw exception, credential, provider
+payload, transcript, audio, private path, callback, thread, or client identity.
+
+This one-file acceptance sync changes no runtime source or existing test and
+closes none of the seven FW-RT6-10b aggregate tasks. After this sync is
+reviewed, committed, pushed, and remotely verified, only Control C exact
+contract review becomes authorized. Control C implementation remains separately
+gated.
+<!-- FW-RT6-10b-B-ACCEPTANCE-SYNC:END -->
