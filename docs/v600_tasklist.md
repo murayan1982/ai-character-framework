@@ -8996,3 +8996,84 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-11a exact contract review is authorized. This sync does not authorize
 FW-RT6-11a implementation.
 <!-- FW-RT6-10d-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11a Control A — standalone-session compatibility acceptance sync
+
+```text
+checkpoint: FW-RT6-11a Control A
+baseline head: cc7ba3b2a550e465e51227462a4158ebebde67fc
+FW-RT6-10d final acceptance: 182335063eabdd901095b4184f097e095eb7021d
+Control A implementation baseline: 182335063eabdd901095b4184f097e095eb7021d
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+acceptance-sync exact surface: 1 file
+dedicated Control A source gate: PASS
+focused Control A compatibility tests: 14 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+full Framework unit suite: 609 / PASS
+stable explicit package: framework.session_compatibility / PASS
+explicit package exports: 10 / PASS
+session compatibility profiles: 5 / TYPED / PASS
+standalone compatibility mode: v5_standalone / PASS
+RealtimeSession default mode: v5_skeleton / PASS
+RealtimeSession explicit unified request: v6_unified / PASS
+silent fallback from v6_unified to v5 mock: False / CONTRACT
+existing compatibility members warning: SILENT / PASS
+future deprecated member warning: DeprecationWarning / stacklevel=2 / POLICY_ONLY
+warning on import or construction: False / PASS
+earliest removal major: 7 / PASS
+migration evidence before removal: REQUIRED / PASS
+historical v5 release gates rewritten: False / PASS
+runtime adoption: DEFERRED_TO_CONTROL_B
+runtime source changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+root import loads framework.session_compatibility eagerly: False / PASS
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-11a aggregate: NOT_COMPLETED
+FW-RT6-11a tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11b root-public cleanup: NOT_AUTHORIZED
+FW-RT6-11c migration guide and examples: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the explicit-only `framework.session_compatibility` package
+as the stable provider-neutral contract for the five existing public sessions.
+The four standalone facades preserve their `v5_standalone` mode, public
+execution owner, method and return shapes, factory signature, and frozen
+contract label. The existing `RealtimeSession` remains the owner for both its
+default `v5_skeleton` compatibility mode and an explicit `v6_unified` request.
+
+Compatibility remains distinct from deprecation. Existing v4/v5 entry points,
+including every `dispose()` alias, remain warning-free. A future true
+deprecation requires a replacement, `DeprecationWarning`, application-call-site
+`stacklevel=2`, no import-time or construction-time warning, no removal before
+v7, and migration evidence before removal. Control A registers and emits no
+public-member warning.
+
+The superseded v5.1 factory, v5.1 uninitialized TextChat fixture, and v5.2
+pre-real-STT assertions remain historical evidence and are not rewritten.
+Current TextChat, VoiceInput, VoiceOutput, Realtime, and Motion compatibility
+regressions remain executable acceptance inputs. Control A performs no
+provider, network, audio, microphone, playback, or real VTube Studio work and
+adds no root-public name.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`. None of the six
+FW-RT6-11a aggregate task checkboxes close here. After this sync is reviewed,
+committed, pushed, and remotely verified, only Control B exact contract review
+is authorized; Control B implementation, Control C, FW-RT6-11b, FW-RT6-11c,
+and their commit/push remain separately gated.
+<!-- FW-RT6-11a-A-ACCEPTANCE-SYNC:END -->
