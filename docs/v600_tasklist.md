@@ -8613,3 +8613,88 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-10d exact contract review is authorized. This sync does not authorize
 FW-RT6-10d implementation.
 <!-- FW-RT6-10c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10d-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10d Control A — callback and plugin isolation acceptance sync
+
+```text
+checkpoint: FW-RT6-10d Control A
+baseline head: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+FW-RT6-10c final acceptance: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+Control A implementation baseline: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+Control A implementation: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+acceptance-sync exact surface: 1 file
+dedicated Control A source gate: PASS
+focused Control A callback-isolation tests: 13 / PASS
+full Framework unit suite: 583 / PASS
+stable explicit package: framework.callback_isolation / PASS
+explicit package exports: 12 / PASS
+callback boundaries: public_callback / plugin_hook / motion_hook / PASS
+public callback failure: ISOLATED / CONTINUE / PASS
+plugin hook failure: ISOLATED / CONTINUE / PASS
+sync and async hook dispatch: ORDERED / ISOLATED / PASS
+motion hook resolver: invoke_motion_lifecycle_hook / REUSED / PASS
+motion hook failure: SKIP_MOTION / CONVERSATION_UNCHANGED / PASS
+callback registry snapshot: STABLE / PASS
+callback invocation under session or registry lock: False / CONTRACT
+callback reentrancy: REQUIRED / DEADLOCK_FALSE / REFERENCE_PASS
+dispatch result retains callback or exception identity: False / PASS
+critical stages: voice_input + text_generation / PASS
+non-critical stages: voice_output + motion / PASS
+critical failure action: FAIL_CURRENT_OPERATION / TYPED
+non-critical failure action: CONTINUE_DEGRADED / TYPED
+stage failure kills session/runtime: False / PASS
+stage failure replaces existing terminal: False / PASS
+runtime adoption: DEFERRED_TO_CONTROL_B
+runtime source changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+root import loads framework.callback_isolation eagerly: False / PASS
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10d aggregate: NOT_COMPLETED
+FW-RT6-10d tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts `framework.callback_isolation` as the stable explicit
+provider-neutral policy and reference-dispatch package for public callbacks,
+legacy plugin hooks, motion-hook failure, and realtime stage criticality. It
+adds no root export and does not adopt the policy into an existing runtime
+owner.
+
+Public callback and legacy plugin-hook failures remain isolated per handler.
+The stable handler snapshot continues in registration order for both sync and
+async dispatch. The public-safe result retains counts and policy identity only;
+it retains no callback, return value, raw exception, credential, provider
+payload, transcript, audio, private path, thread, client, or private identity.
+
+The existing `invoke_motion_lifecycle_hook` remains the sole typed motion-hook
+resolver. A failed hook skips motion without changing the conversation
+terminal. Voice input and text generation remain critical to their current
+primary operation, while voice output and motion remain non-critical side
+effects. Every failure policy preserves the session and runtime and cannot
+replace an already committed terminal.
+
+Runtime adopters must snapshot callback state under the appropriate existing
+registry lock, release registry, session-operation, and turn-admission locks,
+and only then invoke handlers. The reference dispatchers own no lock or mutable
+registry and demonstrate reentrant operation without deadlock. Exact adoption
+by TextChat, VoiceInput, Motion, unified RealtimeSession, and legacy plugin-hook
+owners remains deferred to Control B.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`. None of the six
+FW-RT6-10d aggregate task checkboxes close here. After this sync is reviewed,
+committed, pushed, and remotely verified, only Control B exact contract review
+is authorized; Control B implementation, Control C, and their commit/push
+remain separately gated.
+<!-- FW-RT6-10d-A-ACCEPTANCE-SYNC:END -->
