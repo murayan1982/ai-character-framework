@@ -5669,3 +5669,84 @@ API-version, provider-isolation, and privacy assertions remain unchanged.
 Final closed status requires a separately reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync.
 <!-- FW-RT6-10d-C-CALLBACK-ISOLATION-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:BEGIN -->
+## FW-RT6-11a Control A — explicit standalone compatibility profiles
+
+The explicit-only `framework.session_compatibility` package freezes the v4/v5
+standalone-session compatibility vocabulary before runtime adoption. It is
+provider-neutral, lazy, and absent from the 127-name Framework root surface.
+
+Each immutable `SessionCompatibilityProfile` records the public session kind,
+compatibility mode, frozen contract label, reused execution owner, preservation
+of legacy methods/return/event shapes and factory signature, silent warning
+mode, and the fact that profile construction performs no runtime work.
+
+```text
+TextChatSession: v5_standalone / 4.0
+VoiceInputSession: v5_standalone / 5.2.0
+VoiceOutputSession: v5_standalone / v5.lazy_provider_adapter
+MotionSession: v5_standalone / 5.5.0
+RealtimeSession default: v5_skeleton / 5.2.0
+RealtimeSession explicit unified request: v6_unified / 5.2.0
+```
+
+The existing public session remains the sole execution owner in every row.
+For default `RealtimeSession`, the deterministic mock turn remains the v5
+skeleton compatibility behavior. `on_event()` remains the canonical v6 event
+stream and `on_legacy_event()` remains the exact v5 projection boundary. An
+explicit unified-runtime request cannot silently execute the v5 mock fallback
+when its requested runtime is unavailable.
+
+Compatibility entry points are stable and warning-free. This includes
+`VoiceOutputSession.create_output()`, `RealtimeSession.run_turn()`, all five
+`dispose()` aliases, and the older TextChat/VoiceInput/Motion entry points.
+Describing a method as a compatibility alias does not by itself deprecate it.
+
+`DeprecatedMemberPolicy` is a future-facing guard. A true deprecation requires
+a replacement, `DeprecationWarning`, application-call-site `stacklevel=2`, no
+warning during import or construction, no removal before v7, and migration
+evidence before removal. Control A registers no deprecated public member and
+does not call `warnings.warn`.
+
+Three old release-gate assertions require explicit migration evidence rather
+than source rollback: the v5.1 factory gate predates the accepted keyword-only
+`project_root`, the v5.1 TextChat fixture bypasses `__init__`, and the v5.2
+voice-input gate predates guarded real STT. Their historical files remain
+unchanged. Current VoiceOutput, Realtime, Motion, TextChat, and VoiceInput
+compatibility regressions remain executable acceptance inputs.
+
+```text
+checkpoint: FW-RT6-11a Control A
+baseline head: 182335063eabdd901095b4184f097e095eb7021d
+exact implementation surface: 5 files
+stable explicit package: framework.session_compatibility
+explicit exports: 10
+public-session owners replaced: False
+compatibility modes: v5_standalone / v5_skeleton / v6_unified
+compatibility warning: SILENT
+deprecated warning category: DeprecationWarning
+warning stacklevel: 2
+import/construction warnings: False
+migration evidence before removal: REQUIRED
+historical release gates rewritten: False
+runtime source changed by Control A: False
+factory signatures changed by Control A: False
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TextChat / VoiceInput / VoiceOutput / Realtime / Motion contract labels: UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11a aggregate tasks: 0 / 6 CLOSED
+Control B: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+FW-RT6-11b: NOT_AUTHORIZED
+FW-RT6-11c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Runtime exposure through the five sessions remains exact Control B work.
+Aggregate acceptance, task closure, root-public cleanup, migration-guide/example
+work, commit, and push remain separately authorized boundaries.
+<!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:END -->

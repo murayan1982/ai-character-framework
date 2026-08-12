@@ -4345,3 +4345,109 @@ commit / push: NOT_AUTHORIZED
 Control B changes no root import or application migration requirement. Control
 C aggregate acceptance and task closure remain separately authorized.
 <!-- FW-RT6-10d-B-RUNTIME-ISOLATION:END -->
+
+
+<!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:BEGIN -->
+## FW-RT6-11a Control A — v5 standalone-session compatibility contract
+
+`framework.session_compatibility` is a stable explicit provider-neutral
+package. It defines immutable compatibility profiles for the five existing
+public sessions plus the policy required before any public field or method may
+be deprecated. The package is lazy and adds no name to the `framework` root.
+
+Compatibility is not deprecation. Existing v4/v5 application entry points
+remain warning-free in v6.0 development. In particular, `ask()`,
+`ask_stream()`, `listen_result()`, `create_output()`, `speak()`,
+`apply_motion()`, `run_turn()`, `on_legacy_event()`, and all five `dispose()`
+aliases remain accepted compatibility members. Importing the Framework,
+constructing a session, or using one of those members emits no warning.
+
+The four standalone facades use `v5_standalone` mode and retain their existing
+public execution owners. Their contract labels remain frozen:
+
+| Session | Mode | Contract label | Existing owner |
+|---|---|---|---|
+| `TextChatSession` | `v5_standalone` | `4.0` | `TextChatSession` |
+| `VoiceInputSession` | `v5_standalone` | `5.2.0` | `VoiceInputSession` |
+| `VoiceOutputSession` | `v5_standalone` | `v5.lazy_provider_adapter` | `VoiceOutputSession` |
+| `MotionSession` | `v5_standalone` | `5.5.0` | `MotionSession` |
+
+`RealtimeSession` has two explicit planning modes. The default/no-real-runtime
+profile is `v5_skeleton`: its deterministic mock turn remains the compatibility
+execution path. An explicit unified-runtime request selects `v6_unified` and
+must never silently fall back to the v5 mock path when the requested runtime is
+not executable. The same existing `RealtimeSession` remains the lifecycle,
+event, generation, and terminal owner in both modes. Canonical v6 callbacks
+continue through `on_event()`; applications requiring the exact lossy v5 event
+vocabulary use the already accepted `on_legacy_event()` projection.
+
+### Warning and removal policy
+
+A future deprecated member requires a non-empty replacement, an explicit
+`DeprecationWarning`, `stacklevel=2`, no import-time or construction-time
+warning, an earliest removal major of 7 or later, and mandatory migration
+evidence before removal. `FutureWarning` and `UserWarning` are not used for
+this SDK boundary. No currently accepted compatibility member is deprecated by
+Control A, and Control A emits no warning.
+
+### Historical release-gate evidence
+
+The following historical assertions describe source states that have already
+been superseded by accepted additive work; the old gate files remain unchanged:
+
+- the v5.1 factory gate requires the original four positional-or-keyword text
+  factory parameters and rejects the later accepted keyword-only
+  `project_root` addition;
+- the v5.1 conformance gate allocates `TextChatSession` with `object.__new__`
+  and then calls lifecycle code on an intentionally uninitialized instance;
+- the v5.2 voice-input gate requires configured OpenAI STT to remain
+  `REAL_STT_NOT_IMPLEMENTED`, which was superseded by the later guarded real
+  STT implementation and its double/credential execution guards.
+
+Control C must record migration evidence for those exact assertions instead of
+rewriting historical release gates or reverting accepted additive behavior.
+The v5.0 VoiceOutput, current v5.2 Realtime, and current v5.2 Motion gates remain
+direct regressions. The accepted TextChat and VoiceInput compatibility tests
+remain direct regressions as well. The full migration guide and new examples
+remain FW-RT6-11c work.
+
+```text
+checkpoint: FW-RT6-11a Control A
+baseline head: 182335063eabdd901095b4184f097e095eb7021d
+exact implementation surface: 5 files
+stable explicit package: framework.session_compatibility / LAZY
+explicit exports: 10
+session profiles: 5 / TYPED
+standalone modes: v5_standalone
+RealtimeSession default mode: v5_skeleton
+RealtimeSession explicit unified request: v6_unified
+silent fallback from v6_unified to v5 mock: False / CONTRACT
+compatibility members warning: SILENT
+future deprecated member warning: DeprecationWarning / stacklevel=2
+import or construction warning: False
+earliest removal major: 7
+migration evidence before removal: REQUIRED
+historical gate files changed: False
+runtime source changed by Control A: False
+factory signatures changed by Control A: False
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11a aggregate tasks: 0 / 6 CLOSED
+Control B runtime adoption: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11b root-public cleanup: NOT_AUTHORIZED
+FW-RT6-11c migration examples: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B must expose the accepted profile from each existing public session
+without changing factory signatures, return values, event owners, or API
+versions. Control A does not claim runtime adoption or aggregate acceptance.
+<!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:END -->
