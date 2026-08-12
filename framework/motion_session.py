@@ -278,6 +278,7 @@ class MotionSession:
         self._last_close_result: SessionCloseResult | None = None
         self._state = MotionState.IDLE
         self._callbacks: list[MotionEventCallback] = []
+        self._callback_failure_count = 0
         self._realtime_coordination_lock = threading.RLock()
         self._realtime_event_callbacks: list[MotionRealtimeEventCallback] = []
         self._realtime_event_hub: RealtimeEventHub[RealtimeEvent] | None = None
@@ -447,7 +448,30 @@ class MotionSession:
 
         if not callable(callback):
             raise TypeError("callback must be callable")
-        self._callbacks.append(callback)
+        with self._realtime_coordination_lock:
+            self._callbacks.append(callback)
+
+    def _dispatch_public_callbacks(
+        self,
+        callbacks: tuple[MotionEventCallback, ...],
+        payload: Mapping[str, Any],
+    ) -> int:
+        """Dispatch a stable snapshot after releasing motion registry locks."""
+
+        from .callback_isolation import (
+            CallbackBoundary,
+            dispatch_isolated_callbacks,
+        )
+
+        result = dispatch_isolated_callbacks(
+            callbacks,
+            payload,
+            boundary=CallbackBoundary.PUBLIC_CALLBACK,
+        )
+        if result.failed_count:
+            with self._realtime_coordination_lock:
+                self._callback_failure_count += result.failed_count
+        return result.failed_count
 
     def on_realtime_event(self, callback: MotionRealtimeEventCallback) -> None:
         """Register a canonical motion callback for a bound unified owner.
@@ -733,8 +757,9 @@ class MotionSession:
                 state=resolved_state,
                 public_metadata=public_metadata,
             )
-        for callback in list(self._callbacks):
-            callback(payload)
+        with self._realtime_coordination_lock:
+            callbacks = tuple(self._callbacks)
+        self._dispatch_public_callbacks(callbacks, payload)
         return payload
 
 
@@ -1485,6 +1510,7 @@ class MotionSession:
         callback_result = SessionCleanupResult.completed(
             SessionCleanupTarget.CALLBACK_HUB
         )
+        callback_failures_before = self._callback_failure_count
         try:
             self._emit_closed_once()
         except Exception:
@@ -1495,8 +1521,16 @@ class MotionSession:
         finally:
             self._release_realtime_subscriptions()
             with self._realtime_coordination_lock:
+                callback_failed = (
+                    self._callback_failure_count > callback_failures_before
+                )
                 self._realtime_event_callbacks.clear()
-            self._callbacks.clear()
+                self._callbacks.clear()
+            if callback_failed:
+                callback_result = SessionCleanupResult.failed_result(
+                    SessionCleanupTarget.CALLBACK_HUB,
+                    safe_message="Motion callback cleanup failed.",
+                )
         observed[SessionCleanupTarget.CALLBACK_HUB] = callback_result
         first_result = _runtime_close_result(
             plan,

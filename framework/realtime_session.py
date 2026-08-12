@@ -11,7 +11,7 @@ import asyncio
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from threading import Event, RLock, get_ident
+from threading import Condition, Event, RLock, get_ident
 import time
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Mapping
@@ -591,6 +591,9 @@ class RealtimeSession:
         self._close_finalized = Event()
         self._duplicate_close_requested = False
         self._operation_lock = RLock()
+        self._callback_window_condition = Condition(self._operation_lock)
+        self._callback_window_owner_thread_id: int | None = None
+        self._callback_window_depth = 0
         self._operation_depth = 0
         self._execution_bridge = _RealtimeExecutionBridge(
             thread_name=f"framework-realtime-{self._session_id}",
@@ -969,11 +972,12 @@ class RealtimeSession:
                 phase=phase,
             )
 
-        return self._event_hub.emit(
-            event_factory,
-            legacy_projector=lambda emitted: emitted.to_v5(),
-            overflow_event_factory=overflow_event_factory,
-        )
+        with self._callback_delivery_window():
+            return self._event_hub.emit(
+                event_factory,
+                legacy_projector=lambda emitted: emitted.to_v5(),
+                overflow_event_factory=overflow_event_factory,
+            )
 
     def _apply_stage_completion(
         self,
@@ -1102,6 +1106,12 @@ class RealtimeSession:
         should_shutdown_bridge = False
         try:
             with self._operation_lock:
+                current_thread_id = get_ident()
+                while (
+                    self._callback_window_owner_thread_id is not None
+                    and self._callback_window_owner_thread_id != current_thread_id
+                ):
+                    self._callback_window_condition.wait()
                 self._operation_depth += 1
                 try:
                     yield
@@ -1117,6 +1127,44 @@ class RealtimeSession:
         finally:
             if should_shutdown_bridge:
                 self._finalize_close_result()
+
+    @contextmanager
+    def _callback_delivery_window(self) -> Iterator[None]:
+        """Temporarily release the session operation lock for callbacks/hooks.
+
+        ``_operation_depth`` deliberately remains reserved.  Reentrant close
+        therefore keeps its accepted deferred-close semantics, while callbacks
+        and motion hooks never execute under the actual session lock.  The
+        callback runs on the existing caller/runtime thread; no dispatcher
+        thread, task, or second event registry is introduced.
+        """
+
+        lock = self._operation_lock
+        is_owned = getattr(lock, "_is_owned", None)
+        if not callable(is_owned) or not is_owned():
+            yield
+            return
+
+        release_save = getattr(lock, "_release_save", None)
+        acquire_restore = getattr(lock, "_acquire_restore", None)
+        if not callable(release_save) or not callable(acquire_restore):
+            raise RuntimeError("realtime callback lock release is unavailable")
+
+        current_thread_id = get_ident()
+        if self._callback_window_owner_thread_id is None:
+            self._callback_window_owner_thread_id = current_thread_id
+        elif self._callback_window_owner_thread_id != current_thread_id:
+            raise RuntimeError("realtime callback window ownership conflict")
+        self._callback_window_depth += 1
+        restore_state = release_save()
+        try:
+            yield
+        finally:
+            acquire_restore(restore_state)
+            self._callback_window_depth -= 1
+            if self._callback_window_depth == 0:
+                self._callback_window_owner_thread_id = None
+                self._callback_window_condition.notify_all()
 
     @contextmanager
     def _diagnostics_snapshot_read_section(self) -> Iterator[None]:
@@ -1322,12 +1370,13 @@ class RealtimeSession:
                 phase=phase,
             )
 
-        emitted = self._event_hub.emit(
-            event_factory,
-            legacy_projector=lambda emitted: emitted.to_v5(),
-            overflow_event_factory=overflow_event_factory,
-        )
-        self._handle_motion_lifecycle_event(emitted)
+        with self._callback_delivery_window():
+            emitted = self._event_hub.emit(
+                event_factory,
+                legacy_projector=lambda emitted: emitted.to_v5(),
+                overflow_event_factory=overflow_event_factory,
+            )
+            self._handle_motion_lifecycle_event(emitted)
         return emitted
 
     def emit_created(self) -> RealtimeEvent:
@@ -1524,11 +1573,12 @@ class RealtimeSession:
                 phase=phase,
             )
 
-        self._event_hub.emit(
-            event_factory,
-            legacy_projector=lambda emitted: emitted.to_v5(),
-            overflow_event_factory=overflow_event_factory,
-        )
+        with self._callback_delivery_window():
+            self._event_hub.emit(
+                event_factory,
+                legacy_projector=lambda emitted: emitted.to_v5(),
+                overflow_event_factory=overflow_event_factory,
+            )
         return committed
 
     def _rejected_turn_start_result(
@@ -2164,6 +2214,74 @@ class RealtimeSession:
             work.completion_event.set()
             return suppressed
 
+    def _isolated_stage_failure_envelope(
+        self,
+        *,
+        stage_kind: str,
+        context: object,
+    ) -> object:
+        """Return one provider-neutral typed result after a stage exception."""
+
+        from .callback_isolation import criticality_for_stage, stage_failure_policy
+        from .realtime_stage import (
+            RealtimeStageContext,
+            RealtimeStageKind,
+            RealtimeStageResultEnvelope,
+        )
+
+        if not isinstance(context, RealtimeStageContext):
+            raise TypeError("context must be a RealtimeStageContext")
+        resolved_kind = RealtimeStageKind(stage_kind)
+        policy = stage_failure_policy(criticality_for_stage(resolved_kind))
+        metadata = {
+            "boundary": "realtime_stage",
+            "reason": "stage_exception",
+            "stage_criticality": policy.criticality.value,
+            "failure_action": policy.failure_action.value,
+            "current_operation_fails": policy.current_operation_fails,
+            "session_remains_open": policy.session_remains_open,
+            "runtime_remains_available": policy.runtime_remains_available,
+            "existing_terminal_replacement_allowed": (
+                policy.existing_terminal_replacement_allowed
+            ),
+            "raw_exception_retained": False,
+        }
+        if resolved_kind is RealtimeStageKind.TEXT_GENERATION:
+            from .text_chat_result import TextChatResult
+
+            result: object = TextChatResult.failed(
+                public_error_code="provider_request_failed",
+                safe_message="Realtime text-generation stage failed safely.",
+                retryable=True,
+                public_metadata={
+                    "boundary": "realtime_stage",
+                    "stage_criticality": policy.criticality.value,
+                    "failure_action": policy.failure_action.value,
+                },
+            )
+        elif resolved_kind is RealtimeStageKind.VOICE_OUTPUT:
+            from .audio import VoiceOutputResult
+
+            result = VoiceOutputResult(
+                request_state="failed",
+                audio_ready=False,
+                message="Realtime voice-output stage failed safely.",
+                public_metadata={
+                    "boundary": "realtime_stage",
+                    "stage_criticality": policy.criticality.value,
+                    "failure_action": policy.failure_action.value,
+                },
+            )
+        else:
+            raise ValueError("isolated stage failure requires text or voice output")
+
+        return RealtimeStageResultEnvelope(
+            stage_kind=resolved_kind,
+            context=context,
+            result=result,
+            public_metadata=metadata,
+        )
+
     def _execute_interruptible_stage(
         self,
         *,
@@ -2215,7 +2333,13 @@ class RealtimeSession:
                 suppressed_before_start = work.future_delivery_suppressed
             if suppressed_before_start:
                 return None
-            envelope = stage.start(context=context, request=request)
+            try:
+                envelope = stage.start(context=context, request=request)
+            except Exception:
+                envelope = self._isolated_stage_failure_envelope(
+                    stage_kind=stage_kind,
+                    context=context,
+                )
         finally:
             suppressed_after_start = self._complete_active_interrupt_stage_work(work)
         if suppressed_after_start:
@@ -4152,11 +4276,12 @@ class RealtimeSession:
             )
 
         try:
-            return self._event_hub.emit(
-                event_factory,
-                legacy_projector=lambda emitted: emitted.to_v5(),
-                overflow_event_factory=overflow_event_factory,
-            )
+            with self._callback_delivery_window():
+                return self._event_hub.emit(
+                    event_factory,
+                    legacy_projector=lambda emitted: emitted.to_v5(),
+                    overflow_event_factory=overflow_event_factory,
+                )
         except EventHubClosedError:
             return None
 
@@ -4177,6 +4302,9 @@ class RealtimeSession:
 
         if not isinstance(request, MotionRequest):
             raise TypeError("request must be a MotionRequest")
+        from .callback_isolation import criticality_for_stage, stage_failure_policy
+
+        failure_policy = stage_failure_policy(criticality_for_stage("motion"))
         if reason == "stage_not_configured":
             outcome = MotionOutcome.NOT_CONFIGURED
             status = MotionAdapterStatus.NOT_CONFIGURED
@@ -4217,6 +4345,12 @@ class RealtimeSession:
                 "boundary": "motion",
                 "reason": reason,
                 "conversation_terminal_changed": False,
+                "stage_criticality": failure_policy.criticality.value,
+                "failure_action": failure_policy.failure_action.value,
+                "session_remains_open": failure_policy.session_remains_open,
+                "runtime_remains_available": (
+                    failure_policy.runtime_remains_available
+                ),
             },
         )
 
@@ -4994,6 +5128,7 @@ class RealtimeSession:
             observed[SessionCleanupTarget.STAGE] = self._close_injected_stages(
                 timeout_seconds=plan.stage_cleanup_timeout_seconds
             )
+        callback_errors_before = self._event_hub.diagnostics.callback_error_count
         try:
             self._transition(
                 RealtimeEventType.SESSION_CLOSED,
@@ -5010,13 +5145,27 @@ class RealtimeSession:
             )
         finally:
             callback_closed = self._event_hub.close()
-            observed[SessionCleanupTarget.CALLBACK_HUB] = (
-                SessionCleanupResult.completed(SessionCleanupTarget.CALLBACK_HUB)
-                if callback_closed
-                else SessionCleanupResult.already_closed(
-                    SessionCleanupTarget.CALLBACK_HUB
-                )
+            callback_failed = (
+                self._event_hub.diagnostics.callback_error_count
+                > callback_errors_before
             )
+            if callback_failed:
+                observed[SessionCleanupTarget.CALLBACK_HUB] = (
+                    SessionCleanupResult.failed_result(
+                        SessionCleanupTarget.CALLBACK_HUB,
+                        safe_message="Realtime callback cleanup failed.",
+                    )
+                )
+            else:
+                observed[SessionCleanupTarget.CALLBACK_HUB] = (
+                    SessionCleanupResult.completed(
+                        SessionCleanupTarget.CALLBACK_HUB
+                    )
+                    if callback_closed
+                    else SessionCleanupResult.already_closed(
+                        SessionCleanupTarget.CALLBACK_HUB
+                    )
+                )
         self._pending_close_result = (
             plan,
             observed,

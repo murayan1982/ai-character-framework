@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from typing import Any, Callable
 
 EventHandler = Callable[..., Any]
@@ -42,9 +41,20 @@ async def emit(runtime: dict[str, Any], event_name: str, *args, **kwargs) -> Non
     - Sync handlers are called directly
     """
     hooks = runtime.get("hooks", {})
-    handlers = hooks.get(event_name, [])
+    handlers = tuple(hooks.get(event_name, ()))
 
-    for handler in handlers:
-        result = handler(*args, **kwargs)
-        if inspect.isawaitable(result):
-            await result
+    # Keep the legacy registry and ``None`` return contract, but route the
+    # stable handler snapshot through the accepted provider-neutral isolation
+    # owner.  The import stays local so ordinary ``core.events`` import does not
+    # eagerly load the explicit callback-isolation package.
+    from framework.callback_isolation import (
+        CallbackBoundary,
+        dispatch_isolated_callbacks_async,
+    )
+
+    await dispatch_isolated_callbacks_async(
+        handlers,
+        *args,
+        boundary=CallbackBoundary.PLUGIN_HOOK,
+        **kwargs,
+    )

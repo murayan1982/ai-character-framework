@@ -149,6 +149,7 @@ class VoiceInputSession:
         self._closed = False
         self._callbacks: list[VoiceInputCallback] = []
         self._last_close_result: SessionCloseResult | None = None
+        self._callback_failure_count = 0
 
         capability_credential_env = _voice_input_composition.credential_presence_env(
             provider=provider,
@@ -234,6 +235,42 @@ class VoiceInputSession:
                 raise RuntimeError("Voice input session is closed.")
             self._realtime_event_callbacks.append(callback)
         return callback
+
+    def _dispatch_public_callbacks(
+        self,
+        callbacks: tuple[Callable[[object], None], ...],
+        event: object,
+    ) -> int:
+        """Invoke callbacks with the input-operation lock fully released."""
+
+        from .callback_isolation import (
+            CallbackBoundary,
+            dispatch_isolated_callbacks,
+        )
+
+        lock = self._input_operation_lock
+        is_owned = getattr(lock, "_is_owned", None)
+        release_save = getattr(lock, "_release_save", None)
+        acquire_restore = getattr(lock, "_acquire_restore", None)
+        restore_state: object | None = None
+        if callable(is_owned) and is_owned():
+            if not callable(release_save) or not callable(acquire_restore):
+                raise RuntimeError("input callback lock release is unavailable")
+            restore_state = release_save()
+        try:
+            result = dispatch_isolated_callbacks(
+                callbacks,
+                event,
+                boundary=CallbackBoundary.PUBLIC_CALLBACK,
+            )
+        finally:
+            if restore_state is not None:
+                acquire_restore(restore_state)
+
+        if result.failed_count:
+            with self._realtime_event_lock:
+                self._callback_failure_count += result.failed_count
+        return result.failed_count
 
     def _new_realtime_turn_context(self) -> _VoiceInputTurnContext:
         """Allocate one Framework-owned turn/generation correlation context."""
@@ -469,12 +506,16 @@ class VoiceInputSession:
             },
             boundary="voice_input",
         )
-        for callback in callbacks:
-            callback(event)
         legacy_event = self._legacy_mapping_from_realtime_event(event)
+        with self._realtime_event_lock:
+            legacy_callbacks = (
+                tuple(self._callbacks)
+                if legacy_event is not None
+                else ()
+            )
+        self._dispatch_public_callbacks(callbacks, event)
         if legacy_event is not None:
-            for callback in list(self._callbacks):
-                callback(legacy_event)
+            self._dispatch_public_callbacks(legacy_callbacks, legacy_event)
         return event
 
     def on_event(self, callback: VoiceInputCallback) -> None:
@@ -482,9 +523,10 @@ class VoiceInputSession:
 
         if not callable(callback):
             raise TypeError("callback must be callable")
-        if self._closed:
-            raise RuntimeError("Voice input session is closed.")
-        self._callbacks.append(callback)
+        with self._realtime_event_lock:
+            if self._closed:
+                raise RuntimeError("Voice input session is closed.")
+            self._callbacks.append(callback)
 
     def _unavailable_from_capability(
         self,
@@ -734,6 +776,11 @@ class VoiceInputSession:
                 )
             result = self._correlate_input_result(result, context)
         except Exception:
+            from .callback_isolation import criticality_for_stage, stage_failure_policy
+
+            failure_policy = stage_failure_policy(
+                criticality_for_stage("voice_input")
+            )
             with self._input_operation_lock:
                 decision = self._apply_input_completion(
                     context=context,
@@ -754,7 +801,11 @@ class VoiceInputSession:
                     payload=LifecycleEventPayload(reason="voice_input_stage_exception"),
                     public_error_code=RealtimeErrorCode.STAGE_FAILED,
                     safe_message="Voice input failed.",
-                    public_metadata=event_metadata,
+                    public_metadata={
+                        **event_metadata,
+                        "stage_criticality": failure_policy.criticality.value,
+                        "failure_action": failure_policy.failure_action.value,
+                    },
                 )
                 self._finish_input_context(context)
             raise
@@ -881,6 +932,7 @@ class VoiceInputSession:
             callback_result = SessionCleanupResult.completed(
                 SessionCleanupTarget.CALLBACK_HUB
             )
+            callback_failures_before = self._callback_failure_count
             try:
                 self._emit_realtime_event(
                     RealtimeEventType.SESSION_CLOSED,
@@ -903,11 +955,19 @@ class VoiceInputSession:
                 )
             finally:
                 with self._realtime_event_lock:
+                    callback_failed = (
+                        self._callback_failure_count > callback_failures_before
+                    )
                     self._retired_realtime_event_callbacks = tuple(
                         self._realtime_event_callbacks
                     )
                     self._realtime_event_callbacks.clear()
-                self._callbacks.clear()
+                    self._callbacks.clear()
+                if callback_failed:
+                    callback_result = SessionCleanupResult.failed_result(
+                        SessionCleanupTarget.CALLBACK_HUB,
+                        safe_message="Voice input callback cleanup failed.",
+                    )
             first_result = _runtime_close_result(
                 plan,
                 observed={

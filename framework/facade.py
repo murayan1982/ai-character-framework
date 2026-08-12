@@ -148,6 +148,7 @@ class TextChatSession:
         self._active_realtime_turn_context: _TextChatRealtimeTurnContext | None = None
         self._fw_public_closed = False
         self._last_close_result: SessionCloseResult | None = None
+        self._callback_failure_count = 0
 
     @property
     def session_id(self) -> SessionId:
@@ -233,9 +234,30 @@ class TextChatSession:
             public_metadata=public_metadata or {},
             boundary="text_chat",
         )
-        for callback in callbacks:
-            callback(event)
+        self._dispatch_public_callbacks(callbacks, event)
         return event
+
+    def _dispatch_public_callbacks(
+        self,
+        callbacks: tuple[Callable[[object], None], ...],
+        event: object,
+    ) -> int:
+        """Dispatch one stable public-callback snapshot without retaining errors."""
+
+        from framework.callback_isolation import (
+            CallbackBoundary,
+            dispatch_isolated_callbacks,
+        )
+
+        result = dispatch_isolated_callbacks(
+            callbacks,
+            event,
+            boundary=CallbackBoundary.PUBLIC_CALLBACK,
+        )
+        if result.failed_count:
+            with self._realtime_event_lock:
+                self._callback_failure_count += result.failed_count
+        return result.failed_count
 
     def on_event(
         self,
@@ -247,9 +269,12 @@ class TextChatSession:
         for external apps that want to observe text session events without
         importing runtime or plugin internals.
         """
-        if self.is_closed:
-            raise RuntimeError("Text chat session is closed.")
-        self._event_callbacks.append(callback)
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+        with self._realtime_event_lock:
+            if self.is_closed:
+                raise RuntimeError("Text chat session is closed.")
+            self._event_callbacks.append(callback)
         return callback
 
     def on_state_change(
@@ -257,9 +282,12 @@ class TextChatSession:
         callback: Callable[[TextChatStateChange], None],
     ) -> Callable[[TextChatStateChange], None]:
         """Register an app-facing state change callback and return it."""
-        if self.is_closed:
-            raise RuntimeError("Text chat session is closed.")
-        self._state_change_callbacks.append(callback)
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+        with self._realtime_event_lock:
+            if self.is_closed:
+                raise RuntimeError("Text chat session is closed.")
+            self._state_change_callbacks.append(callback)
         return callback
 
     def _emit_event(
@@ -269,19 +297,21 @@ class TextChatSession:
     ) -> None:
         """Emit one app-facing event to registered callbacks."""
         event = TextChatSessionEvent(type=event_type, data=data or {})
-        for callback in list(self._event_callbacks):
-            callback(event)
+        with self._realtime_event_lock:
+            callbacks = tuple(self._event_callbacks)
+        self._dispatch_public_callbacks(callbacks, event)
 
     def _set_state(self, new_state: str) -> None:
         """Update the app-facing session state and notify callbacks."""
-        old_state = self._state
-        if old_state == new_state:
-            return
+        with self._realtime_event_lock:
+            old_state = self._state
+            if old_state == new_state:
+                return
+            self._state = new_state
+            callbacks = tuple(self._state_change_callbacks)
 
-        self._state = new_state
         event = TextChatStateChange(old_state=old_state, new_state=new_state)
-        for callback in list(self._state_change_callbacks):
-            callback(event)
+        self._dispatch_public_callbacks(callbacks, event)
 
     def _emit_legacy_event_from_realtime_event(
         self,
@@ -375,6 +405,7 @@ class TextChatSession:
             callback_result = SessionCleanupResult.completed(
                 SessionCleanupTarget.CALLBACK_HUB
             )
+            callback_failures_before = self._callback_failure_count
             try:
                 if self._state != "closed":
                     self._set_state("closed")
@@ -399,10 +430,18 @@ class TextChatSession:
                 )
             finally:
                 with self._realtime_event_lock:
+                    callback_failed = (
+                        self._callback_failure_count > callback_failures_before
+                    )
                     self._active_realtime_turn_context = None
                     self._realtime_event_callbacks.clear()
-                self._event_callbacks.clear()
-                self._state_change_callbacks.clear()
+                    self._event_callbacks.clear()
+                    self._state_change_callbacks.clear()
+                if callback_failed:
+                    callback_result = SessionCleanupResult.failed_result(
+                        SessionCleanupTarget.CALLBACK_HUB,
+                        safe_message="Text chat callback cleanup failed.",
+                    )
         first_result = _runtime_close_result(
             plan,
             observed={
@@ -457,11 +496,20 @@ class TextChatSession:
             response = self.ask(message)
         except Exception as exc:  # noqa: BLE001 - public boundary converts to safe result
             classification = _classify_text_chat_exception(exc)
+            from .callback_isolation import criticality_for_stage, stage_failure_policy
+
+            failure_policy = stage_failure_policy(
+                criticality_for_stage("text_generation")
+            )
             return TextChatResult.failed(
                 public_error_code=classification.public_error_code,
                 safe_message=classification.safe_message,
                 retryable=classification.retryable,
-                public_metadata=dict(classification.public_metadata),
+                public_metadata={
+                    **dict(classification.public_metadata),
+                    "stage_criticality": failure_policy.criticality.value,
+                    "failure_action": failure_policy.failure_action.value,
+                },
             )
 
         text = _text_chat_response_to_text(response)
@@ -576,6 +624,11 @@ class TextChatSession:
                 raise
             self._set_state("error")
             classification = _classify_text_chat_exception(exc)
+            from .callback_isolation import criticality_for_stage, stage_failure_policy
+
+            failure_policy = stage_failure_policy(
+                criticality_for_stage("text_generation")
+            )
             failed = self._emit_realtime_event(
                 RealtimeEventType.TURN_FAILED,
                 state=RealtimeState.FAILED,
@@ -591,6 +644,8 @@ class TextChatSession:
                 public_metadata={
                     **dict(classification.public_metadata),
                     "text_chat_public_error_code": classification.public_error_code,
+                    "stage_criticality": failure_policy.criticality.value,
+                    "failure_action": failure_policy.failure_action.value,
                 },
             )
             self._emit_legacy_event_from_realtime_event(

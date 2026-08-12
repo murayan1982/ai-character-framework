@@ -5497,3 +5497,87 @@ TextChat, VoiceInput, Motion, unified RealtimeSession, and legacy plugin-hook
 runtime adoption remains an exact Control B review after this checkpoint is
 accepted and synchronized.
 <!-- FW-RT6-10d-A-CALLBACK-ISOLATION:END -->
+
+
+<!-- FW-RT6-10d-B-RUNTIME-ISOLATION:BEGIN -->
+## FW-RT6-10d Control B — coherent runtime callback isolation
+
+Control B adopts the accepted `framework.callback_isolation` policy in the
+existing TextChat, VoiceInput, Motion, unified RealtimeSession, and legacy
+plugin-hook owners. No new public callback registry, event sequencer, runtime
+thread, provider boundary, or root export is introduced.
+
+Each public session captures one stable callback snapshot under its existing
+registry lock and invokes that snapshot after releasing the registry lock.
+TextChat compatibility, canonical, and state callbacks; VoiceInput canonical
+and legacy callbacks; and Motion mapping callbacks isolate each ordinary
+handler exception and continue to later handlers. Callback failures cannot
+turn an otherwise successful text response, voice-input result, motion
+projection, or previously committed realtime terminal into a runtime failure.
+
+`RealtimeSession` continues to use the sole `RealtimeEventHub` sequencer and
+subscriber registry. During synchronous delivery it temporarily releases the
+actual operation lock while retaining the accepted logical operation depth.
+A small condition on that same lock preserves cross-thread operation ordering;
+same-thread reentrant registration, unregistration, cancellation, diagnostics,
+and deferred close remain available without executing a callback under the
+session lock or creating a dispatcher thread.
+
+Legacy `core.events.emit()` snapshots the existing hook list and routes sync
+and async handlers through the accepted async isolation dispatcher. Its
+signature and `None` return stay unchanged. Plugin discovery, setup, start,
+stop, configuration, and the existing motion-lifecycle resolver are not
+changed.
+
+Unexpected text-generation exceptions are normalized to a failed
+`TextChatResult` with `critical / fail_current_operation` metadata. Unexpected
+voice-output exceptions become a failed `VoiceOutputResult` with
+`non_critical / continue_degraded` metadata. Existing motion failure results
+carry the same non-critical policy and explicitly retain the conversation
+terminal. All stage results exclude the raw exception and preserve the open
+session/runtime truth.
+
+Callback failures observed while the one final close event is dispatched are
+recorded as typed callback-hub cleanup failures. The affected session remains
+closed, callbacks are released, duplicate close remains idempotent, and no raw
+exception or callback identity is retained by `last_close_result`.
+
+```text
+checkpoint: FW-RT6-10d Control B
+baseline head: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+exact implementation surface: 9 files
+policy owner: framework.callback_isolation / REUSED
+event owner: RealtimeEventHub / REUSED
+public callback registries: EXISTING / REUSED
+public callback failure: ISOLATED / CONTINUE
+plugin sync + async hook failure: ISOLATED / CONTINUE
+callback snapshot: STABLE
+callback under registry lock: False
+callback under RealtimeSession operation lock: False
+reentrant callback deadlock: False
+cross-thread operation ordering: PRESERVED
+new callback/event registry: False
+new dispatcher/background thread: False
+critical stage failure: TYPED / CURRENT OPERATION FAILS
+non-critical stage failure: TYPED / CONTINUE DEGRADED
+existing terminal replacement allowed: False
+close callback failure: TYPED CLEANUP FAILURE / SESSION CLOSED
+raw exception/callback/thread/client identity retained: False
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10d aggregate tasks: 0 / 6 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The exact Control B surface is `core/events.py`, these two contract documents,
+the four existing session adopters, the dedicated Control B smoke gate, and its
+new focused test module. `framework/callback_isolation.py`,
+`framework/realtime_event_hub.py`, existing tests, `plugins/manager.py`, and
+`docs/v600_tasklist.md` remain unchanged.
+<!-- FW-RT6-10d-B-RUNTIME-ISOLATION:END -->

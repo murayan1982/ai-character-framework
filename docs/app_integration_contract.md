@@ -4278,3 +4278,70 @@ Control B must adopt these rules in the existing runtime owners. Control A
 does not claim that current compatibility callback or legacy plugin-hook paths
 already satisfy the aggregate acceptance conditions.
 <!-- FW-RT6-10d-A-CALLBACK-ISOLATION:END -->
+
+
+<!-- FW-RT6-10d-B-RUNTIME-ISOLATION:BEGIN -->
+## FW-RT6-10d Control B — application callback and hook behavior
+
+Applications may keep existing callback registration and session factory code.
+TextChat, VoiceInput, Motion, and RealtimeSession callbacks now share the
+accepted isolate-and-continue rule: one callback exception is contained, later
+callbacks in the accepted snapshot still run in registration order, and the
+primary operation keeps its truthful result.
+
+Callbacks are invoked synchronously on the existing caller/runtime thread, but
+not while the applicable callback-registry or RealtimeSession operation lock is
+held. Supported same-thread reentrant operations therefore remain available.
+RealtimeSession keeps cross-thread operation serialization while delivery is in
+progress, so releasing the physical lock does not let a competing interrupt or
+terminal operation overtake the accepted operation.
+
+Legacy plugin hooks keep their existing registry and invocation API. Both sync
+and async handlers are accepted; async values are awaited, each failure is
+isolated independently, and later handlers continue. No plugin lifecycle or
+motion-product mapping contract changes.
+
+Host applications do not receive raw callback or stage exceptions. Critical
+text-generation failures use the existing typed failed result for the current
+operation. Optional voice-output and motion failures report degraded typed
+results without replacing a successful primary response or an established
+conversation terminal. The session and runtime remain available unless an
+independent lifecycle operation closes them.
+
+If a callback fails while the final close event is delivered,
+`last_close_result` truthfully reports a callback-hub cleanup failure. The
+session still stays closed and releases its callback registrations; repeated
+close does not dispatch or clean up again.
+
+```text
+checkpoint: FW-RT6-10d Control B
+baseline head: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+exact implementation surface: 9 files
+public sessions adopted: TextChat / VoiceInput / Motion / Realtime
+legacy plugin hook path adopted: core.events.emit
+public callback failure reaches caller/runtime: False
+later callback after failure: CONTINUES
+registration snapshot: STABLE
+sync + async plugin handlers: SUPPORTED / ISOLATED
+callback under session lock: False
+callback reentrancy: PASS
+operation ordering regression: False
+critical stage result: FAILED CURRENT OPERATION / SESSION OPEN
+non-critical stage result: DEGRADED / PRIMARY TERMINAL RETAINED
+raw exception, credential, payload, transcript, audio retained: False
+close cleanup truth: TYPED / SESSION REMAINS CLOSED
+factory signatures: UNCHANGED
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10d aggregate tasks: 0 / 6 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B changes no root import or application migration requirement. Control
+C aggregate acceptance and task closure remain separately authorized.
+<!-- FW-RT6-10d-B-RUNTIME-ISOLATION:END -->
