@@ -5820,3 +5820,87 @@ commit / push: NOT_AUTHORIZED
 Control B does not close an aggregate task. Aggregate acceptance, task closure,
 Control C, commit, and push remain separately authorized boundaries.
 <!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:END -->
+
+
+<!-- FW-RT6-11a-C-SESSION-COMPATIBILITY-ACCEPTANCE:BEGIN -->
+## FW-RT6-11a Control C — aggregate standalone-session compatibility acceptance
+
+Control C aggregates the accepted explicit compatibility contract and its five
+public-session properties without changing runtime source. The lazy
+`framework.session_compatibility` package remains the sole profile, mode,
+member-status, warning-policy, and future-deprecation vocabulary. The existing
+`TextChatSession`, `VoiceInputSession`, `VoiceOutputSession`, `MotionSession`,
+and `RealtimeSession` remain the sole public execution and lifecycle owners.
+
+The four standalone sessions retain `v5_standalone`. Default and explicit-false
+Realtime construction retain `v5_skeleton`; an explicit true request retains
+`v6_unified` request truth without claiming provider availability or silently
+falling back to the deterministic mock. All five `compatibility_profile`
+properties remain read-only, lazy, immutable, stable across equal reads, and
+readable after close.
+
+Compatibility remains distinct from deprecation. Every accepted v4/v5 member
+stays warning-free. `DeprecatedMemberPolicy` remains policy-only: a future
+deprecation requires a replacement, `DeprecationWarning`, application-call-site
+`stacklevel=2`, no import/construction warning, no removal before v7, and
+migration evidence before removal. Control C deprecates no field or method and
+does not call `warnings.warn`.
+
+The accepted TextChat and VoiceInput regressions and the current VoiceOutput,
+Realtime, and Motion release-contract smokes remain executable acceptance
+inputs. The three historical superseded assertions remain unchanged and are
+covered by the migration evidence already recorded by Control A. No provider,
+network, audio, microphone, playback, or real VTube Studio operation is used.
+
+```text
+checkpoint: FW-RT6-11a Control C
+baseline head: f79dfa6794138654c5f89a212b32ecd7f58399af
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+Control B implementation: 675c4b895f424b75301a5eea5593a75e0349b661
+Control B acceptance sync: f79dfa6794138654c5f89a212b32ecd7f58399af
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact corrective Control C surface: 4 files
+runtime source changed by Control C: False
+existing Control B test semantic sync: 1 file / TASK BOUNDARY ONLY
+canonical compatibility owner: framework.session_compatibility / REUSED / PASS
+public compatibility properties: 5 / READ_ONLY / LAZY / PASS
+standalone modes: 4 / v5_standalone / PASS
+Realtime default and explicit false: v5_skeleton / PASS
+Realtime explicit true: v6_unified / REQUEST TRUTH / PASS
+stage binding alone selects unified: False / PASS
+unavailable unified request falls back to mock: False / PASS
+profile readable after close: True / PASS
+compatibility warning: SILENT / PASS
+deprecated-member policy: DeprecationWarning / POLICY_ONLY / PASS
+deprecated public fields or methods introduced: 0
+historical release-gate files changed: False
+accepted v5 compatibility regressions: PASS
+provider/runtime execution during acceptance: False
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-11a tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-11a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-11b implementation: NOT_AUTHORIZED
+FW-RT6-11c implementation: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+This aggregate changes only this public contract, the tasklist candidate state,
+the dedicated acceptance gate, and one accepted Control B task-boundary test.
+It changes no runtime source, application-integration contract, Control A test,
+Control A/B source gate, historical v5 gate, README, example, root export,
+factory signature, return/event shape, or API version.
+
+The six task checkboxes are acceptance candidates, not final closed status.
+Final completion requires a separately reviewed, committed, pushed, and
+remotely verified one-file final acceptance sync. FW-RT6-11b and FW-RT6-11c
+remain outside this authorization.
+<!-- FW-RT6-11a-C-SESSION-COMPATIBILITY-ACCEPTANCE:END -->

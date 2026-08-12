@@ -3034,12 +3034,12 @@ False
 
 **Tasks:**
 
-- [ ] TextChatSession compatibility adapterを完成する。
-- [ ] VoiceInputSession compatibility adapterを完成する。
-- [ ] VoiceOutputSession compatibility adapterを完成する。
-- [ ] MotionSession compatibility adapterを完成する。
-- [ ] RealtimeSession v5 skeleton behaviorのcompatibility modeを決める。
-- [ ] deprecated fields/methodsのwarning policyを決める。
+- [x] TextChatSession compatibility adapterを完成する。
+- [x] VoiceInputSession compatibility adapterを完成する。
+- [x] VoiceOutputSession compatibility adapterを完成する。
+- [x] MotionSession compatibility adapterを完成する。
+- [x] RealtimeSession v5 skeleton behaviorのcompatibility modeを決める。
+- [x] deprecated fields/methodsのwarning policyを決める。
 
 **Acceptance:**
 
@@ -9180,3 +9180,93 @@ reviewed, committed, pushed, and remotely verified, only Control C exact
 contract review is authorized; Control C implementation, FW-RT6-11b,
 FW-RT6-11c, and their commit/push remain separately gated.
 <!-- FW-RT6-11a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-11a Control C — aggregate standalone-session compatibility acceptance
+
+```text
+checkpoint: FW-RT6-11a Control C
+baseline head: f79dfa6794138654c5f89a212b32ecd7f58399af
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+Control B implementation: 675c4b895f424b75301a5eea5593a75e0349b661
+Control B acceptance sync: f79dfa6794138654c5f89a212b32ecd7f58399af
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact corrective Control C surface: 4 files
+runtime source changed by Control C: False
+existing Control B test semantic sync: 1 file / TASK BOUNDARY ONLY
+stable explicit package: framework.session_compatibility / REUSED / PASS
+canonical profile builder: build_session_compatibility_profile / REUSED / PASS
+public compatibility properties: 5 / READ_ONLY / LAZY / PASS
+standalone modes: 4 / v5_standalone / PASS
+Realtime default mode: v5_skeleton / PASS
+Realtime explicit-false mode: v5_skeleton / PASS
+Realtime explicit-true mode: v6_unified / REQUEST TRUTH / PASS
+Realtime config explicit-true mode: v6_unified / REQUEST TRUTH / PASS
+stage binding alone selects unified: False / PASS
+unavailable unified request falls back to mock: False / PASS
+profile equality across reads: STABLE / PASS
+profile object identity: NOT_CONTRACTED
+profile readable after close: True / PASS
+compatibility warning: SILENT / PASS
+deprecated warning category: DeprecationWarning / POLICY_ONLY / PASS
+warning stacklevel: 2 / PASS
+import or construction warning: False / PASS
+earliest removal major: 7 / PASS
+migration evidence before removal: REQUIRED / PASS
+deprecated public fields or methods introduced: 0
+accepted TextChat/VoiceInput regressions: PASS
+current VoiceOutput/Realtime/Motion release gates: PASS
+historical superseded gate files changed: False
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+private/provider identity retained by profile: False / PASS
+root import loads framework.session_compatibility eagerly: False / PASS
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+FW-RT6-11a tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-11a aggregate: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-11a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-11b root-public cleanup: NOT_AUTHORIZED
+FW-RT6-11c migration guide and examples: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted Control A compatibility vocabulary and
+Control B public-session adoption. The lazy explicit-only
+`framework.session_compatibility` package remains the sole compatibility and
+future-deprecation policy owner; the five existing public sessions remain the
+sole execution and lifecycle owners.
+
+The four standalone profiles remain `v5_standalone`. Default and explicit-false
+Realtime profiles remain `v5_skeleton`; explicit-true requests remain
+`v6_unified` request truth without provider-availability claims or mock
+fallback. Profiles remain read-only, lazy, immutable, warning-free,
+provider-neutral, private-data-free, stable across equal reads, and readable
+after close.
+
+Existing compatibility members remain silent. The explicit
+`DeprecatedMemberPolicy` remains future-facing policy only and introduces no
+deprecated public member. Current v5 regressions and release-contract smokes
+remain executable; historical superseded assertions retain their recorded
+migration evidence and are not rewritten.
+
+This exact four-file aggregate changes no runtime source. Besides this tasklist,
+the public contract, and the new dedicated gate, it updates only the accepted
+Control B task-boundary test from the pre-Control-C `0 / 6` state to
+`6 / 6 ACCEPTED-CANDIDATE`. Control A tests, Control A/B source gates,
+application-integration docs, historical v5 gates, examples, README, root
+exports, signatures, return/event shapes, and version labels remain unchanged.
+
+All six FW-RT6-11a tasks are acceptance candidates. Final closed status
+requires a separately reviewed, committed, pushed, and remotely verified
+one-file final acceptance sync. FW-RT6-11b and FW-RT6-11c remain separately
+gated.
+<!-- FW-RT6-11a-C-AGGREGATE-ACCEPTANCE:END -->

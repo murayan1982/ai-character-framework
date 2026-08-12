@@ -355,7 +355,7 @@ class SessionCompatibilityControlBTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, serialized.lower())
 
-    def test_control_b_docs_and_task_boundary_are_exact(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         for relative in (
             "docs/public_facade.md",
             "docs/app_integration_contract.md",
@@ -370,9 +370,7 @@ class SessionCompatibilityControlBTests(unittest.TestCase):
                 "five read-only `compatibility_profile` properties",
                 normalized.lower(),
             )
-            self.assertIn("0 / 6 CLOSED", text)
-            self.assertIn("Control C", text)
-            self.assertIn("NOT_AUTHORIZED", text)
+            self.assertIn("FW-RT6-11a", text)
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(
             encoding="utf-8"
         )
@@ -380,8 +378,15 @@ class SessionCompatibilityControlBTests(unittest.TestCase):
             "## FW-RT6-11a — v5 standalone session compatibility",
             1,
         )[1].split("## FW-RT6-11b", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertIn(
+            "check_v600_session_compatibility_acceptance",
+            "\n".join(
+                str(path.relative_to(PROJECT_ROOT))
+                for path in PROJECT_ROOT.glob("scripts/*session_compatibility*")
+            ),
+        )
 
 
 if __name__ == "__main__":
