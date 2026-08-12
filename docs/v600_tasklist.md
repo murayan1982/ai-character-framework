@@ -9270,3 +9270,116 @@ requires a separately reviewed, committed, pushed, and remotely verified
 one-file final acceptance sync. FW-RT6-11b and FW-RT6-11c remain separately
 gated.
 <!-- FW-RT6-11a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11a — standalone-session compatibility final acceptance sync
+
+```text
+checkpoint: FW-RT6-11a final acceptance sync
+baseline head: 0eb039718aa8f3b22f9e4ad1956b697d325a685b
+FW-RT6-10d final acceptance: 182335063eabdd901095b4184f097e095eb7021d
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+Control B implementation: 675c4b895f424b75301a5eea5593a75e0349b661
+Control B acceptance sync: f79dfa6794138654c5f89a212b32ecd7f58399af
+Control C aggregate acceptance: 0eb039718aa8f3b22f9e4ad1956b697d325a685b
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact corrective Control B implementation surface: 11 files
+exact corrective Control C aggregate surface: 4 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A compatibility tests: 14 / PASS
+focused Control B compatibility tests: 16 / PASS
+focused Control A+B compatibility tests: 30 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+accepted FW-RT6-10d callback-isolation regression: 25 / PASS
+accepted FW-RT6-10c diagnostics regression: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 625 / PASS
+stable explicit package: framework.session_compatibility / REUSED / PASS
+explicit compatibility exports: 10 / UNCHANGED
+canonical profile builder: build_session_compatibility_profile / REUSED / PASS
+public compatibility properties: 5 / READ_ONLY / LAZY / PASS
+standalone modes: 4 / v5_standalone / PASS
+Realtime default mode: v5_skeleton / PASS
+Realtime explicit-false mode: v5_skeleton / PASS
+Realtime explicit-true mode: v6_unified / REQUEST TRUTH / PASS
+Realtime config explicit-true mode: v6_unified / REQUEST TRUTH / PASS
+stage binding alone selects unified: False / PASS
+unavailable unified request falls back to mock: False / PASS
+profile equality across reads: STABLE / PASS
+profile object identity: NOT_CONTRACTED
+profile readable after close: True / PASS
+compatibility warning: SILENT / PASS
+deprecated warning category: DeprecationWarning / POLICY_ONLY / PASS
+warning stacklevel: 2 / PASS
+import or construction warning: False / PASS
+earliest removal major: 7 / PASS
+migration evidence before removal: REQUIRED / PASS
+deprecated public fields or methods introduced: 0
+accepted TextChat/VoiceInput regressions: PASS
+current VoiceOutput/Realtime/Motion release gates: PASS
+historical superseded gate files changed: False
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+private/provider identity retained by profile: False / PASS
+root import loads framework.session_compatibility eagerly: False / PASS
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+runtime source changed by Control C/final sync: False
+public-facade contract changed by final sync: False
+aggregate gate changed by final sync: False
+existing tests changed by final sync: False
+FW-RT6-11a tasks: 6 / 6 ACCEPTED
+FW-RT6-11a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-11b exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-11b implementation: NOT_AUTHORIZED
+FW-RT6-11c implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-11a closes the v5 standalone-session compatibility contract. The lazy
+explicit-only `framework.session_compatibility` package remains the sole
+immutable compatibility-profile, member-status, warning-policy, and future
+deprecation vocabulary. TextChat, VoiceInput, VoiceOutput, Motion, and Realtime
+retain their existing public session, execution, lifecycle, event, and close
+owners; no second session or compatibility registry is introduced.
+
+The four standalone sessions preserve `v5_standalone` and their frozen contract
+labels. Default and explicit-false Realtime construction preserve
+`v5_skeleton`; explicit-true construction preserves `v6_unified` request truth
+without provider-availability claims or silent deterministic-mock fallback.
+All five public compatibility properties remain read-only, lazy, immutable,
+warning-free, provider-neutral, private-data-free, stable across equal reads,
+and readable after close.
+
+Compatibility remains distinct from deprecation. Accepted v4/v5 members stay
+silent. The explicit future policy requires a replacement,
+`DeprecationWarning`, application-call-site `stacklevel=2`, no import or
+construction warning, no removal before v7, and migration evidence before
+removal. No public field or method is deprecated by FW-RT6-11a. Current v5
+regressions and release-contract smokes remain executable; historical
+superseded assertions remain unchanged with their recorded migration evidence.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade or application-integration contract, aggregate gate,
+existing test, historical release gate, README, example, root export, factory
+signature, return/event shape, or API version. It formally completes, verifies,
+accepts, commits, pushes, and closes all three controls and all six FW-RT6-11a
+aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-11b exact contract review is authorized. This sync does not authorize
+FW-RT6-11b implementation or any FW-RT6-11c work.
+<!-- FW-RT6-11a-FINAL-ACCEPTANCE-SYNC:END -->
