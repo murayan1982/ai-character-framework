@@ -54,6 +54,7 @@ from .version import VOICE_INPUT_API_VERSION
 
 if TYPE_CHECKING:
     from .session_close import SessionCloseResult
+    from .session_compatibility import SessionCompatibilityProfile
 
 from .voice_input_capability import (
     VoiceInputCapabilities,
@@ -221,6 +222,19 @@ class VoiceInputSession:
         """Return the latest immutable close observation."""
 
         return self._last_close_result
+
+    @property
+    def compatibility_profile(self) -> SessionCompatibilityProfile:
+        """Return the immutable warning-free v5 standalone profile."""
+
+        from .session_compatibility import (
+            StandaloneSessionKind,
+            build_session_compatibility_profile,
+        )
+
+        return build_session_compatibility_profile(
+            StandaloneSessionKind.VOICE_INPUT
+        )
 
     def on_realtime_event(
         self,

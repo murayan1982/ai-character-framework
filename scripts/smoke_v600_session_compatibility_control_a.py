@@ -182,7 +182,7 @@ def check_existing_compatibility_regressions() -> None:
     print("[OK] accepted TextChat/VoiceInput regressions and current v5 session gates pass")
 
 
-def check_runtime_deferral_and_privacy() -> None:
+def check_control_a_package_and_control_b_adoption() -> None:
     source = (PROJECT_ROOT / "framework/session_compatibility.py").read_text(
         encoding="utf-8"
     ).lower()
@@ -202,9 +202,14 @@ def check_runtime_deferral_and_privacy() -> None:
         "framework/realtime_session.py",
     ):
         runtime_source = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
-        _require("session_compatibility" not in runtime_source,
-                 f"Control B adoption escaped into Control A: {relative}")
-    print("[OK] runtime adoption and warning emission stay deferred to Control B")
+        _require(runtime_source.count("def compatibility_profile") == 1,
+                 f"Control B profile adoption drifted: {relative}")
+        _require("build_session_compatibility_profile" in runtime_source,
+                 f"canonical compatibility builder is not reused: {relative}")
+        _require("warnings.warn" not in runtime_source,
+                 f"Control B emitted a compatibility warning: {relative}")
+    print("[OK] accepted Control A package remains provider-free under Control B")
+    print("[OK] five exact runtime owners adopt the canonical profile lazily")
     print("[OK] provider execution, private data, and historical gate mutation remain absent")
 
 
@@ -242,9 +247,9 @@ def main() -> None:
     check_import_contract()
     check_profile_and_warning_contract()
     check_existing_compatibility_regressions()
-    check_runtime_deferral_and_privacy()
+    check_control_a_package_and_control_b_adoption()
     check_docs_and_task_boundary()
-    print("v600_rt6_11a_control_a_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11a_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_11a_control_a_exact_surface: 5 files")
     print("v600_rt6_11a_explicit_package: framework.session_compatibility / PASS")
     print("v600_rt6_11a_session_profiles: 5 / TYPED")
@@ -252,10 +257,10 @@ def main() -> None:
     print("v600_rt6_11a_realtime_explicit_mode: v6_unified")
     print("v600_rt6_11a_compatibility_warning: SILENT")
     print("v600_rt6_11a_deprecated_warning: DeprecationWarning / POLICY_ONLY")
-    print("v600_rt6_11a_runtime_adoption: DEFERRED_TO_CONTROL_B")
+    print("v600_rt6_11a_runtime_adoption: 5 / 5 CONTROL_B")
     print("v600_rt6_11a_historical_gate_rewrite: False")
     print("v600_rt6_11a_task_count: 0 / 6 CLOSED")
-    print("v600_rt6_11a_control_b: NOT_AUTHORIZED")
+    print("v600_rt6_11a_control_b: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_11a_control_c: NOT_AUTHORIZED")
     print("v600_rt6_11b: NOT_AUTHORIZED")
     print("v600_rt6_11a_commit_push: NOT_AUTHORIZED")

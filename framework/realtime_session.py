@@ -97,6 +97,7 @@ if TYPE_CHECKING:
         SessionCloseResult,
     )
     from .session_diagnostics import SessionDiagnosticsSnapshot
+    from .session_compatibility import SessionCompatibilityProfile
     from .realtime_stage import (
         MotionStage,
         TextGenerationStage,
@@ -762,6 +763,20 @@ class RealtimeSession:
         """Return the latest immutable close observation, if close was requested."""
 
         return self._last_close_result
+
+    @property
+    def compatibility_profile(self) -> SessionCompatibilityProfile:
+        """Return the immutable profile for the explicitly selected runtime mode."""
+
+        from .session_compatibility import (
+            StandaloneSessionKind,
+            build_session_compatibility_profile,
+        )
+
+        return build_session_compatibility_profile(
+            StandaloneSessionKind.REALTIME,
+            unified_runtime_requested=self._real_runtime_requested,
+        )
 
     @property
     def diagnostics_snapshot(self) -> SessionDiagnosticsSnapshot:

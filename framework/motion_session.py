@@ -51,6 +51,7 @@ from .motion_adapter_execution import (
 )
 if TYPE_CHECKING:
     from .session_close import SessionCloseResult
+    from .session_compatibility import SessionCompatibilityProfile
     from .vtube_studio_transport import VTubeStudioTransportResult
 
 
@@ -442,6 +443,19 @@ class MotionSession:
         """Return the latest immutable close observation."""
 
         return self._last_close_result
+
+    @property
+    def compatibility_profile(self) -> SessionCompatibilityProfile:
+        """Return the immutable warning-free v5 standalone profile."""
+
+        from .session_compatibility import (
+            StandaloneSessionKind,
+            build_session_compatibility_profile,
+        )
+
+        return build_session_compatibility_profile(
+            StandaloneSessionKind.MOTION
+        )
 
     def on_event(self, callback: MotionEventCallback) -> None:
         """Register a public motion event callback."""

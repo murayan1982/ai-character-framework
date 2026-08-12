@@ -5750,3 +5750,73 @@ Runtime exposure through the five sessions remains exact Control B work.
 Aggregate acceptance, task closure, root-public cleanup, migration-guide/example
 work, commit, and push remain separately authorized boundaries.
 <!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:END -->
+
+
+<!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:BEGIN -->
+## FW-RT6-11a Control B — public session compatibility-profile adoption
+
+Control B exposes the accepted compatibility facts through five read-only
+`compatibility_profile` properties on the existing public session owners:
+`TextChatSession`, `VoiceInputSession`, `VoiceOutputSession`, `MotionSession`,
+and `RealtimeSession`. Each property lazily imports the explicit-only
+`framework.session_compatibility` package and returns an immutable canonical
+`SessionCompatibilityProfile`. Importing `framework` and constructing a
+session do not load that package.
+
+The four standalone sessions always report `v5_standalone` with their frozen
+contract labels. `RealtimeSession` reports `v5_skeleton` for default or
+explicit-false construction. An explicit `real_runtime_enabled=True` request,
+including one supplied through `RealtimeSessionConfig`, reports `v6_unified`
+from the existing `_real_runtime_requested` truth. The profile does not claim
+that the requested real runtime is executable. A stage binding without the
+explicit request does not select unified mode, and an unavailable explicit
+request does not silently fall back to a mock turn.
+
+Profile access performs no provider, network, audio, microphone, playback,
+VTube Studio, callback, event, warning, or turn work. It retains no provider
+object, credential, raw payload, transcript, audio, private path, callback,
+thread, client, or private runtime identity. The property remains readable
+after close and returns equal immutable facts on repeated reads; object
+identity is not part of the contract.
+
+Factory signatures, session constructors, legacy methods, return shapes,
+events, root exports, and all five public version labels remain unchanged.
+Existing historical v5 gates remain untouched. The accepted Control A test and
+source gate receive only the two-file semantic boundary sync needed to verify
+the now-authorized five-owner Control B adoption.
+
+```text
+checkpoint: FW-RT6-11a Control B
+baseline head: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+exact corrective implementation surface: 11 files
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+canonical profile owner: framework.session_compatibility / REUSED
+public session properties: 5 / READ_ONLY
+profile import: PROPERTY_ACCESS_ONLY / LAZY
+standalone modes: 4 / v5_standalone
+Realtime default or explicit false: v5_skeleton
+Realtime explicit true: v6_unified / REQUEST TRUTH
+stage binding alone selects unified: False
+unavailable unified request falls back to mock: False
+profile reads after close: PASS
+profile equality: STABLE
+profile object identity: NOT_CONTRACTED
+compatibility warning: SILENT
+provider/runtime execution by profile access: False
+factory signatures and return shapes: UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TextChat / VoiceInput / VoiceOutput / Realtime / Motion contract labels: UNCHANGED
+Control A semantic sync: 2 files / CONTROL_B BOUNDARY ONLY
+historical v5 gate rewrite: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11a aggregate tasks: 0 / 6 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11b: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B does not close an aggregate task. Aggregate acceptance, task closure,
+Control C, commit, and push remain separately authorized boundaries.
+<!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:END -->

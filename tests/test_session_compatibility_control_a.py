@@ -237,7 +237,7 @@ class SessionCompatibilityControlATests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires migration evidence"):
             DeprecatedMemberPolicy(**base, migration_evidence_required=False)
 
-    def test_control_a_is_provider_free_and_does_not_adopt_runtime(self) -> None:
+    def test_control_a_is_provider_free_and_control_b_adoption_is_exact(self) -> None:
         source = (PROJECT_ROOT / "framework/session_compatibility.py").read_text(
             encoding="utf-8"
         ).lower()
@@ -259,7 +259,8 @@ class SessionCompatibilityControlATests(unittest.TestCase):
             "framework/realtime_session.py",
         ):
             runtime_source = (PROJECT_ROOT / relative).read_text(encoding="utf-8")
-            self.assertNotIn("session_compatibility", runtime_source)
+            self.assertEqual(runtime_source.count("def compatibility_profile"), 1)
+            self.assertIn("build_session_compatibility_profile", runtime_source)
 
     def test_public_versions_remain_unchanged(self) -> None:
         self.assertEqual(

@@ -4451,3 +4451,83 @@ Control B must expose the accepted profile from each existing public session
 without changing factory signatures, return values, event owners, or API
 versions. Control A does not claim runtime adoption or aggregate acceptance.
 <!-- FW-RT6-11a-A-SESSION-COMPATIBILITY:END -->
+
+
+<!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:BEGIN -->
+## FW-RT6-11a Control B — host-visible compatibility profiles
+
+Five read-only `compatibility_profile` properties expose the accepted
+provider-neutral compatibility facts from the existing public sessions. Host
+applications may read the property on `TextChatSession`, `VoiceInputSession`,
+`VoiceOutputSession`, `MotionSession`, or `RealtimeSession`, including after
+the session is closed. The returned `SessionCompatibilityProfile` is immutable,
+JSON-safe, and equal across repeated reads. Applications must not depend on
+object identity.
+
+The property is a lazy explicit-package boundary. Neither root import nor
+session construction loads `framework.session_compatibility`; the first
+property read does. It emits no warning and performs no provider, network,
+audio, microphone, playback, VTube Studio, callback, event, or turn operation.
+
+The mode table is exact:
+
+| Session | Mode selection |
+|---|---|
+| `TextChatSession` | `v5_standalone` |
+| `VoiceInputSession` | `v5_standalone` |
+| `VoiceOutputSession` | `v5_standalone` |
+| `MotionSession` | `v5_standalone` |
+| `RealtimeSession` default or explicit false | `v5_skeleton` |
+| `RealtimeSession(real_runtime_enabled=True)` | `v6_unified` |
+| `RealtimeSession(config=RealtimeSessionConfig(real_runtime_enabled=True))` | `v6_unified` |
+
+Realtime selection reports the explicit request, not later runtime
+executability. Injected stages alone do not select unified mode. If an explicit
+unified request cannot execute, the existing typed rejection remains truthful
+and no deterministic mock fallback is manufactured.
+
+The profile contains only the accepted compatibility fields. It does not
+retain provider objects, credentials, provider payloads, transcripts, audio,
+private paths, callbacks, threads, clients, or private runtime identities.
+Factory signatures, constructor signatures, close/dispose/context-manager
+behavior, legacy return and event shapes, root exports, and version labels are
+unchanged.
+
+```text
+checkpoint: FW-RT6-11a Control B
+baseline head: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+exact corrective implementation surface: 11 files
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+canonical builder: build_session_compatibility_profile / REUSED
+public properties: 5 / READ_ONLY
+property package load: LAZY
+profile after close: READABLE
+standalone profile count: 4 / v5_standalone
+Realtime default profile: v5_skeleton
+Realtime explicit-request profile: v6_unified
+explicit request truth source: _real_runtime_requested / REUSED
+silent unified-to-mock fallback: False
+warning emission: False
+profile runtime execution: False
+private/provider identity retained: False
+factory signatures changed: False
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+Control A semantic sync: 2 files / CONTROL_B BOUNDARY ONLY
+historical v5 gates changed: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11a aggregate tasks: 0 / 6 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B exposes compatibility truth only. It does not accept or close the
+FW-RT6-11a aggregate; that remains Control C work after separate review.
+<!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:END -->

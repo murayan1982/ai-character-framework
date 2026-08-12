@@ -16,6 +16,7 @@ from ..version import VOICE_OUTPUT_BOUNDARY_VERSION
 
 if TYPE_CHECKING:
     from ..session_close import SessionCloseResult
+    from ..session_compatibility import SessionCompatibilityProfile
 
 
 @dataclass(frozen=True)
@@ -274,6 +275,19 @@ class VoiceOutputSession:
 
         return self._last_close_result
 
+    @property
+    def compatibility_profile(self) -> SessionCompatibilityProfile:
+        """Return the immutable warning-free v5 standalone profile."""
+
+        from ..session_compatibility import (
+            StandaloneSessionKind,
+            build_session_compatibility_profile,
+        )
+
+        return build_session_compatibility_profile(
+            StandaloneSessionKind.VOICE_OUTPUT
+        )
+
     def close(self) -> None:
         """Close the public voice output session idempotently."""
 
@@ -446,4 +460,3 @@ def _voice_output_closed_result(request: object) -> VoiceOutputResult:
             return VoiceOutputResult(**fallback_kwargs)
         except TypeError:
             raise first_error
-

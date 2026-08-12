@@ -12,6 +12,7 @@ from config.prompt_builder import build_final_system_instruction
 if TYPE_CHECKING:
     from config.loader import RuntimeConfig
     from framework.session_close import SessionCloseResult
+    from framework.session_compatibility import SessionCompatibilityProfile
 
 from framework.version import TEXT_CHAT_API_VERSION
 from framework.identity import EventSequence, GenerationId, SessionId, TurnId
@@ -365,6 +366,19 @@ class TextChatSession:
         """Return the latest immutable close observation."""
 
         return self._last_close_result
+
+    @property
+    def compatibility_profile(self) -> SessionCompatibilityProfile:
+        """Return the immutable warning-free v5 standalone profile."""
+
+        from framework.session_compatibility import (
+            StandaloneSessionKind,
+            build_session_compatibility_profile,
+        )
+
+        return build_session_compatibility_profile(
+            StandaloneSessionKind.TEXT_CHAT
+        )
 
     def close(self) -> None:
         """Close the public text chat session.
