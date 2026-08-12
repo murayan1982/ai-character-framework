@@ -8333,3 +8333,93 @@ This exact one-file sync authorizes only Control B exact contract review after
 it is reviewed, committed, pushed, and remotely verified. It does not authorize
 Control B implementation, Control C, or either later commit/push.
 <!-- FW-RT6-10c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10c Control B — coherent runtime diagnostics acceptance sync
+
+```text
+checkpoint: FW-RT6-10c Control B
+baseline head: ba1c193f1d90e632d727b4f2697302f5f99d167d
+FW-RT6-10b final acceptance: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A acceptance sync: 3566ed618161b1212fb1a193cb4e27f663303863
+Control B implementation: ba1c193f1d90e632d727b4f2697302f5f99d167d
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact corrective Control B implementation surface: 7 files
+dedicated Control B source gate: PASS
+focused Control A diagnostics tests: 12 / PASS
+focused Control B diagnostics tests: 13 / PASS
+focused Control A+B diagnostics tests: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 570 / PASS
+stable explicit package: framework.session_diagnostics / PASS
+public runtime observation: RealtimeSession.diagnostics_snapshot / READ_ONLY
+snapshot mutability: FROZEN / FRESH_PER_READ
+idle/active/terminal/closed reads: PASS
+active identity owner: RealtimeGenerationGate / REUSED
+terminal owner: RealtimeTerminalRegistry / REUSED
+queue depth owner: TTSQueueState.queued_count / REUSED
+stale count owner: RealtimeGenerationGate / REUSED
+duplicate count owner: RealtimeTerminalRegistry / REUSED
+overflow count owner: RealtimeEventHub / REUSED
+capture locks: EXISTING OPERATION + TURN ADMISSION / REUSED
+lock-order wait while holding operation lock: False / PASS
+reentrant callback diagnostics read: PASS
+new diagnostics lock/thread/registry/execution owner: False / PASS
+legacy host session/turn IDs: PRESERVED / PASS
+Framework-owned session/turn IDs: NORMALIZED / PASS
+GenerationId validation: STRICT / PASS
+malformed reserved fw_* IDs accepted: False / PASS
+private-rich runtime value retained: False / PASS
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+FW-RT6-10c aggregate: NOT_COMPLETED
+FW-RT6-10c tasklist: 0 / 9 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync exact surface: 1 file
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B adopts the accepted immutable diagnostics model as one coherent,
+read-only `RealtimeSession.diagnostics_snapshot` observation. Each read returns
+a fresh frozen public value and remains available while idle, during the active
+generation, from reentrant terminal callbacks, and after session close.
+
+The public session reuses its established owners. Active turn and generation
+identity come from `RealtimeGenerationGate`; last terminal result and duplicate
+count come from `RealtimeTerminalRegistry`; stale count comes from the
+generation gate; overflow count comes from `RealtimeEventHub`; and queue depth
+comes from the existing public queue-state count. A retired generation is not
+reported as active through temporary compatibility context.
+
+Snapshot capture reuses the existing operation and turn-admission locks. When
+the turn-admission lock cannot be acquired immediately, capture releases the
+operation lock, yields, and retries. This preserves reentrant and inverted-lock
+progress without adding a lock, thread, timeout worker, registry, execution
+owner, provider call, or network operation.
+
+Legacy host session and turn strings remain compatible. Framework-owned IDs
+normalize through the existing public identity helpers, generation identity
+remains strict, and malformed reserved framework IDs remain rejected. The
+snapshot and `as_dict()` retain no prompt, response, transcript, audio, queue
+item identity, artifact, provider payload, metadata, safe message, credential,
+exception, private path, callback, thread, client, or private object identity.
+
+This one-file acceptance sync changes no runtime source, public contract, gate,
+or existing test and closes none of the nine FW-RT6-10c aggregate tasks. After
+this sync is reviewed, committed, pushed, and remotely verified, only Control C
+exact contract review becomes authorized. Control C implementation remains
+separately gated.
+<!-- FW-RT6-10c-B-ACCEPTANCE-SYNC:END -->
