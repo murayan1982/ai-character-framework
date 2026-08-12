@@ -264,7 +264,7 @@ class SessionDiagnosticsControlBTests(unittest.TestCase):
         self.assertFalse(worker.is_alive())
         self.assertEqual(len(snapshot_box), 1)
 
-    def test_versions_task_boundary_and_provider_isolation_are_unchanged(self) -> None:
+    def test_versions_and_provider_isolation_remain_after_aggregate_acceptance(self) -> None:
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(
             encoding="utf-8"
         )
@@ -272,8 +272,8 @@ class SessionDiagnosticsControlBTests(unittest.TestCase):
             "## FW-RT6-10d", 1
         )[0]
 
-        self.assertEqual(section.count("- [ ]"), 9)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 9)
         self.assertEqual(framework.RealtimeSessionInfo().api_version, "5.2.0")
         self.assertEqual(framework.MotionSessionInfo().api_version, "5.5.0")
         for module_name in (

@@ -2985,15 +2985,15 @@ False
 
 **Tasks:**
 
-- [ ] session snapshotを追加する。
-- [ ] current phaseを追加する。
-- [ ] active turn/generationを追加する。
-- [ ] queue depthを追加する。
-- [ ] active generation countを追加する。
-- [ ] last terminal resultを追加する。
-- [ ] last safe error codeを追加する。
-- [ ] stale/duplicate/overflow countを追加する。
-- [ ] private payload/text/audio/pathを含めない。
+- [x] session snapshotを追加する。
+- [x] current phaseを追加する。
+- [x] active turn/generationを追加する。
+- [x] queue depthを追加する。
+- [x] active generation countを追加する。
+- [x] last terminal resultを追加する。
+- [x] last safe error codeを追加する。
+- [x] stale/duplicate/overflow countを追加する。
+- [x] private payload/text/audio/pathを含めない。
 
 **Acceptance:**
 
@@ -8423,3 +8423,99 @@ this sync is reviewed, committed, pushed, and remotely verified, only Control C
 exact contract review becomes authorized. Control C implementation remains
 separately gated.
 <!-- FW-RT6-10c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10c Control C — public diagnostics aggregate acceptance
+
+```text
+checkpoint: FW-RT6-10c Control C aggregate acceptance candidate
+baseline head: 0427a5446cad52706d10396f2a91ba207eef2911
+FW-RT6-10b final acceptance: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A acceptance sync: 3566ed618161b1212fb1a193cb4e27f663303863
+Control B implementation: ba1c193f1d90e632d727b4f2697302f5f99d167d
+Control B acceptance sync: 0427a5446cad52706d10396f2a91ba207eef2911
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact corrective surface: 4 files
+dedicated Control C aggregate gate: PASS
+focused Control A diagnostics tests: 12 / PASS
+focused Control B diagnostics tests: 13 / PASS
+focused Control A+B diagnostics tests: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 570 / PASS
+stable explicit package: framework.session_diagnostics / PASS
+explicit diagnostics exports: 4 / UNCHANGED
+public property: RealtimeSession.diagnostics_snapshot / READ_ONLY / PASS
+snapshot mutability: FROZEN / FRESH_PER_READ / PASS
+idle/active/terminal/closed reads: PASS
+current phase observation: PASS
+active identity owner: RealtimeGenerationGate / REUSED / PASS
+queue depth owner: TTSQueueState.queued_count / REUSED / PASS
+active generation count owner: RealtimeGenerationGate / REUSED / PASS
+last terminal owner: RealtimeTerminalRegistry / REUSED / PASS
+last safe error derivation: TERMINAL PUBLIC ERROR / PASS
+stale count owner: RealtimeGenerationGate / REUSED / PASS
+duplicate count owner: RealtimeTerminalRegistry / REUSED / PASS
+overflow count owner: RealtimeEventHub / REUSED / PASS
+capture locks: EXISTING OPERATION + TURN ADMISSION / REUSED / PASS
+lock-order wait while holding operation lock: False / PASS
+reentrant callback diagnostics read: PASS
+new diagnostics lock/thread/registry/execution owner: False / PASS
+legacy host session/turn IDs: PRESERVED / PASS
+Framework-owned IDs: NORMALIZED / PASS
+GenerationId validation: STRICT / PASS
+malformed reserved fw_* IDs accepted: False / PASS
+private-rich runtime value retained: False / PASS
+root import loads framework.session_diagnostics eagerly: False / PASS
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing Control B test semantic sync: 1 file / TASK BOUNDARY ONLY
+FW-RT6-10c tasks: 9 / 9 ACCEPTED-CANDIDATE
+FW-RT6-10c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10d: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted immutable model and coherent runtime
+observation contracts without changing runtime source. The explicit lazy
+`framework.session_diagnostics` package remains the only diagnostics model and
+projection vocabulary, while the existing public `RealtimeSession` remains the
+sole snapshot capture owner through its read-only `diagnostics_snapshot`.
+
+Each read returns a fresh frozen snapshot for idle, active, terminal callback,
+and closed states. Active turn/generation and active count come from the
+existing generation gate. Queue depth uses only the existing queued count. The
+terminal registry owns the redacted last result and duplicate count, the
+generation gate owns stale count, and the event hub owns overflow count.
+
+Capture reuses the existing operation and turn-admission locks. It never waits
+for turn admission while retaining the operation lock, preserving callback and
+inverted-lock progress without a new lock, worker, registry, timeout service,
+or execution owner.
+
+Legacy host session and turn strings remain compatible, Framework-owned IDs
+normalize through the existing public identity helpers, generation IDs remain
+strict, and malformed reserved framework IDs remain rejected. The model,
+projection, repr, and `as_dict()` retain no prompt, response, transcript,
+audio, queue-item identity, artifact, provider payload, metadata, safe message,
+credential, exception, private path, callback, thread, client, or private
+object identity.
+
+Control C changes no runtime source. It adds the aggregate regression gate,
+marks all nine FW-RT6-10c tasks as acceptance candidates, and updates one
+accepted Control B test only to replace the pre-Control-C `0 / 9` task boundary
+with the aggregate `9 / 9 ACCEPTED-CANDIDATE` boundary. API-version, provider
+isolation, and runtime assertions in that test remain unchanged. Final closed
+status remains deferred to a reviewed, committed, pushed, and remotely verified
+one-file final acceptance sync. FW-RT6-10d remains outside this authorization.
+<!-- FW-RT6-10c-C-AGGREGATE-ACCEPTANCE:END -->

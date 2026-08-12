@@ -5332,3 +5332,93 @@ Control C aggregate acceptance: NOT_AUTHORIZED
 Control B adopts runtime observation only. Aggregate task closure and Control C
 remain outside this candidate.
 <!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:END -->
+
+
+<!-- FW-RT6-10c-C-PUBLIC-DIAGNOSTICS-ACCEPTANCE:BEGIN -->
+## FW-RT6-10c Control C — public diagnostics aggregate acceptance
+
+Control C accepts the combined Control A immutable model and Control B coherent
+runtime observation as one provider-neutral public diagnostics contract.
+`framework.session_diagnostics` remains an explicit lazy package, and the
+existing public `RealtimeSession` remains the sole capture owner. No second
+diagnostics model, callback, event, registry, lock, worker, service, or provider
+execution path is introduced.
+
+The package keeps exactly four exports: the frozen terminal and session
+snapshots plus their two public-safe builders. Nothing is added to the
+`framework` root. `RealtimeSession.diagnostics_snapshot` remains read-only and
+returns a fresh immutable value on every access while idle, during an active
+generation, from a reentrant terminal callback, and after session close.
+
+The observation reuses the established authoritative owners. Active turn and
+generation identity and active count come from `RealtimeGenerationGate`.
+Queue depth uses only `TTSQueueState.queued_count`. Last terminal result and
+duplicate count come from `RealtimeTerminalRegistry`; stale count comes from
+the generation gate; overflow count comes from `RealtimeEventHub`. The safe
+error code is derived from the redacted terminal projection.
+
+Capture reuses the existing operation and turn-admission locks. If turn
+admission is unavailable, it releases the operation lock, yields, and retries,
+so reentrant and inverted-lock reads retain progress. No lock-order wait occurs
+while holding the operation lock, and no diagnostics-specific lock, thread,
+registry, timeout service, or execution owner is added.
+
+Legacy host session and turn strings remain compatible. Framework-owned IDs
+normalize through the existing public identity helpers, generation identity
+remains strict, and malformed reserved `fw_*` identities remain rejected. The
+snapshot and `as_dict()` contain only the thirteen established public fields.
+They retain no text, transcript, audio, queue-item identity, artifact, provider
+payload, metadata, safe message, credential, raw exception, filesystem path,
+callback, thread, client, or private object identity.
+
+```text
+checkpoint: FW-RT6-10c Control C aggregate acceptance candidate
+baseline head: 0427a5446cad52706d10396f2a91ba207eef2911
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A acceptance sync: 3566ed618161b1212fb1a193cb4e27f663303863
+Control B implementation: ba1c193f1d90e632d727b4f2697302f5f99d167d
+Control B acceptance sync: 0427a5446cad52706d10396f2a91ba207eef2911
+exact corrective Control C surface: 4 files
+dedicated aggregate gate: scripts/check_v600_session_diagnostics_acceptance.py
+focused Control A+B diagnostics tests: 25 / PASS
+explicit package: framework.session_diagnostics / LAZY
+explicit diagnostics exports: 4 / UNCHANGED
+public property: RealtimeSession.diagnostics_snapshot / READ_ONLY
+snapshot: FROZEN / FRESH_PER_READ
+idle/active/terminal/closed reads: PASS
+active identity/count owner: RealtimeGenerationGate / REUSED
+queue depth owner: TTSQueueState.queued_count / REUSED
+last terminal/duplicate owner: RealtimeTerminalRegistry / REUSED
+stale owner: RealtimeGenerationGate / REUSED
+overflow owner: RealtimeEventHub / REUSED
+safe error: DERIVED FROM REDACTED TERMINAL
+capture locks: EXISTING OPERATION + TURN ADMISSION / REUSED
+lock-order wait while holding operation lock: False
+reentrant callback read: PASS
+new lock/thread/registry/execution owner: False
+legacy host session/turn IDs: PRESERVED
+Framework-owned IDs: NORMALIZED
+GenerationId: STRICT
+malformed reserved fw_* IDs accepted: False
+private-rich runtime value retained: False
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+runtime source changed by Control C: False
+existing Control B test semantic sync: 1 file / TASK BOUNDARY ONLY
+FW-RT6-10c tasks: 9 / 9 ACCEPTED-CANDIDATE
+FW-RT6-10c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-10d: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C changes no runtime source. In addition to this public contract, the
+aggregate tasklist state, and the dedicated gate, it updates one accepted
+Control B test only to replace the pre-Control-C `0 / 9` task boundary with the
+aggregate `9 / 9 ACCEPTED-CANDIDATE` boundary. Its API-version, provider
+isolation, and runtime assertions remain unchanged. Final closed status
+requires a separately reviewed, committed, pushed, and remotely verified
+one-file final acceptance sync.
+<!-- FW-RT6-10c-C-PUBLIC-DIAGNOSTICS-ACCEPTANCE:END -->
