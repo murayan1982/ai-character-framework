@@ -282,7 +282,7 @@ class CallbackIsolationControlATests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, rendered)
 
-    def test_control_a_remains_explicit_provider_free_and_task_open(self) -> None:
+    def test_control_c_keeps_control_a_explicit_and_closes_only_tasks(self) -> None:
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(
             encoding="utf-8"
         )
@@ -290,8 +290,8 @@ class CallbackIsolationControlATests(unittest.TestCase):
             "## FW-RT6-10d — Callback and plugin isolation",
             1,
         )[1].split("## FW-RT6-11a", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
         self.assertEqual(framework.RealtimeSessionInfo().api_version, "5.2.0")
         self.assertEqual(framework.MotionSessionInfo().api_version, "5.5.0")
         for module_name in (

@@ -3011,12 +3011,12 @@ False
 
 **Tasks:**
 
-- [ ] public callback failure policyを定義する。
-- [ ] plugin hook failure policyを定義する。
-- [ ] motion hook failure policyを定義する。
-- [ ] critical/non-critical stage failureを区別する。
-- [ ] callback reentrancyを検証する。
-- [ ] event callbackがsession lockを保持したまま呼ばれない設計にする。
+- [x] public callback failure policyを定義する。
+- [x] plugin hook failure policyを定義する。
+- [x] motion hook failure policyを定義する。
+- [x] critical/non-critical stage failureを区別する。
+- [x] callback reentrancyを検証する。
+- [x] event callbackがsession lockを保持したまま呼ばれない設計にする。
 
 **Acceptance:**
 
@@ -8795,3 +8795,105 @@ reviewed, committed, pushed, and remotely verified, only Control C exact
 contract review is authorized; Control C implementation and commit/push remain
 separately gated.
 <!-- FW-RT6-10d-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10d-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-10d Control C — callback and plugin isolation aggregate acceptance
+
+```text
+checkpoint: FW-RT6-10d Control C aggregate acceptance candidate
+baseline head: 0b5faf96d2886d9372bab5a51ddc68b9da2515a3
+FW-RT6-10c final acceptance: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+Control A implementation: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+Control A acceptance sync: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+Control B implementation: b7dfeab05a1a9e87042f9a8e960d53be6da5c5b8
+Control B acceptance sync: 0b5faf96d2886d9372bab5a51ddc68b9da2515a3
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+Control C exact corrective surface: 5 files
+dedicated Control C aggregate gate: PASS
+focused Control A callback-isolation tests: 13 / PASS
+focused Control B callback-isolation tests: 12 / PASS
+focused Control A+B callback-isolation tests: 25 / PASS
+accepted FW-RT6-10c diagnostics regression: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 595 / PASS
+stable explicit policy package: framework.callback_isolation / REUSED / PASS
+explicit isolation exports: 12 / UNCHANGED
+callback boundaries: public_callback / plugin_hook / motion_hook / PASS
+public callback failure: ISOLATED / CONTINUE / PASS
+plugin sync + async hook failure: ISOLATED / CONTINUE / PASS
+motion hook resolver: invoke_motion_lifecycle_hook / REUSED / PASS
+motion hook failure: SKIP MOTION / TERMINAL UNCHANGED / PASS
+public session adopters: TextChat / VoiceInput / Motion / Realtime / PASS
+legacy plugin hook adopter: core.events.emit / PASS
+event sequencer and subscriber owner: RealtimeEventHub / REUSED / PASS
+callback registration snapshot: STABLE / PASS
+callback invocation under registry/session lock: False / PASS
+same-thread callback reentrancy deadlock: False / PASS
+cross-thread operation ordering: PRESERVED / PASS
+new callback/event registry or dispatcher thread: False / PASS
+critical stages: voice_input + text_generation / PASS
+non-critical stages: voice_output + motion / PASS
+critical stage failure: TYPED / FAIL CURRENT OPERATION / PASS
+non-critical stage failure: TYPED / CONTINUE DEGRADED / PASS
+stage failure kills session/runtime: False / PASS
+stage failure replaces existing terminal: False / PASS
+close callback failure: TYPED CLEANUP FAILURE / SESSION CLOSED / PASS
+raw exception/callback/thread/client identity retained: False / PASS
+root import loads framework.callback_isolation eagerly: False / PASS
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C: False
+existing Control A+B test semantic sync: 2 files / TASK BOUNDARY ONLY
+FW-RT6-10d tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-10d final acceptance sync: NOT_AUTHORIZED
+FW-RT6-11a: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted explicit provider-neutral isolation policy
+and its coherent runtime adoption without changing runtime source. The stable
+lazy `framework.callback_isolation` package remains the sole callback, plugin,
+motion-hook, and stage-failure policy vocabulary. TextChat, VoiceInput,
+Motion, unified RealtimeSession, and legacy `core.events.emit` continue to use
+their existing registries, sequencing, lifecycle owners, and return contracts.
+
+Public callbacks and synchronous or asynchronous plugin hooks use stable
+registration snapshots and isolate each ordinary handler exception. Later
+handlers continue in order, observer failure does not corrupt primary success,
+and no callback is invoked while its registry or public session operation lock
+is retained. Existing reentrant cancellation, registration, diagnostics, and
+deferred-close paths retain progress without a new dispatcher thread, event
+registry, or lock owner. Cross-thread operation ordering remains preserved.
+
+The existing `invoke_motion_lifecycle_hook` remains the only motion-hook
+resolver. Hook failure skips motion without changing the conversation
+terminal. Voice input and text generation remain critical to the current
+operation; voice output and motion remain non-critical effects. Typed failures
+keep the session and runtime truthful and cannot replace an already committed
+terminal. A callback failure during final close delivery remains a typed
+cleanup failure while the session stays closed and callbacks are released.
+
+No public policy, dispatch, stage, or close result retains a callback, return
+value, raw exception, credential, provider payload, transcript, audio, private
+path, thread, client, or private runtime identity. Root exports, factory
+signatures, API versions, provider isolation, and existing post-close typed
+rejection remain unchanged.
+
+Control C adds the aggregate regression gate, marks all six FW-RT6-10d tasks
+as acceptance candidates, and updates one accepted task-boundary test in each
+of Control A and Control B to replace the pre-Control-C `0 / 6` task boundary
+with the aggregate `6 / 6 ACCEPTED-CANDIDATE` boundary. Its runtime,
+API-version, provider-isolation, and
+privacy assertions remain unchanged. Final closed status requires a separately
+reviewed, committed, pushed, and remotely verified one-file final acceptance
+sync. FW-RT6-11a remains outside this authorization.
+<!-- FW-RT6-10d-C-AGGREGATE-ACCEPTANCE:END -->

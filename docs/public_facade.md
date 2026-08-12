@@ -5581,3 +5581,91 @@ new focused test module. `framework/callback_isolation.py`,
 `framework/realtime_event_hub.py`, existing tests, `plugins/manager.py`, and
 `docs/v600_tasklist.md` remain unchanged.
 <!-- FW-RT6-10d-B-RUNTIME-ISOLATION:END -->
+
+
+<!-- FW-RT6-10d-C-CALLBACK-ISOLATION-ACCEPTANCE:BEGIN -->
+## FW-RT6-10d Control C — callback and plugin isolation aggregate acceptance
+
+Control C accepts the combined Control A policy vocabulary and Control B
+runtime adoption as one provider-neutral callback and plugin isolation
+contract. `framework.callback_isolation` remains an explicit lazy package and
+the sole immutable policy owner. Nothing is added to the `framework` root.
+
+Public callback and legacy plugin-hook dispatch use stable registration
+snapshots, preserve order, isolate every ordinary handler exception, and
+continue later handlers. TextChat, VoiceInput, Motion, RealtimeSession, and
+legacy `core.events.emit` keep their existing callback registries, signatures,
+sequencing, return values, and lifecycle owners. The existing
+`RealtimeEventHub` remains the sole realtime event sequencer and subscriber
+owner.
+
+Callbacks execute only after registry and session-operation locks are
+released. Same-thread registration, unregistration, cancellation, diagnostics,
+and deferred-close reentrancy retain progress, while cross-thread operation
+ordering remains serialized. No callback dispatcher thread, second event
+registry, callback service, or public lock owner is introduced.
+
+The existing `invoke_motion_lifecycle_hook` remains the only motion-hook
+resolver. A failed hook skips motion without altering the conversation
+terminal. Voice input and text generation remain critical; voice output and
+motion remain non-critical. Every unexpected stage failure becomes a typed,
+public-safe result that preserves the session and runtime and cannot replace
+an already committed terminal.
+
+Callback failure during the single final close event remains a typed cleanup
+failure while the public session stays closed, releases callbacks, and keeps
+duplicate close idempotent. No public result retains a callback, return value,
+raw exception, credential, provider payload, transcript, audio, private path,
+thread, client, or private runtime identity.
+
+```text
+checkpoint: FW-RT6-10d Control C aggregate acceptance candidate
+baseline head: 0b5faf96d2886d9372bab5a51ddc68b9da2515a3
+Control A implementation: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+Control A acceptance sync: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+Control B implementation: b7dfeab05a1a9e87042f9a8e960d53be6da5c5b8
+Control B acceptance sync: 0b5faf96d2886d9372bab5a51ddc68b9da2515a3
+exact corrective Control C surface: 5 files
+dedicated aggregate gate: scripts/check_v600_callback_isolation_acceptance.py
+focused Control A+B callback-isolation tests: 25 / PASS
+stable explicit policy package: framework.callback_isolation / LAZY
+explicit isolation exports: 12 / UNCHANGED
+callback boundaries: public_callback / plugin_hook / motion_hook
+public callback and plugin-hook failures: ISOLATED / CONTINUE
+motion hook failure: SKIP MOTION / TERMINAL UNCHANGED
+public session adopters: TextChat / VoiceInput / Motion / Realtime
+legacy plugin hook adopter: core.events.emit
+event sequencer owner: RealtimeEventHub / REUSED
+callback snapshot: STABLE / ORDERED
+callback invocation under registry/session lock: False
+same-thread reentrant callback deadlock: False
+cross-thread operation ordering: PRESERVED
+new callback/event registry or dispatcher thread: False
+critical stages: voice_input + text_generation
+non-critical stages: voice_output + motion
+stage failure kills session/runtime: False
+stage failure replaces existing terminal: False
+close callback failure: TYPED CLEANUP FAILURE / SESSION CLOSED
+private identity or payload retained: False
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+runtime source changed by Control C: False
+existing Control A+B test semantic sync: 2 files / TASK BOUNDARY ONLY
+FW-RT6-10d tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-10d final acceptance sync: NOT_AUTHORIZED
+FW-RT6-11a: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C changes no runtime source. In addition to this public contract, the
+aggregate tasklist state, and the dedicated gate, it updates one accepted
+task-boundary test in each of Control A and Control B to replace the
+pre-Control-C `0 / 6` task boundary with the
+aggregate `6 / 6 ACCEPTED-CANDIDATE` boundary. Runtime, root-public,
+API-version, provider-isolation, and privacy assertions remain unchanged.
+Final closed status requires a separately reviewed, committed, pushed, and
+remotely verified one-file final acceptance sync.
+<!-- FW-RT6-10d-C-CALLBACK-ISOLATION-ACCEPTANCE:END -->

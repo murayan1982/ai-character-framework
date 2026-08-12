@@ -320,7 +320,7 @@ class CallbackIsolationControlBTests(unittest.TestCase):
                 )
                 self.assertNotIn("private-callback", repr(session.last_close_result))
 
-    def test_control_b_surface_keeps_aggregate_tasks_open_and_control_c_out(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(
             encoding="utf-8"
         )
@@ -328,9 +328,9 @@ class CallbackIsolationControlBTests(unittest.TestCase):
             "## FW-RT6-10d — Callback and plugin isolation",
             1,
         )[1].split("## FW-RT6-11a", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
-        self.assertNotIn("check_v600_callback_isolation_acceptance", "\n".join(
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertIn("check_v600_callback_isolation_acceptance", "\n".join(
             str(path.relative_to(PROJECT_ROOT))
             for path in PROJECT_ROOT.glob("scripts/*callback_isolation*")
         ))
