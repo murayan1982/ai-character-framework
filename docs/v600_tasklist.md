@@ -9383,3 +9383,79 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-11b exact contract review is authorized. This sync does not authorize
 FW-RT6-11b implementation or any FW-RT6-11c work.
 <!-- FW-RT6-11a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11b Control A — frozen root-public inventory acceptance sync
+
+```text
+checkpoint: FW-RT6-11b Control A
+baseline head: ffaaa167aae595d315995ce307f44b24ac1ef37c
+FW-RT6-11a final acceptance: 06e98b0024c2bafc1581d5e3349eae01c1929a8f
+Control A implementation baseline: 06e98b0024c2bafc1581d5e3349eae01c1929a8f
+Control A implementation: ffaaa167aae595d315995ce307f44b24ac1ef37c
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 6 files
+acceptance-sync exact surface: 1 file
+dedicated Control A root-public gate: PASS
+focused Control A root-public tests: 12 / PASS
+canonical root-public manifest gate: PASS
+focused FW-RT6-11a compatibility tests: 30 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+v5.3 lazy provider adapter gate: PASS
+v5.4 client-injection / fake / real-runtime gates: PASS
+full Framework unit suite: 637 / PASS
+canonical runtime source: framework.public_api.PUBLIC_API_NAMES / REUSED / PASS
+machine-readable projection: docs/v600_root_public_api_manifest.json / PASS
+manifest schema: v6.root_public_api_manifest / PASS
+framework root-public names: 127 / UNCHANGED / PASS
+provider-neutral root exports: 112 / PASS
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY / PASS
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL / PASS
+stable optional provider namespace: NONE / DELIBERATE / PASS
+new provider-specific root exports: 0 / PASS
+provider compatibility deprecations: 0 / PASS
+docs/example/export drift: PASS
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+machine-readable manifest changed by acceptance sync: False
+dedicated gate changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+FW-RT6-11b aggregate: NOT_COMPLETED
+FW-RT6-11b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11c migration guide and examples: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the frozen v6 root-public inventory as an unordered 127-name
+contract. `framework.public_api.PUBLIC_API_NAMES` remains the canonical runtime
+source, and `docs/v600_root_public_api_manifest.json` remains its deterministic
+machine-readable projection. The inventory contains 112 provider-neutral names
+and 15 lazy v5 OpenAI voice-input compatibility names.
+
+Wildcard runtime order is preserved only for compatibility and is not a v6
+contract. No stable optional-provider namespace is introduced, no new
+provider-specific root export is allowed, and no retained compatibility export
+is deprecated or removed. Public examples and contract documentation remain
+aligned with the sorted manifest name set.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes no
+runtime source, public-facade or application-integration contract,
+machine-readable manifest, dedicated gate, existing test, example, factory
+signature, return/event shape, or API version. None of the six FW-RT6-11b
+aggregate task checkboxes close here.
+
+After this sync is reviewed, committed, pushed, and remotely verified, only
+Control B exact contract review is authorized. Control B implementation,
+aggregate acceptance, FW-RT6-11c, and their commit/push remain separately
+gated.
+<!-- FW-RT6-11b-A-ACCEPTANCE-SYNC:END -->
