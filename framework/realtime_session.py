@@ -96,6 +96,7 @@ if TYPE_CHECKING:
         SessionClosePlan,
         SessionCloseResult,
     )
+    from .session_diagnostics import SessionDiagnosticsSnapshot
     from .realtime_stage import (
         MotionStage,
         TextGenerationStage,
@@ -760,6 +761,43 @@ class RealtimeSession:
         return self._last_close_result
 
     @property
+    def diagnostics_snapshot(self) -> SessionDiagnosticsSnapshot:
+        """Return one coherent immutable provider-neutral operator snapshot."""
+
+        from .session_diagnostics import build_session_diagnostics_snapshot
+
+        with self._diagnostics_snapshot_read_section():
+            generation = self._generation_gate.diagnostics
+            active_turn_id = self._generation_gate.current_turn_id
+            active_generation_id = self._generation_gate.current_generation_id
+            terminal_records = self._terminal_registry.records
+            terminal = self._terminal_registry.diagnostics
+            event = self._event_hub.diagnostics
+            queue_state = self.get_tts_queue_state()
+            last_terminal_result = next(
+                (
+                    record.result
+                    for record in reversed(terminal_records)
+                    if record.result is not None
+                ),
+                None,
+            )
+            return build_session_diagnostics_snapshot(
+                session_id=self._session_id,
+                state=self._state,
+                phase=self._phase,
+                is_closed=self._closed,
+                active_turn_id=active_turn_id,
+                active_generation_id=active_generation_id,
+                queue_depth=queue_state.queued_count,
+                active_generation_count=generation["active_generation_count"],
+                last_terminal_result=last_terminal_result,
+                stale_completion_count=generation["stale_completion_count"],
+                duplicate_terminal_count=terminal.duplicate_terminal_count,
+                overflow_count=event.history_overflow_count,
+            )
+
+    @property
     def barge_in_policy(self) -> BargeInPolicy:
         return self._barge_in_policy
 
@@ -1079,6 +1117,21 @@ class RealtimeSession:
         finally:
             if should_shutdown_bridge:
                 self._finalize_close_result()
+
+    @contextmanager
+    def _diagnostics_snapshot_read_section(self) -> Iterator[None]:
+        """Acquire existing session locks without introducing lock-order deadlock."""
+
+        while True:
+            with self._operation_lock:
+                acquired = self._turn_admission_lock.acquire(blocking=False)
+                if acquired:
+                    try:
+                        yield
+                    finally:
+                        self._turn_admission_lock.release()
+                    return
+            time.sleep(0)
 
     def on_event(self, callback: RealtimeEventCallback) -> str:
         """Register a canonical callback and return its opaque removal token."""

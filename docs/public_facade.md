@@ -5257,3 +5257,78 @@ Control A commit / push: NOT_AUTHORIZED
 This contract introduces no execution owner and authorizes neither runtime
 adoption, aggregate closure, tasklist synchronization, commit, nor push.
 <!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:END -->
+
+
+<!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:BEGIN -->
+## FW-RT6-10c Control B — coherent realtime diagnostics adoption
+
+`RealtimeSession` exposes one read-only runtime observation:
+
+```python
+snapshot = session.diagnostics_snapshot
+```
+
+Each access returns a new immutable `SessionDiagnosticsSnapshot`. It remains
+available while idle, during an active turn, after a terminal result, and after
+session close. No setter, root model export, callback, event, provider call, or
+counter mutation is introduced.
+
+The public session reuses its existing owners. Session ID, state, phase, and
+closed state come from the session. Active turn/generation and active count
+come only from `RealtimeGenerationGate`; temporary compatibility context is
+not treated as active after the gate retires a generation. Queue depth comes
+from the existing public TTS queue snapshot. Last terminal result and duplicate
+count come from `RealtimeTerminalRegistry`; stale count comes from the
+generation gate; overflow count comes from `RealtimeEventHub`.
+
+Snapshot capture reuses `_operation_lock` and `_turn_admission_lock`. To avoid
+the existing callback/interrupt lock-order inversion, the operation lock is
+released whenever the turn-admission lock cannot be acquired immediately, then
+the read is retried. No new lock, worker, timeout thread, diagnostics registry,
+or execution owner is added. Reentrant callback reads remain supported.
+
+The terminal result is projected through `framework.session_diagnostics` and
+is never retained directly. Framework-owned serialized session/turn IDs are
+normalized to their public ID types, while existing legacy host strings remain
+compatible. Generation IDs remain strict. Reserved malformed `fw_*` IDs remain
+rejected.
+
+Only the thirteen established snapshot fields are exposed. Text, transcript,
+audio, artifacts, queue item identity, provider payloads, metadata, safe
+messages, credentials, raw exceptions, private paths, callbacks, threads,
+clients, and private object identities are excluded from the model and its
+`as_dict()` output.
+
+```text
+checkpoint: FW-RT6-10c Control B
+baseline head: 3566ed618161b1212fb1a193cb4e27f663303863
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A acceptance sync: 3566ed618161b1212fb1a193cb4e27f663303863
+exact corrective Control B surface: 7 files
+public property: RealtimeSession.diagnostics_snapshot / READ-ONLY
+snapshot owner: PUBLIC REALTIME SESSION / REUSED
+active identity owner: RealtimeGenerationGate / REUSED
+terminal owner: RealtimeTerminalRegistry / REUSED
+overflow owner: RealtimeEventHub / REUSED
+capture locks: EXISTING OPERATION + TURN ADMISSION
+lock-order wait while holding operation lock: False
+new diagnostics lock/thread/registry: False
+legacy host session/turn IDs: PRESERVED
+Framework-owned IDs: NORMALIZED
+last terminal projection: PUBLIC_SAFE / PASS
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+Control A existing-test semantic sync: 1 file
+docs/v600_tasklist.md changed: False
+FW-RT6-10c aggregate tasks: 0 / 9 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B commit / push: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+```
+
+Control B adopts runtime observation only. Aggregate task closure and Control C
+remain outside this candidate.
+<!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:END -->

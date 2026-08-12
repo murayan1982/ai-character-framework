@@ -11,17 +11,36 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .identity import GenerationId, SessionId, TurnId
+from .identity import (
+    GenerationId,
+    SessionId,
+    TurnId,
+    normalize_session_id,
+    normalize_turn_id,
+)
 from .lifecycle import RealtimePhase, RecoveryAction, TurnOutcome
 from .realtime import RealtimeErrorCode, RealtimeState, RealtimeTurnResult
 
 
 def _public_id(value: Any, expected_type: type, field_name: str):
-    if isinstance(value, expected_type):
-        return value
-    if not isinstance(value, str):
-        raise TypeError(f"{field_name} must be a {expected_type.__name__} or string")
-    return expected_type.parse(value)
+    if expected_type is SessionId:
+        normalized = normalize_session_id(value)
+    elif expected_type is TurnId:
+        normalized = normalize_turn_id(value)
+    elif expected_type is GenerationId:
+        if isinstance(value, GenerationId):
+            normalized = value
+        elif isinstance(value, str):
+            normalized = GenerationId.parse(value)
+        else:
+            raise TypeError(
+                f"{field_name} must be a GenerationId or string"
+            )
+    else:
+        raise TypeError("unsupported public identity type")
+    if normalized is None:
+        raise ValueError(f"{field_name} must identify one public object")
+    return normalized
 
 
 def _optional_public_id(value: Any, expected_type: type, field_name: str):

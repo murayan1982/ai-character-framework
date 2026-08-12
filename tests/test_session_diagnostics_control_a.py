@@ -261,8 +261,8 @@ class SessionDiagnosticsControlATests(unittest.TestCase):
         self.assertIn('"last_safe_error_code": "provider_error"', encoded)
         self.assertNotIn("private-safe-message-sentinel", encoded)
 
-    def test_control_a_remains_provider_free_and_defers_runtime_adoption(self) -> None:
-        self.assertFalse(hasattr(framework.RealtimeSession, "diagnostics_snapshot"))
+    def test_control_a_remains_provider_free_after_runtime_adoption(self) -> None:
+        self.assertNotIn("SessionDiagnosticsSnapshot", framework.__all__)
         for module_name in (
             "pyvts",
             "websockets",

@@ -4123,3 +4123,58 @@ commit / push: NOT_AUTHORIZED
 
 Control A is a model and privacy-projection contract only.
 <!-- FW-RT6-10c-A-PUBLIC-DIAGNOSTICS:END -->
+
+
+<!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:BEGIN -->
+## FW-RT6-10c Control B — application diagnostics observation
+
+Applications can read current public operator state without invoking a
+provider or receiving a private-rich runtime object:
+
+```python
+snapshot = session.diagnostics_snapshot
+
+print(snapshot.state.value)
+print(snapshot.phase.value if snapshot.phase is not None else None)
+print(snapshot.queue_depth)
+print(snapshot.last_safe_error_code.value)
+```
+
+The property is read-only and returns a fresh frozen snapshot. It can be read
+before a turn, during the active generation, from a reentrant event callback,
+after terminal completion, and after `close()`. Applications need no root
+import for the explicit model package and no factory signature changes.
+
+Active identity follows the existing generation gate rather than a temporary
+turn context mirror. Consequently a terminal or close callback observes no
+retired generation as active. Legacy host session/turn strings remain valid;
+Framework-owned IDs continue to normalize to the typed public identity forms.
+
+The observation contains only correlation IDs, lifecycle state, phase,
+closed state, queue/count facts, a redacted terminal summary, and the derived
+safe error code. It excludes prompts, responses, transcripts, audio, queue
+item IDs, artifacts, provider data, metadata, safe messages, credentials,
+exceptions, filesystem paths, callbacks, threads, and clients.
+
+```text
+checkpoint: FW-RT6-10c Control B
+baseline head: 3566ed618161b1212fb1a193cb4e27f663303863
+exact corrective implementation surface: 7 files
+diagnostics_snapshot: READ-ONLY / IMMUTABLE
+idle/active/terminal/closed reads: SUPPORTED
+reentrant callback read: SUPPORTED
+new execution or diagnostics owner: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10c aggregate tasks: 0 / 9 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+No application migration is required beyond optionally reading the new
+property.
+<!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:END -->
