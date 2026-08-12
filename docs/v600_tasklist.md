@@ -9077,3 +9077,106 @@ committed, pushed, and remotely verified, only Control B exact contract review
 is authorized; Control B implementation, Control C, FW-RT6-11b, FW-RT6-11c,
 and their commit/push remain separately gated.
 <!-- FW-RT6-11a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11a Control B — public session compatibility adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-11a Control B
+baseline head: 675c4b895f424b75301a5eea5593a75e0349b661
+Control A implementation: cc7ba3b2a550e465e51227462a4158ebebde67fc
+Control A acceptance sync: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+Control B implementation baseline: 149edb89e65409ce9c6854b39449d05e9ecfeb98
+Control B implementation: 675c4b895f424b75301a5eea5593a75e0349b661
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact corrective Control B implementation surface: 11 files
+acceptance-sync exact surface: 1 file
+dedicated Control B source gate: PASS
+focused Control A compatibility tests: 14 / PASS
+focused Control B compatibility tests: 16 / PASS
+focused Control A+B compatibility tests: 30 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+accepted FW-RT6-10d callback-isolation regression: 25 / PASS
+accepted FW-RT6-10c diagnostics regression: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 625 / PASS
+stable explicit package: framework.session_compatibility / REUSED / PASS
+canonical profile builder: build_session_compatibility_profile / REUSED / PASS
+public session properties: 5 / READ_ONLY / PASS
+property package loading: LAZY / PROPERTY_ACCESS_ONLY / PASS
+standalone session modes: 4 / v5_standalone / PASS
+RealtimeSession default mode: v5_skeleton / PASS
+RealtimeSession explicit-false mode: v5_skeleton / PASS
+RealtimeSession explicit-true mode: v6_unified / REQUEST_TRUTH / PASS
+RealtimeSession config explicit-true mode: v6_unified / REQUEST_TRUTH / PASS
+stage binding alone selects unified: False / PASS
+unavailable unified request falls back to mock: False / PASS
+profile equality across reads: STABLE / PASS
+profile object identity: NOT_CONTRACTED
+profile readable after close: True / PASS
+compatibility warning: SILENT / PASS
+provider/runtime work during profile access: False / PASS
+private/provider identity retained by profile: False / PASS
+factory signatures and legacy return/event shapes: UNCHANGED
+runtime source changed by acceptance sync: False
+dedicated gate changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+root import loads framework.session_compatibility eagerly: False / PASS
+root compatibility exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+TEXT_CHAT_API_VERSION: 4.0 / UNCHANGED
+VOICE_INPUT_API_VERSION: 5.2.0 / UNCHANGED
+VOICE_OUTPUT_BOUNDARY_VERSION: v5.lazy_provider_adapter / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-11a aggregate: NOT_COMPLETED
+FW-RT6-11a tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+FW-RT6-11b root-public cleanup: NOT_AUTHORIZED
+FW-RT6-11c migration guide and examples: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts the five read-only public-session compatibility-profile
+properties as the exact runtime adoption of the stable explicit
+`framework.session_compatibility` contract. The existing TextChat, VoiceInput,
+VoiceOutput, Motion, and Realtime sessions remain the sole public owners. No
+second session, profile registry, execution owner, warning service, or root
+export is introduced.
+
+The four standalone sessions preserve `v5_standalone` and their frozen
+contract labels. Default and explicit-false `RealtimeSession` construction
+preserve `v5_skeleton`. An explicit true request, whether direct or supplied by
+`RealtimeSessionConfig`, reports `v6_unified` from the existing request truth.
+Injected stages alone do not select unified mode, and an unavailable explicit
+unified request does not manufacture a deterministic mock fallback.
+
+The property remains lazy, read-only, immutable, warning-free, and readable
+after close. Repeated reads return equal public facts without contracting
+object identity. Profile access performs no provider, network, audio,
+microphone, playback, VTube Studio, callback, event, or turn work and retains
+no credential, provider payload, transcript, audio, private path, callback,
+thread, client, or private runtime identity.
+
+Factory and constructor signatures, legacy methods, return and event shapes,
+close/dispose/context-manager behavior, root exports, and all five public
+version labels remain unchanged. Historical v5 gate files remain unchanged;
+the accepted Control A test and source gate contain only the reviewed Control B
+boundary synchronization.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes no
+runtime source, public-facade contract, dedicated gate, or existing test. None
+of the six FW-RT6-11a aggregate task checkboxes close here. After this sync is
+reviewed, committed, pushed, and remotely verified, only Control C exact
+contract review is authorized; Control C implementation, FW-RT6-11b,
+FW-RT6-11c, and their commit/push remain separately gated.
+<!-- FW-RT6-11a-B-ACCEPTANCE-SYNC:END -->
