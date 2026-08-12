@@ -4178,3 +4178,103 @@ commit / push: NOT_AUTHORIZED
 No application migration is required beyond optionally reading the new
 property.
 <!-- FW-RT6-10c-B-PUBLIC-DIAGNOSTICS:END -->
+
+
+<!-- FW-RT6-10d-A-CALLBACK-ISOLATION:BEGIN -->
+## FW-RT6-10d Control A — callback, plugin-hook, and stage-failure policy
+
+Control A adds the stable explicit package `framework.callback_isolation`.
+It defines provider-neutral isolation policy and lock-free reference dispatch
+only; it does not yet replace any public-session callback loop, legacy plugin
+hook dispatcher, session lock boundary, or realtime stage execution path.
+
+```python
+from framework.callback_isolation import (
+    CallbackBoundary,
+    StageCriticality,
+    callback_isolation_policy,
+    stage_failure_policy,
+)
+
+public_policy = callback_isolation_policy(
+    CallbackBoundary.PUBLIC_CALLBACK
+)
+critical_policy = stage_failure_policy(StageCriticality.CRITICAL)
+```
+
+### Public callback policy
+
+A public callback is an observer, not an owner of session or runtime success.
+One callback exception is isolated, the remaining stable registration snapshot
+continues in order, and the exception cannot convert the session, runtime, or
+already accepted terminal result into failure. Dispatch results contain only
+boundary and count facts; they retain no callback object, return value, raw
+exception, credential, provider payload, transcript, audio, private path,
+thread, or client identity.
+
+Runtime adoption must snapshot callbacks while holding the appropriate
+registry lock, release that lock and every session operation/admission lock,
+then invoke the stable snapshot. Reentrant control therefore never waits for a
+session lock held by the callback that initiated it. Existing public rules stay
+authoritative: a blocking turn call from the runtime thread remains a typed
+rejection, while supported cancel and deferred close reentrancy remain intact.
+
+### Plugin and motion hooks
+
+Legacy `runtime["hooks"]` handlers keep registration order and support both
+sync and async handlers. A handler failure is isolated per handler and later
+handlers continue. This contract does not change plugin discovery,
+configuration, registration, or `setup` / `on_start` / `on_stop` lifecycle
+semantics.
+
+The existing `invoke_motion_lifecycle_hook` remains the sole typed motion-hook
+resolver. A motion-hook exception, malformed result, or correlation mismatch
+continues to produce a public-safe failed resolver result, starts no
+`MotionStage`, and changes no conversation terminal. Control A does not create
+a second hook runner.
+
+### Critical and non-critical stage failures
+
+The selected voice-input owner and text-generation stage are critical to the
+current primary operation. Their safely normalized failure fails that operation
+with an existing typed public result, while the session remains open and the
+runtime remains available for later work.
+
+Voice output and motion are non-critical side effects. Their failure becomes a
+typed degraded boundary result and cannot replace an existing conversation
+terminal or erase a successful primary text response. Missing optional stages
+remain capability facts rather than callback or plugin-hook failures.
+
+```text
+checkpoint: FW-RT6-10d Control A
+baseline head: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+exact implementation surface: 5 files
+stable explicit package: framework.callback_isolation
+explicit exports: 12
+public callback failure: ISOLATED / CONTINUE
+plugin hook failure: ISOLATED / CONTINUE
+motion hook failure: SKIP_MOTION / CONVERSATION_UNCHANGED
+callback registry snapshot: LOCKED
+callback invocation: SESSION_AND_REGISTRY_LOCKS_RELEASED
+callback reentrancy: REQUIRED / DEADLOCK_FALSE
+critical stages: voice_input + text_generation
+non-critical stages: voice_output + motion
+stage failure kills session/runtime: False
+existing terminal replacement: False
+runtime adoption: DEFERRED_TO_CONTROL_B
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10d aggregate tasks: 0 / 6 CLOSED
+Control B: NOT_AUTHORIZED
+Control C: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B must adopt these rules in the existing runtime owners. Control A
+does not claim that current compatibility callback or legacy plugin-hook paths
+already satisfy the aggregate acceptance conditions.
+<!-- FW-RT6-10d-A-CALLBACK-ISOLATION:END -->

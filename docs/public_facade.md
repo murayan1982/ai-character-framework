@@ -5422,3 +5422,78 @@ isolation, and runtime assertions remain unchanged. Final closed status
 requires a separately reviewed, committed, pushed, and remotely verified
 one-file final acceptance sync.
 <!-- FW-RT6-10c-C-PUBLIC-DIAGNOSTICS-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10d-A-CALLBACK-ISOLATION:BEGIN -->
+## FW-RT6-10d Control A — explicit callback isolation contract
+
+`framework.callback_isolation` is a stable explicit provider-neutral package.
+It defines immutable policy models for public callbacks, legacy plugin hooks,
+the existing motion lifecycle hook, and critical/non-critical realtime stage
+failure. The package is lazy and adds no name to the `framework` root.
+
+The public callback rule is isolate-and-continue. Dispatch takes a stable
+registration snapshot, preserves registration order, catches each ordinary
+handler exception, and continues to later callbacks. The returned immutable
+count result contains no callback identity, return value, raw exception,
+credential, provider payload, transcript, audio, filesystem path, thread, or
+client object. Callback failure cannot become a runtime failure.
+
+The plugin-hook rule is the same for both synchronous and asynchronous event
+handlers. The motion-hook rule remains distinct: the accepted
+`invoke_motion_lifecycle_hook` resolver owns typed normalization, and failure
+skips mapped motion without changing the conversation result. Product-specific
+mapping remains outside Framework core.
+
+Every runtime adopter must collect callback state under its existing lock and
+invoke only after releasing callback-registry, session-operation, and
+turn-admission locks. The reference dispatchers own no lock or registry and are
+reentrant. Existing typed reentrancy behavior—runtime-thread blocking-call
+rejection, cancel support, and deferred close—remains unchanged.
+
+Stage criticality has two exact classes:
+
+| Stage | Default criticality | Failure effect |
+|---|---|---|
+| selected voice input | `critical` | fail current input operation safely |
+| text generation | `critical` | fail current turn safely |
+| voice output | `non_critical` | continue with degraded output |
+| motion | `non_critical` | continue without replacing conversation terminal |
+
+Both policies preserve the session and runtime. No stage failure may replace
+an already committed terminal. Non-critical failure cannot erase the primary
+response or manufacture a second conversation terminal.
+
+```text
+checkpoint: FW-RT6-10d Control A
+baseline head: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+exact implementation surface: 5 files
+stable explicit package: framework.callback_isolation / LAZY
+explicit exports: 12
+callback boundaries: public_callback / plugin_hook / motion_hook
+public callback exception reaches runtime: False / CONTRACT
+plugin hook exception reaches runtime: False / CONTRACT
+motion hook failure starts stage: False / CONTRACT
+handler ordering: STABLE SNAPSHOT
+callback under session lock: False / REQUIRED
+reentrant callback deadlock: False / REFERENCE_PASS
+stage criticality vocabulary: critical / non_critical
+critical failure closes session: False
+non-critical failure changes primary terminal: False
+runtime source changed by Control A: False
+root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-10d aggregate tasks: 0 / 6 CLOSED
+Control B runtime adoption: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A defines the contract and provider-free reference behavior only.
+TextChat, VoiceInput, Motion, unified RealtimeSession, and legacy plugin-hook
+runtime adoption remains an exact Control B review after this checkpoint is
+accepted and synchronized.
+<!-- FW-RT6-10d-A-CALLBACK-ISOLATION:END -->
