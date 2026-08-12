@@ -8519,3 +8519,97 @@ isolation, and runtime assertions in that test remain unchanged. Final closed
 status remains deferred to a reviewed, committed, pushed, and remotely verified
 one-file final acceptance sync. FW-RT6-10d remains outside this authorization.
 <!-- FW-RT6-10c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10c — public diagnostics final acceptance sync
+
+```text
+checkpoint: FW-RT6-10c final acceptance sync
+baseline head: d40b9cf6a5cd1952d1d6a4ba70b1252830e12644
+FW-RT6-10b final acceptance: 3fe21fd1aec9f38019e1bfadb946f3246edc7799
+Control A implementation: 53023cca67f0865f6454a311517889fdf26f91ab
+Control A acceptance sync: 3566ed618161b1212fb1a193cb4e27f663303863
+Control B implementation: ba1c193f1d90e632d727b4f2697302f5f99d167d
+Control B acceptance sync: 0427a5446cad52706d10396f2a91ba207eef2911
+Control C aggregate acceptance: d40b9cf6a5cd1952d1d6a4ba70b1252830e12644
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact corrective Control B implementation surface: 7 files
+exact corrective Control C aggregate surface: 4 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A diagnostics tests: 12 / PASS
+focused Control B diagnostics tests: 13 / PASS
+focused Control A+B diagnostics tests: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 570 / PASS
+stable explicit package: framework.session_diagnostics / PASS
+explicit diagnostics exports: 4 / UNCHANGED
+public property: RealtimeSession.diagnostics_snapshot / READ_ONLY / PASS
+snapshot mutability: FROZEN / FRESH_PER_READ / PASS
+idle/active/terminal/closed observations: PASS
+active identity and count owner: RealtimeGenerationGate / REUSED / PASS
+queue depth owner: TTSQueueState.queued_count / REUSED / PASS
+last terminal and duplicate owner: RealtimeTerminalRegistry / REUSED / PASS
+stale owner: RealtimeGenerationGate / REUSED / PASS
+overflow owner: RealtimeEventHub / REUSED / PASS
+safe error derivation: REDACTED TERMINAL PUBLIC ERROR / PASS
+capture locks: EXISTING OPERATION + TURN ADMISSION / REUSED / PASS
+lock-order wait while holding operation lock: False / PASS
+reentrant callback diagnostics read: PASS
+new diagnostics lock/thread/registry/execution owner: False / PASS
+legacy host session/turn IDs: PRESERVED / PASS
+Framework-owned IDs: NORMALIZED / PASS
+GenerationId validation: STRICT / PASS
+malformed reserved fw_* IDs accepted: False / PASS
+private-rich runtime value retained: False / PASS
+root import loads framework.session_diagnostics eagerly: False / PASS
+root diagnostics exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+aggregate gate changed by final sync: False
+existing tests changed by final sync: False
+FW-RT6-10c tasks: 9 / 9 ACCEPTED
+FW-RT6-10c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-10d exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-10d implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-10c closes the provider-neutral public diagnostics contract. The
+explicit lazy `framework.session_diagnostics` package remains the sole
+immutable model and projection vocabulary, while the existing public
+`RealtimeSession` remains the sole coherent snapshot capture owner through its
+read-only `diagnostics_snapshot` property.
+
+Each read remains a fresh frozen observation for idle, active, terminal
+callback, and closed states. The existing generation gate owns active identity,
+active count, and stale count; the public queue snapshot supplies only queue
+depth; the terminal registry owns the redacted last result and duplicate count;
+and the event hub owns overflow count. Safe error state remains derived from
+the public terminal projection.
+
+Capture retains the accepted non-deadlocking use of the existing operation and
+turn-admission locks. Legacy host session and turn IDs remain compatible,
+Framework-owned IDs remain normalized, generation IDs remain strict, and
+malformed reserved framework IDs remain rejected. No private-rich runtime value
+can enter the immutable snapshot or its JSON-friendly projection.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade contract, aggregate gate, or existing test. It formally
+completes, verifies, accepts, commits, pushes, and closes all three controls and
+all nine FW-RT6-10c aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-10d exact contract review is authorized. This sync does not authorize
+FW-RT6-10d implementation.
+<!-- FW-RT6-10c-FINAL-ACCEPTANCE-SYNC:END -->
