@@ -231,3 +231,28 @@ PUBLIC_API_NAMES = tuple(
 
 if len(PUBLIC_API_NAMES) != len(set(PUBLIC_API_NAMES)):
     raise RuntimeError("Canonical framework public API manifest contains duplicate names.")
+
+
+# FW-RT6-11b freezes the v6 root-public contract as an unordered name set.
+# ``PUBLIC_API_NAMES`` keeps its historical ordering so existing wildcard-import
+# behavior does not change, but consumers and new conformance gates must compare
+# the canonical sorted views below rather than positional slices.
+ROOT_PUBLIC_API_MANIFEST_SCHEMA_VERSION = "v6.root_public_api_manifest"
+ROOT_PUBLIC_WILDCARD_ORDERING_CONTRACT = "non_contractual"
+
+V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS = tuple(
+    sorted(PROVIDER_COMPAT_LAZY_EXPORTS)
+)
+V6_ROOT_PUBLIC_EXPORTS = tuple(sorted(PUBLIC_API_NAMES))
+V6_PROVIDER_NEUTRAL_ROOT_EXPORTS = tuple(
+    name
+    for name in V6_ROOT_PUBLIC_EXPORTS
+    if name not in PROVIDER_COMPAT_LAZY_EXPORT_MODULES
+)
+
+if len(V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS) != 15:
+    raise RuntimeError("Expected 15 frozen v5 provider compatibility exports.")
+if len(V6_ROOT_PUBLIC_EXPORTS) != 127:
+    raise RuntimeError("Expected 127 frozen v6 root-public exports.")
+if len(V6_PROVIDER_NEUTRAL_ROOT_EXPORTS) != 112:
+    raise RuntimeError("Expected 112 provider-neutral v6 root-public exports.")

@@ -5904,3 +5904,60 @@ Final completion requires a separately reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync. FW-RT6-11b and FW-RT6-11c
 remain outside this authorization.
 <!-- FW-RT6-11a-C-SESSION-COMPATIBILITY-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:BEGIN -->
+## FW-RT6-11b Control A — frozen v6 root-public inventory
+
+The v6 root-public inventory is frozen as an unordered 127-name contract. The
+canonical runtime source remains `framework.public_api.PUBLIC_API_NAMES`, while
+`docs/v600_root_public_api_manifest.json` is its deterministic machine-readable
+projection. The projection sorts every name before serialization and records an
+order-independent SHA-256 digest, so v6 conformance decisions no longer depend
+on `PUBLIC_API_GROUPS` insertion order or positional `framework.__all__` slices.
+
+The current `framework.__all__` order is retained to avoid changing observable
+v5 wildcard-import behavior. Historical release gates that recorded additive
+prefix positions also remain unchanged, but those positions are compatibility
+evidence rather than the v6 public contract. New docs/example/export drift is
+checked against the sorted manifest name set.
+
+The inventory distinguishes 112 provider-neutral exports from 15 frozen OpenAI
+voice-input compatibility exports. The OpenAI names remain lazy, root-public,
+and warning-free because accepted v5.4 release gates require them. They are not
+the preferred v6 application surface, and no new provider-specific root export
+is allowed. Control A deliberately adds no `framework.providers` or other
+stable optional-provider namespace; adding one requires a separate exact
+contract and cannot silently move or remove the v5 names.
+
+```text
+checkpoint: FW-RT6-11b Control A
+baseline head: 06e98b0024c2bafc1581d5e3349eae01c1929a8f
+exact implementation surface: 6 files
+canonical source: framework.public_api.PUBLIC_API_NAMES / REUSED
+machine-readable projection: docs/v600_root_public_api_manifest.json
+manifest schema: v6.root_public_api_manifest
+framework root-public names: 127 / UNCHANGED
+provider-neutral root exports: 112
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL
+stable optional provider namespace: NONE / DELIBERATE
+new provider-specific root exports: 0
+provider compatibility deprecations: 0
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11b aggregate tasks: 0 / 6 CLOSED
+Control A implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A freezes and verifies the inventory only. It does not remove a v5
+compatibility export, introduce a provider namespace, change runtime behavior,
+close an aggregate task, authorize Control B, or authorize commit or push.
+<!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:END -->

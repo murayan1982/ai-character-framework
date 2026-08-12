@@ -4531,3 +4531,52 @@ commit / push: NOT_AUTHORIZED
 Control B exposes compatibility truth only. It does not accept or close the
 FW-RT6-11a aggregate; that remains Control C work after separate review.
 <!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:END -->
+
+
+<!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:BEGIN -->
+## FW-RT6-11b Control A — application import inventory
+
+Host applications continue to import supported contracts from `framework`.
+The v6 application contract is the unordered 127-name inventory generated from
+`framework.public_api.PUBLIC_API_NAMES` and recorded in
+`docs/v600_root_public_api_manifest.json`. Application conformance must compare
+name membership or the sorted manifest digest; it must not depend on a symbol's
+numeric position in `framework.__all__`.
+
+Of the 127 names, 112 are the preferred provider-neutral application surface.
+The 15 `OpenAIVoiceInput*` names remain lazy root exports only for accepted v5.4
+compatibility. Existing consumers may keep importing them without a warning,
+but new host integration should use provider-neutral session, request, result,
+capability, and adapter boundaries. New provider-specific names may not be
+added to the Framework root without a separate exact contract review.
+
+Control A does not establish a stable optional-provider namespace. In
+particular, applications must not infer or depend on a `framework.providers`
+package. Any future namespace must document its lifecycle and migration policy
+before it can replace or supplement the frozen compatibility exports.
+
+The dedicated Control A gate checks the machine-readable manifest against the
+canonical source and `framework.__all__`, scans every public example for missing
+or wildcard root imports, verifies the two contract documents' manifest facts,
+and proves in a fresh process that resolving the 15 compatibility names remains
+lazy with respect to provider SDKs and runtime modules. Drift fails the gate.
+
+```text
+checkpoint: FW-RT6-11b Control A
+baseline head: 06e98b0024c2bafc1581d5e3349eae01c1929a8f
+manifest schema: v6.root_public_api_manifest
+root-public names: 127 / UNCHANGED
+preferred provider-neutral names: 112
+v5 provider compatibility names: 15 / PRESERVED / LAZY
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard order application contract: NONE
+stable optional provider namespace: NONE
+docs/example/export drift: FAILS DEDICATED GATE
+host migration required by Control A: False
+provider/network/audio/microphone/playback/real VTS execution: False
+Control A implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:END -->
