@@ -8897,3 +8897,102 @@ privacy assertions remain unchanged. Final closed status requires a separately
 reviewed, committed, pushed, and remotely verified one-file final acceptance
 sync. FW-RT6-11a remains outside this authorization.
 <!-- FW-RT6-10d-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-10d-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10d — callback and plugin isolation final acceptance sync
+
+```text
+checkpoint: FW-RT6-10d final acceptance sync
+baseline head: 19946d9487671c511b0df3d2861fca7b076c6e68
+FW-RT6-10c final acceptance: ac729f10f4875347f7b222ef55ac560ac9d76eb2
+Control A implementation: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+Control A acceptance sync: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+Control B implementation: b7dfeab05a1a9e87042f9a8e960d53be6da5c5b8
+Control B acceptance sync: 0b5faf96d2886d9372bab5a51ddc68b9da2515a3
+Control C aggregate acceptance: 19946d9487671c511b0df3d2861fca7b076c6e68
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact Control B implementation surface: 9 files
+exact corrective Control C aggregate surface: 5 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A callback-isolation tests: 13 / PASS
+focused Control B callback-isolation tests: 12 / PASS
+focused Control A+B callback-isolation tests: 25 / PASS
+accepted FW-RT6-10c diagnostics regression: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 595 / PASS
+stable explicit policy package: framework.callback_isolation / PASS
+explicit isolation exports: 12 / UNCHANGED
+callback boundaries: public_callback / plugin_hook / motion_hook / PASS
+public callback failure: ISOLATED / CONTINUE / PASS
+plugin sync + async hook failure: ISOLATED / CONTINUE / PASS
+motion hook resolver: invoke_motion_lifecycle_hook / REUSED / PASS
+motion hook failure: SKIP MOTION / TERMINAL UNCHANGED / PASS
+public session adopters: TextChat / VoiceInput / Motion / Realtime / PASS
+legacy plugin hook adopter: core.events.emit / PASS
+event sequencer and subscriber owner: RealtimeEventHub / REUSED / PASS
+callback registration snapshot: STABLE / PASS
+callback invocation under registry/session lock: False / PASS
+same-thread callback reentrancy deadlock: False / PASS
+cross-thread operation ordering: PRESERVED / PASS
+new callback/event registry or dispatcher thread: False / PASS
+critical stages: voice_input + text_generation / PASS
+non-critical stages: voice_output + motion / PASS
+critical stage failure: TYPED / FAIL CURRENT OPERATION / PASS
+non-critical stage failure: TYPED / CONTINUE DEGRADED / PASS
+stage failure kills session/runtime: False / PASS
+stage failure replaces existing terminal: False / PASS
+close callback failure: TYPED CLEANUP FAILURE / SESSION CLOSED / PASS
+raw exception/callback/thread/client identity retained: False / PASS
+root import loads framework.callback_isolation eagerly: False / PASS
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+aggregate gate changed by final sync: False
+existing tests changed by final sync: False
+FW-RT6-10d tasks: 6 / 6 ACCEPTED
+FW-RT6-10d aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-11a exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-11a implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-10d closes the provider-neutral callback and plugin isolation contract.
+The explicit lazy `framework.callback_isolation` package remains the sole
+immutable policy vocabulary. TextChat, VoiceInput, Motion, unified
+RealtimeSession, and legacy `core.events.emit` retain their existing callback
+registries, event sequencing, lifecycle owners, signatures, and return values.
+
+Public callbacks and synchronous or asynchronous plugin hooks continue from a
+stable registration snapshot, isolate each ordinary handler exception, and
+preserve later-handler ordering. Callback delivery remains outside registry and
+session-operation locks. Same-thread reentrancy and cross-thread operation
+ordering retain the accepted behavior without a new dispatcher thread, event
+registry, callback service, or public lock owner.
+
+The existing `invoke_motion_lifecycle_hook` remains the sole typed motion-hook
+resolver. Voice input and text generation remain critical to their current
+operation; voice output and motion remain non-critical. Typed stage and close
+failures preserve session, runtime, and terminal truth and retain no callback,
+return value, raw exception, credential, provider payload, transcript, audio,
+private path, thread, client, or private runtime identity.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade contract, aggregate gate, or existing test. It formally
+completes, verifies, accepts, commits, pushes, and closes all three controls and
+all six FW-RT6-10d aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-11a exact contract review is authorized. This sync does not authorize
+FW-RT6-11a implementation.
+<!-- FW-RT6-10d-FINAL-ACCEPTANCE-SYNC:END -->
