@@ -8698,3 +8698,100 @@ committed, pushed, and remotely verified, only Control B exact contract review
 is authorized; Control B implementation, Control C, and their commit/push
 remain separately gated.
 <!-- FW-RT6-10d-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-10d-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-10d Control B — callback and plugin runtime-adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-10d Control B
+baseline head: b7dfeab05a1a9e87042f9a8e960d53be6da5c5b8
+Control A implementation: a6ffae7e035d4a6761edd2a75afc1a0e77bbd4b9
+Control A acceptance sync: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+Control B implementation baseline: 5fd2f84b74a769d9158ca7785f98e3ea88f42a5a
+Control B implementation: b7dfeab05a1a9e87042f9a8e960d53be6da5c5b8
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 5 files
+exact Control B implementation surface: 9 files
+acceptance-sync exact surface: 1 file
+dedicated Control B source gate: PASS
+focused Control A callback-isolation tests: 13 / PASS
+focused Control B callback-isolation tests: 12 / PASS
+focused Control A+B callback-isolation tests: 25 / PASS
+accepted FW-RT6-10c diagnostics regression: 25 / PASS
+accepted FW-RT6-10b close/dispose regression: 25 / PASS
+accepted FW-RT6-10a recovery/reset regression: 27 / PASS
+accepted FW-RT6-9d stale-delivery regression: 27 / PASS
+v5.2.0 realtime public contract conformance gate: PASS
+full Framework unit suite: 595 / PASS
+stable explicit policy package: framework.callback_isolation / REUSED / PASS
+event sequencer and subscriber owner: RealtimeEventHub / REUSED / PASS
+legacy plugin registry: runtime[hooks] / REUSED / PASS
+public session adopters: TextChat / VoiceInput / Motion / Realtime / PASS
+legacy plugin hook adopter: core.events.emit / PASS
+public callback failure: ISOLATED / CONTINUE / PASS
+sync and async plugin hook failure: ISOLATED / CONTINUE / PASS
+callback registration snapshot: STABLE / PASS
+callback invocation under registry lock: False / PASS
+callback invocation under RealtimeSession operation lock: False / PASS
+cross-thread operation ordering: PRESERVED / PASS
+same-thread callback reentrancy deadlock: False / PASS
+new callback or event registry: False / PASS
+new dispatcher or background thread: False / PASS
+critical stage failure: TYPED / FAIL_CURRENT_OPERATION / PASS
+non-critical stage failure: TYPED / CONTINUE_DEGRADED / PASS
+stage failure kills session/runtime: False / PASS
+stage failure replaces an existing terminal: False / PASS
+close callback failure: TYPED CLEANUP FAILURE / SESSION CLOSED / PASS
+raw exception/callback/thread/client identity retained: False / PASS
+runtime source changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+root import loads framework.callback_isolation eagerly: False / PASS
+root isolation exports: 0 / UNCHANGED
+framework root-public names: 127 / UNCHANGED
+REALTIME_API_VERSION: 5.2.0 / UNCHANGED
+MOTION_API_VERSION: 5.5.0 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+FW-RT6-10d aggregate: NOT_COMPLETED
+FW-RT6-10d tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts coherent runtime adoption of the stable explicit
+`framework.callback_isolation` policy without creating a second callback,
+event, stage, or execution owner. TextChat, VoiceInput, Motion, unified
+RealtimeSession, and legacy `core.events.emit` keep their existing registries,
+signatures, return values, ordering, and public lifecycle contracts.
+
+Every public callback and sync/async plugin hook is invoked from a stable
+registration snapshot. One ordinary handler exception is isolated and later
+handlers continue. Text, voice-input, motion, and realtime success truth cannot
+be corrupted by an observer failure. The existing RealtimeEventHub remains the
+sole event sequencing and subscriber owner.
+
+Realtime callback delivery releases the physical operation lock while
+retaining logical operation ownership and cross-thread serialization. Existing
+same-thread registration, unregistration, cancellation, diagnostics, and
+deferred-close reentrancy retain progress without a dispatcher thread or a new
+public lock owner.
+
+Unexpected critical text-generation failure becomes the existing typed failed
+result for the current operation. Voice-output and motion failure remain typed
+non-critical degraded results and cannot erase or replace an established
+conversation terminal. Callback failure during final close delivery remains a
+typed cleanup failure while the session stays closed and releases callbacks.
+No public result retains a raw exception, callback identity, credential,
+provider payload, transcript, audio, private path, thread, client, or private
+runtime object.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes no
+runtime source, public-facade contract, dedicated gate, or existing test. None
+of the six FW-RT6-10d aggregate task checkboxes close here. After this sync is
+reviewed, committed, pushed, and remotely verified, only Control C exact
+contract review is authorized; Control C implementation and commit/push remain
+separately gated.
+<!-- FW-RT6-10d-B-ACCEPTANCE-SYNC:END -->
