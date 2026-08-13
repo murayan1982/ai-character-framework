@@ -9964,3 +9964,92 @@ The eight tasks are acceptance-candidates rather than final CLOSED state.
 Final completion requires a separately reviewed one-file acceptance sync,
 commit, push, and remote verification. FW-RT6-12a remains separately gated.
 <!-- FW-RT6-11c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11c — migration guide and examples final acceptance sync
+
+```text
+checkpoint: FW-RT6-11c final acceptance sync
+baseline head: e3e0b1968784fcb780e7a9da67f6590f882c2a29
+FW-RT6-11b final acceptance: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+Control A implementation and acceptance: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+Control B implementation and acceptance: 69c47486f9abda234accd6838e2c78726cb5c65f
+Control C aggregate acceptance: e3e0b1968784fcb780e7a9da67f6590f882c2a29
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation and acceptance surface: 8 files
+exact Control B implementation and acceptance surface: 10 files
+exact Control C aggregate surface: 7 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A migration/example tests: 12 / PASS
+focused Control B migration/example tests: 14 / PASS
+focused Control A+B migration/example tests: 26 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+full Framework unit suite: 675 / PASS
+migration guide: docs/v600_v5_to_v6_session_migration.md / ACCEPTED
+v5 standalone sessions retained: 4 / PASS
+all migration examples: 6 / PROVIDER-FREE / PUBLIC ROOT ONLY / ACCEPTED
+text-only example: ACCEPTED
+explicit unavailable/fallback example: ACCEPTED
+host-captured audio example: ACCEPTED
+interrupt/partial completion example: ACCEPTED
+local playback boundary example: ACCEPTED
+motion extension hook example: ACCEPTED
+default realtime compatibility mode: v5_skeleton / PASS
+explicit unified request mode: v6_unified / TRUTHFUL
+production unified orchestration available: False / TRUTHFUL
+silent unified-to-mock fallback: False / PASS
+host audio capture ownership: APPLICATION / UNCHANGED
+local playback ownership: APPLICATION / UNCHANGED
+partial transcript/audio streaming claimed: False / PASS
+provider hard cancellation claimed: False / PASS
+physical playback stop confirmed by acknowledgement: False / PASS
+motion mapping ownership: APPLICATION_OR_PLUGIN / UNCHANGED
+motion side effect replaces or duplicates conversation terminal: False / PASS
+example imports without provider credentials: PASS
+optional provider SDK import: False / PASS
+provider/network/audio-read/microphone/playback/real VTS execution: False / PASS
+framework root-public names: 127 / UNCHANGED
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+runtime source changed by Control C/final sync: False
+public-facade contract changed by final sync: False
+application-integration contract changed by final sync: False
+migration guide changed by final sync: False
+example changed by final sync: False
+aggregate gate changed by final sync: False
+existing test changed by final sync: False
+README changed by final sync: False
+FW-RT6-11c tasks: 8 / 8 ACCEPTED
+FW-RT6-11c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-12a exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-12a implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-11c closes the v6 migration-guide and provider-free example boundary.
+The canonical guide preserves the supported v5 standalone sessions and
+truthfully distinguishes the provider-free `v5_skeleton` path from an explicit
+but currently unavailable `v6_unified` production-orchestration request.
+
+All six examples remain public-root-only and credential-free. Audio capture
+and physical playback stay application-owned; interrupt `partial` remains a
+terminal subsystem aggregate rather than transcript/audio streaming; provider
+hard cancellation is not claimed; motion mapping remains host/plugin-owned and
+cannot replace or duplicate the conversation terminal.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade or application-integration contract, migration guide,
+example, aggregate gate, existing test, root export, provider namespace,
+factory signature, return/event shape, API/schema version, historical v5 gate,
+or README. It formally completes, verifies, accepts, commits, pushes, and
+closes all three controls and all eight FW-RT6-11c aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-12a exact contract review is authorized. This sync does not authorize
+FW-RT6-12a implementation.
+<!-- FW-RT6-11c-FINAL-ACCEPTANCE-SYNC:END -->
