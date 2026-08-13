@@ -9727,3 +9727,87 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-11c exact contract review is authorized. This sync does not authorize
 FW-RT6-11c implementation.
 <!-- FW-RT6-11b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11c Control A — migration foundation acceptance sync
+
+```text
+checkpoint: FW-RT6-11c Control A
+baseline head: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+FW-RT6-11b final acceptance: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+Control A implementation baseline: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+Control A implementation candidate: WORKTREE / VERIFIED
+Control A: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control A implementation surface: 7 files
+corrective-r2 replacement: tests/test_migration_examples_control_a.py / INCLUDED_IN_7
+acceptance-sync exact surface: 1 file
+combined worktree surface: 8 files
+dedicated Control A migration/example gate: PASS
+focused Control A migration/example tests: 12 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+full Framework unit suite: 661 / PASS
+migration guide: docs/v600_v5_to_v6_session_migration.md / PASS
+new examples: 2 / PROVIDER-FREE / PASS
+text-only example: PASS
+explicit unavailable/fallback example: PASS
+example import surface: framework root only / PASS
+example main guards: PASS
+provider credentials required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+credential-free subprocess preserves Windows/Python system environment: True / PASS
+default RealtimeSession compatibility mode: v5_skeleton / PASS
+explicit real-runtime request mode: v6_unified / PASS
+production unified orchestration available: False / TRUTHFUL
+explicit unified request outcome: REJECTED / PASS
+silent unified-to-mock fallback: False / PASS
+fallback selection: EXPLICIT_HOST_ACTION / PASS
+v5 standalone sessions: SUPPORTED / UNCHANGED
+framework runtime source changed by Control A: False
+framework root-public names: 127 / UNCHANGED
+factory signatures and API/schema version labels: UNCHANGED
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+migration guide or example changed by acceptance sync: False
+dedicated gate or existing test changed by acceptance sync: False
+FW-RT6-11c aggregate: NOT_COMPLETED
+FW-RT6-11c tasklist: 0 / 8 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the migration foundation for moving host applications from
+the supported v5 standalone sessions toward the v6 unified-session contract.
+The guide keeps `TextChatSession`, `VoiceInputSession`, `VoiceOutputSession`,
+and `MotionSession` support explicit and distinguishes `v5_standalone`, the
+provider-free deterministic `v5_skeleton`, and the requested `v6_unified`
+compatibility profiles.
+
+The two executable examples import only the public `framework` root and require
+no provider credential or optional provider SDK. The text-only example remains
+an explicitly marked deterministic mock. The unavailable-capability example
+truthfully rejects an explicit unified-runtime request and performs fallback
+only after a separate host decision; it never silently substitutes mock work.
+
+Corrective-r2 changes only the credential-free subprocess test harness. It
+preserves Windows and Python system environment required by `asyncio` while
+removing credential-bearing variables. It changes no example, runtime source,
+public contract, provider boundary, or execution behavior.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes none
+of the seven accepted Control A implementation files, any runtime source,
+root-public inventory, factory signature, API/schema version, dedicated gate,
+existing test, migration guide, or example. None of the eight FW-RT6-11c
+aggregate task checkboxes close here.
+
+After the combined eight-file worktree is reviewed, committed, pushed, and
+remotely verified, only Control B exact contract review is authorized. Control
+B implementation, aggregate acceptance, and their commit/push remain
+separately gated.
+<!-- FW-RT6-11c-A-ACCEPTANCE-SYNC:END -->

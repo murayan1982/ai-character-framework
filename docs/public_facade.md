@@ -6111,3 +6111,47 @@ status. Final completion requires a separately reviewed, committed, pushed,
 and remotely verified one-file final acceptance sync. FW-RT6-11c remains
 separately gated.
 <!-- FW-RT6-11b-C-ROOT-PUBLIC-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11c-A-PUBLIC-MIGRATION:BEGIN -->
+## FW-RT6-11c Control A — public migration entry points
+
+The public v6 migration starts with the existing root-level
+`create_realtime_session(...)` factory. The provider-free text-only example
+uses its deterministic `v5_skeleton` compatibility path. An explicit
+`real_runtime_enabled=True` request reports `v6_unified` compatibility
+intent, but the current source truthfully rejects unavailable orchestration and
+never silently returns mock success.
+
+See:
+
+- `docs/v600_v5_to_v6_session_migration.md`
+- `examples/app_v600_realtime_text_only.py`
+- `examples/app_v600_realtime_unavailable_fallback.py`
+
+```text
+checkpoint: FW-RT6-11c Control A
+baseline head: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+exact implementation surface: 7 files
+v5 standalone sessions retained: 4 / PASS
+default realtime mode: v5_skeleton / PASS
+explicit unified mode: v6_unified / REQUEST TRUTH / PASS
+real unified orchestration available: False / TRUTHFUL
+silent unified-to-mock fallback: False / PASS
+new examples: 2 / PUBLIC ROOT IMPORT ONLY
+examples import without provider credentials: PASS
+runtime source changed: False
+framework root-public names: 127 / UNCHANGED
+provider/network/audio/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11c tasks: 0 / 8 CLOSED
+Control A implementation: IMPLEMENTED / AWAITING_REVIEW
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A is documentation and executable-example work only. Host-captured
+audio, interrupt/partial completion, local playback coordination, and motion
+extension hooks remain Control B.
+<!-- FW-RT6-11c-A-PUBLIC-MIGRATION:END -->

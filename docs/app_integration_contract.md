@@ -4642,3 +4642,57 @@ commit / push: NOT_AUTHORIZED
 Control B changes no session factory, return value, event owner, capability
 truth, or API version. Aggregate task closure remains separate Control C work.
 <!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:END -->
+
+
+<!-- FW-RT6-11c-A-MIGRATION-FOUNDATION:BEGIN -->
+## FW-RT6-11c Control A — session migration foundation
+
+The v5 standalone TextChat, VoiceInput, VoiceOutput, and Motion sessions remain
+supported throughout v6. Applications migrate to `RealtimeSession` only when
+they need a single owner for shared turn/generation identity, canonical events,
+interrupt coordination, stale-result admission, terminal state, diagnostics,
+and close/dispose results.
+
+The default provider-free `RealtimeSession` remains the deterministic
+`v5_skeleton` compatibility path. An explicit
+`real_runtime_enabled=True` request reports `v6_unified` request truth but
+cannot silently fall back to mock execution. Missing or unavailable
+composition is represented by the existing typed construction and turn
+results. Any mock fallback is a separate, visible host decision.
+
+The canonical guide is `docs/v600_v5_to_v6_session_migration.md`. Control A
+adds provider-free text-only and explicit unavailable/fallback examples. The
+host-captured audio, interrupt/partial, local playback, and motion-hook examples
+remain Control B.
+
+```text
+checkpoint: FW-RT6-11c Control A
+baseline head: 7f0f66b11347257ac239982c4118fe8277c2a1e3
+exact implementation surface: 7 files
+migration guide: docs/v600_v5_to_v6_session_migration.md / PASS
+text-only example: examples/app_v600_realtime_text_only.py / PROVIDER-FREE
+unavailable fallback example: examples/app_v600_realtime_unavailable_fallback.py / EXPLICIT HOST CHOICE
+example public import: framework root only / PASS
+example import side effects: False / PASS
+provider credential required: False / PASS
+provider SDK import: False / PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+default realtime compatibility mode: v5_skeleton / PRESERVED
+explicit unified request mode: v6_unified / REQUEST TRUTH
+silent unified-to-mock fallback: False / PASS
+v5 standalone support removed or deprecated: False
+runtime source changed: False
+root-public names changed: False
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+docs/v600_tasklist.md changed: False
+FW-RT6-11c aggregate tasks: 0 / 8 CLOSED
+Control B implementation: NOT_AUTHORIZED
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A changes no runtime or provider boundary. It does not claim real
+unified orchestration, provider execution, microphone ownership, physical
+playback stop, provider hard cancellation, partial streaming, or real motion.
+<!-- FW-RT6-11c-A-MIGRATION-FOUNDATION:END -->
