@@ -4797,3 +4797,48 @@ Control A is a public contract foundation only. Applications must continue to
 use the accepted non-streaming `VoiceInputAudioSource` handoff until a later
 control explicitly adopts streaming operations into a session.
 <!-- FW-RT6-12a-A-HOST-AUDIO-CHUNK:END -->
+
+
+<!-- FW-RT6-12a-B-HOST-AUDIO-STREAMING:BEGIN -->
+## FW-RT6-12a Control B — host audio streaming integration
+
+The application continues to own capture, device selection, buffer lifetime,
+and physical stop. It may send bounded chunks to an explicitly configured
+`VoiceInputSession`; Framework owns only validation, correlation, typed
+acknowledgement/rejection, and transcript events.
+
+Host requirements:
+
+- configure one adapter before beginning a stream;
+- use an explicit accepted audio encoding;
+- send zero-based chunks in exact order;
+- provide each chunk's duration in milliseconds;
+- keep every chunk within advertised bytes and cumulative duration limits;
+- use the next expected sequence for end-of-input;
+- treat abort as cooperative invalidation, not provider/device hard-stop proof;
+- observe partial/final text through canonical realtime callbacks;
+- never log `VoiceInputAudioChunk.data`.
+
+The explicit adapter boundary is `framework.voice_input_streaming_adapter`.
+Its deterministic fake adapter is an offline integration fixture. Its partial
+and final text are configured test observations; it never reads or decodes the
+chunk data. Real provider streaming is not implied or executed by Control B.
+
+```text
+host audio capture ownership: APPLICATION / UNCHANGED
+stream ordering/limits owner: FRAMEWORK
+adapter/provider execution owner: CONFIGURED ADAPTER
+default adapter: NONE / UNSUPPORTED
+partial transcript event: CANONICAL V6 ONLY
+final transcript result: VoiceInputSession.last_stream_result
+host capture physically stopped by abort: NOT_CLAIMED
+provider hard cancel: NOT_CLAIMED
+raw bytes in event/result/public projection: False
+backpressure/queue: NOT_IMPLEMENTED / FW-RT6-12b
+RealtimeSession unified orchestration: UNCHANGED
+root-public names: 127 / UNCHANGED
+provider/network/audio-file/microphone/playback/real VTS execution: False
+FW-RT6-12a tasks: 0 / 7 CLOSED
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12a-B-HOST-AUDIO-STREAMING:END -->

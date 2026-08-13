@@ -10142,3 +10142,100 @@ remotely verified, only Control B exact contract review is authorized. Control
 B implementation, aggregate acceptance, and their commit/push remain
 separately gated.
 <!-- FW-RT6-12a-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12a-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12a Control B — VoiceInputSession streaming acceptance sync
+
+```text
+checkpoint: FW-RT6-12a Control B
+baseline head: f07105742ea6068a6d1655d737c160a5f3487dd5
+Control A implementation and acceptance: f07105742ea6068a6d1655d737c160a5f3487dd5
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B implementation candidate: WORKTREE / VERIFIED
+Control B: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control B implementation surface: 10 files
+acceptance-sync exact surface: 1 file
+combined worktree surface: 11 files
+dedicated Control B audio-chunk streaming gate: PASS
+focused Control B audio-chunk streaming tests: 21 / PASS
+focused Control A audio-chunk contract tests: 15 / PASS
+focused Control A+B tests: 36 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+full Framework unit suite: 711 / PASS
+stable contract namespace: framework.voice_input_streaming / 9 EXACT / PASS
+stable adapter namespace: framework.voice_input_streaming_adapter / 2 EXACT / PASS
+adapter namespace root exports: 0 / EXPLICIT_ONLY / PASS
+session runtime adoption: VoiceInputSession / PASS
+RealtimeSession streaming adoption: False / UNCHANGED / PASS
+factory signature changed: False / PASS
+framework root-public names: 127 / UNCHANGED
+default VoiceInputSession chunk-input support: False / TRUTHFUL / PASS
+explicit deterministic fake capability: True / PASS
+supported encoding: pcm16 / PASS
+maximum chunk-size enforcement: PASS
+maximum cumulative-duration enforcement: PASS
+zero-based strict sequence enforcement: PASS
+out-of-order retry without sequence consumption: PASS
+ordered end-of-input enforcement: PASS
+partial transcript delivery: CANONICAL_V6 / CORRELATED / PASS
+final transcript delivery: VoiceInputSession.last_stream_result / PASS
+legacy mapping callback expansion: False / PASS
+cooperative stream abort: PASS
+provider hard-cancel claimed: False / PASS
+host capture physical-stop claimed: False / PASS
+active-stream close terminalization: PASS
+adapter exception private detail exposed: False / PASS
+raw audio present in repr/event/result/public projection: False / PASS
+deterministic fake reads or decodes raw audio: False / PASS
+backpressure queue implementation: False / DEFERRED_TO_FW-RT6-12b
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-file/microphone/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+streaming contract guide changed by acceptance sync: False
+dedicated gate or existing test changed by acceptance sync: False
+FW-RT6-12a aggregate: NOT_COMPLETED
+FW-RT6-12a tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts explicit, provider-neutral audio-chunk streaming adoption on
+`VoiceInputSession`. The default session remains truthfully unsupported. A host
+must explicitly configure an adapter before beginning a stream, and
+`RealtimeSession` remains unchanged.
+
+Framework validates stream identity, explicit audio encoding, maximum chunk
+bytes, cumulative duration, zero-based ordering, ordered end-of-input, and
+typed retry or terminal rejection. The deterministic fake adapter supplies
+offline partial and final transcript observations without reading or decoding
+the raw chunk bytes.
+
+Partial and final transcripts use the existing canonical v6 realtime event
+types with one Framework-owned session, turn, generation, and event sequence.
+Streaming observations do not expand the retained v5 mapping-callback shapes.
+The final typed result is available from `VoiceInputSession.last_stream_result`.
+
+Abort is cooperative generation invalidation only. It does not claim provider
+hard cancellation or physical termination of application-owned capture.
+Backpressure and queue policy remain deferred to FW-RT6-12b. Control B performs
+no provider, network, audio-file, microphone, playback, or real VTS execution.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes none
+of the ten accepted Control B implementation files, any runtime source,
+root-public inventory, factory signature, API/schema version, public-facade or
+application-integration contract, streaming guide, dedicated gate, or existing
+test. None of the seven FW-RT6-12a aggregate task checkboxes close here.
+
+After the combined eleven-file worktree is reviewed, committed, pushed, and
+remotely verified, only the Control C aggregate-acceptance exact contract
+review is authorized. Control C implementation and its commit/push remain
+separately gated.
+<!-- FW-RT6-12a-B-ACCEPTANCE-SYNC:END -->

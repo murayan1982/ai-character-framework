@@ -211,17 +211,37 @@ def check_root_runtime_and_task_boundaries() -> None:
     _require(len(framework.__all__) == 127, "root-public inventory changed")
     for name in EXPECTED_EXPORTS:
         _require(name not in framework.__all__, f"explicit-only name leaked root: {name}")
-    for session_type in (framework.VoiceInputSession, framework.RealtimeSession):
-        for method_name in (
-            "start_audio_stream",
-            "send_audio_chunk",
-            "end_audio_input",
-            "abort_audio_stream",
-        ):
-            _require(
-                not hasattr(session_type, method_name),
-                f"Control A prematurely added {session_type.__name__}.{method_name}",
-            )
+    _require(
+        not hasattr(framework.VoiceInputSession, "start_audio_stream"),
+        "uncontracted VoiceInputSession.start_audio_stream appeared",
+    )
+    for method_name in (
+        "configure_audio_streaming",
+        "begin_audio_stream",
+        "send_audio_chunk",
+        "end_audio_input",
+        "abort_audio_stream",
+    ):
+        _require(
+            hasattr(framework.VoiceInputSession, method_name),
+            f"Control B VoiceInputSession.{method_name} missing",
+        )
+    for method_name in (
+        "configure_audio_streaming",
+        "start_audio_stream",
+        "begin_audio_stream",
+        "send_audio_chunk",
+        "end_audio_input",
+        "abort_audio_stream",
+    ):
+        _require(
+            not hasattr(framework.RealtimeSession, method_name),
+            f"RealtimeSession boundary drift: {method_name}",
+        )
+    _require(
+        not framework.VoiceInputSession().streaming_capability.audio_chunk_input_supported,
+        "default VoiceInputSession overclaimed audio chunk support",
+    )
 
     snapshot = framework.get_capabilities().realtime_snapshot
     _require(snapshot is not None, "realtime capability snapshot missing")
@@ -235,7 +255,7 @@ def check_root_runtime_and_task_boundaries() -> None:
     )[1].split("## FW-RT6-12b", 1)[0]
     _require(section.count("- [ ]") == 7, "Control A closed an aggregate task")
     _require(section.count("- [x]") == 0, "Control A changed aggregate state")
-    print("[OK] root 127, sessions, runtime capability, and 0/7 task boundary conform")
+    print("[OK] root 127, explicit VoiceInputSession adoption, default-off capability, and 0/7 boundary conform")
 
 
 def check_docs_and_accepted_regressions() -> None:
@@ -300,17 +320,17 @@ def main() -> None:
     check_models_and_truthful_capability()
     check_root_runtime_and_task_boundaries()
     check_docs_and_accepted_regressions()
-    print("v600_rt6_12a_control_a_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12a_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_12a_control_a_exact_surface: 6 files")
     print("v600_rt6_12a_namespace: framework.voice_input_streaming")
     print("v600_rt6_12a_namespace_exports: 9 / EXACT / EXPLICIT_ONLY")
     print("v600_rt6_12a_root_public_names: 127 / UNCHANGED")
-    print("v600_rt6_12a_session_runtime_adoption: False / DEFERRED")
-    print("v600_rt6_12a_partial_transcript_delivery: False / DEFERRED")
+    print("v600_rt6_12a_session_runtime_adoption: VoiceInputSession / CONTROL_B")
+    print("v600_rt6_12a_partial_transcript_delivery: True / EXPLICIT_ADAPTER_ONLY")
     print("v600_rt6_12a_provider_execution: False")
     print("v600_rt6_12a_network_execution: False")
     print("v600_rt6_12a_task_count: 0 / 7 CLOSED")
-    print("v600_rt6_12a_control_b: NOT_AUTHORIZED")
+    print("v600_rt6_12a_control_b: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_12a_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12a Control A public audio-chunk contract gate passed")
 

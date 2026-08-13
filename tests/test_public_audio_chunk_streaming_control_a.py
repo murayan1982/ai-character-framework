@@ -282,15 +282,34 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
             },
         )
 
-    def test_control_a_adds_no_session_streaming_methods(self) -> None:
-        for session_type in (framework.VoiceInputSession, framework.RealtimeSession):
-            for name in (
-                "start_audio_stream",
-                "send_audio_chunk",
-                "end_audio_input",
-                "abort_audio_stream",
-            ):
-                self.assertFalse(hasattr(session_type, name), f"{session_type.__name__}.{name}")
+    def test_control_b_adopts_only_the_voice_input_session_boundary(self) -> None:
+        self.assertFalse(hasattr(framework.VoiceInputSession, "start_audio_stream"))
+        for name in (
+            "configure_audio_streaming",
+            "begin_audio_stream",
+            "send_audio_chunk",
+            "end_audio_input",
+            "abort_audio_stream",
+        ):
+            self.assertTrue(
+                hasattr(framework.VoiceInputSession, name),
+                f"VoiceInputSession.{name}",
+            )
+        for name in (
+            "configure_audio_streaming",
+            "start_audio_stream",
+            "begin_audio_stream",
+            "send_audio_chunk",
+            "end_audio_input",
+            "abort_audio_stream",
+        ):
+            self.assertFalse(
+                hasattr(framework.RealtimeSession, name),
+                f"RealtimeSession.{name}",
+            )
+        self.assertFalse(
+            framework.VoiceInputSession().streaming_capability.audio_chunk_input_supported
+        )
 
     def test_docs_and_task_boundary_record_control_a_truth(self) -> None:
         docs = {

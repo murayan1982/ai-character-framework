@@ -99,3 +99,107 @@ aggregate acceptance: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12a-A-PUBLIC-AUDIO-CHUNK:END -->
+
+<!-- FW-RT6-12a-B-VOICE-INPUT-STREAMING:BEGIN -->
+## Control B VoiceInputSession adoption
+
+Control B attaches the accepted vocabulary to `VoiceInputSession` without
+changing the root-public inventory or `create_voice_input_session(...)`
+signature. Applications explicitly configure an adapter, begin one stream,
+send ordered chunks, then end or abort it:
+
+```python
+from framework import create_voice_input_session
+from framework.voice_input_audio import VoiceInputAudioEncoding, VoiceInputAudioFormat
+from framework.voice_input_streaming import (
+    VoiceInputAudioChunk,
+    VoiceInputStreamConfig,
+    VoiceInputStreamEnd,
+)
+from framework.voice_input_streaming_adapter import (
+    DeterministicFakeVoiceInputStreamingAdapter,
+)
+
+session = create_voice_input_session()
+session.configure_audio_streaming(
+    DeterministicFakeVoiceInputStreamingAdapter(
+        partial_transcripts={0: "途中"},
+        final_transcript="最終 transcript",
+    )
+)
+session.begin_audio_stream(
+    VoiceInputStreamConfig(
+        stream_id="host_stream_1",
+        audio_format=VoiceInputAudioFormat(
+            encoding=VoiceInputAudioEncoding.PCM16,
+            sample_rate_hz=16_000,
+            channel_count=1,
+        ),
+    )
+)
+session.send_audio_chunk(
+    VoiceInputAudioChunk(
+        stream_id="host_stream_1",
+        sequence_number=0,
+        data=b"...",
+        duration_ms=20,
+    )
+)
+session.end_audio_input(
+    VoiceInputStreamEnd(stream_id="host_stream_1", sequence_number=1)
+)
+```
+
+`framework.voice_input_streaming_adapter` is an explicit-only, provider-safe
+namespace with exactly two exports: the structural
+`VoiceInputStreamingAdapter` protocol and the offline deterministic fake.
+The default `VoiceInputSession.streaming_capability` remains fully unsupported.
+Support becomes true only after an explicit adapter whose truthful capability
+passes validation is installed.
+
+Framework, not the adapter, owns stream identity, strict next-sequence
+admission, maximum chunk bytes, cumulative duration, terminal state, and typed
+rejection. Every admitted chunk must supply positive `duration_ms`; missing or
+over-limit duration is rejected without consuming the expected sequence.
+There is no queue, silent drop, pause/resume, or retry budget in Control B.
+
+Partial observations use the already accepted canonical
+`RealtimeEventType.TRANSCRIPT_PARTIAL` plus `TranscriptEventPayload` with
+`is_final=False`. They carry the same session/turn/generation as the stream and
+are intentionally absent from the v5 mapping callback. Accepted end-of-input
+emits one `TRANSCRIPT_FINAL`, stores the correlated `last_stream_result`, and
+retires the generation. Late partial callbacks after end/abort are ignored.
+
+Abort is cooperative Framework/adapter invalidation only. It does not prove a
+provider hard cancel or that application-owned capture physically stopped.
+Closing the session aborts the private stream state and post-close chunk/end/
+abort calls return typed `session_closed` results.
+
+`RealtimeSession` and the global/session realtime capability snapshot remain
+unchanged in this control. Unified turn orchestration is not inferred from the
+standalone voice-input boundary. The Framework root remains exactly 127 names.
+
+```text
+checkpoint: FW-RT6-12a Control B
+baseline head: f07105742ea6068a6d1655d737c160a5f3487dd5
+exact Control B surface: 10 files
+VoiceInputSession streaming adoption: IMPLEMENTED / AWAITING_REVIEW
+explicit adapter namespace exports: 2 / EXACT
+default streaming support: False / TRUTHFUL
+configured fake streaming support: True / PROVIDER-FREE
+strict chunk sequence: PASS expected
+format/chunk/duration validation: PASS expected
+partial transcript canonical event: PASS expected
+partial transcript v5 mapping: NONE
+final transcript event/result: PASS expected
+input abort hard-cancel claim: False
+RealtimeSession streaming methods: False / UNCHANGED
+root-public names: 127 / UNCHANGED
+backpressure: DEFERRED_TO_FW-RT6-12b
+provider/network/audio-file/microphone/playback/real VTS execution: False
+FW-RT6-12a tasks: 0 / 7 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12a-B-VOICE-INPUT-STREAMING:END -->

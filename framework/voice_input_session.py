@@ -11,6 +11,16 @@ from __future__ import annotations
 from . import voice_input_composition as _voice_input_composition
 from .voice_input_audio import VoiceInputAudioSource
 from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceInputProviderAdapter
+from .voice_input_stream_runtime import VoiceInputStreamRuntime
+from .voice_input_streaming import (
+    VoiceInputAudioChunk,
+    VoiceInputStreamAbort,
+    VoiceInputStreamConfig,
+    VoiceInputStreamEnd,
+    VoiceInputStreamOperationResult,
+    VoiceInputStreamingCapability,
+)
+from .voice_input_streaming_adapter import VoiceInputStreamingAdapter
 
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -143,6 +153,11 @@ class VoiceInputSession:
         self._input_operation_lock = RLock()
         self._generation_gate = RealtimeGenerationGate()
         self._active_input_context: _VoiceInputTurnContext | None = None
+        self._stream_input_context: _VoiceInputTurnContext | None = None
+        self._last_stream_result: VoiceInputResult | None = None
+        self._streaming_runtime = VoiceInputStreamRuntime(
+            on_partial=self._emit_stream_partial_transcript
+        )
         self._provider = provider
         self._language = language
         self._allow_provider_execution = allow_provider_execution
@@ -222,6 +237,18 @@ class VoiceInputSession:
         """Return the latest immutable close observation."""
 
         return self._last_close_result
+
+    @property
+    def streaming_capability(self) -> VoiceInputStreamingCapability:
+        """Return the explicitly configured audio-chunk streaming capability."""
+
+        return self._streaming_runtime.capability
+
+    @property
+    def last_stream_result(self) -> VoiceInputResult | None:
+        """Return the latest final or interrupted streaming transcript result."""
+
+        return self._last_stream_result
 
     @property
     def compatibility_profile(self) -> SessionCompatibilityProfile:
@@ -361,6 +388,222 @@ class VoiceInputSession:
         self._generation_gate.advance(GenerationAdvanceReason.TURN_TERMINAL)
         self._active_input_context = None
 
+    def configure_audio_streaming(
+        self,
+        adapter: VoiceInputStreamingAdapter,
+    ) -> VoiceInputStreamingCapability:
+        """Install an explicit provider-neutral streaming adapter.
+
+        The factory signature remains unchanged.  Configuration is rejected
+        after close or while any voice-input operation owns the generation.
+        """
+
+        with self._input_operation_lock:
+            if self._closed:
+                raise RuntimeError("Voice input session is closed.")
+            if self._active_input_context is not None:
+                raise RuntimeError("Voice input operation is already active.")
+            return self._streaming_runtime.configure(adapter)
+
+    def begin_audio_stream(self, config: VoiceInputStreamConfig) -> bool:
+        """Admit one host-owned stream; return false when unavailable or busy."""
+
+        with self._input_operation_lock:
+            if self._closed or self._active_input_context is not None:
+                return False
+            if not self._streaming_runtime.begin(config):
+                return False
+            context = self._new_realtime_turn_context()
+            self._stream_input_context = context
+            self._last_stream_result = None
+            self._emit_realtime_event(
+                RealtimeEventType.LISTENING_STARTED,
+                state=RealtimeState.LISTENING,
+                context=context,
+                payload=LifecycleEventPayload(reason="audio_stream_started"),
+                public_metadata={
+                    "input_mode": "audio_stream",
+                    "stream_id": config.stream_id,
+                    "audio_encoding": config.audio_format.encoding.value,
+                    "host_audio_capture_owned": True,
+                },
+            )
+            return True
+
+    def _emit_stream_partial_transcript(
+        self,
+        stream_id: str,
+        chunk_sequence_number: int,
+        text: str,
+        confidence: float | None,
+    ) -> None:
+        with self._input_operation_lock:
+            context = self._stream_input_context
+            if (
+                context is None
+                or not self._input_context_is_current(context)
+                or self._streaming_runtime.active_stream_id != stream_id
+            ):
+                return
+            self._emit_realtime_event(
+                RealtimeEventType.TRANSCRIPT_PARTIAL,
+                state=RealtimeState.TRANSCRIBING,
+                previous_state=RealtimeState.LISTENING,
+                context=context,
+                payload=TranscriptEventPayload(
+                    text=text,
+                    is_final=False,
+                    confidence=confidence,
+                ),
+                public_metadata={
+                    "input_mode": "audio_stream",
+                    "stream_id": stream_id,
+                    "chunk_sequence_number": chunk_sequence_number,
+                    "provider_hard_cancel_claimed": False,
+                },
+            )
+
+    def _terminate_stream_failure(
+        self,
+        *,
+        stream_id: str,
+        safe_message: str,
+    ) -> None:
+        context = self._stream_input_context
+        if context is None or not self._input_context_is_current(context):
+            return
+        self._last_stream_result = VoiceInputResult.failed(
+            public_error_code=VoiceInputErrorCode.PROVIDER_ERROR,
+            safe_message=safe_message,
+            session_id=context.session_id,
+            turn_id=context.turn_id,
+            generation_id=context.generation_id,
+        )
+        self._emit_realtime_event(
+            RealtimeEventType.VOICE_INPUT_FAILED,
+            state=RealtimeState.FAILED,
+            previous_state=RealtimeState.LISTENING,
+            context=context,
+            payload=LifecycleEventPayload(reason="audio_stream_failed"),
+            public_error_code=RealtimeErrorCode.PROVIDER_ERROR,
+            safe_message=safe_message,
+            public_metadata={
+                "input_mode": "audio_stream",
+                "stream_id": stream_id,
+                "raw_exception_exposed": False,
+            },
+        )
+        self._finish_input_context(context)
+        self._stream_input_context = None
+
+    def send_audio_chunk(
+        self,
+        chunk: VoiceInputAudioChunk,
+    ) -> VoiceInputStreamOperationResult:
+        """Validate and deliver exactly the next chunk to the configured adapter."""
+
+        with self._input_operation_lock:
+            result = self._streaming_runtime.send(chunk)
+            if not result.accepted and result.terminal:
+                context = self._stream_input_context
+                if context is not None and self._input_context_is_current(context):
+                    self._terminate_stream_failure(
+                        stream_id=chunk.stream_id,
+                        safe_message=result.safe_message,
+                    )
+            return result
+
+    def end_audio_input(
+        self,
+        marker: VoiceInputStreamEnd,
+    ) -> VoiceInputStreamOperationResult:
+        """Accept the ordered end marker and emit one correlated final transcript."""
+
+        with self._input_operation_lock:
+            operation, final_result = self._streaming_runtime.end(marker)
+            context = self._stream_input_context
+            if not operation.accepted:
+                if operation.terminal and context is not None:
+                    self._terminate_stream_failure(
+                        stream_id=marker.stream_id,
+                        safe_message=operation.safe_message,
+                    )
+                return operation
+            if context is None or final_result is None:
+                raise AssertionError("accepted stream end requires a final result")
+            correlated = self._correlate_input_result(final_result, context)
+            applied: list[object] = []
+            decision = self._apply_input_completion(
+                context=context,
+                value=correlated,
+                deliver=applied.append,
+            )
+            if not decision.accepted:
+                self._emit_stale_input_completion(context=context, decision=decision)
+                self._last_stream_result = self._stale_input_result(context)
+                self._stream_input_context = None
+                return operation
+            delivered = applied[0]
+            if not isinstance(delivered, VoiceInputResult):
+                raise AssertionError("stream final delivery must retain VoiceInputResult")
+            self._last_stream_result = delivered
+            self._emit_realtime_event(
+                RealtimeEventType.TRANSCRIPT_FINAL,
+                state=RealtimeState.TRANSCRIBING,
+                context=context,
+                payload=TranscriptEventPayload(
+                    text=delivered.text,
+                    is_final=True,
+                    confidence=delivered.confidence,
+                ),
+                public_metadata={
+                    "input_mode": "audio_stream",
+                    "stream_id": marker.stream_id,
+                    "end_sequence_number": marker.sequence_number,
+                },
+            )
+            self._finish_input_context(context)
+            self._stream_input_context = None
+            return operation
+
+    def abort_audio_stream(
+        self,
+        request: VoiceInputStreamAbort,
+    ) -> VoiceInputStreamOperationResult:
+        """Cooperatively abort an active stream without hard-cancel overclaim."""
+
+        with self._input_operation_lock:
+            operation = self._streaming_runtime.abort(request)
+            if not operation.accepted:
+                return operation
+            context = self._stream_input_context
+            if context is not None and self._input_context_is_current(context):
+                self._generation_gate.advance(GenerationAdvanceReason.CANCEL)
+                self._last_stream_result = VoiceInputResult.interrupted(
+                    session_id=context.session_id,
+                    turn_id=context.turn_id,
+                    generation_id=context.generation_id,
+                )
+                self._active_input_context = None
+                self._emit_realtime_event(
+                    RealtimeEventType.VOICE_INPUT_FAILED,
+                    state=RealtimeState.INTERRUPTED,
+                    previous_state=RealtimeState.LISTENING,
+                    context=context,
+                    payload=LifecycleEventPayload(reason="audio_stream_aborted"),
+                    public_error_code=RealtimeErrorCode.INTERRUPTED,
+                    safe_message="Audio input stream was interrupted.",
+                    retryable=True,
+                    public_metadata={
+                        "input_mode": "audio_stream",
+                        "stream_id": request.stream_id,
+                        "provider_hard_cancel_claimed": False,
+                        "host_audio_capture_stopped_claimed": False,
+                    },
+                )
+            self._stream_input_context = None
+            return operation
+
     @staticmethod
     def _correlate_input_result(
         result: VoiceInputResult,
@@ -446,6 +689,14 @@ class VoiceInputSession:
         """
 
         with self._input_operation_lock:
+            stream_id = self._streaming_runtime.active_stream_id
+            if stream_id is not None:
+                return self.abort_audio_stream(
+                    VoiceInputStreamAbort(
+                        stream_id=stream_id,
+                        reason="host_requested",
+                    )
+                ).accepted
             context = self._active_input_context
             if context is None or not self._input_context_is_current(context):
                 return False
@@ -941,6 +1192,14 @@ class VoiceInputSession:
                 public_metadata={"boundary": "voice_input"},
             )
             self._closed = True
+            self._streaming_runtime.close()
+            if self._stream_input_context is not None:
+                self._last_stream_result = VoiceInputResult.closed(
+                    session_id=self._stream_input_context.session_id,
+                    turn_id=self._stream_input_context.turn_id,
+                    generation_id=self._stream_input_context.generation_id,
+                )
+            self._stream_input_context = None
             self._generation_gate.advance(GenerationAdvanceReason.SESSION_CLOSED)
             self._active_input_context = None
             callback_result = SessionCleanupResult.completed(

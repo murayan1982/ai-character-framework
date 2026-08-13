@@ -6322,3 +6322,57 @@ aggregate acceptance: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12a-A-PUBLIC-AUDIO-CHUNK:END -->
+
+
+<!-- FW-RT6-12a-B-VOICE-INPUT-STREAMING:BEGIN -->
+## FW-RT6-12a Control B — VoiceInputSession audio streaming adoption
+
+`VoiceInputSession` now accepts an explicitly configured provider-neutral
+streaming adapter. The additive public members are:
+
+```text
+streaming_capability
+last_stream_result
+configure_audio_streaming(adapter)
+begin_audio_stream(config)
+send_audio_chunk(chunk)
+end_audio_input(marker)
+abort_audio_stream(request)
+```
+
+The default remains unsupported and mock-safe. The deterministic fake adapter
+in `framework.voice_input_streaming_adapter` enables offline partial/final
+event verification without reading or decoding audio content. Ordered chunk,
+format, size, duration, end, abort, duplicate-terminal, and post-close facts
+remain typed. Partial events are canonical v6 events and are not projected into
+the v5 mapping callback.
+
+The Framework root remains 127 names and the existing voice-input factory
+signature is unchanged. `RealtimeSession` gains no streaming method and its
+capability remains false. Backpressure remains FW-RT6-12b.
+
+```text
+checkpoint: FW-RT6-12a Control B
+baseline: f07105742ea6068a6d1655d737c160a5f3487dd5
+exact change surface: 10 files
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: IMPLEMENTED / AWAITING_REVIEW
+VoiceInputSession adoption: True
+explicit adapter namespace: framework.voice_input_streaming_adapter
+adapter namespace exports: 2 / EXACT
+partial/final correlation: SAME SESSION / TURN / GENERATION
+partial legacy projection: False
+raw audio public projection/event/result: False
+provider hard-cancel claimed: False
+root-public names: 127 / UNCHANGED
+factory signatures: UNCHANGED
+RealtimeSession adoption: False / UNCHANGED
+backpressure: DEFERRED_TO_FW-RT6-12b
+provider/network/audio-file/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-12a tasks: 0 / 7 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12a-B-VOICE-INPUT-STREAMING:END -->
