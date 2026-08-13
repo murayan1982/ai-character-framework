@@ -162,10 +162,17 @@ def check_docs_and_task_boundary() -> None:
     section = tasklist.split(
         "## FW-RT6-11c — Migration guide and examples", 1
     )[1].split("## FW-RT6-12a", 1)[0]
-    _require(section.count("- [ ]") == 8, "Control B closed an aggregate task")
-    _require(section.count("- [x]") == 0, "Control B changed aggregate state")
+    _require(section.count("- [ ]") == 0, "FW-RT6-11c task remains open")
+    _require(section.count("- [x]") == 8, "Control C task count drift")
+    _require(
+        (
+            PROJECT_ROOT
+            / "scripts/check_v600_migration_examples_acceptance.py"
+        ).is_file(),
+        "Control C aggregate gate missing",
+    )
     print("[OK] migration docs and four Control B boundaries conform")
-    print("[OK] FW-RT6-11c task boundary remains 0 / 8 closed")
+    print("[OK] FW-RT6-11c task boundary is 8 / 8 acceptance-candidates")
 
 
 def check_example_sources_and_import_safety() -> None:
@@ -357,7 +364,7 @@ def main() -> None:
     check_credential_free_execution()
     check_accepted_control_a_and_root()
     print("v600_rt6_11c_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
-    print("v600_rt6_11c_control_b_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11c_control_b_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_11c_control_b_exact_surface: 9 files")
     print("v600_rt6_11c_new_control_b_examples: 4 / PROVIDER-FREE")
     print("v600_rt6_11c_all_examples: 6 / PUBLIC ROOT ONLY")
@@ -365,9 +372,11 @@ def main() -> None:
     print("v600_rt6_11c_physical_playback_stop_claimed: False")
     print("v600_rt6_11c_provider_execution: False")
     print("v600_rt6_11c_network_execution: False")
-    print("v600_rt6_11c_task_count: 0 / 8 CLOSED")
-    print("v600_rt6_11c_aggregate_acceptance: NOT_AUTHORIZED")
-    print("v600_rt6_11c_commit_push: NOT_AUTHORIZED")
+    print("v600_rt6_11c_control_c_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11c_control_c_exact_surface: 7 files")
+    print("v600_rt6_11c_task_count: 8 / 8 ACCEPTED-CANDIDATE")
+    print("v600_rt6_11c_final_acceptance_sync: NOT_AUTHORIZED")
+    print("v600_rt6_11c_control_c_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-11c Control B migration examples gate passed")
 
 

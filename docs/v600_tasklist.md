@@ -3086,14 +3086,14 @@ FAILS GATE
 
 **Tasks:**
 
-- [ ] v5 standalone sessionからv6 unified sessionへのmigrationを記載する。
-- [ ] text-only exampleを追加する。
-- [ ] host-captured audio exampleを追加する。
-- [ ] interrupt/partial completion exampleを追加する。
-- [ ] local playback boundary exampleを追加する。
-- [ ] motion extension hook exampleを追加する。
-- [ ] unavailable capability fallback exampleを追加する。
-- [ ] examplesがprovider credentialなしでimport可能であることを確認する。
+- [x] v5 standalone sessionからv6 unified sessionへのmigrationを記載する。
+- [x] text-only exampleを追加する。
+- [x] host-captured audio exampleを追加する。
+- [x] interrupt/partial completion exampleを追加する。
+- [x] local playback boundary exampleを追加する。
+- [x] motion extension hook exampleを追加する。
+- [x] unavailable capability fallback exampleを追加する。
+- [x] examplesがprovider credentialなしでimport可能であることを確認する。
 
 ---
 
@@ -9895,3 +9895,72 @@ remotely verified, only the Control C aggregate-acceptance exact contract
 review is authorized. Aggregate implementation and its commit/push remain
 separately gated.
 <!-- FW-RT6-11c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-11c Control C — migration guide and examples aggregate acceptance
+
+```text
+checkpoint: FW-RT6-11c Control C
+baseline head: 69c47486f9abda234accd6838e2c78726cb5c65f
+Control A implementation and acceptance: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+Control B implementation and acceptance: 69c47486f9abda234accd6838e2c78726cb5c65f
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+dedicated aggregate acceptance gate: scripts/check_v600_migration_examples_acceptance.py / PASS
+focused Control A+B tests: 26 / PASS
+full Framework unit suite: 675 / PASS
+migration guide: PASS
+v5 standalone sessions retained: 4 / PASS
+all migration examples: 6 / PROVIDER-FREE / PUBLIC ROOT ONLY / PASS
+text-only example: PASS
+explicit unavailable/fallback example: PASS
+host-captured audio example: PASS
+interrupt/partial completion example: PASS
+local playback boundary example: PASS
+motion extension hook example: PASS
+example imports without provider credentials: PASS
+optional provider SDK import: False / PASS
+provider/network/audio-read/microphone/playback/real VTS execution: False / PASS
+partial transcript/audio streaming claimed: False / PASS
+provider hard cancellation claimed: False / PASS
+physical playback stop claimed: False / PASS
+conversation terminal replacement or duplication by motion: False / PASS
+framework runtime source changed by Control C: False
+application-integration contract changed by Control C: False
+migration guide changed by Control C: False
+examples changed by Control C: False
+framework root-public names: 127 / UNCHANGED
+factory signatures and API/schema version labels: UNCHANGED
+FW-RT6-11c tasks: 8 / 8 ACCEPTED-CANDIDATE
+FW-RT6-11c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12a exact contract review: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted migration guide and all six provider-free
+examples. It closes only the eight FW-RT6-11c task checkboxes as
+acceptance-candidates and adds a dedicated offline aggregate gate. The four
+accepted Control A/B gate and test files receive only the reviewed Control C
+task-boundary and status synchronization.
+
+The aggregate preserves the existing application boundaries. The Framework
+does not acquire host audio capture or local playback ownership, does not
+invent partial transcript/audio streaming or provider hard cancellation, and
+does not treat playback acknowledgement as physical-stop confirmation. Motion
+mapping remains host/plugin-owned and cannot replace or duplicate the
+conversation terminal.
+
+This exact seven-file Control C changes only `docs/public_facade.md`, this
+tasklist, the new aggregate gate, and four accepted Control A/B gate/test
+files. It changes no runtime source, application-integration contract,
+migration guide, example, root export, factory signature, return/event shape,
+API/schema version, provider namespace, historical v5 gate, or README.
+
+The eight tasks are acceptance-candidates rather than final CLOSED state.
+Final completion requires a separately reviewed one-file acceptance sync,
+commit, push, and remote verification. FW-RT6-12a remains separately gated.
+<!-- FW-RT6-11c-C-AGGREGATE-ACCEPTANCE:END -->

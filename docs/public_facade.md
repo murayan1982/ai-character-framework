@@ -6216,3 +6216,64 @@ The examples add no public symbol. Existing root objects, compatibility
 profiles, typed results, canonical events, correlation ownership, and
 host/plugin boundaries remain authoritative.
 <!-- FW-RT6-11c-B-PUBLIC-EXAMPLES:END -->
+
+
+<!-- FW-RT6-11c-C-MIGRATION-ACCEPTANCE:BEGIN -->
+## FW-RT6-11c Control C — migration and examples aggregate acceptance
+
+The accepted public migration surface consists of the existing v5 standalone
+sessions, the existing root-level realtime factory and typed outcomes, one
+canonical migration guide, and six provider-free executable examples. The
+examples demonstrate application decisions without becoming Framework runtime
+or public API.
+
+```text
+checkpoint: FW-RT6-11c Control C
+baseline head: 69c47486f9abda234accd6838e2c78726cb5c65f
+exact Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+dedicated aggregate gate: PASS
+focused Control A+B tests: 26 / PASS
+all migration examples: 6 / PROVIDER-FREE / PUBLIC ROOT ONLY / PASS
+v5 standalone session support: UNCHANGED / PASS
+default realtime compatibility mode: v5_skeleton / PASS
+explicit unified request mode: v6_unified / TRUTHFUL
+production unified orchestration available: False / TRUTHFUL
+silent unified-to-mock fallback: False / PASS
+host audio capture ownership: APPLICATION / UNCHANGED
+local playback ownership: APPLICATION / UNCHANGED
+partial transcript/audio streaming claimed: False / PASS
+provider hard cancellation claimed: False / PASS
+physical playback stop confirmed by acknowledgement: False / PASS
+motion mapping ownership: APPLICATION_OR_PLUGIN / UNCHANGED
+motion side effect replaces conversation terminal: False / PASS
+framework runtime source changed by Control C: False
+application-integration contract changed by Control C: False
+migration guide or example changed by Control C: False
+framework root-public names: 127 / UNCHANGED
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+provider/network/audio-read/microphone/playback/real VTS execution: False
+FW-RT6-11c tasks: 8 / 8 ACCEPTED-CANDIDATE
+FW-RT6-11c final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12a exact contract review: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C adds no capability. It verifies that application-owned capture,
+playback, fallback, and motion choices remain explicit while Framework results
+remain typed and truthful. `partial` stays a terminal coordination aggregate;
+it is not a streaming transcript or audio contract. Host acknowledgement stays
+a receipt observation and does not certify a physical media-engine stop.
+
+This exact seven-file aggregate changes only this public contract, the tasklist
+candidate state, the new aggregate gate, and the accepted Control A/B gate/test
+task-boundary status. It changes no runtime source, application-integration
+contract, migration guide, example, root export, signature, return/event shape,
+provider namespace, README, or API/schema version.
+
+The eight task checkboxes are acceptance-candidates rather than final CLOSED
+status. Final completion requires a separately reviewed, committed, pushed,
+and remotely verified one-file final acceptance sync. FW-RT6-12a remains
+separately gated.
+<!-- FW-RT6-11c-C-MIGRATION-ACCEPTANCE:END -->

@@ -69,15 +69,22 @@ class MigrationExamplesControlBTests(unittest.TestCase):
             self.assertEqual(text.count(marker), 1)
             self.assertIn("9 files", text)
 
-    def test_control_b_does_not_close_aggregate_tasks(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(
             encoding="utf-8"
         )
         section = tasklist.split(
             "## FW-RT6-11c — Migration guide and examples", 1
         )[1].split("## FW-RT6-12a", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 8)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 8)
+        self.assertTrue(
+            (
+                PROJECT_ROOT
+                / "scripts"
+                / "check_v600_migration_examples_acceptance.py"
+            ).is_file()
+        )
 
     def test_examples_import_only_framework_root(self) -> None:
         for path in EXAMPLES:
