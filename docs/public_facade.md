@@ -6277,3 +6277,48 @@ status. Final completion requires a separately reviewed, committed, pushed,
 and remotely verified one-file final acceptance sync. FW-RT6-12a remains
 separately gated.
 <!-- FW-RT6-11c-C-MIGRATION-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12a-A-PUBLIC-AUDIO-CHUNK:BEGIN -->
+## FW-RT6-12a Control A — public audio chunk vocabulary
+
+The provider-neutral public audio-chunk contract is available from the stable
+explicit namespace `framework.voice_input_streaming`. The frozen Framework
+root remains exactly 127 names; applications opt into the new P1 vocabulary
+with an explicit module import.
+
+The contract defines stream configuration, ordered non-empty chunks,
+end-of-input, out-of-band abort, truthful format/size/duration capability, and
+typed operation acknowledgement/rejection data. Sequence numbers start at zero
+and end-of-input consumes the next expected sequence. Abort does not consume a
+sequence and never claims provider hard cancellation.
+
+Control A adds no `VoiceInputSession` or `RealtimeSession` streaming method.
+The current runtime continues to report `audio_chunk_input_supported=False`.
+Partial transcript delivery, live stream ownership, typed runtime rejection,
+and backpressure remain later controls.
+
+See `docs/v600_public_audio_chunk_streaming.md`.
+
+```text
+checkpoint: FW-RT6-12a Control A
+baseline head: d5e707fa4bca34322b9a2319696273b129b6f395
+exact implementation surface: 6 files
+explicit public namespace: framework.voice_input_streaming
+namespace exports: 9 / EXACT
+stream sequence: ZERO_BASED / STRICT_NEXT_EXPECTED
+end-of-input sequence: NEXT_EXPECTED
+abort sequence consumption: NONE
+raw audio in repr or public projection: False
+root-public names: 127 / UNCHANGED
+runtime/session adoption: DEFERRED
+partial transcript event delivery: DEFERRED
+backpressure: DEFERRED_TO_FW-RT6-12b
+provider/network/audio-read/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-12a tasks: 0 / 7 CLOSED
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12a-A-PUBLIC-AUDIO-CHUNK:END -->

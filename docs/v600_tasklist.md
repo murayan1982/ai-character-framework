@@ -10053,3 +10053,92 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-12a exact contract review is authorized. This sync does not authorize
 FW-RT6-12a implementation.
 <!-- FW-RT6-11c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12a-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12a Control A — public audio-chunk contract acceptance sync
+
+```text
+checkpoint: FW-RT6-12a Control A
+baseline head: d5e707fa4bca34322b9a2319696273b129b6f395
+FW-RT6-11c final acceptance: d5e707fa4bca34322b9a2319696273b129b6f395
+Control A implementation baseline: d5e707fa4bca34322b9a2319696273b129b6f395
+Control A implementation candidate: WORKTREE / VERIFIED
+Control A: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control A implementation surface: 6 files
+acceptance-sync exact surface: 1 file
+combined worktree surface: 7 files
+dedicated Control A audio-chunk contract gate: PASS
+focused Control A audio-chunk tests: 15 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+full Framework unit suite: 690 / PASS
+stable explicit namespace: framework.voice_input_streaming / PASS
+namespace exports: 9 / EXACT / EXPLICIT_ONLY / PASS
+streaming API version: 6.0 / PASS
+audio chunk type: VoiceInputAudioChunk / DATA_ONLY / PASS
+chunk sequence: ZERO_BASED / STRICTLY_ORDERED CONTRACT / PASS
+end-of-input marker: VoiceInputStreamEnd / NEXT_EXPECTED_SEQUENCE / PASS
+input-abort marker: VoiceInputStreamAbort / OUT_OF_BAND / PASS
+typed operation result: VoiceInputStreamOperationResult / PASS
+typed result codes: 11 / INCLUDING_NONE / PASS
+accepted audio format capability: PASS
+maximum chunk-size capability: PASS
+maximum duration capability: PASS
+raw audio present in repr/public projection: False / PASS
+private path or URL accepted as stream ID: False / PASS
+default chunk-input support: False / TRUTHFUL / PASS
+current runtime chunk-input support: False / UNCHANGED / PASS
+session streaming methods added by Control A: False / PASS
+partial transcript event delivery: False / DEFERRED_TO_CONTROL_B
+provider hard-cancel proof from input abort: False / PASS
+backpressure implementation: False / DEFERRED_TO_FW-RT6-12b
+framework root-public names: 127 / UNCHANGED
+factory signatures and API/schema version labels: UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-read/microphone/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+streaming contract module or guide changed by acceptance sync: False
+dedicated gate or existing test changed by acceptance sync: False
+FW-RT6-12a aggregate: NOT_COMPLETED
+FW-RT6-12a tasklist: 0 / 7 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the provider-neutral, immutable data vocabulary for future
+public audio-chunk input. The stable explicit namespace
+`framework.voice_input_streaming` contains the exact nine reviewed exports and
+does not enlarge the frozen 127-name Framework root-public inventory.
+
+`VoiceInputAudioChunk` carries non-empty raw bytes only as explicit input. Its
+representation and public projection expose the byte count but never the raw
+payload. Zero-based sequence numbers, the next-sequence end marker, the
+out-of-band abort marker, truthful format and size/duration capability limits,
+and typed rejection results form the accepted Control A contract.
+
+Control A remains data-only. It adds no streaming method to
+`VoiceInputSession` or `RealtimeSession`, and the current runtime continues to
+report `audio_chunk_input_supported=False`. Partial-transcript event delivery
+and session/runtime adoption remain deferred to Control B. Input abort is not
+evidence of provider hard cancellation, and queue backpressure remains a
+separate FW-RT6-12b boundary.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes none
+of the six accepted Control A implementation files, any runtime source,
+root-public inventory, factory signature, API/schema version, public-facade or
+application-integration contract, streaming guide, dedicated gate, or existing
+test. None of the seven FW-RT6-12a aggregate task checkboxes close here.
+
+After the combined seven-file worktree is reviewed, committed, pushed, and
+remotely verified, only Control B exact contract review is authorized. Control
+B implementation, aggregate acceptance, and their commit/push remain
+separately gated.
+<!-- FW-RT6-12a-A-ACCEPTANCE-SYNC:END -->

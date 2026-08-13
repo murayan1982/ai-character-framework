@@ -4754,3 +4754,46 @@ commit / push: NOT_AUTHORIZED
 Control B is documentation, executable-example, and verification work only.
 It adds no Framework runtime behavior or application-specific provider mapping.
 <!-- FW-RT6-11c-B-APP-EXAMPLES:END -->
+
+
+<!-- FW-RT6-12a-A-HOST-AUDIO-CHUNK:BEGIN -->
+## FW-RT6-12a Control A — host audio chunk contract
+
+Applications retain microphone and capture ownership. Control A provides
+immutable public data types under `framework.voice_input_streaming` so a host
+can describe an explicit format, assign one opaque stream ID, number chunks
+from zero, mark ordered end-of-input, or request an out-of-band abort.
+
+The host must not infer support from importability. It must consult a truthful
+`VoiceInputStreamingCapability`; the default is unsupported, and the current
+Framework runtime remains unsupported. A supported capability declares exact
+accepted encodings plus maximum chunk bytes and maximum stream duration.
+
+Raw bytes are deliberately absent from chunk `repr` and `as_dict()` output.
+The host still owns the original bytes and cleanup. Abort means only a host
+request at this contract layer; it does not prove provider cancellation or
+audio disposal. End-of-input is ordered and uses the next expected sequence.
+
+```text
+stable namespace: framework.voice_input_streaming
+audio capture owner: APPLICATION
+audio bytes owner: APPLICATION
+Framework microphone access: False
+sequence start: 0
+silent reorder/drop: FORBIDDEN
+end-of-input: IN_BAND / NEXT_EXPECTED_SEQUENCE
+abort: OUT_OF_BAND / NO_PROVIDER_HARD_CANCEL_CLAIM
+typed rejection vocabulary: DEFINED / NOT_RUNTIME_ADOPTED
+partial transcript delivery: NOT_IMPLEMENTED_BY_CONTROL_A
+session method: NOT_IMPLEMENTED_BY_CONTROL_A
+root-public names: 127 / UNCHANGED
+provider/network/audio-read/microphone/playback/real VTS execution: False
+FW-RT6-12a tasks: 0 / 7 CLOSED
+Control B: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A is a public contract foundation only. Applications must continue to
+use the accepted non-streaming `VoiceInputAudioSource` handoff until a later
+control explicitly adopts streaming operations into a session.
+<!-- FW-RT6-12a-A-HOST-AUDIO-CHUNK:END -->
