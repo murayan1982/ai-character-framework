@@ -9630,3 +9630,100 @@ Final completion requires a separately reviewed, committed, pushed, and
 remotely verified one-file final acceptance sync. FW-RT6-11c remains outside
 this authorization.
 <!-- FW-RT6-11b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-11b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11b — root-public API cleanup final acceptance sync
+
+```text
+checkpoint: FW-RT6-11b final acceptance sync
+baseline head: 9a16cc8ed92305bdeabf53c67c1db0f49bc28725
+FW-RT6-11a final acceptance: 06e98b0024c2bafc1581d5e3349eae01c1929a8f
+Control A implementation: ffaaa167aae595d315995ce307f44b24ac1ef37c
+Control A acceptance sync: 644350479aa3dde264627978d555ef47a432cd3f
+Control B implementation: 6cdb08ac35f2c7f4baa0b8b2a61d8e78a33b0c02
+Control B acceptance sync: 727d999fd012731088fd3261c6e5b0e4bb161e94
+Control C aggregate acceptance: 9a16cc8ed92305bdeabf53c67c1db0f49bc28725
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation surface: 6 files
+exact Control B implementation surface: 11 files
+exact corrective Control C aggregate surface: 7 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A root-public tests: 12 / PASS
+focused Control B namespace tests: 12 / PASS
+focused Control A+B root-public tests: 24 / PASS
+canonical root-public manifest gate: PASS
+focused FW-RT6-11a compatibility tests: 30 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+v5.3 lazy provider adapter gate: PASS
+v5.4 client-injection / fake / real-runtime gates: PASS
+full Framework unit suite: 649 / PASS
+canonical runtime source: framework.public_api.PUBLIC_API_NAMES / REUSED / PASS
+machine-readable projection: docs/v600_root_public_api_manifest.json / REUSED / PASS
+manifest schema: v6.root_public_api_manifest / PASS
+framework root-public names: 127 / UNCHANGED / PASS
+provider-neutral root exports: 112 / UNCHANGED / PASS
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY / SILENT / PASS
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+provider-neutral SHA-256: c75717d89860716610c539d0ba6411259b3b9dd77349fd7b8c17bcdf2bdb2c3e
+provider-compatibility SHA-256: 4f8dd7bc622270fd5f4cbdae80d656cf21c6aed2604b5e73f465f51e457fa996
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL / PASS
+stable optional provider namespace: framework.providers.openai.voice_input / PASS
+namespace exact exports: 15 / PASS
+namespace container exports: 0 / EXPLICIT MODULE ONLY / PASS
+root and namespace object identity: SAME / PASS
+new provider-specific root exports: 0 / PASS
+provider compatibility deprecations: 0 / PASS
+docs/example/export drift: PASS
+offline wheel provider-namespace membership: PASS
+namespace import loads OpenAI SDK: False / PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+runtime source changed by Control C/final sync: False
+public-facade contract changed by final sync: False
+application-integration contract changed by final sync: False
+machine-readable manifest changed by final sync: False
+provider namespace source changed by final sync: False
+aggregate gate changed by final sync: False
+existing tests changed by final sync: False
+README or example changed by final sync: False
+FW-RT6-11b tasks: 6 / 6 ACCEPTED
+FW-RT6-11b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-11c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-11c implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-11b closes the v6 root-public API cleanup boundary.
+`framework.public_api.PUBLIC_API_NAMES` remains the single runtime source,
+and `docs/v600_root_public_api_manifest.json` remains its deterministic
+machine-readable projection. The Framework root remains an unordered
+127-name contract containing 112 preferred provider-neutral exports and 15
+lazy, silent v5 OpenAI voice-input compatibility exports.
+
+`framework.providers.openai.voice_input` remains the sole stable explicit
+optional-provider namespace and exposes the same exact 15 objects as the
+retained root compatibility surface. The intermediate
+`framework.providers` and `framework.providers.openai` containers remain
+empty. Root and namespace imports remain free of provider SDK, client,
+credential, network, audio, microphone, playback, and real VTube Studio work.
+
+Wildcard runtime order remains observable only for compatibility and is not
+part of the v6 contract. No root export, compatibility guarantee, factory
+signature, return or event shape, API version, provider execution boundary,
+or application-integration contract changes in this final sync.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade or application-integration contract, machine-readable
+manifest, provider namespace source, aggregate gate, existing test, historical
+v5 gate, README, or example. It formally completes, verifies, accepts, commits,
+pushes, and closes all three controls and all six FW-RT6-11b aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-11c exact contract review is authorized. This sync does not authorize
+FW-RT6-11c implementation.
+<!-- FW-RT6-11b-FINAL-ACCEPTANCE-SYNC:END -->
