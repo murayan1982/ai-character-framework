@@ -10322,3 +10322,95 @@ The seven tasks are acceptance-candidates rather than final CLOSED state.
 Final completion requires a separately reviewed one-file acceptance sync,
 commit, push, and remote verification. FW-RT6-12b remains separately gated.
 <!-- FW-RT6-12a-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12a — public audio-chunk streaming final acceptance sync
+
+```text
+checkpoint: FW-RT6-12a final acceptance sync
+baseline head: 164da2bff3b8b3329a0063d049031960d4d9bdae
+FW-RT6-11c final acceptance: d5e707fa4bca34322b9a2319696273b129b6f395
+Control A implementation and acceptance: f07105742ea6068a6d1655d737c160a5f3487dd5
+Control B implementation and acceptance: 1b829c092ddb4651c3d5cdea687bbffa645ee6c5
+Control C aggregate acceptance: 164da2bff3b8b3329a0063d049031960d4d9bdae
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation and acceptance surface: 7 files
+exact Control B implementation and acceptance surface: 11 files
+exact Control C aggregate surface: 7 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+focused Control A tests: 15 / PASS
+focused Control B tests: 21 / PASS
+focused Control A+B tests: 36 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+full Framework unit suite: 711 / PASS
+stable contract namespace: framework.voice_input_streaming / 9 EXACT / ACCEPTED
+stable adapter namespace: framework.voice_input_streaming_adapter / 2 EXACT / ACCEPTED
+adapter namespace root exports: 0 / EXPLICIT_ONLY / PASS
+session runtime adoption: VoiceInputSession / ACCEPTED
+RealtimeSession streaming adoption: False / UNCHANGED / PASS
+framework root-public names: 127 / UNCHANGED
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+default VoiceInputSession chunk-input support: False / TRUTHFUL / PASS
+explicit deterministic fake capability: True / PASS
+audio chunk type: VoiceInputAudioChunk / ACCEPTED
+chunk sequence: ZERO_BASED / STRICT_NEXT_EXPECTED / ACCEPTED
+format/chunk-size/duration capability: ACCEPTED
+end-of-input: ORDERED_NEXT_SEQUENCE / ACCEPTED
+input abort: COOPERATIVE / ACCEPTED
+partial transcript event: CANONICAL_V6 / CORRELATED / ACCEPTED
+malformed/out-of-order chunk: TYPED_REJECTION / ACCEPTED
+legacy mapping callback expansion: False / PASS
+provider hard-cancel claimed: False / PASS
+host capture physical-stop claimed: False / PASS
+raw audio present in repr/event/result/public projection: False / PASS
+backpressure queue implementation: False / DEFERRED_TO_FW-RT6-12b
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-file/microphone/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+public-facade contract changed by final sync: False
+application-integration contract changed by final sync: False
+streaming guide changed by final sync: False
+root API manifest changed by final sync: False
+aggregate gate changed by final sync: False
+existing gate/test changed by final sync: False
+example changed by final sync: False
+README changed by final sync: False
+FW-RT6-12a tasks: 7 / 7 ACCEPTED
+FW-RT6-12a aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-12b exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-12b implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-12a closes the provider-neutral public audio-chunk streaming boundary.
+The accepted contract keeps both streaming namespaces explicit-only, preserves
+the frozen 127-name Framework root, and adopts streaming only through an
+explicitly configured `VoiceInputSession` adapter. Default capability remains
+truthfully unsupported and `RealtimeSession` remains unchanged.
+
+Ordered audio chunks, typed retry/rejection, ordered end-of-input, cooperative
+abort, and correlated canonical partial/final transcript events are accepted.
+Raw audio remains absent from representations, events, results, and public
+projections. Neither provider hard cancellation nor physical termination of
+application-owned capture is claimed. Backpressure and queue policy remain a
+separate FW-RT6-12b boundary.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade or application-integration contract, streaming guide,
+root API manifest, aggregate gate, existing gate/test, provider namespace,
+factory signature, return/event shape, API/schema version, example, historical
+v5 gate, or README. It formally completes, verifies, accepts, commits, pushes,
+and closes all three controls and all seven FW-RT6-12a aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-12b exact contract review is authorized. This sync does not authorize
+FW-RT6-12b implementation.
+<!-- FW-RT6-12a-FINAL-ACCEPTANCE-SYNC:END -->
