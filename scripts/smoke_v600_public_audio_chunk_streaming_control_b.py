@@ -278,8 +278,12 @@ def check_docs_tasks_and_regressions() -> None:
     section = tasklist.split(
         "## FW-RT6-12a — P1 public audio chunk streaming", 1
     )[1].split("## FW-RT6-12b", 1)[0]
-    _require(section.count("- [ ]") == 7, "Control B closed an aggregate task")
-    _require(section.count("- [x]") == 0, "Control B changed aggregate state")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 7, "Control C task count drift")
+    _require(
+        (PROJECT_ROOT / "scripts/check_v600_public_audio_chunk_streaming_acceptance.py").is_file(),
+        "Control C aggregate gate missing",
+    )
     for command in (
         [sys.executable, "scripts/smoke_v600_public_audio_chunk_streaming_control_a.py", "--source-only"],
         [sys.executable, "scripts/check_v600_migration_examples_acceptance.py", "--source-only"],
@@ -287,7 +291,7 @@ def check_docs_tasks_and_regressions() -> None:
         [sys.executable, "scripts/check_v600_session_compatibility_acceptance.py", "--source-only"],
     ):
         _run(command)
-    print("[OK] Control B docs, 0/7 task boundary, and accepted Control A/11a/11b/11c gates conform")
+    print("[OK] Control B docs, 7/7 candidate boundary, and accepted Control A/11a/11b/11c gates conform")
 
 
 def main() -> None:
@@ -299,18 +303,19 @@ def main() -> None:
     check_namespace_import_and_public_boundaries()
     check_stream_runtime_and_canonical_events()
     check_docs_tasks_and_regressions()
-    print("v600_rt6_12a_control_b_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12a_control_b_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_12a_control_b_exact_surface: 10 files")
     print("v600_rt6_12a_runtime_adoption: VoiceInputSession / EXPLICIT_ADAPTER_ONLY")
     print("v600_rt6_12a_adapter_namespace_exports: 2 / EXACT / EXPLICIT_ONLY")
     print("v600_rt6_12a_partial_transcript: CANONICAL_V6 / CORRELATED")
     print("v600_rt6_12a_backpressure_queue: False / FW-RT6-12b")
     print("v600_rt6_12a_root_public_names: 127 / UNCHANGED")
-    print("v600_rt6_12a_task_count: 0 / 7 CLOSED")
+    print("v600_rt6_12a_task_count: 7 / 7 ACCEPTED-CANDIDATE")
     print("v600_rt6_12a_provider_execution: False")
     print("v600_rt6_12a_network_execution: False")
-    print("v600_rt6_12a_control_b_acceptance_sync: NOT_AUTHORIZED")
-    print("v600_rt6_12a_control_c_aggregate: NOT_AUTHORIZED")
+    print("v600_rt6_12a_control_b_acceptance_sync: 1b829c092ddb4651c3d5cdea687bbffa645ee6c5 / CLOSED")
+    print("v600_rt6_12a_control_c_aggregate: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12a_final_acceptance_sync: NOT_AUTHORIZED")
     print("v600_rt6_12a_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12a Control B public audio-chunk streaming gate passed")
 

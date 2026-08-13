@@ -6376,3 +6376,71 @@ aggregate acceptance: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12a-B-VOICE-INPUT-STREAMING:END -->
+
+
+<!-- FW-RT6-12a-C-AUDIO-STREAMING-ACCEPTANCE:BEGIN -->
+## FW-RT6-12a Control C — aggregate audio-chunk acceptance
+
+The accepted v6 audio-chunk boundary has two explicit namespaces:
+
+- `framework.voice_input_streaming` contains the exact nine immutable
+  operation, capability, chunk, end, abort, and result contracts;
+- `framework.voice_input_streaming_adapter` contains the exact two explicit
+  adapter contracts used for provider-neutral integration and offline tests.
+
+Neither namespace adds a Framework-root export. The root remains the frozen
+127-name application inventory. The existing voice-input factory signature is
+unchanged, `RealtimeSession` gains no audio-streaming member, and a default
+`VoiceInputSession` reports streaming as unsupported.
+
+An application that explicitly configures a supported adapter may begin one
+stream, send non-empty zero-based chunks in exact order, observe typed retry or
+terminal rejection, send the ordered next-sequence end marker, or request a
+cooperative abort. Framework enforces the advertised encoding, per-chunk byte
+limit, cumulative duration, stream identity, and sequence.
+
+Partial and final transcripts use the existing canonical v6 event vocabulary.
+Every event from one stream carries the same Framework-owned session, turn,
+and generation identity and a strictly increasing event sequence. Streaming
+transcripts do not expand the retained v5 mapping callbacks. The final typed
+result is available from `VoiceInputSession.last_stream_result`.
+
+Raw chunk bytes remain application-owned and are absent from representations,
+public projections, events, and results. Abort does not prove provider hard
+cancellation or physical termination of application-owned capture. Queue and
+backpressure behavior are not part of FW-RT6-12a and remain FW-RT6-12b work.
+
+```text
+checkpoint: FW-RT6-12a Control C
+baseline head: 1b829c092ddb4651c3d5cdea687bbffa645ee6c5
+exact aggregate surface: 7 files
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+dedicated aggregate gate: check_v600_public_audio_chunk_streaming_acceptance.py
+focused tests: 36 / PASS
+full unit suite: 711 / PASS
+contract namespace exports: 9 / EXACT / EXPLICIT_ONLY
+adapter namespace exports: 2 / EXACT / EXPLICIT_ONLY
+VoiceInputSession adoption: True / EXPLICIT_ADAPTER_ONLY
+RealtimeSession adoption: False / UNCHANGED
+default audio chunk support: False / TRUTHFUL
+canonical partial/final correlation: PASS
+legacy mapping callback expansion: False
+provider hard-cancel claimed: False
+host capture physical-stop claimed: False
+raw audio public exposure: False
+root-public names: 127 / UNCHANGED
+factory signatures: UNCHANGED
+backpressure: DEFERRED_TO_FW-RT6-12b
+provider/network/audio-file/microphone/playback/real VTS execution: False
+FW-RT6-12a tasks: 7 / 7 ACCEPTED-CANDIDATE
+final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12b: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C adds aggregate documentation and verification only. It changes no
+runtime source, provider implementation, application-integration contract,
+streaming guide, root manifest, factory, version label, example, or README.
+<!-- FW-RT6-12a-C-AUDIO-STREAMING-ACCEPTANCE:END -->

@@ -3103,13 +3103,13 @@ FAILS GATE
 
 **Tasks:**
 
-- [ ] audio chunk typeを定義する。
-- [ ] chunk sequenceを定義する。
-- [ ] accepted format/max chunk/max durationをcapability化する。
-- [ ] end-of-inputを定義する。
-- [ ] input abortを定義する。
-- [ ] partial transcript eventを実装する。
-- [ ] malformed/out-of-order chunkをtyped rejectする。
+- [x] audio chunk typeを定義する。
+- [x] chunk sequenceを定義する。
+- [x] accepted format/max chunk/max durationをcapability化する。
+- [x] end-of-inputを定義する。
+- [x] input abortを定義する。
+- [x] partial transcript eventを実装する。
+- [x] malformed/out-of-order chunkをtyped rejectする。
 
 ---
 
@@ -10239,3 +10239,86 @@ remotely verified, only the Control C aggregate-acceptance exact contract
 review is authorized. Control C implementation and its commit/push remain
 separately gated.
 <!-- FW-RT6-12a-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12a-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-12a Control C — public audio-chunk streaming aggregate acceptance
+
+```text
+checkpoint: FW-RT6-12a Control C
+baseline head: 1b829c092ddb4651c3d5cdea687bbffa645ee6c5
+Control A implementation and acceptance: f07105742ea6068a6d1655d737c160a5f3487dd5
+Control B implementation and acceptance: 1b829c092ddb4651c3d5cdea687bbffa645ee6c5
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+dedicated aggregate acceptance gate: scripts/check_v600_public_audio_chunk_streaming_acceptance.py / PASS
+focused Control A tests: 15 / PASS
+focused Control B tests: 21 / PASS
+focused Control A+B tests: 36 / PASS
+full Framework unit suite: 711 / PASS
+stable contract namespace: framework.voice_input_streaming / 9 EXACT / PASS
+stable adapter namespace: framework.voice_input_streaming_adapter / 2 EXACT / PASS
+adapter namespace root exports: 0 / EXPLICIT_ONLY / PASS
+session runtime adoption: VoiceInputSession / PASS
+RealtimeSession streaming adoption: False / UNCHANGED / PASS
+factory signature changed by Control C: False / PASS
+framework root-public names: 127 / UNCHANGED
+default VoiceInputSession chunk-input support: False / TRUTHFUL / PASS
+explicit deterministic fake capability: True / PASS
+audio chunk type: VoiceInputAudioChunk / ACCEPTED
+chunk sequence: ZERO_BASED / STRICT_NEXT_EXPECTED / ACCEPTED
+format/chunk-size/duration capability: ACCEPTED
+end-of-input: ORDERED_NEXT_SEQUENCE / ACCEPTED
+input abort: COOPERATIVE / ACCEPTED
+partial transcript event: CANONICAL_V6 / CORRELATED / ACCEPTED
+malformed/out-of-order chunk: TYPED_REJECTION / ACCEPTED
+legacy mapping callback expansion: False / PASS
+provider hard-cancel claimed: False / PASS
+host capture physical-stop claimed: False / PASS
+raw audio present in repr/event/result/public projection: False / PASS
+backpressure queue implementation: False / DEFERRED_TO_FW-RT6-12b
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-file/microphone/playback/real VTS execution: False / PASS
+framework runtime source changed by Control C: False
+application-integration contract changed by Control C: False
+streaming guide changed by Control C: False
+root API manifest changed by Control C: False
+FW-RT6-12a tasks: 7 / 7 ACCEPTED-CANDIDATE
+FW-RT6-12a final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12b exact contract review: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted provider-neutral audio-chunk vocabulary and
+the explicit `VoiceInputSession` runtime adoption. It closes only the seven
+FW-RT6-12a task checkboxes as acceptance-candidates and adds a dedicated
+offline aggregate gate. The four accepted Control A/B gate and test files
+receive only the reviewed Control C task-boundary and status synchronization.
+
+The aggregate preserves the frozen application boundaries. Streaming remains
+default-off and requires an explicit adapter. `RealtimeSession`, the 127-name
+Framework root, factory signatures, and API/schema version labels stay
+unchanged. Partial and final text remain canonical v6 events correlated to one
+Framework-owned session, turn, generation, and event sequence; the retained v5
+mapping callbacks are not expanded.
+
+Abort remains cooperative and does not prove provider hard cancellation or
+physical termination of application-owned capture. Raw audio remains absent
+from public projections, results, events, and representations. Backpressure
+and queue policy remain FW-RT6-12b work. The aggregate performs no provider,
+network, audio-file, microphone, playback, or real VTS execution.
+
+This exact seven-file Control C changes only `docs/public_facade.md`, this
+tasklist, the new aggregate gate, and four accepted Control A/B gate/test
+files. It changes no Framework runtime source, application-integration
+contract, streaming guide, root API manifest, factory signature, public return
+or event shape, provider namespace, example, README, or historical v5 gate.
+
+The seven tasks are acceptance-candidates rather than final CLOSED state.
+Final completion requires a separately reviewed one-file acceptance sync,
+commit, push, and remote verification. FW-RT6-12b remains separately gated.
+<!-- FW-RT6-12a-C-AGGREGATE-ACCEPTANCE:END -->

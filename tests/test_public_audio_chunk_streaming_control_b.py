@@ -380,7 +380,7 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
             )
             self.assertEqual(session.last_stream_result.text, "done")
 
-    def test_docs_and_tasklist_record_control_b_without_closing_tasks(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         docs = {
             name: (PROJECT_ROOT / "docs" / name).read_text(encoding="utf-8")
             for name in (
@@ -399,8 +399,11 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
         section = tasklist.split(
             "## FW-RT6-12a — P1 public audio chunk streaming", 1
         )[1].split("## FW-RT6-12b", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 7)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 7)
+        self.assertTrue(
+            (PROJECT_ROOT / "scripts/check_v600_public_audio_chunk_streaming_acceptance.py").is_file()
+        )
 
 
 if __name__ == "__main__":

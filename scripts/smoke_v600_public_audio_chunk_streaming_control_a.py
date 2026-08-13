@@ -253,9 +253,13 @@ def check_root_runtime_and_task_boundaries() -> None:
     section = tasklist.split(
         "## FW-RT6-12a — P1 public audio chunk streaming", 1
     )[1].split("## FW-RT6-12b", 1)[0]
-    _require(section.count("- [ ]") == 7, "Control A closed an aggregate task")
-    _require(section.count("- [x]") == 0, "Control A changed aggregate state")
-    print("[OK] root 127, explicit VoiceInputSession adoption, default-off capability, and 0/7 boundary conform")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 7, "Control C task count drift")
+    _require(
+        (PROJECT_ROOT / "scripts/check_v600_public_audio_chunk_streaming_acceptance.py").is_file(),
+        "Control C aggregate gate missing",
+    )
+    print("[OK] root 127, explicit VoiceInputSession adoption, default-off capability, and 7/7 candidate boundary conform")
 
 
 def check_docs_and_accepted_regressions() -> None:
@@ -329,8 +333,10 @@ def main() -> None:
     print("v600_rt6_12a_partial_transcript_delivery: True / EXPLICIT_ADAPTER_ONLY")
     print("v600_rt6_12a_provider_execution: False")
     print("v600_rt6_12a_network_execution: False")
-    print("v600_rt6_12a_task_count: 0 / 7 CLOSED")
-    print("v600_rt6_12a_control_b: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12a_task_count: 7 / 7 ACCEPTED-CANDIDATE")
+    print("v600_rt6_12a_control_b: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
+    print("v600_rt6_12a_control_c: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12a_final_acceptance_sync: NOT_AUTHORIZED")
     print("v600_rt6_12a_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12a Control A public audio-chunk contract gate passed")
 
