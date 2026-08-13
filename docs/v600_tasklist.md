@@ -9811,3 +9811,87 @@ remotely verified, only Control B exact contract review is authorized. Control
 B implementation, aggregate acceptance, and their commit/push remain
 separately gated.
 <!-- FW-RT6-11c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11c Control B — provider-free migration examples acceptance sync
+
+```text
+checkpoint: FW-RT6-11c Control B
+baseline head: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+Control A implementation and acceptance sync: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B implementation baseline: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+Control B implementation candidate: WORKTREE / VERIFIED
+Control B: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control B implementation surface: 9 files
+acceptance-sync exact surface: 1 file
+combined worktree surface: 10 files
+dedicated Control B migration/example gate: PASS
+focused Control B migration/example tests: 14 / PASS
+dedicated Control A migration/example source gate: PASS
+focused Control A migration/example tests: 12 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+full Framework unit suite: 675 / PASS
+new Control B examples: 4 / PROVIDER-FREE / PASS
+all migration examples: 6 / FRAMEWORK_ROOT_ONLY / PASS
+host-captured audio handoff: OPAQUE_ID / FAKE_ADAPTER / PASS
+host microphone or audio-file read: False / PASS
+partial transcript/audio streaming claimed: False / PASS
+interrupt aggregate status: partial / TERMINAL / PASS
+interrupt hard cancellation claimed: False / PASS
+local playback ownership: HOST / PASS
+playback acknowledgement confirms physical stop: False / PASS
+motion lifecycle mapping: listening / thinking / speaking / completed / PASS
+missing motion stage: not_configured / TYPED / PASS
+conversation terminal completion count: 1 / PASS
+provider credentials required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+framework runtime source changed by Control B: False
+framework root-public names: 127 / UNCHANGED
+factory signatures and API/schema version labels: UNCHANGED
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+migration guide or example changed by acceptance sync: False
+dedicated gate or existing test changed by acceptance sync: False
+FW-RT6-11c aggregate: NOT_COMPLETED
+FW-RT6-11c tasklist: 0 / 8 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate acceptance exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control C aggregate implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts four provider-free executable examples that complete the
+reviewed host-integration boundary without adding runtime source or root-public
+API. Every example imports only the public `framework` root, runs without
+provider credentials or optional provider SDKs, and performs no provider,
+network, microphone, playback, audio-file, or real VTube Studio work.
+
+The host-captured-audio example retains a `VoiceInputSession` and hands an
+opaque host input identifier to `FakeVoiceInputProviderAdapter`; it does not
+claim unified streaming input. The interrupt example keeps
+`coordination_result.partial` as heterogeneous terminal subsystem observations,
+not partial transcript or audio streaming, and does not claim hard provider
+cancellation.
+
+The local-playback example leaves playback ownership with the host. A flush
+request and acknowledgement remain protocol observations and never confirm a
+physical stop. The motion-extension example maps lifecycle observations into
+typed motion requests; an absent motion stage returns `not_configured` while
+the conversation reaches its terminal completion exactly once.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes none
+of the nine accepted Control B implementation files, any runtime source,
+root-public inventory, factory signature, API/schema version, dedicated gate,
+existing test, migration guide, or example. None of the eight FW-RT6-11c
+aggregate task checkboxes close here.
+
+After the combined ten-file worktree is reviewed, committed, pushed, and
+remotely verified, only the Control C aggregate-acceptance exact contract
+review is authorized. Aggregate implementation and its commit/push remain
+separately gated.
+<!-- FW-RT6-11c-B-ACCEPTANCE-SYNC:END -->

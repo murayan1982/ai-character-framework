@@ -4696,3 +4696,61 @@ Control A changes no runtime or provider boundary. It does not claim real
 unified orchestration, provider execution, microphone ownership, physical
 playback stop, provider hard cancellation, partial streaming, or real motion.
 <!-- FW-RT6-11c-A-MIGRATION-FOUNDATION:END -->
+
+
+<!-- FW-RT6-11c-B-APP-EXAMPLES:BEGIN -->
+## FW-RT6-11c Control B — application boundary examples
+
+Applications can use the four Control B examples as migration templates while
+retaining explicit ownership:
+
+| Example | Application responsibility | Framework observation |
+| --- | --- | --- |
+| host-captured audio | capture, retain, and clean up private audio | opaque source ID and provider-neutral final result |
+| interrupt/partial | decide when to interrupt and interpret subsystem facts | typed outer result plus terminal aggregate projection |
+| local playback | own the player and any physical-stop result | host stop request and optional receipt acknowledgement |
+| motion hook | own character/product lifecycle mapping | provider-neutral request and typed motion side effect |
+
+The host-audio example uses the retained standalone `VoiceInputSession` because
+the current unified runtime does not accept streaming audio chunks. The example
+hands over no raw bytes or private path and uses only the deterministic fake
+adapter.
+
+For interrupt handling, `coordination_result.partial` means that explicitly
+targeted subsystems returned different terminal outcomes. It is not evidence of
+partial transcript/audio delivery or provider hard cancel. An outer
+`not_implemented` result remains truthful when the aggregate contains no
+effective cancellation.
+
+For playback, `PLAYBACK_STOP_REQUESTED_TO_HOST` asks the app to act.
+`acknowledge_host_playback_stop(...)` records receipt, not speaker or media
+engine success. Physical playback remains entirely app-owned.
+
+For motion, the hook maps existing canonical lifecycle notifications to
+`MotionRequest | None`. Missing stage configuration remains typed
+`not_configured`; motion failure cannot change or duplicate the conversation
+terminal.
+
+```text
+exact Control B surface: 9 files
+runtime or provider implementation changed: False
+new examples: 4
+new dedicated gate/test files: 2
+contract/guide files updated: 3
+example Framework import: public root only
+provider credential required: False
+provider SDK import: False
+provider/network/audio-read/microphone/playback/real VTS execution: False
+partial transcript/audio streaming implemented: False
+physical playback stop claimed: False
+conversation terminal replacement by motion: False
+root-public names: 127 / UNCHANGED
+FW-RT6-11c aggregate tasks: 0 / 8 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B is documentation, executable-example, and verification work only.
+It adds no Framework runtime behavior or application-specific provider mapping.
+<!-- FW-RT6-11c-B-APP-EXAMPLES:END -->

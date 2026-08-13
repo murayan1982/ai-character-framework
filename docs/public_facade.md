@@ -6155,3 +6155,64 @@ Control A is documentation and executable-example work only. Host-captured
 audio, interrupt/partial completion, local playback coordination, and motion
 extension hooks remain Control B.
 <!-- FW-RT6-11c-A-PUBLIC-MIGRATION:END -->
+
+
+<!-- FW-RT6-11c-B-PUBLIC-EXAMPLES:BEGIN -->
+## FW-RT6-11c Control B — public migration boundary examples
+
+Control B adds four executable, provider-free examples using the existing
+public Framework root:
+
+```text
+host-captured audio:
+VoiceInputAudioSource opaque ID -> retained VoiceInputSession fake handoff
+
+interrupt partial completion:
+InterruptResult.coordination_result / terminal subsystem aggregation
+
+local playback:
+PLAYBACK_STOP_REQUESTED_TO_HOST -> optional host acknowledgement
+
+motion extension:
+RealtimeSession.set_motion_lifecycle_hook -> MotionRequest mapping
+```
+
+The host-audio example does not claim realtime audio chunk input. The
+interrupt example uses `partial` only for mixed terminal subsystem outcomes;
+partial transcript/audio streaming remains unsupported. The playback example
+does not turn request or acknowledgement into physical-stop confirmation. The
+motion example uses no motion stage, so mapped requests remain typed
+`not_configured` side effects and never replace the conversation terminal.
+
+```text
+checkpoint: FW-RT6-11c Control B
+baseline head: 5cec4e338688724ee43157b7ccbf75deb67cf70e
+exact implementation surface: 9 files
+new Control B examples: 4 / PROVIDER-FREE
+all Control A+B examples: 6 / PUBLIC ROOT IMPORT ONLY
+host audio source: opaque_id / PASS
+host audio read / microphone access: False / False
+interrupt aggregate outcome: partial / TERMINAL
+interrupt outer compatibility outcome: not_implemented / TRUTHFUL
+partial transcript or audio streaming claimed: False
+provider hard cancellation claimed: False
+playback ownership: host / UNCHANGED
+host stop request or acknowledgement implies physical stop: False
+motion mapping owner: host/plugin / UNCHANGED
+motion stage configured by example: False
+conversation terminal changed by motion failure: False
+runtime source changed: False
+framework root-public names: 127 / UNCHANGED
+factory signatures and API/schema versions: UNCHANGED
+provider/network/audio-read/microphone/playback/real VTS execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11c tasks: 0 / 8 CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The examples add no public symbol. Existing root objects, compatibility
+profiles, typed results, canonical events, correlation ownership, and
+host/plugin boundaries remain authoritative.
+<!-- FW-RT6-11c-B-PUBLIC-EXAMPLES:END -->

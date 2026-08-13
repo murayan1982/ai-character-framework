@@ -123,3 +123,76 @@ python -m unittest tests.test_migration_examples_control_a
 ```
 
 <!-- FW-RT6-11c-A-MIGRATION-GUIDE:END -->
+
+
+<!-- FW-RT6-11c-B-MIGRATION-EXAMPLES:BEGIN -->
+## Control B executable boundary examples
+
+Control B adds four provider-free examples without changing Framework runtime
+source or claiming production unified orchestration:
+
+```text
+exact Control B implementation surface: 9 files
+```
+
+- `examples/app_v600_host_captured_audio.py`
+- `examples/app_v600_interrupt_partial_completion.py`
+- `examples/app_v600_local_playback_boundary.py`
+- `examples/app_v600_motion_extension_hook.py`
+
+### Host-captured audio remains a host handoff
+
+The host-audio example intentionally uses the retained public
+`VoiceInputSession` boundary. The host supplies an opaque capture identifier to
+`VoiceInputAudioSource`; the Framework example does not open a microphone,
+read audio bytes, resolve a private path, or upload audio. A deterministic
+`FakeVoiceInputProviderAdapter` proves the public handoff without provider or
+network execution.
+
+This does not claim that the current `RealtimeSession` accepts streaming audio
+chunks. Audio chunk input and partial transcript streaming remain P1 work.
+
+### Interrupt partial completion is subsystem aggregation
+
+The interrupt example starts one provider-free realtime turn and submits an
+`InterruptRequest.user_barge_in(...)`. Its additive
+`coordination_result` is terminal and may report `partial` because the targeted
+subsystems have different terminal observations such as `unsupported` and
+`not_active`.
+
+The outer compatibility result remains `not_implemented` when no subsystem
+reports an effective cancellation. `partial` does not mean partial transcript,
+partial audio, provider hard cancellation, or successful interruption.
+
+### Local playback remains host-owned
+
+The playback example uses a provider-free demo session snapshot to exercise the
+already accepted host coordination events. `flush_output(...)` can request a
+host stop, and `acknowledge_host_playback_stop(...)` can record host receipt.
+Neither the request nor the acknowledgement confirms physical media-engine or
+speaker stop. The example performs no playback.
+
+### Motion mapping remains a host/plugin extension
+
+The motion example registers `set_motion_lifecycle_hook(...)` and maps selected
+lifecycle notifications to provider-neutral `MotionRequest` values. It
+configures no motion stage, so mapped requests produce typed `not_configured`
+motion outcomes. The conversation still completes exactly once, and no VTube
+Studio, WebSocket, network, or provider operation occurs.
+
+### Shared example safety
+
+All six FW-RT6-11c Control A+B examples:
+
+- use the public `framework` root as their only Framework import;
+- perform no work during module import;
+- preserve required Windows/Python system environment in credential-free
+  subprocess verification while removing credential-bearing variables;
+- require no optional provider SDK or credential;
+- execute no network, audio read, microphone, physical playback, provider, or
+  real VTube Studio operation in acceptance verification.
+
+Control B changes no root-public name, factory signature, runtime source, API
+or schema version. All eight FW-RT6-11c aggregate tasks remain open until the
+separately reviewed aggregate acceptance control.
+<!-- FW-RT6-11c-B-MIGRATION-EXAMPLES:END -->
