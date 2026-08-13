@@ -9459,3 +9459,90 @@ Control B exact contract review is authorized. Control B implementation,
 aggregate acceptance, FW-RT6-11c, and their commit/push remain separately
 gated.
 <!-- FW-RT6-11b-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-11b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-11b Control B — optional-provider namespace acceptance sync
+
+```text
+checkpoint: FW-RT6-11b Control B
+baseline head: 6cdb08ac35f2c7f4baa0b8b2a61d8e78a33b0c02
+Control A implementation: ffaaa167aae595d315995ce307f44b24ac1ef37c
+Control A acceptance sync: 644350479aa3dde264627978d555ef47a432cd3f
+Control B implementation baseline: 644350479aa3dde264627978d555ef47a432cd3f
+Control B implementation: 6cdb08ac35f2c7f4baa0b8b2a61d8e78a33b0c02
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control B implementation surface: 11 files
+acceptance-sync exact surface: 1 file
+dedicated Control B namespace gate: PASS
+focused Control B namespace tests: 12 / PASS
+dedicated Control A root-public gate: PASS
+focused Control A root-public tests: 12 / PASS
+focused Control A+B root-public tests: 24 / PASS
+canonical root-public manifest gate: PASS
+focused FW-RT6-11a compatibility tests: 30 / PASS
+accepted v5 compatibility regressions: 62 / PASS
+v5.3 lazy provider adapter gate: PASS
+v5.4 client-injection / fake / real-runtime gates: PASS
+full Framework unit suite: 649 / PASS
+offline wheel provider-namespace membership: PASS
+stable optional provider namespace: framework.providers.openai.voice_input / PASS
+namespace exact exports: 15 / PASS
+namespace container exports: 0 / EXPLICIT MODULE ONLY / PASS
+root and namespace object identity: SAME / PASS
+framework root-public names: 127 / UNCHANGED / PASS
+provider-neutral root exports: 112 / UNCHANGED / PASS
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY / SILENT / PASS
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL / PASS
+new provider-specific root exports: 0 / PASS
+provider compatibility deprecations: 0 / PASS
+namespace import loads OpenAI SDK: False / PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+machine-readable manifest changed by acceptance sync: False
+Control A/B gates changed by acceptance sync: False
+existing tests changed by acceptance sync: False
+FW-RT6-11b aggregate: NOT_COMPLETED
+FW-RT6-11b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+Control C implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11c migration guide and examples: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts `framework.providers.openai.voice_input` as the stable
+explicit optional-provider namespace for the 15 frozen v5.4 OpenAI voice-input
+contracts. The intermediate `framework.providers` and
+`framework.providers.openai` packages remain empty containers. Each namespace
+export is the same object as its retained lazy root compatibility export.
+
+The unordered 127-name root contract and its digest remain unchanged. All 15
+root compatibility exports remain lazy, warning-free, and supported throughout
+v6; no new provider-specific root export or deprecation is introduced. Normal
+host integration continues to use provider-neutral session, request, result,
+capability, configuration, and adapter boundaries.
+
+Importing the explicit namespace loads no OpenAI SDK and performs no provider,
+network, audio, microphone, playback, or real VTube Studio work. The stable
+namespace is present in the offline wheel and retains all existing explicit
+runtime-policy gates before provider work can occur.
+
+This exact one-file sync changes only `docs/v600_tasklist.md`; it changes no
+runtime source, public-facade or application-integration contract,
+machine-readable manifest, dedicated gate, existing test, README, example,
+factory signature, return/event shape, or API version. None of the six
+FW-RT6-11b aggregate task checkboxes close here.
+
+After this sync is reviewed, committed, pushed, and remotely verified, only
+Control C aggregate exact contract review is authorized. Control C
+implementation, aggregate acceptance, FW-RT6-11c, and their commit/push remain
+separately gated.
+<!-- FW-RT6-11b-B-ACCEPTANCE-SYNC:END -->
