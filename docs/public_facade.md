@@ -6029,3 +6029,85 @@ Control B adds no execution owner and changes no session runtime. Aggregate
 acceptance, task closure, Control C, FW-RT6-11c, commit, and push remain
 separately authorized boundaries.
 <!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:END -->
+
+
+<!-- FW-RT6-11b-C-ROOT-PUBLIC-ACCEPTANCE:BEGIN -->
+## FW-RT6-11b Control C — aggregate root-public cleanup acceptance
+
+Control C accepts the combined frozen root-public inventory and stable explicit
+optional-provider namespace without changing runtime source. The canonical
+runtime source remains `framework.public_api.PUBLIC_API_NAMES`, and
+`docs/v600_root_public_api_manifest.json` remains its deterministic sorted
+machine-readable projection. Conformance compares name membership and recorded
+digests, never positional `framework.__all__` slices.
+
+The Framework root remains the unordered 127-name v6 contract: 112 preferred
+provider-neutral exports plus 15 lazy, silent v5 OpenAI voice-input
+compatibility exports. The current wildcard runtime order remains observable
+for compatibility but is non-contractual. No root name is added, removed,
+moved, or deprecated by Control C.
+
+`framework.providers.openai.voice_input` remains the sole stable explicit
+optional-provider module. It exports the same exact 15 objects as the retained
+root compatibility surface. `framework.providers` and
+`framework.providers.openai` remain empty containers. Importing either the root
+or the explicit namespace performs no provider SDK import, client creation,
+credential read, provider/network/audio/microphone/playback operation, or real
+VTube Studio work.
+
+The accepted Control A/B gates remain executable after a four-file semantic
+sync limited to the Control C task boundary and status output. The dedicated
+aggregate gate rechecks their 24 focused tests, the canonical manifest,
+docs/examples/root-export drift, v5 compatibility regressions, provider-safe
+imports, and offline wheel namespace membership.
+
+```text
+checkpoint: FW-RT6-11b Control C
+baseline head: 727d999fd012731088fd3261c6e5b0e4bb161e94
+Control A implementation: ffaaa167aae595d315995ce307f44b24ac1ef37c
+Control A acceptance sync: 644350479aa3dde264627978d555ef47a432cd3f
+Control B implementation: 6cdb08ac35f2c7f4baa0b8b2a61d8e78a33b0c02
+Control B acceptance sync: 727d999fd012731088fd3261c6e5b0e4bb161e94
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact corrective Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C BOUNDARY ONLY
+runtime source changed by Control C: False
+machine-readable manifest changed by Control C: False
+application-integration contract changed by Control C: False
+canonical source: framework.public_api.PUBLIC_API_NAMES / REUSED / PASS
+manifest schema: v6.root_public_api_manifest / PASS
+framework root-public names: 127 / UNCHANGED / PASS
+provider-neutral root exports: 112 / UNCHANGED / PASS
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY / SILENT / PASS
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL / PASS
+stable optional provider namespace: framework.providers.openai.voice_input / PASS
+namespace exact exports: 15 / ROOT OBJECT IDENTITY / PASS
+namespace container exports: 0 / EXPLICIT MODULE ONLY / PASS
+new provider-specific root exports: 0 / PASS
+provider compatibility deprecations: 0 / PASS
+docs/example/export drift: PASS
+offline wheel provider-namespace membership: PASS
+provider/network/audio/microphone/playback/real VTS execution: False / PASS
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+FW-RT6-11b tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-11b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-11c implementation: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+This exact seven-file aggregate changes only this public contract, the tasklist
+candidate state, the new dedicated aggregate gate, and the accepted Control A/B
+gate/test task-boundary status. It changes no runtime source, application
+integration contract, machine-readable manifest, provider namespace source,
+historical v5 gate, README, example, root export, signature, return/event shape,
+or API version.
+
+The six task checkboxes are acceptance candidates rather than final closed
+status. Final completion requires a separately reviewed, committed, pushed,
+and remotely verified one-file final acceptance sync. FW-RT6-11c remains
+separately gated.
+<!-- FW-RT6-11b-C-ROOT-PUBLIC-ACCEPTANCE:END -->

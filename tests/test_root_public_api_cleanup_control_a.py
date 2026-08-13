@@ -236,15 +236,22 @@ assert not forbidden.intersection(sys.modules), sorted(forbidden.intersection(sy
             for marker in required:
                 self.assertIn(marker, text, f"{name}: {marker}")
 
-    def test_control_a_does_not_close_aggregate_tasks(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         tasklist = (PROJECT_ROOT / "docs" / "v600_tasklist.md").read_text(
             encoding="utf-8"
         )
         section = tasklist.split(
             "## FW-RT6-11b — Root-public API cleanup", 1
         )[1].split("## FW-RT6-11c", 1)[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertTrue(
+            (
+                PROJECT_ROOT
+                / "scripts"
+                / "check_v600_root_public_api_cleanup_acceptance.py"
+            ).is_file()
+        )
 
 
 if __name__ == "__main__":

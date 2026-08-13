@@ -218,9 +218,9 @@ def check_manifest_and_docs() -> None:
     section = tasklist.split("## FW-RT6-11b — Root-public API cleanup", 1)[1].split(
         "## FW-RT6-11c", 1
     )[0]
-    _require(section.count("- [ ]") == 6, "Control B closed an aggregate task")
-    _require(section.count("- [x]") == 0, "Control B changed aggregate task state")
-    print("[OK] manifest/docs align and aggregate task state remains 0 / 6")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 6, "Control C aggregate task count drift")
+    print("[OK] manifest/docs align and aggregate tasks are 6 / 6 acceptance-candidates")
 
 
 def main() -> None:
@@ -238,7 +238,7 @@ def main() -> None:
     check_namespace_import_is_provider_safe()
     check_manifest_and_docs()
     print("v600_rt6_11b_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
-    print("v600_rt6_11b_control_b_status: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11b_control_b_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print(f"v600_rt6_11b_stable_provider_namespace: {EXPECTED_NAMESPACE}")
     print("v600_rt6_11b_namespace_exports: 15 / EXACT / ROOT IDENTITY")
     print("v600_rt6_11b_root_public_names: 127 / UNCHANGED")
@@ -246,8 +246,8 @@ def main() -> None:
     print("v600_rt6_11b_provider_sdk_imported: False")
     print("v600_rt6_11b_provider_execution: False")
     print("v600_rt6_11b_network_execution: False")
-    print("v600_rt6_11b_task_count: 0 / 6 CLOSED")
-    print("v600_rt6_11b_control_c: NOT_AUTHORIZED")
+    print("v600_rt6_11b_task_count: 6 / 6 ACCEPTED-CANDIDATE")
+    print("v600_rt6_11b_control_c: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_11b_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-11b Control B optional-provider namespace gate passed")
 

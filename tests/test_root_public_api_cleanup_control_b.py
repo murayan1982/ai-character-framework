@@ -180,14 +180,21 @@ assert not any(name.startswith("openai.") for name in sys.modules)
             for phrase in required:
                 self.assertIn(phrase, text, f"{name}: {phrase}")
 
-    def test_control_b_does_not_close_aggregate_tasks(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         tasklist = (PROJECT_ROOT / "docs/v600_tasklist.md").read_text(encoding="utf-8")
         section = tasklist.split("## FW-RT6-11b — Root-public API cleanup", 1)[1].split(
             "## FW-RT6-11c", 1
         )[0]
 
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertTrue(
+            (
+                PROJECT_ROOT
+                / "scripts"
+                / "check_v600_root_public_api_cleanup_acceptance.py"
+            ).is_file()
+        )
 
 
 if __name__ == "__main__":

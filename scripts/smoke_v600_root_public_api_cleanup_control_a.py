@@ -334,10 +334,10 @@ def check_contract_docs() -> None:
     section = tasklist.split("## FW-RT6-11b — Root-public API cleanup", 1)[1].split(
         "## FW-RT6-11c", 1
     )[0]
-    _require(section.count("- [ ]") == 6, "Control A must not close aggregate tasks")
-    _require(section.count("- [x]") == 0, "Control A changed aggregate task state")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 6, "Control C aggregate task count drift")
 
-    print("[OK] docs/export facts align and aggregate task state remains 0 / 6")
+    print("[OK] docs/export facts align and aggregate tasks are 6 / 6 acceptance-candidates")
 
 
 def main() -> None:
@@ -360,7 +360,9 @@ def main() -> None:
     print("v600_rt6_11b_docs_example_export_drift: PASS")
     print("v600_rt6_11b_provider_execution: False")
     print("v600_rt6_11b_network_execution: False")
-    print("v600_rt6_11b_control_b: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11b_control_b: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
+    print("v600_rt6_11b_control_c: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_11b_task_count: 6 / 6 ACCEPTED-CANDIDATE")
     print("v600_rt6_11b_commit_push: NOT_AUTHORIZED")
 
 
