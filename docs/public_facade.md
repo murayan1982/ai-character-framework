@@ -5961,3 +5961,71 @@ Control A freezes and verifies the inventory only. It does not remove a v5
 compatibility export, introduce a provider namespace, change runtime behavior,
 close an aggregate task, authorize Control B, or authorize commit or push.
 <!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:END -->
+
+
+<!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:BEGIN -->
+## FW-RT6-11b Control B — stable optional OpenAI voice-input namespace
+
+Control B adds the explicitly importable stable provider package
+`framework.providers.openai.voice_input`. Its exact `__all__` is the same
+sorted 15-name set recorded by
+`framework.public_api.V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS`. The container
+packages `framework.providers` and `framework.providers.openai` export no
+objects of their own; consumers must select the reviewed voice-input module
+explicitly.
+
+The namespace re-exports the already accepted v5.4 adapter, injected-client,
+marked-fake, guarded real-provider, policy, status, and private-credential
+contracts. Each namespace object is identical to the corresponding lazy root
+compatibility object. Importing the namespace may load those Framework contract
+modules, but it does not import the OpenAI SDK, create a provider client, read a
+credential, resolve audio, open a microphone, perform network work, or execute
+a provider.
+
+The Framework root remains the frozen unordered 127-name v6 contract. The 15
+`OpenAIVoiceInput*` root names remain lazy, warning-free, and supported for the
+complete v6 lifecycle; Control B neither moves nor deprecates them. New
+provider-specific names remain prohibited at the root. Any later removal of a
+compatibility root requires a separately reviewed deprecation contract, no
+earlier than v7, plus migration evidence.
+
+The optional namespace is an advanced compatibility and provider-integration
+surface. Normal host applications continue to use the provider-neutral
+session, request, result, capability, configuration, and adapter boundaries and
+must not construct provider clients for the normal public flow.
+
+```text
+checkpoint: FW-RT6-11b Control B
+baseline head: 644350479aa3dde264627978d555ef47a432cd3f
+Control A implementation: ffaaa167aae595d315995ce307f44b24ac1ef37c
+Control A acceptance sync: 644350479aa3dde264627978d555ef47a432cd3f
+exact Control B implementation surface: 11 files
+stable optional provider namespace: framework.providers.openai.voice_input
+namespace exact exports: 15 / SAME OBJECTS AS ROOT COMPATIBILITY
+namespace container exports: 0 / EXPLICIT MODULE ONLY
+framework root-public names: 127 / UNCHANGED
+provider-neutral root exports: 112 / UNCHANGED
+v5 provider compatibility root exports: 15 / PRESERVED / LAZY / SILENT
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard runtime order: PRESERVED / NON-CONTRACTUAL
+new provider-specific root exports: 0
+provider compatibility deprecations: 0
+namespace import loads OpenAI SDK: False
+namespace import executes provider/network/audio/microphone: False
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+Control A gate/test semantic sync: 2 files / CONTROL_B BOUNDARY ONLY
+historical v5.3/v5.4 gates changed: False
+docs/v600_tasklist.md changed: False
+FW-RT6-11b aggregate tasks: 0 / 6 CLOSED
+Control A: COMPLETED / VERIFIED / ACCEPTED / CLOSED
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+Control C aggregate acceptance: NOT_AUTHORIZED
+FW-RT6-11c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B adds no execution owner and changes no session runtime. Aggregate
+acceptance, task closure, Control C, FW-RT6-11c, commit, and push remain
+separately authorized boundaries.
+<!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:END -->

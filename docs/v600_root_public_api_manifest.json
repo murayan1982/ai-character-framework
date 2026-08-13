@@ -2,7 +2,7 @@
   "schema_version": "v6.root_public_api_manifest",
   "generated_from": "framework.public_api.PUBLIC_API_NAMES",
   "root_wildcard_ordering_contract": "non_contractual",
-  "stable_optional_provider_namespace": null,
+  "stable_optional_provider_namespace": "framework.providers.openai.voice_input",
   "new_provider_specific_root_exports_allowed": false,
   "root_public_name_count": 127,
   "provider_neutral_name_count": 112,

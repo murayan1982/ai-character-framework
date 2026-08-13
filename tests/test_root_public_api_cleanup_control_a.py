@@ -125,16 +125,27 @@ class RootPublicApiCleanupControlATests(unittest.TestCase):
             _digest(V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS),
         )
 
-    def test_machine_manifest_records_no_provider_namespace(self) -> None:
+    def test_machine_manifest_records_control_b_provider_namespace(self) -> None:
         manifest = json.loads(
             (PROJECT_ROOT / "docs" / "v600_root_public_api_manifest.json").read_text(
                 encoding="utf-8"
             )
         )
-        self.assertIsNone(manifest["stable_optional_provider_namespace"])
+        self.assertEqual(
+            manifest["stable_optional_provider_namespace"],
+            "framework.providers.openai.voice_input",
+        )
         self.assertFalse(manifest["new_provider_specific_root_exports_allowed"])
         self.assertFalse((PROJECT_ROOT / "framework" / "providers.py").exists())
-        self.assertFalse((PROJECT_ROOT / "framework" / "providers").exists())
+        self.assertTrue(
+            (
+                PROJECT_ROOT
+                / "framework"
+                / "providers"
+                / "openai"
+                / "voice_input.py"
+            ).is_file()
+        )
 
     def test_provider_compatibility_resolution_remains_lazy(self) -> None:
         code = r'''

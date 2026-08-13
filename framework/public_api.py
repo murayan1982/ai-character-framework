@@ -239,6 +239,7 @@ if len(PUBLIC_API_NAMES) != len(set(PUBLIC_API_NAMES)):
 # the canonical sorted views below rather than positional slices.
 ROOT_PUBLIC_API_MANIFEST_SCHEMA_VERSION = "v6.root_public_api_manifest"
 ROOT_PUBLIC_WILDCARD_ORDERING_CONTRACT = "non_contractual"
+STABLE_OPTIONAL_PROVIDER_NAMESPACE = "framework.providers.openai.voice_input"
 
 V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS = tuple(
     sorted(PROVIDER_COMPAT_LAZY_EXPORTS)

@@ -53,6 +53,7 @@ def _manifest_from_source() -> dict[str, object]:
     from framework.public_api import (
         ROOT_PUBLIC_API_MANIFEST_SCHEMA_VERSION,
         ROOT_PUBLIC_WILDCARD_ORDERING_CONTRACT,
+        STABLE_OPTIONAL_PROVIDER_NAMESPACE,
         V5_PROVIDER_COMPATIBILITY_ROOT_EXPORTS,
         V6_PROVIDER_NEUTRAL_ROOT_EXPORTS,
         V6_ROOT_PUBLIC_EXPORTS,
@@ -64,7 +65,7 @@ def _manifest_from_source() -> dict[str, object]:
         "root_wildcard_ordering_contract": (
             ROOT_PUBLIC_WILDCARD_ORDERING_CONTRACT
         ),
-        "stable_optional_provider_namespace": None,
+        "stable_optional_provider_namespace": STABLE_OPTIONAL_PROVIDER_NAMESPACE,
         "new_provider_specific_root_exports_allowed": False,
         "root_public_name_count": len(V6_ROOT_PUBLIC_EXPORTS),
         "provider_neutral_name_count": len(V6_PROVIDER_NEUTRAL_ROOT_EXPORTS),
@@ -167,8 +168,9 @@ def check_machine_readable_manifest() -> None:
         "JSON provider compatibility count drift",
     )
     _require(
-        actual["stable_optional_provider_namespace"] is None,
-        "Control A must not establish a provider namespace",
+        actual["stable_optional_provider_namespace"]
+        == "framework.providers.openai.voice_input",
+        "Control B stable provider namespace drift",
     )
     _require(
         actual["new_provider_specific_root_exports_allowed"] is False,
@@ -229,8 +231,10 @@ print("lazy-provider-compatibility-pass")
     )
     _require(
         not (PROJECT_ROOT / "framework" / "providers.py").exists()
-        and not (PROJECT_ROOT / "framework" / "providers").exists(),
-        "Control A must not create an uncontracted provider namespace",
+        and (
+            PROJECT_ROOT / "framework" / "providers" / "openai" / "voice_input.py"
+        ).is_file(),
+        "Control B stable provider namespace path drift",
     )
 
     print("[OK] 15 v5 provider compatibility exports remain root-lazy and isolated")
@@ -343,17 +347,20 @@ def main() -> None:
     check_public_api_source_import_safety()
     check_examples_against_root_manifest()
     check_contract_docs()
-    print("v600_rt6_11b_control_a_status: implemented-awaiting-review")
+    print("v600_rt6_11b_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_11b_root_public_names: 127 / unchanged")
     print("v600_rt6_11b_provider_neutral_names: 112")
     print("v600_rt6_11b_provider_compatibility_names: 15 / preserved / lazy")
     print(f"v600_rt6_11b_root_public_sha256: {ROOT_PUBLIC_DIGEST}")
     print("v600_rt6_11b_wildcard_order_contract: non_contractual")
-    print("v600_rt6_11b_stable_optional_provider_namespace: none")
+    print(
+        "v600_rt6_11b_stable_optional_provider_namespace: "
+        "framework.providers.openai.voice_input / CONTROL_B"
+    )
     print("v600_rt6_11b_docs_example_export_drift: PASS")
     print("v600_rt6_11b_provider_execution: False")
     print("v600_rt6_11b_network_execution: False")
-    print("v600_rt6_11b_control_b: NOT_AUTHORIZED")
+    print("v600_rt6_11b_control_b: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_11b_commit_push: NOT_AUTHORIZED")
 
 

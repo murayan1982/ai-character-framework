@@ -4580,3 +4580,65 @@ aggregate acceptance: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:END -->
+
+
+<!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:BEGIN -->
+## FW-RT6-11b Control B — optional provider import contract
+
+Advanced consumers that require the accepted OpenAI voice-input contracts may
+use the stable explicit module:
+
+```python
+from framework.providers.openai.voice_input import (
+    OpenAIVoiceInputProviderAdapter,
+)
+```
+
+Only `framework.providers.openai.voice_input` is the stable public provider
+module. The intermediate `framework.providers` and
+`framework.providers.openai` packages are empty namespace containers and do not
+provide wildcard or direct provider-object exports. The voice-input module has
+an exact 15-name `__all__` matching the frozen v5 root compatibility inventory.
+
+Existing root imports remain valid, lazy, and warning-free throughout v6:
+
+```python
+from framework import OpenAIVoiceInputProviderAdapter
+```
+
+Both imports resolve the same class object. Control B does not require host
+migration and does not authorize removal or deprecation of the root import.
+New normal application integrations should still prefer the provider-neutral
+`VoiceInputSession` and related request, result, capability, configuration, and
+adapter boundaries. The optional namespace does not authorize direct provider
+client construction in the normal host flow.
+
+Importing the explicit namespace never imports the OpenAI SDK, creates a
+client, reads a credential, resolves or reads audio, accesses a microphone,
+performs network work, or executes transcription. The already accepted
+explicit runtime policy gates remain required before any such work can occur.
+
+```text
+checkpoint: FW-RT6-11b Control B
+baseline head: 644350479aa3dde264627978d555ef47a432cd3f
+stable import: framework.providers.openai.voice_input
+stable namespace exports: 15 / EXACT
+root and namespace object identity: SAME / PASS
+root-public names: 127 / UNCHANGED
+preferred provider-neutral names: 112 / UNCHANGED
+v5 provider compatibility names: 15 / PRESERVED / LAZY / SILENT
+root-public unordered SHA-256: 4b0c5a17621879fac7bb9f82c85f1bb722ce36a46e534be1179b6ae3e985dbf0
+wildcard order application contract: NONE
+new provider-specific root exports: 0
+host migration required by Control B: False
+namespace import provider/network/audio/microphone execution: False
+docs/example/export drift: FAILS DEDICATED GATE
+Control B implementation: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-11b aggregate tasks: 0 / 6 CLOSED
+Control C aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B changes no session factory, return value, event owner, capability
+truth, or API version. Aggregate task closure remains separate Control C work.
+<!-- FW-RT6-11b-B-OPTIONAL-PROVIDER-NAMESPACE:END -->
