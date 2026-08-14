@@ -10510,3 +10510,97 @@ verified, only Control B exact contract review is authorized. Control B
 implementation, aggregate acceptance, and their commit/push remain separately
 gated.
 <!-- FW-RT6-12b-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12b-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12b Control B — backpressure runtime acceptance sync
+
+```text
+checkpoint: FW-RT6-12b Control B
+baseline head: fa12002e898a88bc9d9025004b0e4b26772d8187
+Control A implementation and acceptance: fa12002e898a88bc9d9025004b0e4b26772d8187
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B implementation candidate: WORKTREE / VERIFIED
+Control B: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control B implementation surface: 11 files
+acceptance-sync new path surface: 1 file / docs/v600_tasklist.md
+acceptance semantic-state corrective replacements: 2 existing Control B files
+combined worktree surface: 12 files
+dedicated Control B backpressure runtime gate: PASS
+focused Control B backpressure tests: 23 / PASS
+accepted Control A backpressure tests: 19 / PASS
+focused Control A+B tests: 42 / PASS
+full Framework unit suite: 753 / PASS
+stable contract namespace: framework.backpressure / 12 EXACT / EXPLICIT_ONLY / PASS
+internal runtime namespace: framework.backpressure_runtime / 1 EXACT / EXPLICIT_ONLY / PASS
+framework root-public names: 127 / UNCHANGED
+runtime boundaries adopted: 4 / 4 / PASS
+audio-input owner: VoiceInputStreamRuntime and VoiceInputSession / PASS
+response-delta owner: RealtimeEventHub and RealtimeSession / PASS
+voice-output owner: BoundedVoiceSynthesisPendingQueue / PASS
+event-subscriber owner: RealtimeEventHub and RealtimeSession / PASS
+maximum pending and in-flight counts: FIXED PER OWNER / PASS
+overflow policy: reject_newest / PASS
+capacity rejection: TYPED / RETRYABLE / NON_CONSUMING / PASS
+paused rejection: TYPED / RETRYABLE / NON_CONSUMING / PASS
+closed rejection: TYPED / TERMINAL / PASS
+overflow event: NON_SILENT / RETRYABLE / PASS
+silent drop: PROHIBITED / PASS
+pause/resume effect: NEW ADMISSION ONLY / PASS
+accepted pending or in-flight work cancelled by pause/resume: False / PASS
+accepted pending or in-flight work dropped by pause/resume: False / PASS
+raw audio/text/voice/event payload in public backpressure projection: False / PASS
+VoiceInputSession capability and control surface: ADOPTED / PASS
+RealtimeSession response-delta and subscriber control surface: ADOPTED / PASS
+specialized voice-output queue bounded adoption: PASS
+factory signatures and API/schema version labels: UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+backpressure contract guide/runtime changed by acceptance sync: False
+Control B gate/test behavior changed by sync: ACCEPTANCE-STATE ONLY
+FW-RT6-12b aggregate: NOT_COMPLETED
+FW-RT6-12b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_B
+Control C aggregate exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control C implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts bounded runtime ownership at the four reviewed backpressure
+boundaries. `VoiceInputStreamRuntime` and `VoiceInputSession` own audio-input
+admission, `RealtimeEventHub` and `RealtimeSession` own response-delta and
+subscriber delivery admission, and `BoundedVoiceSynthesisPendingQueue` owns
+voice-output admission.
+
+Each owner declares fixed pending and in-flight capacity. The accepted
+`reject_newest` policy returns typed, retryable capacity and pause rejections
+without consuming caller-owned work. Closure is terminal. Capacity rejection
+is non-silent and produces a typed overflow event; accepted work is never
+silently dropped.
+
+Pause and resume affect only new admission. They do not cancel, evict, flush,
+dispose, or drop already accepted pending or in-flight work. Raw audio,
+response text, synthesis requests, subscriber events, provider objects, and
+private paths remain in their private owners and outside public backpressure
+projections.
+
+The runtime namespace remains explicit-only and the frozen 127-name Framework
+root is unchanged. Factory signatures and API/schema labels are unchanged.
+The accepted candidate performs no provider, network, audio-device, playback,
+or real VTS execution.
+
+This sync adds only `docs/v600_tasklist.md` to the baseline change surface. It
+also corrects the acceptance-state condition in the already modified Control B
+smoke and unit-test files so the same gates validate both the pre-acceptance
+candidate and this accepted worktree. The combined baseline surface remains
+exactly twelve files. None of the six aggregate task checkboxes close here.
+
+After this combined worktree is reviewed, committed, pushed, and remotely
+verified, only the Control C aggregate-acceptance exact contract review is
+authorized. Control C implementation and its commit/push remain separately
+gated.
+<!-- FW-RT6-12b-B-ACCEPTANCE-SYNC:END -->

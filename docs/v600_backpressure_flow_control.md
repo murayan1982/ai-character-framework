@@ -105,3 +105,56 @@ The following remain outside Control A:
 
 Those actions require a separately authorized control. The Control A baseline
 is `3153efd68213575e39802f0857d05aee693df255`.
+
+<!-- FW-RT6-12b-B-RUNTIME-ADOPTION:BEGIN -->
+## Control B runtime adoption
+
+Control B implements bounded ownership in the internal explicit-only
+`framework.backpressure_runtime` module. The controller keeps only opaque item
+IDs and counters. Audio bytes, response text, subscriber events, synthesis
+requests, provider objects, and private paths stay in their existing private
+owners and never enter the public backpressure projection.
+
+The four exact adoptions are:
+
+- `audio_input`: `VoiceInputStreamRuntime` admits at most one in-flight chunk;
+  `VoiceInputSession` exposes capability, snapshot, last typed rejection, and
+  pause/resume operations.
+- `response_delta`: `RealtimeEventHub` applies bounded delivery admission to
+  `realtime.response.delta` events before sequence/history commitment.
+- `event_subscriber`: the same event hub bounds every canonical delivery and
+  exposes the observation/control surface through `RealtimeSession`.
+- `voice_output`: `BoundedVoiceSynthesisPendingQueue` uses its configured
+  pending depth and one in-flight synthesis handoff while retaining its
+  established enqueue result vocabulary.
+
+Admission uses `reject_newest`. `capacity_reached` and `paused` are retryable;
+`closed` is terminal. Rejected work is not consumed and `dropped=False`.
+Capacity rejection produces a `BackpressureOverflowEvent`; adopting components
+may also preserve their existing typed diagnostic. A callback failure cannot
+convert a rejection to acceptance or hide the caller-visible typed result.
+
+Pause/resume never changes already accepted pending or in-flight ownership.
+Closure rejects new work while allowing accepted work to complete or be
+explicitly cleared by its existing owner. No automatic eviction, implicit
+flush, silent discard, provider hard cancel, device stop, or playback action is
+introduced.
+
+```text
+baseline head: fa12002e898a88bc9d9025004b0e4b26772d8187
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: IMPLEMENTED / AWAITING_REVIEW
+exact Control B surface: 11 files
+runtime namespace exports: 1 / EXACT / EXPLICIT_ONLY
+boundaries adopted: 4 / 4
+maximum pending/in-flight: FIXED PER OWNER
+overflow policy: reject_newest
+silent drop: False / PROHIBITED
+root-public names: 127 / UNCHANGED
+provider/network/device/playback execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-12b tasks: 0 / 6 CLOSED
+Control B acceptance sync: NOT_AUTHORIZED
+aggregate acceptance / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12b-B-RUNTIME-ADOPTION:END -->

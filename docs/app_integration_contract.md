@@ -4891,3 +4891,55 @@ Control A defines immutable provider-neutral contracts only. Existing
 specialized voice-output queue and realtime-event history behavior remain
 unchanged until an explicitly authorized runtime-adoption control.
 <!-- FW-RT6-12b-A-APP-BACKPRESSURE:END -->
+
+
+<!-- FW-RT6-12b-B-APP-BACKPRESSURE:BEGIN -->
+## FW-RT6-12b Control B — application runtime backpressure
+
+Control B adopts the accepted `framework.backpressure` vocabulary at four
+concrete Framework-owned boundaries. Applications receive an immediate typed
+rejection when admission is paused, closed, or at capacity; they do not wait
+on an unbounded Framework queue and rejected work remains caller-owned.
+
+`VoiceInputSession` exposes the `audio_input` capability and count-only
+snapshot through `audio_input_backpressure_capability` and
+`audio_input_backpressure_snapshot`. `pause_audio_input()` and
+`resume_audio_input()` affect only new chunks. Existing
+`send_audio_chunk()` results remain `VoiceInputStreamOperationResult`; a
+backpressure rejection is also available from
+`last_audio_input_backpressure_result` and its safe public metadata. Raw chunk
+bytes never enter either result.
+
+`RealtimeSession` owns the `response_delta` and `event_subscriber` delivery
+controllers. Applications may inspect, pause, or resume either exact boundary
+with `backpressure_capability()`, `backpressure_snapshot()`,
+`pause_backpressure()`, and `resume_backpressure()`. A rejected event is not
+assigned a committed sequence, retained in history, or delivered to a
+subscriber.
+
+The explicitly imported `BoundedVoiceSynthesisPendingQueue` adopts the
+`voice_output` boundary. Its existing enqueue result stays compatible while
+also carrying the generic typed result. Capacity remains `REJECTED_FULL`;
+paused and closed admission are `REJECTED_PAUSED` and `REJECTED_CLOSED`.
+Accepted pending work is retained across pause or close, and explicit clear is
+the only pending-work withdrawal operation.
+
+```text
+runtime owner: framework.backpressure_runtime / EXPLICIT_ONLY
+audio_input owner: VoiceInputSession / VoiceInputStreamRuntime
+response_delta owner: RealtimeSession / RealtimeEventHub
+event_subscriber owner: RealtimeSession / RealtimeEventHub
+voice_output owner: BoundedVoiceSynthesisPendingQueue
+overflow policy: reject_newest
+capacity/paused rejection: TYPED / RETRYABLE / CALLER RETAINS
+closed rejection: TYPED / TERMINAL
+pause/resume cancellation or drop: False
+accepted work silent drop: PROHIBITED
+raw audio/text/event/request in public snapshot: False
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback execution: False
+FW-RT6-12b tasks: 0 / 6 CLOSED
+Control B: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12b-B-APP-BACKPRESSURE:END -->

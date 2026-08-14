@@ -20,6 +20,15 @@ import time
 from typing import Callable, Generic, TypeVar
 from uuid import uuid4
 
+from .backpressure import (
+    BackpressureAdmissionResult,
+    BackpressureBoundary,
+    BackpressureCapability,
+    BackpressureControlResult,
+    BackpressureOverflowEvent,
+    BackpressureSnapshot,
+)
+from .backpressure_runtime import BoundedBackpressureRuntime
 from .identity import EventSequence
 
 
@@ -38,6 +47,20 @@ _SUBSCRIPTION_TOKEN_PATTERN = re.compile(r"^fw_event_sub_[0-9a-f]{32}$")
 
 class EventHubClosedError(RuntimeError):
     """Raised when registration or emission is attempted after hub close."""
+
+
+class EventHubBackpressureError(RuntimeError):
+    """Typed retryable delivery rejection without event acceptance or loss."""
+
+    def __init__(self, result: BackpressureAdmissionResult) -> None:
+        if not isinstance(result, BackpressureAdmissionResult):
+            raise TypeError("result must be a BackpressureAdmissionResult")
+        self.result = result
+        super().__init__(result.safe_message or "Realtime event delivery was rejected.")
+
+    @property
+    def retryable(self) -> bool:
+        return self.result.retryable
 
 
 class EventSubscriptionToken(str):
@@ -75,6 +98,7 @@ class EventHubDiagnostics:
     slow_callback_count: int
     history_overflow_count: int
     rejected_after_close_count: int
+    delivery_backpressure_rejection_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +107,8 @@ class _Delivery(Generic[EventT]):
     callbacks: tuple[EventCallback[EventT], ...]
     legacy_event: EventT | None
     legacy_callbacks: tuple[EventCallback[EventT], ...]
+    backpressure_item_id: str
+    response_delta: bool
 
 
 class RealtimeEventHub(Generic[EventT]):
@@ -102,13 +128,23 @@ class RealtimeEventHub(Generic[EventT]):
         self,
         *,
         history_limit: int = 64,
+        delivery_pending_limit: int = 64,
         slow_callback_seconds: float = 0.25,
         clock: Clock = time.monotonic,
+        on_backpressure_overflow: Callable[[BackpressureOverflowEvent], None]
+        | None = None,
     ) -> None:
         if isinstance(history_limit, bool) or not isinstance(history_limit, int):
             raise TypeError("history_limit must be an integer")
         if history_limit < 2:
             raise ValueError("history_limit must be at least 2")
+        if isinstance(delivery_pending_limit, bool) or not isinstance(
+            delivery_pending_limit,
+            int,
+        ):
+            raise TypeError("delivery_pending_limit must be an integer")
+        if delivery_pending_limit < 1:
+            raise ValueError("delivery_pending_limit must be at least 1")
         if isinstance(slow_callback_seconds, bool) or not isinstance(
             slow_callback_seconds,
             (int, float),
@@ -136,6 +172,20 @@ class RealtimeEventHub(Generic[EventT]):
         ] = {}
         self._history: deque[EventT] = deque()
         self._pending: deque[_Delivery[EventT]] = deque()
+        self._event_subscriber_backpressure = BoundedBackpressureRuntime(
+            boundary=BackpressureBoundary.EVENT_SUBSCRIBER,
+            maximum_pending_count=delivery_pending_limit,
+            maximum_in_flight_count=1,
+            on_overflow=on_backpressure_overflow,
+            public_metadata={"owner": "realtime_event_hub"},
+        )
+        self._response_delta_backpressure = BoundedBackpressureRuntime(
+            boundary=BackpressureBoundary.RESPONSE_DELTA,
+            maximum_pending_count=delivery_pending_limit,
+            maximum_in_flight_count=1,
+            on_overflow=on_backpressure_overflow,
+            public_metadata={"owner": "realtime_event_hub"},
+        )
         self._next_sequence = EventSequence.first()
         self._closed = False
         self._dispatching = False
@@ -145,6 +195,7 @@ class RealtimeEventHub(Generic[EventT]):
         self._slow_callback_count = 0
         self._history_overflow_count = 0
         self._rejected_after_close_count = 0
+        self._delivery_backpressure_rejection_count = 0
 
     @property
     def is_closed(self) -> bool:
@@ -178,7 +229,40 @@ class RealtimeEventHub(Generic[EventT]):
                 slow_callback_count=self._slow_callback_count,
                 history_overflow_count=self._history_overflow_count,
                 rejected_after_close_count=self._rejected_after_close_count,
+                delivery_backpressure_rejection_count=(
+                    self._delivery_backpressure_rejection_count
+                ),
             )
+
+    def backpressure_capability(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BackpressureCapability:
+        return self._backpressure_runtime(boundary).capability
+
+    def backpressure_snapshot(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BackpressureSnapshot:
+        return self._backpressure_runtime(boundary).snapshot
+
+    def last_backpressure_rejection(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BackpressureAdmissionResult | None:
+        return self._backpressure_runtime(boundary).last_rejection
+
+    def pause_backpressure(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BackpressureControlResult:
+        return self._backpressure_runtime(boundary).pause()
+
+    def resume_backpressure(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BackpressureControlResult:
+        return self._backpressure_runtime(boundary).resume()
 
     def subscribe(
         self,
@@ -243,38 +327,66 @@ class RealtimeEventHub(Generic[EventT]):
                 self._rejected_after_close_count += 1
                 raise EventHubClosedError("Realtime event hub is closed.")
 
-            event_sequence = self._allocate_sequence_locked()
+            event_sequence = self._next_sequence
             event = event_factory(event_sequence)
             self._require_factory_sequence(event, event_sequence)
-            self._emitted_event_count += 1
 
             overflow_event: EventT | None = None
+            drop_count = 0
+            first_dropped_sequence: EventSequence | None = None
             if len(self._history) >= self._history_limit:
                 reserved_slots = 2 if overflow_event_factory is not None else 1
                 drop_count = len(self._history) + reserved_slots - self._history_limit
-                first_dropped_sequence: EventSequence | None = None
-                for _ in range(drop_count):
-                    dropped = self._history.popleft()
-                    if first_dropped_sequence is None:
-                        first_dropped_sequence = self._read_event_sequence(dropped)
-                self._history_overflow_count += drop_count
+                if drop_count:
+                    first_dropped_sequence = self._read_event_sequence(
+                        self._history[0]
+                    )
 
                 if overflow_event_factory is not None:
-                    overflow_sequence = self._allocate_sequence_locked()
+                    overflow_sequence = event_sequence.next()
                     overflow_event = overflow_event_factory(
                         overflow_sequence,
                         first_dropped_sequence,
-                        self._history_overflow_count,
+                        self._history_overflow_count + drop_count,
                     )
                     self._require_factory_sequence(
                         overflow_event,
                         overflow_sequence,
                     )
-                    self._emitted_event_count += 1
+            deliveries = [event]
+            if overflow_event is not None:
+                deliveries.append(overflow_event)
+            accepted_items: list[tuple[str, bool]] = []
+            try:
+                for delivery_event in deliveries:
+                    accepted_items.append(
+                        self._admit_delivery_locked(delivery_event)
+                    )
+            except EventHubBackpressureError:
+                for item_id, response_delta in accepted_items:
+                    self._event_subscriber_backpressure.withdraw_pending(item_id)
+                    if response_delta:
+                        self._response_delta_backpressure.withdraw_pending(item_id)
+                self._delivery_backpressure_rejection_count += 1
+                raise
+
+            self._next_sequence = event_sequence.next()
+            self._emitted_event_count += 1
+            if overflow_event is not None:
+                self._next_sequence = self._next_sequence.next()
+                self._emitted_event_count += 1
+            for _ in range(drop_count):
+                self._history.popleft()
+            self._history_overflow_count += drop_count
 
             self._history.append(event)
             self._pending.append(
-                self._delivery_locked(event, legacy_projector)
+                self._delivery_locked(
+                    event,
+                    legacy_projector,
+                    backpressure_item_id=accepted_items[0][0],
+                    response_delta=accepted_items[0][1],
+                )
             )
 
             if overflow_event is not None:
@@ -283,6 +395,8 @@ class RealtimeEventHub(Generic[EventT]):
                     self._delivery_locked(
                         overflow_event,
                         legacy_projector,
+                        backpressure_item_id=accepted_items[1][0],
+                        response_delta=accepted_items[1][1],
                     )
                 )
 
@@ -304,6 +418,8 @@ class RealtimeEventHub(Generic[EventT]):
             self._closed = True
             self._callbacks.clear()
             self._legacy_callbacks.clear()
+            self._event_subscriber_backpressure.close()
+            self._response_delta_backpressure.close()
             return True
 
     def _allocate_sequence_locked(self) -> EventSequence:
@@ -315,6 +431,9 @@ class RealtimeEventHub(Generic[EventT]):
         self,
         event: EventT,
         legacy_projector: LegacyProjector[EventT] | None,
+        *,
+        backpressure_item_id: str,
+        response_delta: bool,
     ) -> _Delivery[EventT]:
         legacy_event = (
             legacy_projector(event)
@@ -330,6 +449,8 @@ class RealtimeEventHub(Generic[EventT]):
                 if legacy_event is not None
                 else ()
             ),
+            backpressure_item_id=backpressure_item_id,
+            response_delta=response_delta,
         )
 
     def _drain_deliveries(self) -> None:
@@ -340,15 +461,82 @@ class RealtimeEventHub(Generic[EventT]):
                     return
                 delivery = self._pending.popleft()
 
-            self._deliver_callbacks(
-                delivery.callbacks,
-                delivery.event,
+            subscriber_claim = self._event_subscriber_backpressure.claim(
+                delivery.backpressure_item_id
             )
-            if delivery.legacy_event is not None:
-                self._deliver_callbacks(
-                    delivery.legacy_callbacks,
-                    delivery.legacy_event,
+            if subscriber_claim is None:
+                raise RuntimeError("event-subscriber backpressure claim drift")
+            if delivery.response_delta:
+                response_claim = self._response_delta_backpressure.claim(
+                    delivery.backpressure_item_id
                 )
+                if response_claim is None:
+                    self._event_subscriber_backpressure.complete(
+                        delivery.backpressure_item_id
+                    )
+                    raise RuntimeError("response-delta backpressure claim drift")
+
+            try:
+                self._deliver_callbacks(
+                    delivery.callbacks,
+                    delivery.event,
+                )
+                if delivery.legacy_event is not None:
+                    self._deliver_callbacks(
+                        delivery.legacy_callbacks,
+                        delivery.legacy_event,
+                    )
+            finally:
+                self._event_subscriber_backpressure.complete(
+                    delivery.backpressure_item_id
+                )
+                if delivery.response_delta:
+                    self._response_delta_backpressure.complete(
+                        delivery.backpressure_item_id
+                    )
+
+    def _admit_delivery_locked(self, event: EventT) -> tuple[str, bool]:
+        sequence = self._read_event_sequence(event)
+        if sequence is None:
+            raise ValueError("event must expose an EventSequence")
+        item_id = f"event_{int(sequence)}"
+        response_delta = self._is_response_delta(event)
+        subscriber_result = self._event_subscriber_backpressure.admit_item(
+            item_id,
+            public_metadata={"event_sequence": int(sequence)},
+        )
+        if not subscriber_result.accepted:
+            raise EventHubBackpressureError(subscriber_result)
+        if response_delta:
+            response_result = self._response_delta_backpressure.admit_item(
+                item_id,
+                public_metadata={"event_sequence": int(sequence)},
+            )
+            if not response_result.accepted:
+                self._event_subscriber_backpressure.withdraw_pending(item_id)
+                raise EventHubBackpressureError(response_result)
+        return item_id, response_delta
+
+    def _backpressure_runtime(
+        self,
+        boundary: BackpressureBoundary | str,
+    ) -> BoundedBackpressureRuntime:
+        resolved = (
+            boundary
+            if isinstance(boundary, BackpressureBoundary)
+            else BackpressureBoundary(str(boundary))
+        )
+        if resolved is BackpressureBoundary.EVENT_SUBSCRIBER:
+            return self._event_subscriber_backpressure
+        if resolved is BackpressureBoundary.RESPONSE_DELTA:
+            return self._response_delta_backpressure
+        raise ValueError("event hub owns only response_delta and event_subscriber")
+
+    @staticmethod
+    def _is_response_delta(event: EventT) -> bool:
+        value = getattr(event, "type", None)
+        value = getattr(value, "value", value)
+        return value == "realtime.response.delta"
 
     def _deliver_callbacks(
         self,
@@ -394,6 +582,7 @@ class RealtimeEventHub(Generic[EventT]):
 
 __all__ = [
     "EventHubClosedError",
+    "EventHubBackpressureError",
     "EventSubscriptionToken",
     "EventHubDiagnostics",
     "RealtimeEventHub",

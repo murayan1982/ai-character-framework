@@ -1218,6 +1218,39 @@ class RealtimeSession:
         with self._operation_lock:
             return self._event_hub.unsubscribe(token)
 
+    def backpressure_capability(self, boundary: object):
+        """Return truthful response-delta or subscriber delivery limits.
+
+        Boundary values come from the explicit ``framework.backpressure``
+        namespace. Audio-input and voice-output owners expose their own
+        capability at their respective runtime boundaries.
+        """
+
+        with self._operation_lock:
+            return self._event_hub.backpressure_capability(boundary)
+
+    def backpressure_snapshot(self, boundary: object):
+        """Return current count-only delivery state for an owned boundary."""
+
+        with self._operation_lock:
+            return self._event_hub.backpressure_snapshot(boundary)
+
+    def pause_backpressure(self, boundary: object):
+        """Pause new delivery admission without cancelling accepted work."""
+
+        with self._operation_lock:
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            return self._event_hub.pause_backpressure(boundary)
+
+    def resume_backpressure(self, boundary: object):
+        """Resume new delivery admission without changing accepted work."""
+
+        with self._operation_lock:
+            if self._closed or self._close_requested:
+                raise self._session_closed_error()
+            return self._event_hub.resume_backpressure(boundary)
+
     def _generation_for_event(
         self,
         turn_id: TurnId | str | None,

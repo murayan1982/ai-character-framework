@@ -4,8 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from threading import RLock
-from typing import Callable
+from typing import Callable, Mapping
+from uuid import uuid4
 
+from .backpressure import (
+    BackpressureAdmissionResult,
+    BackpressureBoundary,
+    BackpressureCapability,
+    BackpressureControlResult,
+    BackpressureOverflowEvent,
+    BackpressureRejectionCode,
+    BackpressureSnapshot,
+)
+from .backpressure_runtime import BoundedBackpressureRuntime
 from .voice_input import VoiceInputResult
 from .voice_input_streaming import (
     VoiceInputAudioChunk,
@@ -31,9 +42,16 @@ class _ActiveStream:
 
 
 class VoiceInputStreamRuntime:
-    """Validate one-at-a-time streams without adding a backpressure queue."""
+    """Validate ordered streams with bounded audio-input admission."""
 
-    def __init__(self, *, on_partial: PartialDelivery) -> None:
+    def __init__(
+        self,
+        *,
+        on_partial: PartialDelivery,
+        on_backpressure_overflow: Callable[[BackpressureOverflowEvent], None]
+        | None = None,
+        maximum_in_flight_audio_chunks: int = 1,
+    ) -> None:
         self._on_partial = on_partial
         self._adapter: VoiceInputStreamingAdapter | None = None
         self._capability = VoiceInputStreamingCapability()
@@ -41,6 +59,16 @@ class VoiceInputStreamRuntime:
         self._last_terminal: tuple[str, str] | None = None
         self._closed = False
         self._lock = RLock()
+        self._audio_backpressure = BoundedBackpressureRuntime(
+            boundary=BackpressureBoundary.AUDIO_INPUT,
+            maximum_pending_count=1,
+            maximum_in_flight_count=maximum_in_flight_audio_chunks,
+            on_overflow=on_backpressure_overflow,
+            public_metadata={
+                "owner": "VoiceInputStreamRuntime",
+                "payload_retained": False,
+            },
+        )
 
     @property
     def capability(self) -> VoiceInputStreamingCapability:
@@ -51,6 +79,24 @@ class VoiceInputStreamRuntime:
     def active_stream_id(self) -> str | None:
         with self._lock:
             return self._active.config.stream_id if self._active is not None else None
+
+    @property
+    def backpressure_capability(self) -> BackpressureCapability:
+        return self._audio_backpressure.capability
+
+    @property
+    def backpressure_snapshot(self) -> BackpressureSnapshot:
+        return self._audio_backpressure.snapshot
+
+    @property
+    def last_backpressure_result(self) -> BackpressureAdmissionResult | None:
+        return self._audio_backpressure.last_rejection
+
+    def pause_backpressure(self) -> BackpressureControlResult:
+        return self._audio_backpressure.pause()
+
+    def resume_backpressure(self) -> BackpressureControlResult:
+        return self._audio_backpressure.resume()
 
     def configure(self, adapter: VoiceInputStreamingAdapter) -> VoiceInputStreamingCapability:
         required = (
@@ -106,9 +152,11 @@ class VoiceInputStreamRuntime:
         next_expected: int | None = None,
         retryable: bool = False,
         terminal: bool = False,
+        public_metadata: Mapping[str, object] | None = None,
     ) -> VoiceInputStreamOperationResult:
-        return VoiceInputStreamOperationResult.rejected(
+        return VoiceInputStreamOperationResult(
             kind=kind,
+            accepted=False,
             stream_id=stream_id,
             rejection_code=code,
             safe_message=message,
@@ -116,6 +164,7 @@ class VoiceInputStreamRuntime:
             next_expected_sequence_number=next_expected,
             retryable=retryable,
             terminal=terminal,
+            public_metadata=public_metadata or {},
         )
 
     def _terminal_rejection(
@@ -164,6 +213,53 @@ class VoiceInputStreamRuntime:
             pass
 
     def send(self, chunk: VoiceInputAudioChunk) -> VoiceInputStreamOperationResult:
+        """Admit one chunk without waiting when the in-flight slot is occupied."""
+
+        if not isinstance(chunk, VoiceInputAudioChunk):
+            raise TypeError("chunk must be VoiceInputAudioChunk")
+        item_id = f"audio_{uuid4().hex}"
+        admission = self._audio_backpressure.admit_item(
+            item_id,
+            start_immediately=True,
+            public_metadata={
+                "stream_id": chunk.stream_id,
+                "sequence_number": chunk.sequence_number,
+            },
+        )
+        if not admission.accepted:
+            closed = admission.rejection_code is BackpressureRejectionCode.CLOSED
+            return self._rejected(
+                kind=chunk.kind,
+                stream_id=chunk.stream_id,
+                code=(
+                    VoiceInputStreamRejectionCode.SESSION_CLOSED
+                    if closed
+                    else VoiceInputStreamRejectionCode.NOT_SUPPORTED
+                ),
+                message=(
+                    "Voice input session is closed."
+                    if closed
+                    else "Audio input backpressure rejected the chunk."
+                ),
+                sequence_number=chunk.sequence_number,
+                retryable=admission.retryable,
+                terminal=closed,
+                public_metadata={
+                    "boundary": BackpressureBoundary.AUDIO_INPUT.value,
+                    "backpressure_rejection_code": admission.rejection_code.value,
+                    "dropped": admission.dropped,
+                },
+            )
+        try:
+            return self._send_admitted(chunk)
+        finally:
+            if not self._audio_backpressure.complete(item_id):
+                raise AssertionError("accepted audio admission lost in-flight ownership")
+
+    def _send_admitted(
+        self,
+        chunk: VoiceInputAudioChunk,
+    ) -> VoiceInputStreamOperationResult:
         if not isinstance(chunk, VoiceInputAudioChunk):
             raise TypeError("chunk must be VoiceInputAudioChunk")
         with self._lock:
@@ -228,41 +324,55 @@ class VoiceInputStreamRuntime:
                     retryable=True,
                 )
 
-            def emit_partial(text: str, confidence: float | None) -> None:
-                if not isinstance(text, str) or not text.strip():
-                    raise ValueError("partial transcript text must be non-empty")
-                if confidence is not None and not 0.0 <= confidence <= 1.0:
-                    raise ValueError("partial transcript confidence is invalid")
-                with self._lock:
-                    current = self._active
-                    if current is None or current.config.stream_id != chunk.stream_id:
-                        return
-                self._on_partial(
-                    chunk.stream_id,
-                    chunk.sequence_number,
-                    text.strip(),
-                    confidence,
-                )
+        def emit_partial(text: str, confidence: float | None) -> None:
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError("partial transcript text must be non-empty")
+            if confidence is not None and not 0.0 <= confidence <= 1.0:
+                raise ValueError("partial transcript confidence is invalid")
+            with self._lock:
+                current = self._active
+                if current is None or current.config.stream_id != chunk.stream_id:
+                    return
+            self._on_partial(
+                chunk.stream_id,
+                chunk.sequence_number,
+                text.strip(),
+                confidence,
+            )
 
-            try:
-                adapter.accept_chunk(chunk, emit_partial=emit_partial)
-            except Exception:
-                self._abort_adapter_safely(
-                    adapter,
-                    stream_id=chunk.stream_id,
-                    last_sequence_number=(expected - 1 if expected > 0 else None),
-                    reason="adapter_chunk_failed",
-                )
-                self._last_terminal = (chunk.stream_id, "aborted")
-                self._active = None
-                return self._rejected(
+        # Provider work runs outside the runtime lock. The bounded controller
+        # owns the one in-flight slot while abort/close may proceed cooperatively.
+        try:
+            adapter.accept_chunk(chunk, emit_partial=emit_partial)
+        except Exception:
+            self._abort_adapter_safely(
+                adapter,
+                stream_id=chunk.stream_id,
+                last_sequence_number=(expected - 1 if expected > 0 else None),
+                reason="adapter_chunk_failed",
+            )
+            with self._lock:
+                if self._active is active:
+                    self._last_terminal = (chunk.stream_id, "aborted")
+                    self._active = None
+                    return self._rejected(
+                        kind=chunk.kind,
+                        stream_id=chunk.stream_id,
+                        code=VoiceInputStreamRejectionCode.NOT_SUPPORTED,
+                        message="Audio chunk adapter rejected the operation.",
+                        sequence_number=chunk.sequence_number,
+                        terminal=True,
+                    )
+                terminal = self._terminal_rejection(
                     kind=chunk.kind,
                     stream_id=chunk.stream_id,
-                    code=VoiceInputStreamRejectionCode.NOT_SUPPORTED,
-                    message="Audio chunk adapter rejected the operation.",
                     sequence_number=chunk.sequence_number,
-                    terminal=True,
                 )
+                if terminal is None:
+                    raise AssertionError("stream changed without a terminal state")
+                return terminal
+
+        with self._lock:
             if self._active is not active:
                 terminal = self._terminal_rejection(
                     kind=chunk.kind,
@@ -442,6 +552,9 @@ class VoiceInputStreamRuntime:
             )
 
     def close(self) -> None:
+        # Close admission first so no caller can acquire a new in-flight slot
+        # while stream cleanup is waiting on the adapter boundary.
+        self._audio_backpressure.close()
         with self._lock:
             if self._closed:
                 return

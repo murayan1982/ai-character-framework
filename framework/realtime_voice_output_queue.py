@@ -22,6 +22,15 @@ import threading
 from typing import Callable, Mapping, Protocol, runtime_checkable
 
 from .audio.voice_output import VoiceOutputRequest
+from .backpressure import (
+    BackpressureAdmissionResult,
+    BackpressureBoundary,
+    BackpressureCapability,
+    BackpressureControlResult,
+    BackpressureRejectionCode,
+    BackpressureSnapshot,
+)
+from .backpressure_runtime import BoundedBackpressureRuntime
 from .identity import GenerationId, SessionId, TurnId
 from .public_safety import public_mapping, sanitize_public_value
 from .realtime_stage import RealtimeStageContext
@@ -94,6 +103,8 @@ class VoiceSynthesisEnqueueOutcome(str, Enum):
 
     ACCEPTED = "accepted"
     REJECTED_FULL = "rejected_full"
+    REJECTED_PAUSED = "rejected_paused"
+    REJECTED_CLOSED = "rejected_closed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +117,10 @@ class VoiceSynthesisEnqueueResult:
     max_pending_depth: int
     safe_message: str = ""
     public_metadata: Mapping[str, object] = field(default_factory=dict)
+    backpressure_result: BackpressureAdmissionResult | None = field(
+        default=None,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         outcome = (
@@ -132,6 +147,20 @@ class VoiceSynthesisEnqueueResult:
             and pending_count != max_pending_depth
         ):
             raise ValueError("rejected_full enqueue requires a full pending queue")
+        if self.backpressure_result is not None:
+            if not isinstance(
+                self.backpressure_result,
+                BackpressureAdmissionResult,
+            ):
+                raise TypeError(
+                    "backpressure_result must be BackpressureAdmissionResult or None"
+                )
+            if self.backpressure_result.accepted is not (
+                outcome is VoiceSynthesisEnqueueOutcome.ACCEPTED
+            ):
+                raise ValueError("enqueue and backpressure acceptance must agree")
+            if self.backpressure_result.admission.item_id != str(self.work.work_id):
+                raise ValueError("enqueue and backpressure work identity must agree")
         object.__setattr__(self, "outcome", outcome)
         object.__setattr__(self, "pending_count", pending_count)
         object.__setattr__(self, "max_pending_depth", max_pending_depth)
@@ -149,6 +178,19 @@ class VoiceSynthesisEnqueueResult:
     @property
     def accepted(self) -> bool:
         return self.outcome is VoiceSynthesisEnqueueOutcome.ACCEPTED
+
+    @property
+    def retryable(self) -> bool:
+        if self.backpressure_result is not None:
+            return self.backpressure_result.retryable
+        return self.outcome in (
+            VoiceSynthesisEnqueueOutcome.REJECTED_FULL,
+            VoiceSynthesisEnqueueOutcome.REJECTED_PAUSED,
+        )
+
+    @property
+    def dropped(self) -> bool:
+        return False
 
 
 class VoiceSynthesisPendingClearOutcome(str, Enum):
@@ -343,6 +385,7 @@ class BoundedVoiceSynthesisPendingQueue:
         "_lock",
         "_pending",
         "_overflow_count",
+        "_backpressure",
     )
 
     def __init__(
@@ -361,6 +404,15 @@ class BoundedVoiceSynthesisPendingQueue:
         self._lock = threading.RLock()
         self._pending: deque[_PendingVoiceSynthesisEntry] = deque()
         self._overflow_count = 0
+        self._backpressure = BoundedBackpressureRuntime(
+            boundary=BackpressureBoundary.VOICE_OUTPUT,
+            maximum_pending_count=self._max_pending_depth,
+            maximum_in_flight_count=1,
+            public_metadata={
+                "owner": "BoundedVoiceSynthesisPendingQueue",
+                "payload_retained": False,
+            },
+        )
 
     @property
     def max_pending_depth(self) -> int:
@@ -381,6 +433,29 @@ class BoundedVoiceSynthesisPendingQueue:
         with self._lock:
             return self._overflow_count
 
+    @property
+    def backpressure_capability(self) -> BackpressureCapability:
+        return self._backpressure.capability
+
+    @property
+    def backpressure_snapshot(self) -> BackpressureSnapshot:
+        return self._backpressure.snapshot
+
+    @property
+    def last_backpressure_result(self) -> BackpressureAdmissionResult | None:
+        return self._backpressure.last_rejection
+
+    def pause(self) -> BackpressureControlResult:
+        return self._backpressure.pause()
+
+    def resume(self) -> BackpressureControlResult:
+        return self._backpressure.resume()
+
+    def close(self) -> BackpressureSnapshot:
+        """Close new admission while retaining explicitly accepted pending work."""
+
+        return self._backpressure.close()
+
     def enqueue(
         self,
         *,
@@ -398,30 +473,59 @@ class BoundedVoiceSynthesisPendingQueue:
         )
         overflow_event: VoiceSynthesisQueueEvent | None = None
         with self._lock:
-            if len(self._pending) >= self._max_pending_depth:
-                self._overflow_count += 1
-                overflow_event = VoiceSynthesisQueueEvent(
-                    type=VoiceSynthesisQueueEventType.OVERFLOW,
-                    work=work,
-                    pending_count=len(self._pending),
-                    max_pending_depth=self._max_pending_depth,
-                    overflow_count=self._overflow_count,
-                    safe_message="Voice synthesis pending queue is full.",
-                    public_metadata={
-                        "boundary": "voice_synthesis_pending_queue",
-                        "reason": "bounded_pending_capacity",
-                    },
-                )
+            backpressure_result = self._backpressure.admit_item(
+                str(work.work_id),
+                public_metadata={
+                    "session_id": str(work.session_id),
+                    "turn_id": str(work.turn_id),
+                    "generation_id": str(work.generation_id),
+                },
+            )
+            if not backpressure_result.accepted:
+                rejection_code = backpressure_result.rejection_code
+                if rejection_code is BackpressureRejectionCode.CAPACITY_REACHED:
+                    outcome = VoiceSynthesisEnqueueOutcome.REJECTED_FULL
+                    reason = "bounded_pending_capacity"
+                    message = (
+                        "Voice synthesis work was rejected because the pending "
+                        "queue is full."
+                    )
+                elif rejection_code is BackpressureRejectionCode.PAUSED:
+                    outcome = VoiceSynthesisEnqueueOutcome.REJECTED_PAUSED
+                    reason = "admission_paused"
+                    message = "Voice synthesis work was rejected while admission is paused."
+                elif rejection_code is BackpressureRejectionCode.CLOSED:
+                    outcome = VoiceSynthesisEnqueueOutcome.REJECTED_CLOSED
+                    reason = "admission_closed"
+                    message = "Voice synthesis work was rejected because admission is closed."
+                else:  # pragma: no cover - controller has an exact rejection set
+                    raise AssertionError("unexpected voice-output rejection")
+
+                if outcome is VoiceSynthesisEnqueueOutcome.REJECTED_FULL:
+                    self._overflow_count += 1
+                    overflow_event = VoiceSynthesisQueueEvent(
+                        type=VoiceSynthesisQueueEventType.OVERFLOW,
+                        work=work,
+                        pending_count=len(self._pending),
+                        max_pending_depth=self._max_pending_depth,
+                        overflow_count=self._overflow_count,
+                        safe_message="Voice synthesis pending queue is full.",
+                        public_metadata={
+                            "boundary": "voice_synthesis_pending_queue",
+                            "reason": reason,
+                        },
+                    )
                 result = VoiceSynthesisEnqueueResult(
-                    outcome=VoiceSynthesisEnqueueOutcome.REJECTED_FULL,
+                    outcome=outcome,
                     work=work,
                     pending_count=len(self._pending),
                     max_pending_depth=self._max_pending_depth,
-                    safe_message="Voice synthesis work was rejected because the pending queue is full.",
+                    safe_message=message,
                     public_metadata={
-                        "boundary": "voice_synthesis_pending_queue",
-                        "reason": "bounded_pending_capacity",
+                        "boundary": BackpressureBoundary.VOICE_OUTPUT.value,
+                        "reason": reason,
                     },
+                    backpressure_result=backpressure_result,
                 )
             else:
                 self._pending.append(
@@ -437,9 +541,10 @@ class BoundedVoiceSynthesisPendingQueue:
                     max_pending_depth=self._max_pending_depth,
                     safe_message="Voice synthesis work was accepted into the pending queue.",
                     public_metadata={
-                        "boundary": "voice_synthesis_pending_queue",
+                        "boundary": BackpressureBoundary.VOICE_OUTPUT.value,
                         "reason": "accepted",
                     },
+                    backpressure_result=backpressure_result,
                 )
 
         if overflow_event is not None:
@@ -471,6 +576,9 @@ class BoundedVoiceSynthesisPendingQueue:
                 cleared_entries = tuple(cleared)
 
             cleared_work = tuple(entry.work for entry in cleared_entries)
+            for work in cleared_work:
+                if not self._backpressure.withdraw_pending(str(work.work_id)):
+                    raise AssertionError("cleared voice work lost pending ownership")
             pending_count = len(self._pending)
 
         if cleared_work:
@@ -524,12 +632,21 @@ class BoundedVoiceSynthesisPendingQueue:
                 context=entry.work.context,
                 work_id=entry.work.work_id,
             )
+            admission = self._backpressure.claim(str(entry.work.work_id))
+            if admission is None:
+                stage._release_generation(active.work_id)
+                return None
             claimed = self._pending.popleft()
             if claimed is not entry:  # pragma: no cover - protected by queue lock
                 stage._release_generation(active.work_id)
+                self._backpressure.complete(str(entry.work.work_id))
                 raise RuntimeError("pending voice synthesis FIFO claim drift")
 
-        return stage._run_claimed(active=active, request=entry.request)
+        try:
+            return stage._run_claimed(active=active, request=entry.request)
+        finally:
+            if not self._backpressure.complete(str(entry.work.work_id)):
+                raise AssertionError("voice-output in-flight ownership was lost")
 
     def _deliver_event(self, event: VoiceSynthesisQueueEvent) -> None:
         callback = self._on_event

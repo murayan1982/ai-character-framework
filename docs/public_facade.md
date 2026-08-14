@@ -6490,3 +6490,58 @@ Control A acceptance sync: NOT_AUTHORIZED
 Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12b-A-PUBLIC-BACKPRESSURE:END -->
+
+
+<!-- FW-RT6-12b-B-PUBLIC-BACKPRESSURE:BEGIN -->
+## FW-RT6-12b Control B — bounded runtime adoption
+
+The internal explicit-only `framework.backpressure_runtime` module now owns a
+thread-safe `BoundedBackpressureRuntime`. It retains opaque item identities and
+bounded counts only; payload ownership stays with the adopting runtime. It is
+not re-exported from the Framework root and the root inventory remains exactly
+127 names.
+
+All four accepted boundaries now have one concrete owner:
+
+| Boundary | Concrete owner | Pending / in-flight limit |
+| --- | --- | --- |
+| `audio_input` | `VoiceInputStreamRuntime`, observed by `VoiceInputSession` | 1 / 1 |
+| `response_delta` | `RealtimeEventHub`, observed by `RealtimeSession` | 64 / 1 |
+| `event_subscriber` | `RealtimeEventHub`, observed by `RealtimeSession` | 64 / 1 |
+| `voice_output` | `BoundedVoiceSynthesisPendingQueue` | configured depth / 1 |
+
+The event hub admits delivery before committing sequence/history state. A
+capacity or pause rejection therefore consumes no event sequence and causes no
+delivery. Reentrant accepted events remain serialized; `reject_newest`
+preserves the already accepted FIFO. Audio-input admission occurs before its
+provider-neutral adapter call so a concurrent chunk is rejected without
+waiting. The voice-output queue maps its established result vocabulary to the
+generic `BackpressureAdmissionResult` without placing synthesis request text in
+public state.
+
+Pause/resume blocks or reopens new admission only. It never cancels or drops
+pending or in-flight work. Close rejects new work terminally while existing
+accepted ownership remains explicit until completion or caller-requested clear.
+
+```text
+checkpoint: FW-RT6-12b Control B
+baseline: fa12002e898a88bc9d9025004b0e4b26772d8187
+exact change surface: 11 files
+runtime namespace: framework.backpressure_runtime / EXPLICIT_ONLY
+runtime namespace exports: 1 / EXACT
+stable contract namespace: framework.backpressure / 12 / UNCHANGED
+boundary count: 4 / ADOPTED
+overflow policy: reject_newest
+typed retryable capacity rejection: PASS
+pause/resume accepted-work cancellation: False
+silent drop: PROHIBITED
+root-public names: 127 / UNCHANGED
+factory signatures and API version labels: UNCHANGED
+provider/network/audio-device/playback execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-12b tasks: 0 / 6 CLOSED
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12b-B-PUBLIC-BACKPRESSURE:END -->

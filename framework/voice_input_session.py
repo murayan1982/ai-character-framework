@@ -9,6 +9,12 @@ while adopting Framework-owned v6 correlation.
 from __future__ import annotations
 
 from . import voice_input_composition as _voice_input_composition
+from .backpressure import (
+    BackpressureAdmissionResult,
+    BackpressureCapability,
+    BackpressureControlResult,
+    BackpressureSnapshot,
+)
 from .voice_input_audio import VoiceInputAudioSource
 from .voice_input_provider_adapter import FakeVoiceInputProviderAdapter, VoiceInputProviderAdapter
 from .voice_input_stream_runtime import VoiceInputStreamRuntime
@@ -243,6 +249,42 @@ class VoiceInputSession:
         """Return the explicitly configured audio-chunk streaming capability."""
 
         return self._streaming_runtime.capability
+
+    @property
+    def audio_input_backpressure_capability(self) -> BackpressureCapability:
+        """Return truthful limits for the session-owned audio-input boundary."""
+
+        return self._streaming_runtime.backpressure_capability
+
+    @property
+    def audio_input_backpressure_snapshot(self) -> BackpressureSnapshot:
+        """Return count-only audio admission state without raw audio."""
+
+        return self._streaming_runtime.backpressure_snapshot
+
+    @property
+    def last_audio_input_backpressure_result(
+        self,
+    ) -> BackpressureAdmissionResult | None:
+        """Return the most recent typed audio-input admission rejection."""
+
+        return self._streaming_runtime.last_backpressure_result
+
+    def pause_audio_input(self) -> BackpressureControlResult:
+        """Pause new audio chunks without cancelling an accepted chunk."""
+
+        with self._input_operation_lock:
+            if self._closed:
+                raise RuntimeError("Voice input session is closed.")
+            return self._streaming_runtime.pause_backpressure()
+
+    def resume_audio_input(self) -> BackpressureControlResult:
+        """Resume new audio chunks without changing accepted work."""
+
+        with self._input_operation_lock:
+            if self._closed:
+                raise RuntimeError("Voice input session is closed.")
+            return self._streaming_runtime.resume_backpressure()
 
     @property
     def last_stream_result(self) -> VoiceInputResult | None:
@@ -502,8 +544,10 @@ class VoiceInputSession:
     ) -> VoiceInputStreamOperationResult:
         """Validate and deliver exactly the next chunk to the configured adapter."""
 
+        # Admission occurs before the operation lock so a concurrent caller gets
+        # an immediate typed capacity rejection instead of waiting unboundedly.
+        result = self._streaming_runtime.send(chunk)
         with self._input_operation_lock:
-            result = self._streaming_runtime.send(chunk)
             if not result.accepted and result.terminal:
                 context = self._stream_input_context
                 if context is not None and self._input_context_is_current(context):
