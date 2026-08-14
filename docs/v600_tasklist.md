@@ -10691,3 +10691,102 @@ The six tasks are acceptance-candidates rather than final CLOSED state. Final
 completion requires a separately reviewed one-file acceptance sync, commit,
 push, and remote verification. FW-RT6-12c remains separately gated.
 <!-- FW-RT6-12b-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12b — backpressure final acceptance sync
+
+```text
+checkpoint: FW-RT6-12b final acceptance sync
+baseline head: 25cf1e97f501cb3a70f4e24ab503f87496d4baa4
+FW-RT6-12a final acceptance: 3153efd68213575e39802f0857d05aee693df255
+Control A implementation and acceptance: fa12002e898a88bc9d9025004b0e4b26772d8187
+Control B implementation and acceptance: 51e7ff75b2f17cecb1c21ac696d0c254aa033863
+Control C aggregate implementation and acceptance: 54291405a817afddbef927b0e0a3173d8937772c
+Control C corrective-r2: 25cf1e97f501cb3a70f4e24ab503f87496d4baa4
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation and acceptance surface: 7 files
+exact Control B implementation and acceptance surface: 12 files
+exact Control C aggregate surface: 7 files
+exact Control C corrective-r2 surface: 2 files
+final acceptance-sync exact surface: 1 file
+dedicated Control C aggregate gate: PASS
+historical FW-RT6-11c/12a task-boundary isolation: PASS
+FW-RT6-12b aggregate-state isolation: PASS
+focused Control A tests: 19 / PASS
+focused Control B tests: 23 / PASS
+focused Control A+B tests: 42 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+full Framework unit suite: 753 / PASS
+stable contract namespace: framework.backpressure / 12 EXACT / ACCEPTED
+internal runtime namespace: framework.backpressure_runtime / 1 EXACT / ACCEPTED
+backpressure namespaces in framework root: 0 / EXPLICIT_ONLY / PASS
+framework root-public names: 127 / UNCHANGED
+runtime boundaries adopted: 4 / 4 ACCEPTED
+audio-input owner: VoiceInputStreamRuntime and VoiceInputSession / ACCEPTED
+response-delta owner: RealtimeEventHub and RealtimeSession / ACCEPTED
+voice-output owner: BoundedVoiceSynthesisPendingQueue / ACCEPTED
+event-subscriber owner: RealtimeEventHub and RealtimeSession / ACCEPTED
+maximum pending and in-flight counts: FIXED PER OWNER / ACCEPTED
+overflow policy: reject_newest / ACCEPTED
+capacity and pause rejection: TYPED / RETRYABLE / NON_CONSUMING / ACCEPTED
+closed rejection: TYPED / TERMINAL / ACCEPTED
+overflow event: NON_SILENT / RETRYABLE / ACCEPTED
+silent drop: PROHIBITED / ACCEPTED
+pause/resume effect: NEW ADMISSION ONLY / ACCEPTED
+accepted pending or in-flight work cancelled by pause/resume: False / PASS
+accepted pending or in-flight work dropped by pause/resume: False / PASS
+raw audio/text/voice/event payload in public backpressure projection: False / PASS
+factory signatures and return/event shapes: UNCHANGED
+API and schema version labels: UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/real VTS execution: False / PASS
+runtime source changed by Control C/final sync: False
+public-facade contract changed by final sync: False
+application-integration contract changed by final sync: False
+backpressure guide changed by final sync: False
+root API manifest changed by final sync: False
+aggregate gate changed by final sync: False
+existing gate/test changed by final sync: False
+example changed by final sync: False
+README changed by final sync: False
+FW-RT6-12b tasks: 6 / 6 ACCEPTED
+FW-RT6-12b aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-12c exact contract review: AUTHORIZED_AFTER_SYNC_PUSH
+FW-RT6-12c implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-12b closes the provider-neutral backpressure contract and its bounded
+runtime adoption at all four reviewed owners. Both backpressure namespaces
+remain explicit-only, and the frozen 127-name Framework root remains
+unchanged.
+
+Every owner retains fixed pending and in-flight capacity. The accepted
+`reject_newest` policy preserves caller ownership through typed retryable
+capacity and pause rejection. Closure remains terminal, overflow remains
+non-silent, and pause/resume affects only new admission without cancelling,
+evicting, or dropping accepted work.
+
+Public projections remain payload-free. Raw audio, response text, synthesis
+requests, subscriber events, provider objects, and private paths remain in
+their private owners. No provider, network, audio-device, playback, or real VTS
+execution is performed by this final sync.
+
+This final sync changes only `docs/v600_tasklist.md`; it changes no runtime
+source, public-facade or application-integration contract, backpressure guide,
+root API manifest, aggregate gate, existing gate/test, provider namespace,
+factory signature, return/event shape, API/schema version, example, historical
+v5 gate, or README. It formally completes, verifies, accepts, commits, pushes,
+and closes all three controls and all six FW-RT6-12b aggregate tasks.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+FW-RT6-12c exact contract review is authorized. This sync does not authorize
+FW-RT6-12c implementation.
+<!-- FW-RT6-12b-FINAL-ACCEPTANCE-SYNC:END -->
