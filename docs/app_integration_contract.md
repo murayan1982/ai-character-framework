@@ -4842,3 +4842,52 @@ FW-RT6-12a tasks: 0 / 7 CLOSED
 Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12a-B-HOST-AUDIO-STREAMING:END -->
+
+
+<!-- FW-RT6-12b-A-APP-BACKPRESSURE:BEGIN -->
+## FW-RT6-12b Control A — application backpressure contract
+
+Applications must treat queue admission as an explicit ownership transfer.
+Submitting audio input, a response delta, voice output, or an event-subscriber
+delivery does not by itself prove that Framework accepted the work. A runtime
+that adopts this contract must return a typed `BackpressureAdmissionResult`.
+When capacity is reached, `reject_newest` leaves the new item with the caller,
+returns `capacity_reached` with `retryable=True`, and emits a corresponding
+non-silent `BackpressureOverflowEvent`.
+
+The stable data-only vocabulary lives under `framework.backpressure`. Importing
+that namespace does not create a queue or opt any runtime boundary into flow
+control. Applications must inspect one truthful `BackpressureCapability` per
+boundary; the default capability is unsupported and must not advertise limits.
+A supported capability declares both `maximum_pending_count` and
+`maximum_in_flight_count`, typed retryable rejection, and overflow events.
+
+Pause and resume control only new admission. Pause does not cancel, dequeue,
+dispose, or silently drop already accepted work. Closed boundaries reject
+terminally. Contract objects retain only opaque item IDs and public-safe
+metadata; raw audio, response text, voice payloads, and subscriber payloads do
+not enter these public models.
+
+```text
+stable namespace: framework.backpressure
+contract API: 6.0
+explicit namespace exports: 12 / EXACT
+boundaries: audio_input / response_delta / voice_output / event_subscriber
+overflow policy: reject_newest
+capacity rejection: TYPED / RETRYABLE / CALLER_RETAINS_NEW_ITEM
+overflow event: REQUIRED_BY_SUPPORTED_CAPABILITY
+silent drop: PROHIBITED
+pause effect: NEW_ADMISSION_ONLY
+accepted work cancellation/drop by pause: False
+default/runtime adoption: UNSUPPORTED / CONTROL_B
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback execution: False
+FW-RT6-12b tasks: 0 / 6 CLOSED
+Control A acceptance sync: NOT_AUTHORIZED
+Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
+```
+
+Control A defines immutable provider-neutral contracts only. Existing
+specialized voice-output queue and realtime-event history behavior remain
+unchanged until an explicitly authorized runtime-adoption control.
+<!-- FW-RT6-12b-A-APP-BACKPRESSURE:END -->

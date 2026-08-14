@@ -6444,3 +6444,49 @@ Control C adds aggregate documentation and verification only. It changes no
 runtime source, provider implementation, application-integration contract,
 streaming guide, root manifest, factory, version label, example, or README.
 <!-- FW-RT6-12a-C-AUDIO-STREAMING-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12b-A-PUBLIC-BACKPRESSURE:BEGIN -->
+## FW-RT6-12b Control A — explicit backpressure namespace
+
+`framework.backpressure` is the stable, explicit-only v6.0 contract namespace
+for flow-control capability, admission, observation, pause/resume results, and
+non-silent overflow diagnostics. It exports exactly 12 names and adds nothing
+to the frozen 127-name Framework root.
+
+The contract has four exact boundaries: `audio_input`, `response_delta`,
+`voice_output`, and `event_subscriber`. A supported capability declares fixed
+maximum pending and in-flight counts, retryable rejection, and overflow-event
+support. `reject_newest` is the only Control A overflow policy: the rejected
+item is not consumed, `dropped` remains false, and the caller may retry after
+capacity becomes available. Silent loss is never a valid result.
+
+`pause` blocks new admission without cancelling or dropping accepted work;
+`resume` reopens admission. Repeated pause/resume and closed-state operations
+produce typed rejection codes. All public objects are immutable and expose
+only opaque IDs, bounded counts, enums, safe messages, and public-safe
+metadata. They do not expose raw audio, text deltas, voice payloads, subscriber
+payloads, private paths, or provider exceptions.
+
+```text
+checkpoint: FW-RT6-12b Control A
+baseline: 3153efd68213575e39802f0857d05aee693df255
+exact change surface: 6 files
+namespace: framework.backpressure
+namespace exports: 12 / EXACT / EXPLICIT_ONLY
+boundary count: 4 / EXACT
+maximum pending/in-flight: CONTRACTED
+pause/resume: CONTRACTED / NO_CANCEL_OR_DROP
+retryable capacity rejection: CONTRACTED
+overflow event: CONTRACTED / NON_SILENT
+silent drop: PROHIBITED
+root-public names: 127 / UNCHANGED
+runtime queue adoption: False / CONTROL_B
+provider/network/audio-device/playback execution: False
+docs/v600_tasklist.md changed: False
+FW-RT6-12b tasks: 0 / 6 CLOSED
+Control A: IMPLEMENTED / AWAITING_REVIEW
+Control A acceptance sync: NOT_AUTHORIZED
+Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12b-A-PUBLIC-BACKPRESSURE:END -->

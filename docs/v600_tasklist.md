@@ -10414,3 +10414,99 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-12b exact contract review is authorized. This sync does not authorize
 FW-RT6-12b implementation.
 <!-- FW-RT6-12a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12b-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12b Control A — backpressure contract acceptance sync
+
+```text
+checkpoint: FW-RT6-12b Control A
+baseline head: 3153efd68213575e39802f0857d05aee693df255
+FW-RT6-12a final acceptance: 3153efd68213575e39802f0857d05aee693df255
+Control A implementation baseline: 3153efd68213575e39802f0857d05aee693df255
+Control A implementation candidate: WORKTREE / VERIFIED
+Control A: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control A implementation surface: 6 files
+acceptance-sync new path surface: 1 file / docs/v600_tasklist.md
+acceptance semantic-state corrective replacements: 2 existing Control A files
+combined worktree surface: 7 files
+dedicated Control A backpressure gate: PASS
+focused Control A backpressure tests: 19 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+full Framework unit suite: 730 / PASS
+stable explicit namespace: framework.backpressure / PASS
+namespace exports: 12 / EXACT / EXPLICIT_ONLY / PASS
+backpressure API version: 6.0 / PASS
+boundaries: audio_input / response_delta / voice_output / event_subscriber
+boundary count: 4 / EXACT / PASS
+default boundary support: False / TRUTHFUL / PASS
+supported maximum pending count: REQUIRED / PASS
+supported maximum in-flight count: REQUIRED / PASS
+overflow policy: reject_newest / PASS
+capacity rejection: TYPED / RETRYABLE / PASS
+paused rejection: TYPED / RETRYABLE / PASS
+closed rejection: TYPED / TERMINAL / PASS
+overflow event: NON_SILENT / RETRYABLE / PASS
+silent drop: PROHIBITED / PASS
+pause/resume: NEW_ADMISSION_ONLY / PASS
+accepted work cancellation by pause/resume: False / PASS
+accepted work drop by pause/resume: False / PASS
+raw audio/text/voice/event payload in contract models: False / PASS
+private path or URL accepted as item ID: False / PASS
+framework root-public names: 127 / UNCHANGED
+current realtime voice-input backpressure support: False / TRUTHFUL / PASS
+runtime queue adoption: False / DEFERRED_TO_CONTROL_B
+existing specialized voice-output queue changed: False
+existing realtime-event hub changed: False
+factory signatures and API/schema version labels: UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/real VTS execution: False / PASS
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+backpressure contract guide/module changed by acceptance sync: False
+Control A gate/test behavior changed by sync: ACCEPTANCE-STATE ONLY
+FW-RT6-12b aggregate: NOT_COMPLETED
+FW-RT6-12b tasklist: 0 / 6 CLOSED
+tasklist aggregate checkboxes: NOT_CLOSED_BY_CONTROL_A
+Control B exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts the immutable, provider-neutral backpressure vocabulary in
+the explicit `framework.backpressure` namespace. Its exact 12 exports cover
+four boundaries and do not enlarge the frozen 127-name Framework root-public
+inventory.
+
+A supported boundary declares fixed maximum pending and in-flight counts,
+typed retryable rejection, and non-silent overflow-event support. The accepted
+`reject_newest` policy leaves rejected work with the caller. Capacity and pause
+rejections are retryable; closure is terminal. Silent drop is prohibited.
+
+Pause and resume affect only new admission. They do not cancel, dequeue,
+dispose, or drop accepted pending or in-flight work. Public models contain only
+opaque item IDs and public-safe metadata; raw audio, response text, voice
+payloads, and subscriber-event payloads remain outside the contract.
+
+Control A remains data-only. No runtime queue adopts the contract, the current
+realtime voice-input capability remains truthfully unsupported, and existing
+specialized voice-output queue and realtime-event hub behavior is unchanged.
+Runtime adoption remains Control B work.
+
+This sync adds only `docs/v600_tasklist.md` to the baseline change surface. It
+also corrects the acceptance-state condition in the already modified Control A
+smoke and unit-test files so the same gates validate both the pre-acceptance
+candidate and this accepted worktree. The combined baseline surface remains
+exactly seven files. None of the six aggregate task checkboxes close here.
+
+After this combined worktree is reviewed, committed, pushed, and remotely
+verified, only Control B exact contract review is authorized. Control B
+implementation, aggregate acceptance, and their commit/push remain separately
+gated.
+<!-- FW-RT6-12b-A-ACCEPTANCE-SYNC:END -->
