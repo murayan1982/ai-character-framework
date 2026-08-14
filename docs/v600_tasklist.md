@@ -10790,3 +10790,81 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 FW-RT6-12c exact contract review is authorized. This sync does not authorize
 FW-RT6-12c implementation.
 <!-- FW-RT6-12b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12c-A-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12c Control A — experimental natural-turn capability acceptance sync
+
+```text
+checkpoint: FW-RT6-12c Control A
+baseline head: e5a41949370d341448e51ba47a6209b14dee9f80
+FW-RT6-12b final acceptance: e5a41949370d341448e51ba47a6209b14dee9f80
+Control A implementation baseline: e5a41949370d341448e51ba47a6209b14dee9f80
+Control A implementation candidate: WORKTREE / VERIFIED
+Control A: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control A implementation surface: 6 files
+acceptance-sync new path surface: 1 file / docs/v600_tasklist.md
+acceptance semantic-state corrective replacements: 2 existing Control A files
+combined worktree surface: 7 files
+dedicated Control A natural-turn gate: PASS
+focused Control A natural-turn tests: 16 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+accepted FW-RT6-12b backpressure gate: PASS
+full Framework unit suite: 769 / PASS
+stable contract namespace: framework.natural_turn
+namespace exports: 6 / EXACT / EXPLICIT_ONLY
+natural-turn extensions: 7 / EXACT / INDEPENDENT
+combined natural-turn mode: NONE
+default supported extensions: 0 / 7
+default experimental: True
+default owner: host_application
+explicit activation required: True
+runtime/session adoption: False
+v6.0.0 P0 acceptance requirement: False
+framework root-public names: 127 / UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/background/real VTS execution: False / PASS
+raw audio/transcript/provider/device handle in public projection: False / PASS
+docs/v600_tasklist.md primary FW-RT6-12c boundary changed: False
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+natural-turn guide changed by acceptance sync: False
+root API manifest changed by acceptance sync: False
+factory signature or event/result shape changed: False
+FW-RT6-12c roadmap items closed: 0 / 7
+Control A acceptance sync: IMPLEMENTED / AWAITING_REVIEW
+Control B exact contract review: AUTHORIZED_AFTER_COMMIT_PUSH
+Control B implementation: NOT_AUTHORIZED
+aggregate acceptance: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control A accepts a provider-neutral, immutable capability vocabulary for seven
+independent experimental natural-turn extensions. It does not accept a
+combined natural-turn mode, microphone implementation, background listener,
+automatic capture runtime, provider adapter, device permission flow, or signal
+processing implementation.
+
+All default capabilities remain experimental, explicitly activated,
+unsupported, host-owned, and execution-free. The explicit-only namespace does
+not enlarge the frozen 127-name Framework root. Public projections contain
+policy and ownership facts only and exclude audio, transcript, provider,
+credential, private-path, and device-handle material.
+
+This sync adds only `docs/v600_tasklist.md` to the baseline change surface. It
+also corrects the acceptance-state condition in the already modified Control A
+smoke and unit-test files so the same gates validate both the pre-acceptance
+candidate and this accepted worktree. The combined baseline surface remains
+exactly seven files. The primary FW-RT6-12c roadmap boundary is unchanged and
+none of its seven independent future extension items is implemented or closed.
+
+After this combined worktree is reviewed, committed, pushed, and remotely
+verified, only Control B exact contract review is authorized. Control B
+implementation, aggregate acceptance, and their commit/push remain separately
+gated.
+<!-- FW-RT6-12c-A-ACCEPTANCE-SYNC:END -->

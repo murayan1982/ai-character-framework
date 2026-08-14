@@ -4943,3 +4943,41 @@ Control B: IMPLEMENTED / AWAITING_REVIEW
 Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12b-B-APP-BACKPRESSURE:END -->
+
+
+<!-- FW-RT6-12c-A-APP-NATURAL-TURN:BEGIN -->
+## FW-RT6-12c Control A — host-owned natural-turn extensions
+
+Applications must treat every natural-turn extension as an independent,
+experimental, default-off capability. The presence of
+`framework.natural_turn` does not grant microphone permission, begin capture,
+start a background monitor, load a provider, or opt a session into automatic
+turn behavior.
+
+The host application owns user consent, permission UI, device selection,
+physical microphone capture and stop, background lifecycle, wake-word policy,
+audio retention, and local signal-processing policy. A future supported
+capability must be explicitly configured through an adapter and separately
+authorized. Support for one extension must not be projected onto any other.
+
+Applications should read one `NaturalTurnCapability` for each exact extension
+and use `supported=False` as the safe fallback. They must not infer capability
+from platform, provider, package availability, or the success of importing the
+module. Capability metadata and projections must remain free of audio,
+transcript, provider objects, credentials, private paths, and device handles.
+
+```text
+stable namespace: framework.natural_turn / EXPLICIT_ONLY
+extensions: 7 / INDEPENDENT
+default supported extensions: 0
+default ownership: HOST APPLICATION
+activation: EXPLICIT ONLY
+permission UI/device/capture/background policy: HOST APPLICATION
+Framework microphone/background/provider/network execution: False
+RealtimeSession/VoiceInputSession adoption: False
+root-public names: 127 / UNCHANGED
+v6.0.0 P0 acceptance requirement: False
+Control A acceptance sync: NOT_AUTHORIZED
+Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12c-A-APP-NATURAL-TURN:END -->

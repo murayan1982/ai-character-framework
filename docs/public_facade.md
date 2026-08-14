@@ -6608,3 +6608,47 @@ Framework runtime source, provider implementation, application-integration
 contract, backpressure guide, root manifest, factory, version label, example,
 or README.
 <!-- FW-RT6-12b-C-BACKPRESSURE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12c-A-PUBLIC-NATURAL-TURN:BEGIN -->
+## FW-RT6-12c Control A — experimental natural-turn capability boundary
+
+The explicit-only `framework.natural_turn` namespace defines six public names
+and an exact seven-extension inventory. It is not imported by the Framework
+root, so the frozen root remains exactly 127 names. Importing the namespace or
+creating its immutable models activates no session, adapter, device, provider,
+network, playback, background task, or real VTS work.
+
+The seven extensions are independent: microphone listening while speaking,
+VAD-based automatic detection, wake word, background input monitoring,
+automatic next-turn capture, echo cancellation, and noise suppression. There
+is no combined natural-turn mode, and one supported extension never implies
+support for any other extension.
+
+Every default capability is experimental, explicitly activated, unsupported,
+host-owned, and execution-free. A future supported capability must name an
+explicit adapter owner and still requires a separately authorized exact
+contract and runtime-adoption control.
+
+```text
+checkpoint: FW-RT6-12c Control A
+baseline: e5a41949370d341448e51ba47a6209b14dee9f80
+exact change surface: 6 files
+namespace: framework.natural_turn
+namespace exports: 6 / EXACT / EXPLICIT_ONLY
+extension count: 7 / EXACT / INDEPENDENT
+combined natural-turn mode: NONE
+default support: 0 / 7
+default owner: host_application
+explicit activation required: True
+microphone/background/provider/network execution by default: False
+runtime/session adoption: False / CONTROL_B NOT_AUTHORIZED
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback/background/real VTS execution: False
+docs/v600_tasklist.md changed: False
+v6.0.0 P0 acceptance requirement: False
+Control A: IMPLEMENTED / AWAITING_REVIEW
+Control A acceptance sync: NOT_AUTHORIZED
+Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12c-A-PUBLIC-NATURAL-TURN:END -->
