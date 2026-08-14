@@ -410,7 +410,7 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
                 safe_message="C:\\private\\payload.raw",
             )
 
-    def test_control_a_leaves_runtime_and_task_closure_for_control_b(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         from framework.backpressure import BackpressureCapability
         from framework.voice_input_streaming import VoiceInputStreamingCapability
 
@@ -427,8 +427,11 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
         section = tasklist.split("## FW-RT6-12b — P1 backpressure", 1)[1].split(
             "## FW-RT6-12c", 1
         )[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertTrue(
+            (PROJECT_ROOT / "scripts/check_v600_backpressure_acceptance.py").is_file()
+        )
         self.assertIn("FW-RT6-12a-FINAL-ACCEPTANCE-SYNC:BEGIN", tasklist)
         acceptance_marker_count = tasklist.count(
             "FW-RT6-12b-A-ACCEPTANCE-SYNC:BEGIN"

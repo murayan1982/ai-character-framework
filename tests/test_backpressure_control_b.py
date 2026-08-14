@@ -480,7 +480,7 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
         self.assertEqual(queue.pending_work, (second.work,))
         self.assertEqual(queue.backpressure_snapshot.pending_count, 1)
 
-    def test_docs_and_task_boundary_describe_control_b_without_closure(self) -> None:
+    def test_control_c_closes_only_the_aggregate_task_boundary(self) -> None:
         docs = {
             name: (PROJECT_ROOT / "docs" / name).read_text(encoding="utf-8")
             for name in (
@@ -510,8 +510,11 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
         section = tasklist.split("## FW-RT6-12b — P1 backpressure", 1)[1].split(
             "## FW-RT6-12c", 1
         )[0]
-        self.assertEqual(section.count("- [ ]"), 6)
-        self.assertEqual(section.count("- [x]"), 0)
+        self.assertEqual(section.count("- [ ]"), 0)
+        self.assertEqual(section.count("- [x]"), 6)
+        self.assertTrue(
+            (PROJECT_ROOT / "scripts/check_v600_backpressure_acceptance.py").is_file()
+        )
         acceptance_marker_count = tasklist.count(
             "FW-RT6-12b-B-ACCEPTANCE-SYNC:BEGIN"
         )

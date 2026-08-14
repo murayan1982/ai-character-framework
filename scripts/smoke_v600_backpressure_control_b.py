@@ -241,8 +241,12 @@ def check_docs_and_task_boundary() -> bool:
     section = tasklist.split("## FW-RT6-12b — P1 backpressure", 1)[1].split(
         "## FW-RT6-12c", 1
     )[0]
-    _require(section.count("- [ ]") == 6, "FW-RT6-12b open task count drift")
-    _require(section.count("- [x]") == 0, "Control B closed aggregate tasks")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 6, "Control C task count drift")
+    _require(
+        (PROJECT_ROOT / "scripts/check_v600_backpressure_acceptance.py").is_file(),
+        "Control C aggregate gate missing",
+    )
     acceptance_marker_count = tasklist.count(
         "FW-RT6-12b-B-ACCEPTANCE-SYNC:BEGIN"
     )
@@ -260,7 +264,7 @@ def check_docs_and_task_boundary() -> bool:
             in tasklist,
             "Control B acceptance status drift",
         )
-    print("[OK] Control B contracts conform and tasks remain 0 / 6 closed")
+    print("[OK] Control B contracts conform and tasks are 6 / 6 acceptance-candidates")
     return bool(acceptance_marker_count)
 
 
@@ -291,27 +295,19 @@ def main() -> None:
     acceptance_synced = check_docs_and_task_boundary()
     check_focused_tests()
 
-    status = (
-        "COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH"
-        if acceptance_synced
-        else "IMPLEMENTED / AWAITING_REVIEW"
-    )
-    sync_status = (
-        "IMPLEMENTED / AWAITING_REVIEW"
-        if acceptance_synced
-        else "NOT_AUTHORIZED"
-    )
+    _require(acceptance_synced, "accepted Control B history missing")
     print("v600_rt6_12b_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
-    print(f"v600_rt6_12b_control_b_status: {status}")
+    print("v600_rt6_12b_control_b_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_12b_control_b_exact_surface: 11 files")
     print("v600_rt6_12b_runtime_namespace_exports: 1 / EXACT / EXPLICIT_ONLY")
     print("v600_rt6_12b_runtime_boundaries: 4 / 4 ADOPTED")
     print("v600_rt6_12b_overflow_policy: reject_newest / NON_SILENT")
     print("v600_rt6_12b_root_public_names: 127 / UNCHANGED")
-    print("v600_rt6_12b_task_count: 0 / 6 CLOSED")
+    print("v600_rt6_12b_task_count: 6 / 6 ACCEPTED-CANDIDATE")
     print("v600_rt6_12b_provider_network_device_execution: False")
-    print(f"v600_rt6_12b_control_b_acceptance_sync: {sync_status}")
-    print("v600_rt6_12b_aggregate_acceptance: NOT_AUTHORIZED")
+    print("v600_rt6_12b_control_b_acceptance_sync: 51e7ff75b2f17cecb1c21ac696d0c254aa033863 / CLOSED")
+    print("v600_rt6_12b_aggregate_acceptance: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12b_final_acceptance_sync: NOT_AUTHORIZED")
     print("v600_rt6_12b_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12b Control B backpressure runtime gate passed")
 

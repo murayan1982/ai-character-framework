@@ -321,8 +321,12 @@ def check_docs_and_task_boundary() -> bool:
     section = tasklist.split("## FW-RT6-12b — P1 backpressure", 1)[1].split(
         "## FW-RT6-12c", 1
     )[0]
-    _require(section.count("- [ ]") == 6, "FW-RT6-12b open task count drift")
-    _require(section.count("- [x]") == 0, "FW-RT6-12b task closed in Control A")
+    _require(section.count("- [ ]") == 0, "Control C left an aggregate task open")
+    _require(section.count("- [x]") == 6, "Control C task count drift")
+    _require(
+        (PROJECT_ROOT / "scripts/check_v600_backpressure_acceptance.py").is_file(),
+        "Control C aggregate gate missing",
+    )
     _require(
         "FW-RT6-12a-FINAL-ACCEPTANCE-SYNC:BEGIN" in tasklist,
         "accepted FW-RT6-12a history missing",
@@ -344,11 +348,11 @@ def check_docs_and_task_boundary() -> bool:
             in tasklist,
             "Control A accepted status missing",
         )
-    print("[OK] public/app/guide contracts conform and tasks remain 0 / 6 closed")
+    print("[OK] public/app/guide contracts conform and tasks are 6 / 6 acceptance-candidates")
     return bool(acceptance_marker_count)
 
 
-def check_runtime_non_adoption() -> None:
+def check_runtime_adoption_boundary() -> None:
     import framework
     from framework.backpressure import BackpressureCapability
     from framework.voice_input_streaming import VoiceInputStreamingCapability
@@ -367,14 +371,18 @@ def check_runtime_non_adoption() -> None:
             not BackpressureCapability(boundary=boundary).supported,
             f"default boundary capability overclaim: {boundary}",
         )
+    _require(
+        framework.VoiceInputSession().audio_input_backpressure_capability.supported,
+        "accepted Control B audio-input adoption missing",
+    )
     runtime_source = (
         PROJECT_ROOT / "framework/voice_input_stream_runtime.py"
     ).read_text(encoding="utf-8")
     _require(
-        "without adding a backpressure queue" in runtime_source,
-        "accepted audio-stream runtime boundary drift",
+        "BoundedBackpressureRuntime" in runtime_source,
+        "accepted Control B runtime adoption drift",
     )
-    print("[OK] Control A remains data-only; runtime adoption is deferred to Control B")
+    print("[OK] Control A defaults remain truthful and accepted Control B runtime adoption conforms")
 
 
 def check_focused_tests() -> None:
@@ -401,25 +409,22 @@ def main() -> None:
     check_contract_models()
     check_public_safety_and_root_boundary()
     acceptance_synced = check_docs_and_task_boundary()
-    check_runtime_non_adoption()
+    check_runtime_adoption_boundary()
     check_focused_tests()
 
-    status = (
-        "COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH"
-        if acceptance_synced
-        else "IMPLEMENTED / AWAITING_REVIEW"
-    )
-    sync_status = "IMPLEMENTED / AWAITING_REVIEW" if acceptance_synced else "NOT_AUTHORIZED"
-    print(f"v600_rt6_12b_control_a_status: {status}")
+    _require(acceptance_synced, "accepted Control A history missing")
+    print("v600_rt6_12b_control_a_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_12b_control_a_exact_surface: 6 files")
     print("v600_rt6_12b_namespace_exports: 12 / EXACT / EXPLICIT_ONLY")
     print("v600_rt6_12b_boundaries: 4 / EXACT")
     print("v600_rt6_12b_root_public_names: 127 / UNCHANGED")
-    print("v600_rt6_12b_runtime_adoption: False / CONTROL_B")
-    print("v600_rt6_12b_task_count: 0 / 6 CLOSED")
+    print("v600_rt6_12b_runtime_adoption: True / CONTROL_B / 4 BOUNDARIES")
+    print("v600_rt6_12b_task_count: 6 / 6 ACCEPTED-CANDIDATE")
     print("v600_rt6_12b_provider_network_device_execution: False")
-    print(f"v600_rt6_12b_control_a_acceptance_sync: {sync_status}")
-    print("v600_rt6_12b_control_b: NOT_AUTHORIZED")
+    print("v600_rt6_12b_control_a_acceptance_sync: fa12002e898a88bc9d9025004b0e4b26772d8187 / CLOSED")
+    print("v600_rt6_12b_control_b: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
+    print("v600_rt6_12b_control_c: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12b_final_acceptance_sync: NOT_AUTHORIZED")
     print("v600_rt6_12b_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12b Control A backpressure contract gate passed")
 

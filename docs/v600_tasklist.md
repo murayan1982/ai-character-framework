@@ -3117,12 +3117,12 @@ FAILS GATE
 
 **Tasks:**
 
-- [ ] audio input queue backpressureを実装する。
-- [ ] response delta subscriber backpressureを実装する。
-- [ ] voice output queue backpressureを実装する。
-- [ ] max in-flightをcapability化する。
-- [ ] retryable rejectionを実装する。
-- [ ] silent dropを禁止する。
+- [x] audio input queue backpressureを実装する。
+- [x] response delta subscriber backpressureを実装する。
+- [x] voice output queue backpressureを実装する。
+- [x] max in-flightをcapability化する。
+- [x] retryable rejectionを実装する。
+- [x] silent dropを禁止する。
 
 ---
 
@@ -9909,7 +9909,7 @@ Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIF
 Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
 Control C: IMPLEMENTED / AWAITING_REVIEW
 exact Control C surface: 7 files
-Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY
 dedicated aggregate acceptance gate: scripts/check_v600_migration_examples_acceptance.py / PASS
 focused Control A+B tests: 26 / PASS
 full Framework unit suite: 675 / PASS
@@ -10297,7 +10297,8 @@ Control C aggregates the accepted provider-neutral audio-chunk vocabulary and
 the explicit `VoiceInputSession` runtime adoption. It closes only the seven
 FW-RT6-12a task checkboxes as acceptance-candidates and adds a dedicated
 offline aggregate gate. The four accepted Control A/B gate and test files
-receive only the reviewed Control C task-boundary and status synchronization.
+receive only the reviewed Control C task-boundary, status, and accepted
+runtime-state synchronization.
 
 The aggregate preserves the frozen application boundaries. Streaming remains
 default-off and requires an explicit adapter. `RealtimeSession`, the 127-name
@@ -10604,3 +10605,86 @@ verified, only the Control C aggregate-acceptance exact contract review is
 authorized. Control C implementation and its commit/push remain separately
 gated.
 <!-- FW-RT6-12b-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12b-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-12b Control C — backpressure aggregate acceptance
+
+```text
+checkpoint: FW-RT6-12b Control C
+baseline head: 51e7ff75b2f17cecb1c21ac696d0c254aa033863
+Control A implementation and acceptance: fa12002e898a88bc9d9025004b0e4b26772d8187
+Control B implementation and acceptance: 51e7ff75b2f17cecb1c21ac696d0c254aa033863
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+dedicated aggregate acceptance gate: scripts/check_v600_backpressure_acceptance.py / PASS
+focused Control A tests: 19 / PASS
+focused Control B tests: 23 / PASS
+focused Control A+B tests: 42 / PASS
+full Framework unit suite: 753 / PASS
+stable contract namespace: framework.backpressure / 12 EXACT / EXPLICIT_ONLY / PASS
+internal runtime namespace: framework.backpressure_runtime / 1 EXACT / EXPLICIT_ONLY / PASS
+framework root-public names: 127 / UNCHANGED
+runtime boundaries adopted: 4 / 4 ADOPTED / PASS
+audio-input owner: VoiceInputStreamRuntime and VoiceInputSession / ACCEPTED
+response-delta owner: RealtimeEventHub and RealtimeSession / ACCEPTED
+voice-output owner: BoundedVoiceSynthesisPendingQueue / ACCEPTED
+event-subscriber owner: RealtimeEventHub and RealtimeSession / ACCEPTED
+maximum pending and in-flight counts: FIXED PER OWNER / ACCEPTED
+overflow policy: reject_newest / ACCEPTED
+capacity rejection: TYPED / RETRYABLE / NON_CONSUMING / ACCEPTED
+paused rejection: TYPED / RETRYABLE / NON_CONSUMING / ACCEPTED
+closed rejection: TYPED / TERMINAL / ACCEPTED
+overflow event: NON_SILENT / RETRYABLE / ACCEPTED
+silent drop: PROHIBITED / ACCEPTED
+pause/resume effect: NEW ADMISSION ONLY / ACCEPTED
+accepted pending or in-flight work cancelled by pause/resume: False / PASS
+accepted pending or in-flight work dropped by pause/resume: False / PASS
+raw audio/text/voice/event payload in public backpressure projection: False / PASS
+factory signatures and API/schema version labels: UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/real VTS execution: False / PASS
+framework runtime source changed by Control C: False
+application-integration contract changed by Control C: False
+backpressure guide changed by Control C: False
+root API manifest changed by Control C: False
+FW-RT6-12b tasks: 6 / 6 ACCEPTED-CANDIDATE
+FW-RT6-12b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12c implementation: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted provider-neutral backpressure vocabulary and
+the bounded runtime adoption at all four reviewed owners. It closes only the
+six FW-RT6-12b task checkboxes as acceptance-candidates and adds one dedicated
+offline aggregate gate. The four accepted Control A/B gate and test files
+receive only the reviewed Control C task-boundary and status synchronization.
+
+Every accepted owner uses fixed pending and in-flight capacity. The
+`reject_newest` policy preserves caller ownership and returns typed retryable
+capacity or pause rejection without consuming work. Closure is terminal.
+Overflow is non-silent and accepted pending or in-flight work is not cancelled,
+evicted, or dropped by pause/resume.
+
+Public projections contain opaque item IDs, counts, enums, safe messages, and
+public-safe metadata only. Raw audio, response text, voice requests, subscriber
+events, provider objects, and private paths remain in their private owners. The
+frozen 127-name Framework root, factory signatures, API/schema labels, and
+provider boundaries are unchanged. The aggregate performs no provider,
+network, audio-device, playback, or real VTS execution.
+
+This exact seven-file Control C changes only `docs/public_facade.md`, this
+tasklist, the new aggregate gate, and four accepted Control A/B gate/test
+files. It changes no Framework runtime source, application-integration
+contract, backpressure guide, root API manifest, factory signature, public
+return or event shape, provider namespace, example, README, or historical v5
+gate.
+
+The six tasks are acceptance-candidates rather than final CLOSED state. Final
+completion requires a separately reviewed one-file acceptance sync, commit,
+push, and remote verification. FW-RT6-12c remains separately gated.
+<!-- FW-RT6-12b-C-AGGREGATE-ACCEPTANCE:END -->

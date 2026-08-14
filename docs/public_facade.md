@@ -6545,3 +6545,66 @@ Control B: IMPLEMENTED / AWAITING_REVIEW
 Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12b-B-PUBLIC-BACKPRESSURE:END -->
+
+
+<!-- FW-RT6-12b-C-BACKPRESSURE-ACCEPTANCE:BEGIN -->
+## FW-RT6-12b Control C — aggregate backpressure acceptance
+
+The accepted v6 backpressure boundary consists of two explicit-only
+namespaces. `framework.backpressure` contains the exact 12 immutable contract
+types, while `framework.backpressure_runtime` contains the single bounded
+runtime owner. Neither namespace enlarges the frozen 127-name Framework root.
+
+All four contracted boundaries have concrete runtime ownership:
+
+- `audio_input`: `VoiceInputStreamRuntime`, observed by `VoiceInputSession`;
+- `response_delta`: `RealtimeEventHub`, observed by `RealtimeSession`;
+- `voice_output`: `BoundedVoiceSynthesisPendingQueue`;
+- `event_subscriber`: `RealtimeEventHub`, observed by `RealtimeSession`.
+
+Each owner declares fixed pending and in-flight capacity. `reject_newest`
+returns caller-owned work through a typed retryable rejection when capacity is
+full or admission is paused. Closure is terminal. Capacity rejection emits a
+public-safe overflow event and never silently consumes or drops the rejected
+payload.
+
+Pause and resume affect new admission only. Accepted pending and in-flight work
+remains owned until explicit completion or caller-requested withdrawal. Public
+capabilities, snapshots, results, and overflow events expose opaque IDs and
+bounded counts only; raw audio, response text, synthesis requests, subscriber
+events, provider objects, and private paths remain outside the projection.
+
+```text
+checkpoint: FW-RT6-12b Control C
+baseline head: 51e7ff75b2f17cecb1c21ac696d0c254aa033863
+exact aggregate surface: 7 files
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+dedicated aggregate gate: check_v600_backpressure_acceptance.py
+focused tests: 42 / PASS
+full unit suite: 753 / PASS
+contract namespace exports: 12 / EXACT / EXPLICIT_ONLY
+runtime namespace exports: 1 / EXACT / EXPLICIT_ONLY
+runtime boundaries: 4 / 4 ADOPTED
+maximum pending/in-flight: FIXED PER OWNER
+overflow policy: reject_newest / NON_SILENT
+capacity and pause rejection: TYPED / RETRYABLE / NON_CONSUMING
+closed rejection: TYPED / TERMINAL
+pause/resume accepted-work cancellation: False
+silent drop: PROHIBITED
+raw payload public exposure: False
+root-public names: 127 / UNCHANGED
+factory signatures and API/schema labels: UNCHANGED
+provider/network/audio-device/playback/real VTS execution: False
+FW-RT6-12b tasks: 6 / 6 ACCEPTED-CANDIDATE
+final acceptance sync: NOT_AUTHORIZED
+FW-RT6-12c: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control C adds aggregate documentation and verification only. It changes no
+Framework runtime source, provider implementation, application-integration
+contract, backpressure guide, root manifest, factory, version label, example,
+or README.
+<!-- FW-RT6-12b-C-BACKPRESSURE-ACCEPTANCE:END -->
