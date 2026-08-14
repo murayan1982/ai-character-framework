@@ -17,15 +17,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-EXPECTED_HEAD = "51e7ff75b2f17cecb1c21ac696d0c254aa033863"
+EXPECTED_HEAD = "54291405a817afddbef927b0e0a3173d8937772c"
 EXPECTED_SURFACE = {
-    "docs/public_facade.md",
     "docs/v600_tasklist.md",
     "scripts/check_v600_backpressure_acceptance.py",
-    "scripts/smoke_v600_backpressure_control_a.py",
-    "scripts/smoke_v600_backpressure_control_b.py",
-    "tests/test_backpressure_control_a.py",
-    "tests/test_backpressure_control_b.py",
 }
 EXPECTED_TASKS = (
     "audio input queue backpressureを実装する。",
@@ -110,6 +105,16 @@ def _changed_paths() -> set[str]:
     }
 
 
+def _bounded_section(source: str, begin: str, end: str) -> str:
+    _require(source.count(begin) == 1, f"section begin marker drift: {begin}")
+    _require(source.count(end) == 1, f"section end marker drift: {end}")
+    return source.split(begin, 1)[1].split(end, 1)[0]
+
+
+def _squash(source: str) -> str:
+    return " ".join(source.split())
+
+
 def check_exact_surface() -> None:
     _require(_git("rev-parse", "HEAD") == EXPECTED_HEAD, "baseline HEAD drift")
     _require(
@@ -122,7 +127,7 @@ def check_exact_surface() -> None:
         "Control C exact surface drift; "
         f"expected={sorted(EXPECTED_SURFACE)!r}; actual={sorted(actual)!r}",
     )
-    print("[OK] baseline and exact seven-file FW-RT6-12b Control C surface conform")
+    print("[OK] baseline and exact two-file FW-RT6-12b Control C corrective-r2 surface conform")
 
 
 def check_accepted_history_and_focused_gates() -> None:
@@ -143,6 +148,61 @@ def check_accepted_history_and_focused_gates() -> None:
         "Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED",
     ):
         _require(phrase in tasklist, f"accepted history fact missing: {phrase}")
+
+    historical_task_only = (
+        (
+            "FW-RT6-11c-C-AGGREGATE-ACCEPTANCE:BEGIN",
+            "FW-RT6-11c-C-AGGREGATE-ACCEPTANCE:END",
+            "FW-RT6-11c",
+        ),
+        (
+            "FW-RT6-12a-C-AGGREGATE-ACCEPTANCE:BEGIN",
+            "FW-RT6-12a-C-AGGREGATE-ACCEPTANCE:END",
+            "FW-RT6-12a",
+        ),
+    )
+    for begin, end, label in historical_task_only:
+        section = _bounded_section(tasklist, begin, end)
+        squashed = _squash(section)
+        _require(
+            "Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY"
+            in section,
+            f"{label} historical task-boundary label drift",
+        )
+        _require(
+            "CONTROL_C AGGREGATE STATE ONLY" not in section,
+            f"{label} historical aggregate-state contamination",
+        )
+        _require(
+            "receive only the reviewed Control C task-boundary and status synchronization."
+            in squashed,
+            f"{label} historical task-boundary prose drift",
+        )
+        _require(
+            "accepted runtime-state synchronization" not in squashed,
+            f"{label} historical runtime-state contamination",
+        )
+
+    backpressure_section = _bounded_section(
+        tasklist,
+        "FW-RT6-12b-C-AGGREGATE-ACCEPTANCE:BEGIN",
+        "FW-RT6-12b-C-AGGREGATE-ACCEPTANCE:END",
+    )
+    backpressure_squashed = _squash(backpressure_section)
+    for phrase in (
+        "Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY",
+        "Control C aggregate commit: 54291405a817afddbef927b0e0a3173d8937772c / PUSHED",
+        "Control C corrective-r2: IMPLEMENTED / AWAITING_REVIEW",
+        "corrective-r2 exact surface: 2 files",
+    ):
+        _require(phrase in backpressure_section, f"Control C corrective fact missing: {phrase}")
+    _require(
+        "receive only the reviewed Control C task-boundary, status, and accepted runtime-state synchronization."
+        in backpressure_squashed,
+        "FW-RT6-12b aggregate-state prose drift",
+    )
+    print("[OK] historical FW-RT6-11c/12a task-boundary records are unchanged")
+    print("[OK] FW-RT6-12b aggregate-state scope is isolated and explicit")
 
     sources = {
         "Control A gate": PROJECT_ROOT / "scripts/smoke_v600_backpressure_control_a.py",
@@ -370,6 +430,8 @@ def main() -> None:
     print("v600_rt6_12b_control_b_status: COMPLETED / VERIFIED / ACCEPTED / CLOSED")
     print("v600_rt6_12b_control_c_status: IMPLEMENTED / AWAITING_REVIEW")
     print("v600_rt6_12b_control_c_exact_surface: 7 files")
+    print("v600_rt6_12b_control_c_corrective_r2: IMPLEMENTED / AWAITING_REVIEW")
+    print("v600_rt6_12b_control_c_corrective_r2_surface: 2 files")
     print("v600_rt6_12b_existing_gate_test_sync: 4 files / AGGREGATE STATE ONLY")
     print("v600_rt6_12b_contract_namespace_exports: 12 / EXACT / EXPLICIT_ONLY")
     print("v600_rt6_12b_runtime_namespace_exports: 1 / EXACT / EXPLICIT_ONLY")

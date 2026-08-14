@@ -9909,7 +9909,7 @@ Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIF
 Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
 Control C: IMPLEMENTED / AWAITING_REVIEW
 exact Control C surface: 7 files
-Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY
+Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
 dedicated aggregate acceptance gate: scripts/check_v600_migration_examples_acceptance.py / PASS
 focused Control A+B tests: 26 / PASS
 full Framework unit suite: 675 / PASS
@@ -10297,8 +10297,7 @@ Control C aggregates the accepted provider-neutral audio-chunk vocabulary and
 the explicit `VoiceInputSession` runtime adoption. It closes only the seven
 FW-RT6-12a task checkboxes as acceptance-candidates and adds a dedicated
 offline aggregate gate. The four accepted Control A/B gate and test files
-receive only the reviewed Control C task-boundary, status, and accepted
-runtime-state synchronization.
+receive only the reviewed Control C task-boundary and status synchronization.
 
 The aggregate preserves the frozen application boundaries. Streaming remains
 default-off and requires an explicit adapter. `RealtimeSession`, the 127-name
@@ -10619,7 +10618,10 @@ Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIF
 Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
 Control C: IMPLEMENTED / AWAITING_REVIEW
 exact Control C surface: 7 files
-Control A/B gate/test semantic sync: 4 files / CONTROL_C TASK BOUNDARY ONLY
+Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY
+Control C aggregate commit: 54291405a817afddbef927b0e0a3173d8937772c / PUSHED
+Control C corrective-r2: IMPLEMENTED / AWAITING_REVIEW
+corrective-r2 exact surface: 2 files
 dedicated aggregate acceptance gate: scripts/check_v600_backpressure_acceptance.py / PASS
 focused Control A tests: 19 / PASS
 focused Control B tests: 23 / PASS
@@ -10662,7 +10664,8 @@ Control C aggregates the accepted provider-neutral backpressure vocabulary and
 the bounded runtime adoption at all four reviewed owners. It closes only the
 six FW-RT6-12b task checkboxes as acceptance-candidates and adds one dedicated
 offline aggregate gate. The four accepted Control A/B gate and test files
-receive only the reviewed Control C task-boundary and status synchronization.
+receive only the reviewed Control C task-boundary, status, and accepted
+runtime-state synchronization.
 
 Every accepted owner uses fixed pending and in-flight capacity. The
 `reject_newest` policy preserves caller ownership and returns typed retryable
