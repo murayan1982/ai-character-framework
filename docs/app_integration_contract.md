@@ -4533,6 +4533,40 @@ FW-RT6-11a aggregate; that remains Control C work after separate review.
 <!-- FW-RT6-11a-B-SESSION-COMPATIBILITY-ADOPTION:END -->
 
 
+<!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:BEGIN -->
+## FW-RT6-13a host integration acceptance candidate
+
+Host integrations keep their accepted ownership boundaries. Host audio is
+represented by an opaque `VoiceInputAudioSource`; the fake suite never opens a
+microphone or retains raw audio. The resulting typed transcript is passed to the
+existing mock-safe realtime turn path, followed by a typed in-memory fake TTS
+handoff and the existing mock motion adapter. Playback remains host-owned and is
+not performed.
+
+The same suite exercises user stop during response stream, user speech interrupt
+during voice output, duplicate interrupt, late response delta, late TTS artifact,
+late motion completion, queue overflow, session reset, session close during
+active turn, post-close operation rejection, and exact event trace / terminal
+result behavior. The integrated gate requires one retained terminal per turn and
+actual stale-generation rejection.
+
+```text
+text-only normal turn: VERIFIED_BY_SUITE
+host audio -> transcript -> text -> TTS -> motion: VERIFIED_BY_SUITE
+exact event trace / terminal result: VERIFIED_BY_SUITE
+fake-only integrated suite: PASS_REQUIRED
+exactly-once terminal: PASS_REQUIRED
+stale rejection: PASS_REQUIRED
+network/provider/microphone/playback: False
+real VTS execution: False
+host playback side effect: False
+production session/facade change: False
+FW-RT6-13a tasklist state: 0 / 13 CLOSED / UNCHANGED
+acceptance sync / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:END -->
+
+
 <!-- FW-RT6-11b-A-ROOT-PUBLIC-CLEANUP:BEGIN -->
 ## FW-RT6-11b Control A — application import inventory
 

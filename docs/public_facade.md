@@ -6745,3 +6745,36 @@ Framework runtime source, the application-integration contract, the natural-turn
 guide, root API manifest, provider namespace, example, README, or any of the
 seven separately gated future roadmap items.
 <!-- FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:BEGIN -->
+## FW-RT6-13a — integrated fake-runtime acceptance candidate
+
+Applications receive no new facade member in this checkpoint. The dedicated
+provider-free suite composes the existing public session lifecycle with the
+explicit-only deterministic fake runtime and verifies text-only normal turn,
+host audio -> transcript -> text -> TTS -> motion, user stop during response
+stream, user speech interrupt during voice output, duplicate interrupt, late
+response delta, late TTS artifact, late motion completion, queue overflow,
+session reset, session close during active turn, post-close operation rejection,
+and exact event trace / terminal result behavior.
+
+All fake adapters are local test doubles. No provider SDK, network, microphone,
+audio playback, real VTS runtime, private credential, or raw audio is used.
+`RealtimeSession`, root exports, factory signatures, and production event/result
+models remain unchanged.
+
+```text
+checkpoint: FW-RT6-13a
+baseline head: 888e17685f71688f038bbed1a113c4b317b057dd
+implementation surface: docs/tests/acceptance script only
+fake-only integrated suite: PASS_REQUIRED
+exactly-once terminal: PASS_REQUIRED
+stale rejection: PASS_REQUIRED
+network/provider/microphone/playback: False
+RealtimeSession production orchestration changed: False
+root-public names: 127 / UNCHANGED
+FW-RT6-13a tasklist state: 0 / 13 CLOSED / UNCHANGED
+acceptance sync / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:END -->
