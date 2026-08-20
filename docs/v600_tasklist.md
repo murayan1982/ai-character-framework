@@ -10868,3 +10868,85 @@ verified, only Control B exact contract review is authorized. Control B
 implementation, aggregate acceptance, and their commit/push remain separately
 gated.
 <!-- FW-RT6-12c-A-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12c-B-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12c Control B — RealtimeSession capability adoption acceptance sync
+
+```text
+checkpoint: FW-RT6-12c Control B
+baseline head: b556712bb20465cf712be449b7c956f784b22044
+Control A acceptance: b556712bb20465cf712be449b7c956f784b22044
+Control B implementation baseline: b556712bb20465cf712be449b7c956f784b22044
+Control B implementation candidate: WORKTREE / VERIFIED
+Control B: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact Control B implementation surface: 8 files
+acceptance-sync new path surface: 1 file / docs/v600_tasklist.md
+acceptance semantic-state corrective replacements: 2 existing Control B files
+combined worktree surface: 9 files
+dedicated Control A natural-turn gate: PASS
+dedicated Control B session-capability gate: PASS
+focused Control A and Control B natural-turn tests: 28 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+accepted FW-RT6-12b backpressure gate: PASS
+full Framework unit suite: 781 / PASS
+stable contract namespace: framework.natural_turn
+namespace exports: 6 / EXACT / EXPLICIT_ONLY
+session adoption owner: RealtimeSession / READ_ONLY_CAPABILITY_SNAPSHOT
+natural-turn extensions: 7 / EXACT / INDEPENDENT
+combined natural-turn mode: NONE
+default supported extensions: 0 / 7
+default experimental: True
+default owner: host_application
+explicit activation required: True
+adapter configuration or activation API: NONE
+VoiceInputSession adoption: False
+v6.0.0 P0 acceptance requirement: False
+framework root-public names: 127 / UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/background/real VTS execution: False / PASS
+raw audio/transcript/provider/device handle in public projection: False / PASS
+docs/v600_tasklist.md primary FW-RT6-12c boundary changed: False
+runtime source changed by acceptance sync: False
+public-facade contract changed by acceptance sync: False
+application-integration contract changed by acceptance sync: False
+natural-turn guide changed by acceptance sync: False
+root API manifest changed by acceptance sync: False
+factory signature or event/result/error shape changed: False
+API/schema version changed: False
+FW-RT6-12c roadmap items closed: 0 / 7
+Control B acceptance sync: IMPLEMENTED / AWAITING_REVIEW
+aggregate exact contract review: AUTHORIZED_AFTER_COMMIT_PUSH
+aggregate implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+Control B accepts one immutable, session-owned, read-only
+`RealtimeSession.natural_turn_capabilities` snapshot. The property is lazy and
+remains readable after close. It exposes only the accepted seven-entry Control
+A capability inventory, with all entries still experimental, explicitly
+activated, unsupported, host-owned, and execution-free.
+
+This acceptance does not add a combined natural-turn mode, adapter registration,
+configuration, activation, start, stop, observation, or automatic-transition
+API. It implements no microphone listening while speaking, VAD, wake word,
+background monitoring, automatic next-turn capture, echo cancellation, or
+noise suppression. `VoiceInputSession`, both public factory signatures, the
+frozen 127-name Framework root, event/result/error shapes, and API/schema
+versions remain unchanged.
+
+This sync adds only `docs/v600_tasklist.md` to the baseline Control B change
+surface. It also corrects the acceptance-state condition in the already
+modified Control B smoke and unit-test files so the same gates validate both
+the pre-acceptance eight-file candidate and this accepted nine-file worktree.
+The primary FW-RT6-12c roadmap boundary is unchanged and none of its seven
+independent future extension items is implemented or closed.
+
+After this combined worktree is reviewed, committed, pushed, and remotely
+verified, only aggregate exact contract review is authorized. Aggregate
+implementation and its commit/push remain separately gated.
+<!-- FW-RT6-12c-B-ACCEPTANCE-SYNC:END -->

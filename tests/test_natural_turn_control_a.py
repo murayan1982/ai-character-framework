@@ -249,7 +249,7 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
         )
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
 
-    def test_docs_task_boundary_and_runtime_non_adoption_conform(self) -> None:
+    def test_docs_task_boundary_and_execution_non_adoption_conform(self) -> None:
         app = (PROJECT_ROOT / "docs/app_integration_contract.md").read_text(
             encoding="utf-8"
         )
@@ -298,14 +298,27 @@ assert not loaded.intersection(forbidden), sorted(loaded.intersection(forbidden)
                 tasklist,
             )
         self.assertNotIn("natural_turn", (PROJECT_ROOT / "framework/__init__.py").read_text(encoding="utf-8"))
-        for relative_path in (
-            "framework/realtime_session.py",
-            "framework/voice_input_session.py",
-        ):
-            self.assertNotIn(
-                "natural_turn",
-                (PROJECT_ROOT / relative_path).read_text(encoding="utf-8"),
-            )
+        self.assertNotIn(
+            "natural_turn",
+            (PROJECT_ROOT / "framework/voice_input_session.py").read_text(
+                encoding="utf-8"
+            ),
+        )
+        realtime_source = (PROJECT_ROOT / "framework/realtime_session.py").read_text(
+            encoding="utf-8"
+        )
+        control_b_marker = "FW-RT6-12c-B-PUBLIC-SESSION-CAPABILITIES:BEGIN"
+        if control_b_marker in facade:
+            self.assertIn("natural_turn_capabilities", realtime_source)
+            for forbidden_member in (
+                "configure_natural_turn",
+                "activate_natural_turn",
+                "start_natural_turn",
+                "natural_mode",
+            ):
+                self.assertNotIn(forbidden_member, realtime_source)
+        else:
+            self.assertNotIn("natural_turn", realtime_source)
 
 
 if __name__ == "__main__":

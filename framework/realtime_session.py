@@ -84,6 +84,7 @@ if TYPE_CHECKING:
     from .motion import MotionErrorCode, MotionRequest, MotionResult, MotionState
     from .motion_control import MotionControlResult
     from .motion_lifecycle import MotionLifecycleHook, MotionLifecycleNotification
+    from .natural_turn import NaturalTurnCapabilitySet
     from .realtime_generation_gate import (
         GenerationAdmissionDecision,
         GenerationAdvanceReason,
@@ -629,6 +630,7 @@ class RealtimeSession:
         )
         self._public_metadata = _public_mapping(public_metadata)
         self._barge_in_policy = BargeInPolicy.disabled()
+        self._natural_turn_capabilities: NaturalTurnCapabilitySet | None = None
         self._motion_lifecycle_hook: MotionLifecycleHook | None = None
         self._motion_control_lock = RLock()
         self._active_motion_work: _ActiveMotionWork | None = None
@@ -721,6 +723,25 @@ class RealtimeSession:
         """Return this session's immutable truthful capability snapshot."""
 
         return self._capability_snapshot
+
+    @property
+    def natural_turn_capabilities(self) -> NaturalTurnCapabilitySet:
+        """Return this session's immutable default-off natural-turn snapshot.
+
+        The explicit namespace is imported lazily only when this additive
+        property is read.  Control B exposes capability truth but does not add
+        adapter configuration, activation, microphone access, or background
+        execution.
+        """
+
+        with self._operation_lock:
+            snapshot = self._natural_turn_capabilities
+            if snapshot is None:
+                from .natural_turn import default_natural_turn_capability_set
+
+                snapshot = default_natural_turn_capability_set()
+                self._natural_turn_capabilities = snapshot
+            return snapshot
 
     @property
     def construction_result(self) -> RealtimeSessionConstructionResult:

@@ -217,7 +217,7 @@ def check_public_safety_and_root_boundary() -> None:
     print("[OK] immutable public projections are payload-safe and root remains 127 names")
 
 
-def check_docs_task_and_runtime_boundary() -> bool:
+def check_docs_task_and_runtime_boundary() -> tuple[bool, bool]:
     app = (PROJECT_ROOT / "docs/app_integration_contract.md").read_text(
         encoding="utf-8"
     )
@@ -285,13 +285,39 @@ def check_docs_task_and_runtime_boundary() -> bool:
         )
     for relative_path in (
         "framework/__init__.py",
-        "framework/realtime_session.py",
         "framework/voice_input_session.py",
     ):
         source = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
-        _require("natural_turn" not in source, f"runtime adoption appeared: {relative_path}")
-    print("[OK] public/app/guide contracts conform; roadmap and runtime remain separately gated")
-    return bool(acceptance_marker_count)
+        _require("natural_turn" not in source, f"unexpected adoption appeared: {relative_path}")
+
+    control_b_adopted = (
+        facade.count("FW-RT6-12c-B-PUBLIC-SESSION-CAPABILITIES:BEGIN") == 1
+    )
+    realtime_source = (PROJECT_ROOT / "framework/realtime_session.py").read_text(
+        encoding="utf-8"
+    )
+    if control_b_adopted:
+        _require(
+            "natural_turn_capabilities" in realtime_source,
+            "Control B read-only capability property missing",
+        )
+        for forbidden_member in (
+            "configure_natural_turn",
+            "activate_natural_turn",
+            "start_natural_turn",
+            "natural_mode",
+        ):
+            _require(
+                forbidden_member not in realtime_source,
+                f"Control B execution API appeared: {forbidden_member}",
+            )
+    else:
+        _require(
+            "natural_turn" not in realtime_source,
+            "runtime adoption appeared before Control B",
+        )
+    print("[OK] public/app/guide contracts conform; execution remains separately gated")
+    return bool(acceptance_marker_count), control_b_adopted
 
 
 def check_focused_tests() -> None:
@@ -317,7 +343,7 @@ def main() -> None:
     check_namespace_and_import_safety()
     check_capability_contract()
     check_public_safety_and_root_boundary()
-    acceptance_synced = check_docs_task_and_runtime_boundary()
+    acceptance_synced, control_b_adopted = check_docs_task_and_runtime_boundary()
     check_focused_tests()
 
     status = (
@@ -336,11 +362,18 @@ def main() -> None:
     print("v600_rt6_12c_extensions: 7 / EXACT / INDEPENDENT")
     print("v600_rt6_12c_default_supported: 0 / 7")
     print("v600_rt6_12c_root_public_names: 127 / UNCHANGED")
-    print("v600_rt6_12c_runtime_adoption: False")
+    print(
+        "v600_rt6_12c_session_capability_adoption: "
+        + ("RealtimeSession / CONTROL_B / READ_ONLY" if control_b_adopted else "False")
+    )
+    print("v600_rt6_12c_extension_execution: False")
     print("v600_rt6_12c_p0_required: False")
     print("v600_rt6_12c_provider_network_device_background_execution: False")
     print(f"v600_rt6_12c_control_a_acceptance_sync: {sync_status}")
-    print("v600_rt6_12c_control_b: NOT_AUTHORIZED")
+    print(
+        "v600_rt6_12c_control_b: "
+        + ("IMPLEMENTED / AWAITING_REVIEW" if control_b_adopted else "NOT_AUTHORIZED")
+    )
     print("v600_rt6_12c_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12c Control A natural-turn capability gate passed")
 

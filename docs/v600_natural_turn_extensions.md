@@ -69,3 +69,41 @@ objects, credentials, private paths, or device handles.
 Control B runtime adoption is not authorized by this contract. Each extension
 remains a separate roadmap/exact-contract item and may be scheduled as a v6.0
 experimental extension, v6.1.0 work, or a later v6.x release.
+
+<!-- FW-RT6-12c-B-SESSION-CAPABILITIES:BEGIN -->
+## Control B RealtimeSession capability adoption
+
+Control B adopts the accepted exact seven-entry inventory as one immutable,
+read-only `RealtimeSession.natural_turn_capabilities` snapshot. The property is
+loaded lazily and remains readable after session close. Every entry retains the
+Control A default: experimental, explicitly activated, unsupported,
+host-owned, and execution-free.
+
+This is capability visibility, not natural-turn execution. Control B adds no
+adapter registration, configuration, activation, start, stop, observation, or
+automatic-transition method. It does not implement microphone listening while
+speaking, VAD, wake word, background monitoring, automatic next-turn capture,
+echo cancellation, or noise suppression. Those seven extensions remain
+separate future exact-contract items.
+
+`VoiceInputSession`, `RealtimeSessionConfig`, both public factory signatures,
+the Framework root, event/result/error shapes, and API/schema versions remain
+unchanged. Importing `framework`, constructing or closing a session, and using
+the ordinary capability snapshot do not load `framework.natural_turn`; only
+reading the additive property performs the safe lazy import.
+
+```text
+checkpoint: FW-RT6-12c Control B
+baseline: b556712bb20465cf712be449b7c956f784b22044
+adoption owner: RealtimeSession / READ_ONLY_CAPABILITY_SNAPSHOT
+natural-turn extensions: 7 / EXACT / INDEPENDENT
+default supported extensions: 0 / 7
+adapter configuration or activation API: NONE
+VoiceInputSession adoption: False
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback/background/real VTS execution: False
+FW-RT6-12c roadmap items closed: 0 / 7
+Control B: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12c-B-SESSION-CAPABILITIES:END -->

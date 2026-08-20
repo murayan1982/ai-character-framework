@@ -4981,3 +4981,39 @@ Control A acceptance sync: NOT_AUTHORIZED
 Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12c-A-APP-NATURAL-TURN:END -->
+
+
+<!-- FW-RT6-12c-B-APP-SESSION-CAPABILITIES:BEGIN -->
+## FW-RT6-12c Control B — application capability observation
+
+Applications may read `RealtimeSession.natural_turn_capabilities` to obtain
+the exact immutable seven-extension inventory accepted by Control A. The
+snapshot remains readable after close and is intentionally default-off:
+`supported=False` for all seven entries, with host ownership and explicit
+activation still required.
+
+This property is not an activation or runtime surface. Applications must not
+infer microphone permission, active capture, VAD, wake-word monitoring,
+background execution, automatic next-turn capture, echo cancellation, or
+noise suppression from its presence. No `configure_*`, `activate_*`, `start_*`,
+or combined natural-turn method is added in this control.
+
+The application continues to own consent, permission UI, physical capture and
+stop, background lifecycle, retention, and local processing policy. A future
+supported extension still requires its own exact contract and explicitly
+reviewed adapter boundary.
+
+```text
+adoption owner: RealtimeSession / READ_ONLY
+extensions: 7 / EXACT / INDEPENDENT
+default supported: 0 / 7
+activation/configuration API: NONE
+VoiceInputSession adoption: False
+factory signatures: UNCHANGED
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback/background execution: False
+FW-RT6-12c roadmap items closed: 0 / 7
+Control B: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12c-B-APP-SESSION-CAPABILITIES:END -->

@@ -6652,3 +6652,48 @@ Control A acceptance sync: NOT_AUTHORIZED
 Control B / aggregate acceptance / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12c-A-PUBLIC-NATURAL-TURN:END -->
+
+
+<!-- FW-RT6-12c-B-PUBLIC-SESSION-CAPABILITIES:BEGIN -->
+## FW-RT6-12c Control B — RealtimeSession capability snapshot
+
+`RealtimeSession` gains one additive read-only property:
+
+```python
+session.natural_turn_capabilities
+```
+
+It returns a session-owned immutable `NaturalTurnCapabilitySet` containing the
+exact seven independent Control A entries. The same snapshot object remains
+readable after close. All entries remain unsupported, experimental,
+host-owned, execution-free, and explicitly activated.
+
+The property uses a lazy import so `import framework`, ordinary realtime
+session construction, close, and the existing `capabilities` property do not
+load the explicit-only `framework.natural_turn` namespace. Reading the new
+property loads only the provider-neutral data contract.
+
+Control B adds no natural-turn adapter, configuration method, activation
+method, automatic session transition, microphone access, VAD execution,
+background listener, provider/network call, playback, or signal-processing
+implementation. `VoiceInputSession`, `RealtimeSessionConfig`, factory
+signatures, event/result/error shapes, API/schema versions, the root manifest,
+and the frozen 127-name Framework root remain unchanged.
+
+```text
+checkpoint: FW-RT6-12c Control B
+baseline: b556712bb20465cf712be449b7c956f784b22044
+exact change surface: 8 files
+session property: natural_turn_capabilities / READ_ONLY
+extensions: 7 / EXACT / INDEPENDENT
+default supported: 0 / 7
+combined natural-turn mode: NONE
+adapter/configuration/activation API: NONE
+VoiceInputSession adoption: False
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback/background/real VTS execution: False
+FW-RT6-12c roadmap items closed: 0 / 7
+Control B: IMPLEMENTED / AWAITING_REVIEW
+Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-12c-B-PUBLIC-SESSION-CAPABILITIES:END -->
