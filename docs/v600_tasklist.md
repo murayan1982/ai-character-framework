@@ -10950,3 +10950,83 @@ After this combined worktree is reviewed, committed, pushed, and remotely
 verified, only aggregate exact contract review is authorized. Aggregate
 implementation and its commit/push remain separately gated.
 <!-- FW-RT6-12c-B-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:BEGIN -->
+## FW-RT6-12c Control C — natural-turn aggregate acceptance
+
+```text
+checkpoint: FW-RT6-12c Control C
+baseline head: f92d7dcf20e5a5591a406329fd1d0fb96b186b64
+Control A implementation and acceptance: b556712bb20465cf712be449b7c956f784b22044
+Control B implementation and acceptance: f92d7dcf20e5a5591a406329fd1d0fb96b186b64
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+exact Control C surface: 7 files
+Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY
+dedicated aggregate acceptance gate: scripts/check_v600_natural_turn_acceptance.py / PASS
+focused Control A tests: 16 / PASS
+focused Control B tests: 12 / PASS
+focused Control A+B tests: 28 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+accepted FW-RT6-12b backpressure gate: PASS
+full Framework unit suite: 781 / PASS
+accepted aggregate contracts: 2 / 2
+Control A vocabulary contract: ACCEPTED
+Control B RealtimeSession read-only snapshot contract: ACCEPTED
+stable contract namespace: framework.natural_turn / 6 EXACT / EXPLICIT_ONLY
+natural-turn extensions: 7 / EXACT / INDEPENDENT
+combined natural-turn mode: NONE
+default supported extensions: 0 / 7
+default experimental: True
+default owner: host_application
+explicit activation required: True
+session adoption owner: RealtimeSession / READ_ONLY_CAPABILITY_SNAPSHOT
+adapter configuration or activation API: NONE
+VoiceInputSession adoption: False
+v6.0.0 P0 acceptance requirement: False
+framework root-public names: 127 / UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/background/real VTS execution: False / PASS
+raw audio/transcript/provider/device handle in public projection: False / PASS
+framework runtime source changed by Control C: False
+application-integration contract changed by Control C: False
+natural-turn guide changed by Control C: False
+root API manifest changed by Control C: False
+factory signature or event/result/error shape changed by Control C: False
+API/schema version changed by Control C: False
+FW-RT6-12c roadmap items closed: 0 / 7 / UNCHANGED
+final acceptance sync: NOT_AUTHORIZED
+FW-RT6-13a: NOT_AUTHORIZED
+Control C commit / push: NOT_AUTHORIZED
+```
+
+Control C aggregates the accepted provider-neutral Control A vocabulary and the
+accepted Control B read-only `RealtimeSession` snapshot. It adds one offline
+aggregate gate and synchronizes only aggregate state in the four existing
+Control A/B gate and test files. It adds no runtime, provider, adapter,
+configuration, activation, execution, observation, or automatic-turn behavior.
+
+The seven natural-turn extensions remain independent future roadmap items.
+Their primary FW-RT6-12c boundary remains unchanged, with no checkboxes and no
+closed item. Default support remains 0 / 7, there is no combined natural-turn
+mode, and `VoiceInputSession` remains unadopted. The explicit-only namespace
+does not enlarge the frozen 127-name Framework root.
+
+This exact seven-file Control C changes only `docs/public_facade.md`, this
+tasklist, the new aggregate gate, and four accepted Control A/B gate/test
+files. It changes no Framework runtime source, application-integration
+contract, natural-turn guide, root API manifest, factory, public event/result/
+error shape, API/schema version, provider namespace, example, README, or
+historical acceptance gate.
+
+Final acceptance requires a separately reviewed sync after this Control C
+candidate is committed, pushed, and remotely verified. Neither that final sync
+nor FW-RT6-13a implementation nor this Control C commit/push is authorized by
+this aggregate implementation.
+<!-- FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:END -->

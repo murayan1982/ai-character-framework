@@ -167,7 +167,7 @@ assert session.natural_turn_capabilities is snapshot
     print("[OK] root/session remain namespace-lazy and property access adds no execution")
 
 
-def check_docs_and_task_boundary() -> bool:
+def check_docs_and_task_boundary() -> tuple[bool, bool]:
     app = (PROJECT_ROOT / "docs/app_integration_contract.md").read_text(encoding="utf-8")
     facade = (PROJECT_ROOT / "docs/public_facade.md").read_text(encoding="utf-8")
     guide = (PROJECT_ROOT / "docs/v600_natural_turn_extensions.md").read_text(encoding="utf-8")
@@ -211,8 +211,31 @@ def check_docs_and_task_boundary() -> bool:
             "aggregate exact contract review: AUTHORIZED_AFTER_COMMIT_PUSH",
         ):
             _require(phrase in tasklist, f"Control B acceptance fact missing: {phrase}")
+    aggregate_marker_count = tasklist.count(
+        "FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:BEGIN"
+    )
+    _require(aggregate_marker_count <= 1, "Control C aggregate marker duplicated")
+    if aggregate_marker_count:
+        for marker in (
+            "FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:END",
+            "FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:BEGIN",
+            "FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:END",
+        ):
+            source = facade if "NATURAL-TURN" in marker else tasklist
+            _require(source.count(marker) == 1, f"Control C marker drift: {marker}")
+        _require(
+            (PROJECT_ROOT / "scripts/check_v600_natural_turn_acceptance.py").is_file(),
+            "Control C aggregate gate missing",
+        )
+        for phrase in (
+            "Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED",
+            "Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED",
+            "Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY",
+            "FW-RT6-12c roadmap items closed: 0 / 7 / UNCHANGED",
+        ):
+            _require(phrase in tasklist, f"Control C aggregate fact missing: {phrase}")
     print("[OK] public/app/guide contracts conform and all seven runtime items remain open")
-    return bool(acceptance_marker_count)
+    return bool(acceptance_marker_count), bool(aggregate_marker_count)
 
 
 def check_focused_tests() -> None:
@@ -231,17 +254,25 @@ def main() -> None:
         check_exact_surface()
     check_session_capability_adoption()
     check_lazy_import_and_execution_safety()
-    acceptance_synced = check_docs_and_task_boundary()
+    acceptance_synced, aggregate_synced = check_docs_and_task_boundary()
     check_focused_tests()
     status = (
-        "COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH"
-        if acceptance_synced
-        else "IMPLEMENTED / AWAITING_REVIEW"
+        "COMPLETED / VERIFIED / ACCEPTED / CLOSED"
+        if aggregate_synced
+        else (
+            "COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH"
+            if acceptance_synced
+            else "IMPLEMENTED / AWAITING_REVIEW"
+        )
     )
     sync_status = (
-        "IMPLEMENTED / AWAITING_REVIEW"
-        if acceptance_synced
-        else "NOT_AUTHORIZED"
+        "f92d7dcf20e5a5591a406329fd1d0fb96b186b64 / CLOSED"
+        if aggregate_synced
+        else (
+            "IMPLEMENTED / AWAITING_REVIEW"
+            if acceptance_synced
+            else "NOT_AUTHORIZED"
+        )
     )
     print(f"v600_rt6_12c_control_b_status: {status}")
     print("v600_rt6_12c_control_b_exact_surface: 8 files")
@@ -254,7 +285,10 @@ def main() -> None:
     print("v600_rt6_12c_provider_network_device_background_execution: False")
     print("v600_rt6_12c_task_count: 0 / 7 CLOSED")
     print(f"v600_rt6_12c_control_b_acceptance_sync: {sync_status}")
-    print("v600_rt6_12c_aggregate_acceptance: NOT_AUTHORIZED")
+    print(
+        "v600_rt6_12c_aggregate_acceptance: "
+        + ("IMPLEMENTED / AWAITING_REVIEW" if aggregate_synced else "NOT_AUTHORIZED")
+    )
     print("v600_rt6_12c_commit_push: NOT_AUTHORIZED")
     print("[OK] FW-RT6-12c Control B session-capability gate passed")
 

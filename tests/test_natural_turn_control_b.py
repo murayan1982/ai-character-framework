@@ -258,6 +258,30 @@ session.close()
                 "aggregate exact contract review: AUTHORIZED_AFTER_COMMIT_PUSH",
             ):
                 self.assertIn(phrase, tasklist)
+        aggregate_marker_count = tasklist.count(
+            "FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:BEGIN"
+        )
+        self.assertLessEqual(aggregate_marker_count, 1)
+        if aggregate_marker_count:
+            self.assertEqual(
+                tasklist.count("FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:END"),
+                1,
+            )
+            for marker in (
+                "FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:BEGIN",
+                "FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:END",
+            ):
+                self.assertEqual(facade.count(marker), 1)
+            self.assertTrue(
+                (PROJECT_ROOT / "scripts/check_v600_natural_turn_acceptance.py").is_file()
+            )
+            for phrase in (
+                "Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED",
+                "Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED",
+                "Control A/B gate/test semantic sync: 4 files / CONTROL_C AGGREGATE STATE ONLY",
+                "FW-RT6-12c roadmap items closed: 0 / 7 / UNCHANGED",
+            ):
+                self.assertIn(phrase, tasklist)
 
     def test_control_a_source_gate_accepts_control_b_semantic_sync(self) -> None:
         completed = subprocess.run(

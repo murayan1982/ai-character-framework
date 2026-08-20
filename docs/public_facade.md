@@ -6697,3 +6697,51 @@ Control B: IMPLEMENTED / AWAITING_REVIEW
 Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12c-B-PUBLIC-SESSION-CAPABILITIES:END -->
+
+
+<!-- FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:BEGIN -->
+## FW-RT6-12c Control C — natural-turn aggregate acceptance
+
+Control C aggregates the two accepted natural-turn contracts without adding
+runtime behavior. The explicit-only `framework.natural_turn` vocabulary remains
+exactly six exports and seven independent extensions. `RealtimeSession` remains
+the only session owner, through one cached, immutable, read-only
+`natural_turn_capabilities` snapshot whose default support is still 0 / 7.
+
+The aggregate does not combine the extensions into a mode and does not add an
+adapter, configuration, activation, start, stop, observation, or automatic-turn
+API. `VoiceInputSession`, factory signatures, event/result/error shapes,
+API/schema versions, and the frozen 127-name Framework root remain unchanged.
+No provider, network, audio-device, playback, background, or real VTS execution
+is introduced.
+
+```text
+checkpoint: FW-RT6-12c Control C
+baseline head: f92d7dcf20e5a5591a406329fd1d0fb96b186b64
+Control A implementation and acceptance: b556712bb20465cf712be449b7c956f784b22044
+Control B implementation and acceptance: f92d7dcf20e5a5591a406329fd1d0fb96b186b64
+exact Control C surface: 7 files
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: IMPLEMENTED / AWAITING_REVIEW
+accepted aggregate contracts: 2 / 2
+namespace exports: 6 / EXACT / EXPLICIT_ONLY
+natural-turn extensions: 7 / EXACT / INDEPENDENT
+session adoption: RealtimeSession / READ_ONLY_CAPABILITY_SNAPSHOT
+default supported extensions: 0 / 7
+combined natural-turn mode: NONE
+adapter/configuration/activation/execution API: NONE
+VoiceInputSession adoption: False
+root-public names: 127 / UNCHANGED
+provider/network/audio-device/playback/background/real VTS execution: False
+FW-RT6-12c roadmap items closed: 0 / 7 / UNCHANGED
+final acceptance sync: NOT_AUTHORIZED
+FW-RT6-13a: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+This aggregate changes documentation and verification only. It does not change
+Framework runtime source, the application-integration contract, the natural-turn
+guide, root API manifest, provider namespace, example, README, or any of the
+seven separately gated future roadmap items.
+<!-- FW-RT6-12c-C-NATURAL-TURN-ACCEPTANCE:END -->
