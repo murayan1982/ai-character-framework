@@ -33,6 +33,14 @@ EXACT_SURFACE = (
     "scripts/check_v600_real_runtime_operator_acceptance.py",
     "tests/test_real_runtime_operator_acceptance.py",
 )
+ACCEPTANCE_SYNC_SURFACE = (
+    "docs/app_integration_contract.md",
+    "docs/public_facade.md",
+    "docs/v600_guarded_real_runtime_composition.md",
+    "docs/v600_tasklist.md",
+    "docs/v600_real_runtime_operator_acceptance.md",
+    "scripts/check_v600_real_runtime_operator_acceptance.py",
+)
 OPTIONAL_PROVIDER_MODULES = frozenset(
     {"openai", "elevenlabs", "pyvts", "websockets", "sounddevice", "pyaudio"}
 )
@@ -57,6 +65,26 @@ def check_exact_surface() -> None:
         "FW-RT6-13c tooling must not change production Framework source",
     )
     _require("README.md" not in EXACT_SURFACE, "README remains owned by FW-RT6-14b")
+    _require(
+        len(ACCEPTANCE_SYNC_SURFACE) == 6,
+        "acceptance-sync surface must contain six files",
+    )
+    _require(
+        not any(relative.startswith("framework/") for relative in ACCEPTANCE_SYNC_SURFACE),
+        "acceptance sync must not change production Framework source",
+    )
+    _require(
+        OPERATOR_PATH.relative_to(PROJECT_ROOT).as_posix() not in ACCEPTANCE_SYNC_SURFACE,
+        "acceptance sync must not change the operator",
+    )
+    _require(
+        VERIFIER_PATH.relative_to(PROJECT_ROOT).as_posix() not in ACCEPTANCE_SYNC_SURFACE,
+        "acceptance sync must not change the private verifier",
+    )
+    _require(
+        TEST_PATH.relative_to(PROJECT_ROOT).as_posix() not in ACCEPTANCE_SYNC_SURFACE,
+        "acceptance sync must not change the dedicated tests",
+    )
 
 
 def check_contract_docs() -> None:
@@ -69,16 +97,27 @@ def check_contract_docs() -> None:
     combined = "\n".join(documents)
     for phrase in (
         "baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791",
-        "status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
+        "implementation commit: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b",
+        "acceptance-sync baseline: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b",
+        "status: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH",
         "exact implementation surface: 9 files",
+        "exact acceptance-sync surface: 6 files",
         "production Framework source changes: 0",
         "root-public names: 127 / UNCHANGED",
         "RealtimeSession real orchestration changed/enabled: False",
-        "canonical scenarios closed: 0 / 9",
+        "canonical scenarios closed: 9 / 9 ACCEPTED",
         "provider hard cancel claimed: False",
         "physical playback stop claimed by Framework: False",
-        "real operator execution: NOT_AUTHORIZED",
-        "private evidence read/validated: False",
+        "real operator execution: COMPLETED / OPERATOR_CONFIRMED",
+        "private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR",
+        "private evidence imported/read by acceptance sync: False",
+        "private values or paths exposed: False",
+        "raw audio/payload/exception/text exposed: False",
+        "private model/hotkey/selector exposed: False",
+        "repository clean after real operator run: True",
+        "FW-RT6-13c tasks: 9 / 9 ACCEPTED",
+        "FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14a implementation: NOT_AUTHORIZED",
         "commit / push: NOT_AUTHORIZED",
     ):
         _require(phrase in combined, f"operator contract phrase missing: {phrase}")
@@ -89,17 +128,29 @@ def check_tasklist_boundary() -> None:
     canonical = tasklist.split(
         "## FW-RT6-13c — Operator acceptance", 1
     )[1].split("## FW-RT6-14a", 1)[0]
-    _require(canonical.count("- [ ]") == 9, "13c must retain exactly nine open tasks")
-    _require(canonical.count("- [x]") == 0, "13c must close no canonical task yet")
+    _require(canonical.count("- [ ]") == 0, "13c must retain zero open tasks")
+    _require(canonical.count("- [x]") == 9, "13c must close exactly nine tasks")
     _require(
         tasklist.count("FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN") == 1,
         "13c implementation marker must be unique in tasklist",
     )
+    _require(
+        tasklist.count("FW-RT6-13c-FINAL-ACCEPTANCE-SYNC:BEGIN") == 1,
+        "13c final acceptance marker must be unique in tasklist",
+    )
     for phrase in (
-        "configured real voice input tooling: IMPLEMENTED / NOT_EXECUTED",
-        "configured real LLM streaming tooling: IMPLEMENTED / NOT_EXECUTED",
-        "FW-RT6-13c canonical scenarios: 0 / 9 CLOSED / UNCHANGED",
-        "acceptance sync: NOT_AUTHORIZED",
+        "acceptance-sync baseline head: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b",
+        "implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED",
+        "final acceptance-sync exact surface: 6 files",
+        "configured real voice input: PASS",
+        "configured real LLM streaming: PASS",
+        "FW-RT6-13c canonical scenarios: 9 / 9 VERIFIED / ACCEPTED",
+        "private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR",
+        "private evidence imported/read by acceptance sync: False",
+        "FW-RT6-13c tasks: 9 / 9 ACCEPTED",
+        "FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14a implementation: NOT_AUTHORIZED",
+        "acceptance sync: IMPLEMENTED / AWAITING_REVIEW",
     ):
         _require(phrase in tasklist, f"tasklist tooling fact missing: {phrase}")
 
@@ -246,6 +297,7 @@ def main() -> None:
 
     print("FW-RT6-13c real-runtime operator tooling: PASS")
     print("exact implementation surface: 9 files / PASS")
+    print("exact acceptance-sync surface: 6 files / PASS")
     print("production Framework source changes: 0")
     print("dedicated provider-free tests: 15 / PASS")
     print("provider SDK lazy import: PASS")
@@ -256,11 +308,19 @@ def main() -> None:
     print("RealtimeSession real orchestration changed/enabled: False")
     print("provider/network/microphone/playback/VTS execution: False")
     print("private config/audio/artifacts/evidence read: False")
-    print("FW-RT6-13c canonical scenarios: 0 / 9 CLOSED / UNCHANGED")
-    print("FW-RT6-13c: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
-    print("real operator execution: NOT_AUTHORIZED")
-    print("private evidence validation: NOT_RUN")
-    print("commit / push: NOT_AUTHORIZED")
+    print("FW-RT6-13c canonical scenarios: 9 / 9 VERIFIED / ACCEPTED")
+    print("real operator execution: COMPLETED / OPERATOR_CONFIRMED")
+    print("private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR")
+    print("private evidence imported/read by acceptance sync: False")
+    print("private values or paths exposed: False")
+    print("raw audio/payload/exception/text exposed: False")
+    print("private model/hotkey/selector exposed: False")
+    print("repository clean after real operator run: True")
+    print("FW-RT6-13c final acceptance sync: PASS")
+    print("FW-RT6-13c: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH")
+    print("FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
+    print("FW-RT6-14a implementation: NOT_AUTHORIZED")
+    print("acceptance-sync commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":

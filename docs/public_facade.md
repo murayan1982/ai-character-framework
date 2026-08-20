@@ -6830,24 +6830,31 @@ acceptance-sync commit / push: NOT_AUTHORIZED
 
 
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
-## FW-RT6-13c — no facade adoption; operator-only real-stage evidence
+## FW-RT6-13c — no facade adoption; final operator acceptance sync
 
 FW-RT6-13c adds scripts, tests, and documentation only. It adds no root-public
 symbol, changes no factory signature, and does not make real
 `RealtimeSession.run_turn()` executable. The root-public manifest remains
 exactly 127 names.
 
-The operator runner lazily reaches existing accepted boundaries: root-public
+The operator runner lazily reached existing accepted boundaries: root-public
 real STT and motion, the explicitly imported injected-client streaming LLM
 adapter, and the provider-neutral voice-artifact control. Host playback remains
 outside Framework. The runner may record only fixed booleans/counts and never
 publicly expose private text, paths, provider/model/voice/hotkey/selector data,
 payloads, audio, or exception details.
 
+The separately authorized run completed all nine scenarios, and the independent
+exact-allowlist verifier accepted its private evidence. This sync records only
+those public-safe markers; it does not import the evidence file or run ID.
+
 ```text
-checkpoint: FW-RT6-13c / OPERATOR_TOOLING
+checkpoint: FW-RT6-13c / FINAL_ACCEPTANCE_SYNC
 baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+implementation commit: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+acceptance-sync baseline: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+status: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact acceptance-sync surface: 6 files
 root-public names: 127 / UNCHANGED
 new root exports: 0
 factory signature changes: 0
@@ -6857,9 +6864,20 @@ provider execution in provider-free tests: False
 dedicated provider-free tests: 15 / PASS
 related stage/session/provider-neutral tests: 200 / PASS
 full Framework unit suite: 816 / PASS
-canonical scenarios closed: 0 / 9
-real operator execution: NOT_AUTHORIZED
-private evidence read/validated: False
+canonical scenarios closed: 9 / 9 ACCEPTED
+real operator execution: COMPLETED / OPERATOR_CONFIRMED
+private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR
+private evidence imported/read by acceptance sync: False
+provider hard cancel claimed: False
+physical playback stop claimed by Framework: False
+private values or paths exposed: False
+raw audio/payload/exception/text exposed: False
+private model/hotkey/selector exposed: False
+repository clean after real operator run: True
+RealtimeSession real orchestration changed/enabled: False
+FW-RT6-13c tasks: 9 / 9 ACCEPTED
+FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

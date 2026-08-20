@@ -86,7 +86,7 @@ acceptance-sync commit / push: NOT_AUTHORIZED
 
 
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
-## FW-RT6-13c operator-tooling relationship
+## FW-RT6-13c final operator-acceptance relationship
 
 The 13b composition contract remains unchanged. FW-RT6-13c does not add real
 execution to `compose_guarded_real_runtime()` or `RealtimeSession`. Instead, an
@@ -103,19 +103,38 @@ Framework never claims a physical device stop. VTS motion retains the accepted
 local-loopback, private-token, configured-binding, and visual-confirmation
 requirements from v5.5.
 
+The separately authorized real operator run completed the nine canonical
+scenarios, and the independent exact-allowlist verifier accepted its private
+evidence. This public sync records only safe result markers and does not import
+the evidence file, run identifier, private configuration, or artifacts.
+
 ```text
-checkpoint: FW-RT6-13c / TOOLING_ONLY
+checkpoint: FW-RT6-13c / FINAL_ACCEPTANCE_SYNC
 baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+implementation commit: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+acceptance-sync baseline: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+status: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact acceptance-sync surface: 6 files
 13b composition source changed: False
 RealtimeSession turn orchestration changed: False
 production Framework source changes: 0
 provider-free dedicated tests: 15 / PASS
 related stage/session/provider-neutral tests: 200 / PASS
 full Framework unit suite: 816 / PASS
-canonical operator scenarios closed: 0 / 9
-real provider/network/microphone/playback/VTS execution: NOT_AUTHORIZED
-private evidence read/validated: False
+canonical operator scenarios closed: 9 / 9 ACCEPTED
+real operator execution: COMPLETED / OPERATOR_CONFIRMED
+private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR
+private evidence imported/read by acceptance sync: False
+provider/network/microphone/playback/VTS execution in acceptance-sync tests: False
+provider hard cancel claimed: False
+physical playback stop claimed by Framework: False
+private values or paths exposed: False
+raw audio/payload/exception/text exposed: False
+private model/hotkey/selector exposed: False
+repository clean after real operator run: True
+FW-RT6-13c tasks: 9 / 9 ACCEPTED
+FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

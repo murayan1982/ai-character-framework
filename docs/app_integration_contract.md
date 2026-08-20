@@ -5104,7 +5104,7 @@ acceptance-sync commit / push: NOT_AUTHORIZED
 
 
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
-## FW-RT6-13c — application-owned real-stage operator boundary
+## FW-RT6-13c — application-owned real-stage final acceptance sync
 
 Applications receive no new runtime or facade API in FW-RT6-13c. The new
 operator command coordinates the already accepted real STT, streaming LLM,
@@ -5121,13 +5121,17 @@ not claim provider hard cancellation.
 Credential values, actual private paths, audio, transcript/LLM text, provider
 payloads, raw exceptions, model names, voice identities, hotkeys, selectors,
 and evidence must never enter public metadata, console output, committed files,
-or screenshots attached to public review. Private evidence is validated by a
-separate exact-allowlist verifier before any later acceptance sync.
+or screenshots attached to public review. The separately authorized real run
+completed all nine scenarios, and the independent exact-allowlist verifier
+accepted its private evidence without importing that evidence into this sync.
 
 ```text
-checkpoint: FW-RT6-13c / TOOLING_ONLY
+checkpoint: FW-RT6-13c / FINAL_ACCEPTANCE_SYNC
 baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+implementation commit: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+acceptance-sync baseline: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+status: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact acceptance-sync surface: 6 files
 application API changes: 0
 production Framework source changes: 0
 root-public names: 127 / UNCHANGED
@@ -5135,12 +5139,20 @@ RealtimeSession real orchestration changed/enabled: False
 host playback ownership: APPLICATION / OPERATOR
 provider hard cancel claimed: False
 physical playback stop claimed by Framework: False
-canonical scenarios closed: 0 / 9
+canonical scenarios closed: 9 / 9 ACCEPTED
 dedicated provider-free tests: 15 / PASS
 related stage/session/provider-neutral tests: 200 / PASS
 full Framework unit suite: 816 / PASS
-real operator execution: NOT_AUTHORIZED
-private evidence read/validated: False
+real operator execution: COMPLETED / OPERATOR_CONFIRMED
+private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR
+private evidence imported/read by acceptance sync: False
+private values or paths exposed: False
+raw audio/payload/exception/text exposed: False
+private model/hotkey/selector exposed: False
+repository clean after real operator run: True
+FW-RT6-13c tasks: 9 / 9 ACCEPTED
+FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

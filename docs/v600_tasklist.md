@@ -3226,15 +3226,15 @@ operator-only
 
 **Acceptance scenarios:**
 
-- [ ] configured real voice input。
-- [ ] configured real LLM streaming。
-- [ ] cooperative interrupt。
-- [ ] real TTS generation。
-- [ ] pending clear / late artifact rejection。
-- [ ] host playback stop boundary。
-- [ ] configured real motion。
-- [ ] interrupt recovery / next turn。
-- [ ] close cleanup。
+- [x] configured real voice input。
+- [x] configured real LLM streaming。
+- [x] cooperative interrupt。
+- [x] real TTS generation。
+- [x] pending clear / late artifact rejection。
+- [x] host playback stop boundary。
+- [x] configured real motion。
+- [x] interrupt recovery / next turn。
+- [x] close cleanup。
 
 ---
 
@@ -11301,8 +11301,9 @@ is authorized. FW-RT6-13c implementation remains separately gated.
 checkpoint: FW-RT6-13c
 baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
 baseline subject: feat: add guarded real-runtime composition
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+status: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
 exact implementation surface: 9 files
+exact acceptance-sync surface: 6 files
 modified documentation files: 4
 new operator/documentation/test files: 5
 production Framework source changes: 0
@@ -11316,33 +11317,96 @@ source-only gate: PROVIDER_FREE
 dedicated provider-free tests: 15 / PASS
 related stage/session/provider-neutral tests: 200 / PASS
 full Framework unit suite: 816 / PASS
-configured real voice input tooling: IMPLEMENTED / NOT_EXECUTED
-configured real LLM streaming tooling: IMPLEMENTED / NOT_EXECUTED
-cooperative interrupt tooling: IMPLEMENTED / NOT_EXECUTED
-real TTS generation tooling: IMPLEMENTED / NOT_EXECUTED
-pending clear / late artifact rejection tooling: IMPLEMENTED / NOT_EXECUTED
-host playback stop boundary tooling: IMPLEMENTED / NOT_EXECUTED
-configured real motion tooling: IMPLEMENTED / NOT_EXECUTED
-interrupt recovery / next turn tooling: IMPLEMENTED / NOT_EXECUTED
-close cleanup tooling: IMPLEMENTED / NOT_EXECUTED
+configured real voice input: VERIFIED
+configured real LLM streaming: VERIFIED
+cooperative interrupt: VERIFIED
+real TTS generation: VERIFIED
+pending clear / late artifact rejection: VERIFIED
+host playback stop boundary: VERIFIED_BY_OPERATOR
+configured real motion: VERIFIED_BY_OPERATOR
+interrupt recovery / next turn: VERIFIED
+close cleanup: VERIFIED
 provider hard cancel claimed: False
 Framework physical playback stop claimed: False
-provider/network/microphone/playback/VTS execution in candidate tests: False
+provider/network/microphone/playback/VTS execution in acceptance-sync tests: False
 private config/audio/artifacts/evidence committed: False
-FW-RT6-13c canonical scenarios: 0 / 9 CLOSED / UNCHANGED
-real operator execution: NOT_AUTHORIZED
-private evidence read/validated: False
-acceptance sync: NOT_AUTHORIZED
+private values or paths exposed: False
+raw audio/payload/exception/text exposed: False
+private model/hotkey/selector exposed: False
+repository clean after real operator run: True
+FW-RT6-13c canonical scenarios: 9 / 9 VERIFIED / ACCEPTED
+real operator execution: COMPLETED / OPERATOR_CONFIRMED
+private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR
+private evidence imported/read by acceptance sync: False
+acceptance sync: IMPLEMENTED / AWAITING_REVIEW
+FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 
-This candidate implements only the operator runner, exact private-evidence
-verifier, provider-free source gate/tests, and their contracts. The canonical
-nine checkboxes remain open until the tooling is reviewed, committed, pushed,
-and remotely verified, then a separately authorized private real run completes
-all scenarios and its evidence passes the independent verifier.
+The committed and remotely verified operator tooling completed all nine
+canonical scenarios. The separately authorized private run was accepted by the
+independent exact-allowlist verifier, and the repository remained clean.
 
 No private value, actual private path, transcript/LLM text, raw audio, provider
 payload, raw exception, model, voice identity, hotkey, selector, screenshot, or
-evidence file belongs in this repository or public review output.
+evidence file is imported into this acceptance sync or public review output.
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->
+
+
+<!-- FW-RT6-13c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-13c — real-runtime operator final acceptance sync
+
+```text
+checkpoint: FW-RT6-13c final acceptance sync
+acceptance-sync baseline head: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+implementation commit: 8a4c4cabfd1360bb9645c0ffb07efa856ec9322b
+implementation subject: test: add FW-RT6-13c real-runtime operator acceptance
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 6 files
+final acceptance-sync production Framework source changes: 0 files
+final acceptance-sync operator/verifier/test changes: 0 files
+dedicated provider-free tests: 15 / PASS
+related stage/session/provider-neutral tests: 200 / PASS
+full Framework unit suite: 816 / PASS
+configured real voice input: PASS
+configured real LLM streaming: PASS
+cooperative interrupt and future delivery suppression: PASS
+real TTS generation: PASS
+pending clear / late artifact rejection: PASS
+host playback stop boundary: OPERATOR_CONFIRMED / PASS
+configured real motion: OPERATOR_CONFIRMED / PASS
+interrupt recovery / next turn: PASS
+close cleanup: PASS
+private evidence validation: ACCEPTED_BY_INDEPENDENT_VALIDATOR
+private evidence imported/read by acceptance sync: False
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+private values or paths exposed: False
+raw audio/payload/exception/text exposed: False
+private model/hotkey/selector exposed: False
+repository clean after real operator run: True
+root-public names: 127 / UNCHANGED
+RealtimeSession real orchestration used: False
+FW-RT6-13c tasks: 9 / 9 ACCEPTED
+FW-RT6-13c: COMPLETED / REAL_EXECUTED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14a implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This sync records only the fixed public-safe acceptance facts emitted by the
+operator and independent verifier. It does not read or retain the private
+configuration, audio, artifacts, evidence file, run identifier, credential,
+provider payload, transcript/LLM text, model, voice identity, hotkey, selector,
+or raw exception.
+
+No production Framework source, operator, verifier, dedicated test, root API,
+factory signature, event/result/error shape, API/schema version, provider
+namespace, example, README, or historical acceptance record changes here.
+Provider and device execution is not repeated by this provider-free sync.
+
+After this exact six-file sync is reviewed, committed, pushed, and remotely
+verified, FW-RT6-13c is fully closed and only FW-RT6-14a exact contract review
+is authorized. FW-RT6-14a implementation remains separately gated.
+<!-- FW-RT6-13c-FINAL-ACCEPTANCE-SYNC:END -->
