@@ -5055,3 +5055,49 @@ Control B: IMPLEMENTED / AWAITING_REVIEW
 Control B acceptance sync / aggregate / commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-12c-B-APP-SESSION-CAPABILITIES:END -->
+
+
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:BEGIN -->
+## FW-RT6-13b — host-owned guarded real-runtime final acceptance sync
+
+Applications may explicitly import `framework.guarded_real_runtime` when they
+need to preflight a host-owned four-stage real-runtime composition. The package
+is not exported from the `framework` root. Existing factory signatures and the
+127-name root-public manifest remain unchanged.
+
+The host supplies four representation-hidden factories for real STT, streaming
+LLM, TTS, and motion stages. Framework calls none of them until
+`real_runtime_enabled=True` and `allow_provider_execution=True` are both set.
+Missing configuration also fails before factory reach. This keeps normal import,
+capability inspection, fake execution, and single-opt-in states provider-free.
+
+Host factories exclusively own credentials, endpoints, model identities,
+private paths, VTS authentication, and motion selectors. Applications must not
+copy those values, raw provider payloads/exceptions/audio, or operator evidence
+into Framework public metadata, results, exceptions, documentation, tests, or
+committed configuration.
+
+Each composition attempt returns four ordered provider-neutral stage results.
+Applications may inspect reach booleans and fixed outcomes, but receive no
+provider client, raw exception, or private configuration. The hidden ready
+`RealtimeSessionConfig` is an ownership handoff, not evidence that a provider,
+microphone, playback device, or VTS motion ran during preflight.
+
+```text
+namespace: framework.guarded_real_runtime / EXPLICIT_ONLY
+real stages: voice_input / text_generation / voice_output / motion
+double opt-in: real_runtime_enabled + allow_provider_execution
+factory/preflight before double opt-in: False
+private configuration/evidence source commit: FORBIDDEN
+safe failure result: PROVIDER_NEUTRAL / COUNT_ONLY
+root-public names: 127 / UNCHANGED
+dedicated guarded-composition tests: 10 / PASS
+related stage/session/integrated/root-public tests: 122 / PASS
+full Framework unit suite: 801 / PASS
+FW-RT6-13b tasklist state: 10 / 10 ACCEPTED
+FW-RT6-13b: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+FW-RT6-13c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->

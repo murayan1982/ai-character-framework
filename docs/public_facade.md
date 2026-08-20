@@ -6785,3 +6785,45 @@ FW-RT6-13b implementation: NOT_AUTHORIZED
 acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:END -->
+
+
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:BEGIN -->
+## FW-RT6-13b — explicit guarded real-runtime final acceptance sync
+
+`framework.guarded_real_runtime` is an explicit-only provider-neutral package.
+It adds no `framework` root export, changes no facade/session factory signature,
+and imports no provider SDK. Its configuration hides the four host-owned stage
+factories from representation and requires two independent booleans before any
+factory or stage preflight can be reached.
+
+The public-safe composition result distinguishes disabled, provider-execution
+blocked, incomplete, preflight-failed, and ready states. It always contains one
+ordered result for voice input, text generation, voice output, and motion. Each
+stage result exposes only fixed status/safe text, retryability, and reach
+booleans. Raw exceptions and provider/private objects are never retained.
+
+On complete preflight success, the hidden `session_config` contains the existing
+four provider-neutral stage protocols with `real_runtime_enabled=True`. This is
+an ownership/configuration handoff only. Provider execution still occurs solely
+inside the host-supplied stages; composition itself does not claim a network,
+microphone, playback, or VTS side effect.
+
+```text
+checkpoint: FW-RT6-13b
+baseline head: 1a1e9ab676caa606ba6bd2741f8c3b9ca1700e0c
+status: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact surface: 7 files
+acceptance-sync surface: 5 files / CONTRACT_AND_GATE_STATE_ONLY
+root-public names: 127 / UNCHANGED
+provider SDK import before double opt-in: False
+private configuration/evidence exposure: False
+stage reach results: 4 / EXACT
+dedicated tests: 10 / PASS
+related tests: 122 / PASS
+full Framework unit suite: 801 / PASS
+tasklist state: 10 / 10 ACCEPTED
+FW-RT6-13c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->

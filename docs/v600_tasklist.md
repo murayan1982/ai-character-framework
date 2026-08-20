@@ -3184,16 +3184,16 @@ False
 
 **Tasks:**
 
-- [ ] real STT composition。
-- [ ] real LLM streaming composition。
-- [ ] real TTS composition。
-- [ ] real VTS motion composition。
-- [ ] explicit double opt-in。
-- [ ] provider SDK lazy import。
-- [ ] real-run preflight。
-- [ ] safe failure normalization。
-- [ ] private configuration/evidence non-commit policy。
-- [ ] stage別capability/reach result verification。
+- [x] real STT composition。
+- [x] real LLM streaming composition。
+- [x] real TTS composition。
+- [x] real VTS motion composition。
+- [x] explicit double opt-in。
+- [x] provider SDK lazy import。
+- [x] real-run preflight。
+- [x] safe failure normalization。
+- [x] private configuration/evidence non-commit policy。
+- [x] stage別capability/reach result verification。
 
 ---
 
@@ -11192,3 +11192,103 @@ After this exact five-file sync is reviewed, committed, pushed, and remotely
 verified, FW-RT6-13a is fully closed and only FW-RT6-13b exact contract review
 is authorized. FW-RT6-13b implementation remains separately gated.
 <!-- FW-RT6-13a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:BEGIN -->
+## FW-RT6-13b — guarded real-runtime composition implementation candidate
+
+```text
+checkpoint: FW-RT6-13b
+baseline head: 1a1e9ab676caa606ba6bd2741f8c3b9ca1700e0c
+baseline subject: docs: close FW-RT6-13a
+status: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+exact implementation surface: 7 files
+exact acceptance-sync surface: 5 files
+new explicit-only module: framework/guarded_real_runtime.py
+real STT composition: FACTORY + PREFLIGHT CONTRACT
+real LLM streaming composition: FACTORY + STREAMING CAPABILITY CONTRACT
+real TTS composition: FACTORY + PREFLIGHT CONTRACT
+real VTS motion composition: FACTORY + PROVIDER_NEUTRAL_INTENT CONTRACT
+explicit double opt-in: real_runtime_enabled + allow_provider_execution
+provider SDK import before double opt-in: False
+factory call before double opt-in: False
+real-run preflight: AFTER_DOUBLE_OPT_IN / STAGE_OWNED
+safe failure normalization: FIXED PROVIDER-NEUTRAL RESULTS
+private configuration/evidence non-commit policy: DOCUMENTED / ENFORCED
+stage capability/reach results: 4 / CANONICAL ORDER / PUBLIC SAFE
+failed composition cleanup: BEST_EFFORT / COUNT_ONLY
+root-public names: 127 / UNCHANGED
+root API manifest changed: False
+factory signatures changed: False
+RealtimeSession turn orchestration changed: False
+provider/network/microphone/playback/VTS execution in tests: False
+dedicated tests: 10 / PASS
+related tests: 122 / PASS
+full Framework unit suite: 801 / PASS
+FW-RT6-13b tasks: 10 / 10 ACCEPTED
+FW-RT6-13c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+The candidate adds a provider-neutral composition owner without adding any
+provider-specific root export or committed private configuration. Both opt-ins
+and all four factories must be present before provider-owned construction or
+preflight is reachable. The result records exact stage reach/capability truth
+without retaining provider objects or raw failures.
+
+The ten roadmap checkboxes in the canonical FW-RT6-13b section are accepted by
+the dedicated, related, and full-suite evidence above. FW-RT6-13c remains
+implementation-gated and no real operator evidence belongs in this candidate.
+<!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->
+
+
+<!-- FW-RT6-13b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-13b — guarded real-runtime final acceptance sync
+
+```text
+checkpoint: FW-RT6-13b final acceptance sync
+baseline head: 1a1e9ab676caa606ba6bd2741f8c3b9ca1700e0c
+baseline subject: docs: close FW-RT6-13a
+implementation exact surface: 7 files
+final acceptance-sync exact surface: 5 files
+final acceptance-sync runtime source changes: 0 files
+final acceptance-sync dedicated test changes: 0 files
+stable namespace: framework.guarded_real_runtime / EXPLICIT_ONLY
+real STT composition: PASS
+real LLM streaming composition: PASS
+real TTS composition: PASS
+real VTS motion composition: PASS
+explicit double opt-in: PASS
+provider SDK lazy import: PASS
+real-run preflight: PASS
+safe failure normalization: PASS
+private configuration/evidence non-commit policy: PASS
+stage capability/reach result verification: 4 / PASS
+dedicated guarded-composition tests: 10 / PASS
+related stage/session/integrated/root-public tests: 122 / PASS
+full Framework unit suite: 801 / PASS
+factory calls before double opt-in: 0
+factory calls with incomplete configuration: 0
+provider/network/microphone/playback/VTS execution in tests: False
+raw exception exposed: False
+private configuration exposed: False
+provider payload exposed: False
+root-public names: 127 / UNCHANGED
+root API manifest changed: False
+RealtimeSession turn orchestration changed: False
+FW-RT6-13b tasks: 10 / 10 ACCEPTED
+FW-RT6-13b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This sync accepts the four-stage composition and its guarded preflight handoff.
+It does not add a root export, change the Framework runtime implementation or
+dedicated tests, execute a provider/device, or retain operator evidence.
+
+After this exact five-file sync is reviewed, committed, pushed, and remotely
+verified, FW-RT6-13b is fully closed and only FW-RT6-13c exact contract review
+is authorized. FW-RT6-13c implementation remains separately gated.
+<!-- FW-RT6-13b-FINAL-ACCEPTANCE-SYNC:END -->
