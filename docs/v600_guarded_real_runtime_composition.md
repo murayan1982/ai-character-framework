@@ -83,3 +83,39 @@ FW-RT6-13c implementation: NOT_AUTHORIZED
 acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->
+
+
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
+## FW-RT6-13c operator-tooling relationship
+
+The 13b composition contract remains unchanged. FW-RT6-13c does not add real
+execution to `compose_guarded_real_runtime()` or `RealtimeSession`. Instead, an
+operator-only script owns the explicit sequence across existing real stage
+implementations after it verifies a committed/pushed clean `main`, exact
+provider versions, private material outside the repository, and separate real
+execution/privacy confirmations.
+
+The real LLM cancellation boundary remains cooperative: future deltas are
+suppressed and provider hard cancel remains unclaimed. TTS late-artifact
+admission is retired through the accepted generation gate and its private
+artifact is invalidated. Host playback stop remains an external observation;
+Framework never claims a physical device stop. VTS motion retains the accepted
+local-loopback, private-token, configured-binding, and visual-confirmation
+requirements from v5.5.
+
+```text
+checkpoint: FW-RT6-13c / TOOLING_ONLY
+baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+13b composition source changed: False
+RealtimeSession turn orchestration changed: False
+production Framework source changes: 0
+provider-free dedicated tests: 15 / PASS
+related stage/session/provider-neutral tests: 200 / PASS
+full Framework unit suite: 816 / PASS
+canonical operator scenarios closed: 0 / 9
+real provider/network/microphone/playback/VTS execution: NOT_AUTHORIZED
+private evidence read/validated: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

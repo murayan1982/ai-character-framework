@@ -5101,3 +5101,46 @@ FW-RT6-13c implementation: NOT_AUTHORIZED
 acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->
+
+
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
+## FW-RT6-13c — application-owned real-stage operator boundary
+
+Applications receive no new runtime or facade API in FW-RT6-13c. The new
+operator command coordinates the already accepted real STT, streaming LLM,
+TTS, host playback handoff, and VTube Studio boundaries only after a clean,
+synced `main` checkout, exact dependency pins, an outside-repository private
+configuration, and explicit execution/privacy confirmations.
+
+`RealtimeSession` real turn orchestration remains unavailable and unchanged.
+The application/operator owns physical playback and stop confirmation; the
+Framework records request/ack facts but never claims it stopped a device.
+Likewise, LLM interruption is cooperative future-delivery suppression and does
+not claim provider hard cancellation.
+
+Credential values, actual private paths, audio, transcript/LLM text, provider
+payloads, raw exceptions, model names, voice identities, hotkeys, selectors,
+and evidence must never enter public metadata, console output, committed files,
+or screenshots attached to public review. Private evidence is validated by a
+separate exact-allowlist verifier before any later acceptance sync.
+
+```text
+checkpoint: FW-RT6-13c / TOOLING_ONLY
+baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+application API changes: 0
+production Framework source changes: 0
+root-public names: 127 / UNCHANGED
+RealtimeSession real orchestration changed/enabled: False
+host playback ownership: APPLICATION / OPERATOR
+provider hard cancel claimed: False
+physical playback stop claimed by Framework: False
+canonical scenarios closed: 0 / 9
+dedicated provider-free tests: 15 / PASS
+related stage/session/provider-neutral tests: 200 / PASS
+full Framework unit suite: 816 / PASS
+real operator execution: NOT_AUTHORIZED
+private evidence read/validated: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

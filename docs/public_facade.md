@@ -6827,3 +6827,39 @@ FW-RT6-13c implementation: NOT_AUTHORIZED
 acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13b-GUARDED-REAL-RUNTIME:END -->
+
+
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
+## FW-RT6-13c — no facade adoption; operator-only real-stage evidence
+
+FW-RT6-13c adds scripts, tests, and documentation only. It adds no root-public
+symbol, changes no factory signature, and does not make real
+`RealtimeSession.run_turn()` executable. The root-public manifest remains
+exactly 127 names.
+
+The operator runner lazily reaches existing accepted boundaries: root-public
+real STT and motion, the explicitly imported injected-client streaming LLM
+adapter, and the provider-neutral voice-artifact control. Host playback remains
+outside Framework. The runner may record only fixed booleans/counts and never
+publicly expose private text, paths, provider/model/voice/hotkey/selector data,
+payloads, audio, or exception details.
+
+```text
+checkpoint: FW-RT6-13c / OPERATOR_TOOLING
+baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+root-public names: 127 / UNCHANGED
+new root exports: 0
+factory signature changes: 0
+production Framework source changes: 0
+provider imports during framework/operator-tool import: 0
+provider execution in provider-free tests: False
+dedicated provider-free tests: 15 / PASS
+related stage/session/provider-neutral tests: 200 / PASS
+full Framework unit suite: 816 / PASS
+canonical scenarios closed: 0 / 9
+real operator execution: NOT_AUTHORIZED
+private evidence read/validated: False
+commit / push: NOT_AUTHORIZED
+```
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->

@@ -11292,3 +11292,57 @@ After this exact five-file sync is reviewed, committed, pushed, and remotely
 verified, FW-RT6-13b is fully closed and only FW-RT6-13c exact contract review
 is authorized. FW-RT6-13c implementation remains separately gated.
 <!-- FW-RT6-13b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:BEGIN -->
+## FW-RT6-13c — real-runtime operator tooling implementation candidate
+
+```text
+checkpoint: FW-RT6-13c
+baseline head: cf660a0c4eb4373f21dfdd779a5f98b64457d791
+baseline subject: feat: add guarded real-runtime composition
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 9 files
+modified documentation files: 4
+new operator/documentation/test files: 5
+production Framework source changes: 0
+README changes: 0
+dependency/packaging changes: 0
+root-public names: 127 / UNCHANGED
+RealtimeSession real orchestration changed/enabled: False
+operator runner import: PROVIDER_FREE
+private evidence verifier: EXACT_ALLOWLIST / SAFE_OUTPUT
+source-only gate: PROVIDER_FREE
+dedicated provider-free tests: 15 / PASS
+related stage/session/provider-neutral tests: 200 / PASS
+full Framework unit suite: 816 / PASS
+configured real voice input tooling: IMPLEMENTED / NOT_EXECUTED
+configured real LLM streaming tooling: IMPLEMENTED / NOT_EXECUTED
+cooperative interrupt tooling: IMPLEMENTED / NOT_EXECUTED
+real TTS generation tooling: IMPLEMENTED / NOT_EXECUTED
+pending clear / late artifact rejection tooling: IMPLEMENTED / NOT_EXECUTED
+host playback stop boundary tooling: IMPLEMENTED / NOT_EXECUTED
+configured real motion tooling: IMPLEMENTED / NOT_EXECUTED
+interrupt recovery / next turn tooling: IMPLEMENTED / NOT_EXECUTED
+close cleanup tooling: IMPLEMENTED / NOT_EXECUTED
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+provider/network/microphone/playback/VTS execution in candidate tests: False
+private config/audio/artifacts/evidence committed: False
+FW-RT6-13c canonical scenarios: 0 / 9 CLOSED / UNCHANGED
+real operator execution: NOT_AUTHORIZED
+private evidence read/validated: False
+acceptance sync: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+This candidate implements only the operator runner, exact private-evidence
+verifier, provider-free source gate/tests, and their contracts. The canonical
+nine checkboxes remain open until the tooling is reviewed, committed, pushed,
+and remotely verified, then a separately authorized private real run completes
+all scenarios and its evidence passes the independent verifier.
+
+No private value, actual private path, transcript/LLM text, raw audio, provider
+payload, raw exception, model, voice identity, hotkey, selector, screenshot, or
+evidence file belongs in this repository or public review output.
+<!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->
