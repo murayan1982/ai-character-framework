@@ -1,7 +1,7 @@
 # v6.0.0 integrated fake-runtime acceptance
 
 <!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:BEGIN -->
-## FW-RT6-13a implementation candidate
+## FW-RT6-13a final acceptance-sync candidate
 
 FW-RT6-13a adds one provider-free integration suite over the accepted session,
 generation-gate, terminal-registry, interrupt, recovery, close, and
@@ -36,13 +36,17 @@ it performs no external or device execution.
 ```text
 checkpoint: FW-RT6-13a
 baseline head: 888e17685f71688f038bbed1a113c4b317b057dd
-status: IMPLEMENTED / AWAITING_REVIEW
+implementation commit: 0e61ca4154a48f5b41999be40129579d44e21cde
+acceptance-sync baseline: 0e61ca4154a48f5b41999be40129579d44e21cde
+implementation: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+acceptance sync: IMPLEMENTED / AWAITING_REVIEW
 exact implementation surface: 5 files
+exact acceptance-sync surface: 5 files
 integrated scenario groups: 10
-roadmap scenarios covered: 13 / 13
-fake-only integrated suite: PASS_REQUIRED
-exactly-once terminal: PASS_REQUIRED
-stale rejection: PASS_REQUIRED
+roadmap scenarios covered: 13 / 13 ACCEPTED
+fake-only integrated suite: PASS
+exactly-once terminal: PASS
+stale rejection: PASS
 network/provider/microphone/playback: False
 real VTS execution: False
 raw audio retained: False
@@ -50,7 +54,9 @@ production Framework source changed: False
 RealtimeSession production orchestration changed: False
 Framework root exports changed: False
 framework root-public names: 127 / UNCHANGED
-FW-RT6-13a tasklist state: 0 / 13 CLOSED / UNCHANGED
-acceptance sync / commit / push: NOT_AUTHORIZED
+FW-RT6-13a tasklist state: 13 / 13 ACCEPTED
+FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:END -->

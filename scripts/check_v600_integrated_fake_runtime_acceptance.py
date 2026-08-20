@@ -45,6 +45,10 @@ def check_contract_docs() -> None:
         "post-close operation rejection",
         "exact event trace / terminal result",
         "network/provider/microphone/playback: False",
+        "implementation commit: 0e61ca4154a48f5b41999be40129579d44e21cde",
+        "FW-RT6-13a tasklist state: 13 / 13 ACCEPTED",
+        "FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-13b implementation: NOT_AUTHORIZED",
     ):
         _require(phrase in combined, f"integrated contract phrase missing: {phrase}")
 
@@ -55,9 +59,22 @@ def check_tasklist_boundary() -> None:
         "## FW-RT6-13a — Integrated fake-runtime acceptance",
         1,
     )[1].split("## FW-RT6-13b", 1)[0]
-    _require(section.count("- [ ]") == 13, "FW-RT6-13a must retain 13 open tasks")
-    _require(section.count("- [x]") == 0, "implementation candidate closed a task")
+    _require(section.count("- [ ]") == 0, "FW-RT6-13a retains an open task")
+    _require(section.count("- [x]") == 13, "FW-RT6-13a must close 13 tasks")
     _require("fake-only integrated suite:" in section, "acceptance block missing")
+    _require(
+        tasklist.count("FW-RT6-13a-FINAL-ACCEPTANCE-SYNC:BEGIN") == 1,
+        "FW-RT6-13a final acceptance marker must be unique",
+    )
+    for phrase in (
+        "implementation commit: 0e61ca4154a48f5b41999be40129579d44e21cde",
+        "integrated scenario groups: 10 / PASS",
+        "roadmap scenarios: 13 / 13 ACCEPTED",
+        "FW-RT6-13a tasks: 13 / 13 ACCEPTED",
+        "FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-13b implementation: NOT_AUTHORIZED",
+    ):
+        _require(phrase in tasklist, f"final acceptance fact missing: {phrase}")
 
 
 def check_test_source_boundary() -> None:
@@ -104,8 +121,11 @@ def main() -> None:
     print("network/provider/microphone/playback: False")
     print("framework root-public names: 127 / UNCHANGED")
     print("RealtimeSession production orchestration changed: False")
-    print("FW-RT6-13a tasklist state: 0 / 13 CLOSED / UNCHANGED")
-    print("commit / push: NOT_AUTHORIZED")
+    print("FW-RT6-13a tasklist state: 13 / 13 ACCEPTED")
+    print("FW-RT6-13a final acceptance sync: PASS")
+    print("FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
+    print("FW-RT6-13b implementation: NOT_AUTHORIZED")
+    print("acceptance-sync commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":

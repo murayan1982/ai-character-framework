@@ -3148,19 +3148,19 @@ noise suppression
 
 **Tasks:**
 
-- [ ] text-only normal turn。
-- [ ] host audio -> transcript -> text -> TTS -> motion normal turn。
-- [ ] user stop during response stream。
-- [ ] user speech interrupt during voice output。
-- [ ] duplicate interrupt。
-- [ ] late response delta。
-- [ ] late TTS artifact。
-- [ ] late motion completion。
-- [ ] queue overflow。
-- [ ] session reset。
-- [ ] session close during active turn。
-- [ ] close後operation rejection。
-- [ ] exact event trace/terminal resultを検証する。
+- [x] text-only normal turn。
+- [x] host audio -> transcript -> text -> TTS -> motion normal turn。
+- [x] user stop during response stream。
+- [x] user speech interrupt during voice output。
+- [x] duplicate interrupt。
+- [x] late response delta。
+- [x] late TTS artifact。
+- [x] late motion completion。
+- [x] queue overflow。
+- [x] session reset。
+- [x] session close during active turn。
+- [x] close後operation rejection。
+- [x] exact event trace/terminal resultを検証する。
 
 **Acceptance:**
 
@@ -11121,3 +11121,74 @@ After this one-file sync is reviewed, committed, pushed, and remotely verified,
 only FW-RT6-13a exact contract review is authorized. FW-RT6-13a implementation
 remains separately gated.
 <!-- FW-RT6-12c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-13a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-13a — integrated fake-runtime final acceptance sync
+
+```text
+checkpoint: FW-RT6-13a final acceptance sync
+acceptance-sync baseline head: 0e61ca4154a48f5b41999be40129579d44e21cde
+implementation commit: 0e61ca4154a48f5b41999be40129579d44e21cde
+implementation subject: test: add FW-RT6-13a integrated fake-runtime acceptance
+implementation: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+implementation exact surface: 5 files
+final acceptance-sync exact surface: 5 files
+final acceptance-sync production runtime source changes: 0 files
+final acceptance-sync integrated test changes: 0 files
+integrated scenario groups: 10 / PASS
+roadmap scenarios: 13 / 13 ACCEPTED
+text-only normal turn: PASS
+host audio -> transcript -> text -> TTS -> motion normal turn: PASS
+user stop during response stream: PASS
+user speech interrupt during voice output: PASS
+duplicate interrupt: PASS
+late response delta: STALE_REJECTED / PASS
+late TTS artifact: STALE_REJECTED / PASS
+late motion completion: STALE_REJECTED / PASS
+queue overflow: TYPED_REJECTION / PASS
+session reset: GENERATION_RETIRED / PASS
+session close during active turn: EXACTLY_ONCE_CLOSED_TERMINAL / PASS
+post-close operation rejection: TYPED_REJECTION / PASS
+exact event trace / terminal result: PASS
+fake-only integrated suite: PASS
+exactly-once terminal: PASS
+stale rejection: PASS
+network/provider/microphone/playback: False
+real VTS execution: False
+raw audio retained: False
+framework root-public names: 127 / UNCHANGED
+RealtimeSession production orchestration changed: False
+factory signature or event/result/error shape changed: False
+API/schema version changed: False
+root API manifest changed: False
+provider namespace, example, or README changed: False
+FW-RT6-13a tasks: 13 / 13 ACCEPTED
+FW-RT6-13a: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-13a closes the provider-free integrated acceptance matrix over the
+accepted session lifecycle, deterministic fake scheduler, generation gate,
+terminal registry, interrupt coordination, recovery/reset, and close
+boundaries. The ten executable scenario groups cover all thirteen roadmap
+requirements and retain one exact terminal result while rejecting retired
+response, TTS, and motion completions.
+
+The normal host-audio path uses only an opaque host-owned audio source, a local
+fake transcript adapter, the mock-safe realtime turn, an in-memory fake TTS
+handoff, and mock motion. The suite opens no microphone, performs no playback,
+imports no provider SDK, makes no network request, and executes no real VTube
+Studio operation.
+
+This final sync changes only the tasklist/contract/gate state. It does not
+change production Framework source, the integrated scenario test, root API
+manifest, factory signature, public event/result/error shape, API/schema
+version, provider namespace, example, README, or historical acceptance record.
+
+After this exact five-file sync is reviewed, committed, pushed, and remotely
+verified, FW-RT6-13a is fully closed and only FW-RT6-13b exact contract review
+is authorized. FW-RT6-13b implementation remains separately gated.
+<!-- FW-RT6-13a-FINAL-ACCEPTANCE-SYNC:END -->

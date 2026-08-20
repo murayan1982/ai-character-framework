@@ -4534,7 +4534,7 @@ FW-RT6-11a aggregate; that remains Control C work after separate review.
 
 
 <!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:BEGIN -->
-## FW-RT6-13a host integration acceptance candidate
+## FW-RT6-13a host integration final acceptance sync
 
 Host integrations keep their accepted ownership boundaries. Host audio is
 represented by an opaque `VoiceInputAudioSource`; the fake suite never opens a
@@ -4554,15 +4554,19 @@ actual stale-generation rejection.
 text-only normal turn: VERIFIED_BY_SUITE
 host audio -> transcript -> text -> TTS -> motion: VERIFIED_BY_SUITE
 exact event trace / terminal result: VERIFIED_BY_SUITE
-fake-only integrated suite: PASS_REQUIRED
-exactly-once terminal: PASS_REQUIRED
-stale rejection: PASS_REQUIRED
+implementation commit: 0e61ca4154a48f5b41999be40129579d44e21cde
+acceptance-sync baseline: 0e61ca4154a48f5b41999be40129579d44e21cde
+fake-only integrated suite: PASS
+exactly-once terminal: PASS
+stale rejection: PASS
 network/provider/microphone/playback: False
 real VTS execution: False
 host playback side effect: False
 production session/facade change: False
-FW-RT6-13a tasklist state: 0 / 13 CLOSED / UNCHANGED
-acceptance sync / commit / push: NOT_AUTHORIZED
+FW-RT6-13a tasklist state: 13 / 13 ACCEPTED
+FW-RT6-13b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13a-INTEGRATED-FAKE-RUNTIME:END -->
 
