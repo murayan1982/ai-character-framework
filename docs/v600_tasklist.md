@@ -11030,3 +11030,94 @@ candidate is committed, pushed, and remotely verified. Neither that final sync
 nor FW-RT6-13a implementation nor this Control C commit/push is authorized by
 this aggregate implementation.
 <!-- FW-RT6-12c-C-AGGREGATE-ACCEPTANCE:END -->
+
+
+<!-- FW-RT6-12c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-12c — natural-turn contract final acceptance sync
+
+```text
+checkpoint: FW-RT6-12c final acceptance sync
+baseline head: 7118215b9c751793f5ea941e61425e1e76dc66ec
+Control A implementation and acceptance: b556712bb20465cf712be449b7c956f784b22044
+Control B implementation and acceptance: f92d7dcf20e5a5591a406329fd1d0fb96b186b64
+Control C aggregate implementation and acceptance: 7118215b9c751793f5ea941e61425e1e76dc66ec
+Control A: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control B: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+Control C: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED / CLOSED
+exact Control A implementation and acceptance surface: 7 files
+exact Control B implementation and acceptance surface: 9 files
+exact Control C aggregate surface: 7 files
+final acceptance-sync exact surface: 1 file / docs/v600_tasklist.md
+dedicated Control C aggregate gate: PASS
+focused Control A tests: 16 / PASS
+focused Control B tests: 12 / PASS
+focused Control A+B tests: 28 / PASS
+accepted FW-RT6-11a compatibility gate: PASS
+accepted FW-RT6-11b root-public cleanup gate: PASS
+accepted FW-RT6-11c migration/examples gate: PASS
+accepted FW-RT6-12a audio-chunk streaming gate: PASS
+accepted FW-RT6-12b backpressure gate: PASS
+full Framework unit suite: 781 / PASS
+accepted aggregate contracts: 2 / 2
+Control A vocabulary contract: ACCEPTED
+Control B RealtimeSession read-only snapshot contract: ACCEPTED
+stable contract namespace: framework.natural_turn / 6 EXACT / EXPLICIT_ONLY
+natural-turn extensions: 7 / EXACT / INDEPENDENT / FUTURE_ROADMAP
+combined natural-turn mode: NONE
+default supported extensions: 0 / 7
+default experimental: True
+default owner: host_application
+explicit activation required: True
+session adoption owner: RealtimeSession / READ_ONLY_CAPABILITY_SNAPSHOT
+adapter configuration or activation API: NONE
+VoiceInputSession adoption: False
+v6.0.0 P0 acceptance requirement: False
+framework root-public names: 127 / UNCHANGED
+provider credential required: False / PASS
+optional provider SDK import: False / PASS
+provider/network/audio-device/playback/background/real VTS execution: False / PASS
+raw audio/transcript/provider/device handle in public projection: False / PASS
+framework runtime source changed by final sync: False
+public-facade contract changed by final sync: False
+application-integration contract changed by final sync: False
+natural-turn guide changed by final sync: False
+root API manifest changed by final sync: False
+aggregate gate changed by final sync: False
+existing Control A/B gate or test changed by final sync: False
+factory signature or event/result/error shape changed by final sync: False
+API/schema version changed by final sync: False
+example, README, or provider namespace changed by final sync: False
+FW-RT6-12c accepted contract aggregate: 2 / 2 ACCEPTED
+FW-RT6-12c roadmap extension implementations: 0 / 7 CLOSED / UNCHANGED
+FW-RT6-12c aggregate: COMPLETED / VERIFIED / ACCEPTED / COMMITTED / PUSHED / CLOSED
+FW-RT6-13a exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-13a implementation: NOT_AUTHORIZED
+final acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+FW-RT6-12c closes the reviewed provider-neutral natural-turn contract aggregate:
+the exact seven-extension Control A vocabulary and the Control B immutable,
+session-owned, read-only `RealtimeSession.natural_turn_capabilities` snapshot.
+The explicit-only namespace remains six names, the Framework root remains 127
+names, and all default capabilities remain unsupported, experimental,
+host-owned, explicitly activated, and execution-free.
+
+This final acceptance does not implement or close any of the seven future
+roadmap extensions. Microphone listening while speaking, VAD-based automatic
+detection, wake word, background input monitoring, automatic next-turn capture,
+echo cancellation, and noise suppression remain seven independent exact-contract
+items with 0 / 7 implementations closed. There is still no combined natural-turn
+mode, adapter/configuration/activation API, or `VoiceInputSession` adoption.
+
+This exact final sync changes only `docs/v600_tasklist.md`. It changes no
+Framework runtime source, public-facade or application-integration contract,
+natural-turn guide, root API manifest, aggregate gate, existing Control A/B gate
+or test, factory signature, event/result/error shape, API/schema version,
+provider namespace, example, README, or historical acceptance record. It
+performs no provider, network, audio-device, playback, background, or real VTS
+execution.
+
+After this one-file sync is reviewed, committed, pushed, and remotely verified,
+only FW-RT6-13a exact contract review is authorized. FW-RT6-13a implementation
+remains separately gated.
+<!-- FW-RT6-12c-FINAL-ACCEPTANCE-SYNC:END -->
