@@ -1,150 +1,85 @@
 # Release Package Policy
 
-This document defines which files should be included in public release packages and which files should stay internal or local.
-
-## Goals
-
-Public release packages should be:
-
-- easy to run
-- easy to inspect
-- free from local secrets
-- free from generated cache files
-- free from internal release-operation notes
-- consistent with public documentation links
-
-## Public release package
-
-The public release package is intended for users who want to try or build on the current version of the framework.
-
-It should contain the files needed to install, run, inspect, and integrate with the framework.
-
-## Include
-
-Public release packages should include:
+## Current release
 
 ```text
-README.md
-LICENSE.txt
-.env.example
-requirements.txt
-install.bat
-run.bat
-main.py
-
-characters/
-config/
-core/
-docs/
-examples/
-framework/
-live2d/
-llm/
-plugins/
-presets/
-registry/
-scripts/
-stt/
-tts/
-utils/
+target: v6.0.0
+source version: 6.0.0
+publication status: RELEASE_CANDIDATE / NOT_RELEASED
+latest published release: v5.5.0
 ```
 
-## Exclude
-
-Public release packages should not include:
+The official public artifact is a deterministic source ZIP plus an ASCII
+SHA-256 sidecar:
 
 ```text
-.env
-.git/
-.github/
-__pycache__/
-*.pyc
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.venv/
-venv/
-dist/
-build/
-*.log
-release_checklist_*.md
-local test output
-temporary working notes
+release/ai-character-framework_v6.0.0.zip
+release/ai-character-framework_v6.0.0.zip.sha256
 ```
 
-## Documentation rules
+Generated artifacts stay ignored and uncommitted.
 
-Files included in the public package should not link to files that are intentionally excluded.
+## Exact membership
 
-Public docs should not link to:
+Membership comes from `git ls-files` at the release commit. The builder sorts
+normalized POSIX paths and applies only the committed exclusions below. The
+official build does not accept untracked or dirty-worktree files.
+
+Excluded:
 
 ```text
-release_checklist_*.md
-old version-specific release notes
-local-only files
-private notes
+.git/**
+.github/**
+.gitignore
+.vscode/settings.json
+release/**
+dist/**
+build/**
+virtual environments and caches
+compiled Python files and logs
 ```
 
-Current release notes should use the stable path:
+The package includes the installable Python packages, public configuration
+examples, docs, examples, tests, and release tooling. Required members include
+`README.md`, `LICENSE.txt`, `.env.example`, `pyproject.toml`, current/fixed
+release notes, and the v6 package builder/readiness/operator sources.
+
+## Private artifact rejection
+
+Before exclusions are applied, the builder rejects tracked private artifact
+paths, including token/config/evidence directories, `.env` variants other than
+`.env.example`, credential/token/evidence JSON names, and captured audio. It
+checks path names only and does not open private artifacts.
+
+The public ZIP must not contain credentials, tokens, private configuration,
+private evidence, provider identifiers, captured audio, transcripts, generated
+voice output, screenshots, raw payloads, or raw exceptions.
+
+## Determinism and archive safety
+
+Every entry has a fixed timestamp, normalized regular-file permissions, sorted
+order, and fixed DEFLATE settings. Verification requires:
 
 ```text
-RELEASE_NOTES.md
+exact committed membership
+byte-identical deterministic rebuild
+ZIP integrity
+duplicate entry rejection
+unsafe/absolute/parent member rejection
+private artifact rejection
+SHA-256 sidecar integrity
+isolated package-import smoke
+framework.__version__ == 6.0.0
+framework.__all__ count == 127
 ```
 
-Historical release notes are preserved by Git tags and GitHub Releases.
+## Release execution boundary
 
-## Release checklist files
+The builder and readiness gates never create tags, push, or call GitHub. The
+release operator requires a clean `main`, `HEAD == origin/main`, an absent tag
+and GitHub Release, a strict package gate, and three exact confirmations. It
+then creates an annotated tag, pushes only that tag, publishes the ZIP and
+sidecar, redownloads both assets into a temporary directory, verifies them, and
+confirms the repository remains clean.
 
-Release checklist files are internal working files.
-
-They may exist during release preparation, but they should not be required by public documentation and should not be included in public release packages.
-
-## Sanity check expectations
-
-Before publishing a release package, check that:
-
-```text
-required files exist
-required directories exist
-forbidden files are absent
-public Markdown links point to included files
-public docs do not reference internal release checklist files
-.env is not included
-cache files are not included
-```
-
-## Recommended verification
-
-For the current v5.0.0 mock-safe package verification, run:
-
-```powershell
-python -m compileall -q .
-python scripts/smoke_public_facade.py
-python scripts/smoke_app_sdk.py
-python scripts/smoke_voice_output_real_tts_opt_in_boundary.py
-python scripts/smoke_voice_output_artifact_result_contract.py
-python scripts/smoke_voice_output_real_provider_execution_guard.py
-python scripts/smoke_voice_output_host_app_handoff.py
-python scripts/smoke_voice_output_v500_release_readiness.py
-python scripts/smoke_voice_output_v500_package_readiness.py
-python scripts/check_release_package.py
-python examples/app_voice_output_integration.py
-```
-
-Legacy text-chat examples may also be run as optional smoke checks:
-
-```powershell
-python examples/app_error_handling.py
-python examples/public_text_chat.py
-python examples/minimal_app_text_chat.py
-```
-
-## Local build workflow
-
-Release packages may be created with a local build script outside Git management.
-
-The local build script is treated as a maintainer-side tool and is not included in the repository or public release package.
-
-Generated release packages may be stored locally under a versioned `release/` directory.
-
-The `release/` directory is a local artifact archive and should not be committed to Git.
+Implementation review does not authorize public release operations.

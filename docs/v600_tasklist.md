@@ -11639,3 +11639,54 @@ FW-RT6-14c exact contract review is authorized. FW-RT6-14c implementation,
 package/release tooling, tag creation, push, GitHub Release, official assets,
 and publication remain separately gated.
 <!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE-CANDIDATE:BEGIN -->
+## FW-RT6-14c — deterministic package and release implementation candidate
+
+```text
+checkpoint: FW-RT6-14c
+baseline head: 799589526aef1a9d903fe4da4c23550b5c12ca38
+baseline subject: docs: close FW-RT6-14b
+exact contract review: COMPLETED
+implementation: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 18 files
+production Framework behavior changes: 0
+source version metadata: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+exact committed membership: PASS
+deterministic rebuild: PASS
+duplicate entry rejection: PASS
+private artifact rejection: PASS
+package-import smoke: PASS
+release notes: PASS
+strict tag readiness: IMPLEMENTED / NOT_RUN
+annotated tag: NOT_AUTHORIZED / NOT_RUN
+push: NOT_AUTHORIZED / NOT_RUN
+GitHub Release: NOT_AUTHORIZED / NOT_RUN
+official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
+published asset redownload verification: IMPLEMENTED / NOT_RUN
+clean tree confirmation: IMPLEMENTED / NOT_RUN
+FW-RT6-14b documentation gate: PASS
+FW-RT6-14a aggregate gate: PASS
+full Framework unit suite: 828 / PASS
+provider/network/microphone/playback/VTS execution: False
+private artifact contents read: False
+FW-RT6-14c canonical tasks: 0 / 14 CLOSED / UNCHANGED
+FW-RT6-14c final release-status sync: NOT_AUTHORIZED
+tag / push / GitHub Release: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+This exact candidate implements all fourteen controls without closing them.
+The provider-free gate creates two temporary byte-identical packages and then
+deletes them. It does not write the official artifact, create a tag, push, call
+GitHub Release, read private artifacts, or execute a provider/device.
+
+After review, commit, push, and remote verification, a separately authorized
+release-status sync must establish the clean committed release checkpoint.
+Official ZIP creation, strict tag readiness, annotated tag, tag push, public
+GitHub Release, asset upload, published-asset redownload, and final clean-tree
+acceptance remain separately gated.
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE-CANDIDATE:END -->

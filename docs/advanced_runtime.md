@@ -1,5 +1,19 @@
 # Advanced Runtime Behavior
 
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
+## Current v6.0.0 release-candidate note
+
+Source metadata is now `6.0.0`; the latest published release remains v5.5.0.
+FW-RT6-14c changes version metadata and provider-free release tooling only. It
+does not alter runtime behavior. Package membership is derived from Git, builds
+are byte-identical, archives reject duplicates/private paths, and an extracted
+package must import `framework` with 127 root-public names.
+
+Annotated tag creation, push, GitHub Release publication, official assets, and
+published-asset redownload are implemented but not authorized or run by this
+candidate. The accepted 14b freeze below remains historical baseline evidence.
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
 <!-- FW-RT6-14b-ADVANCED-RUNTIME-FREEZE:BEGIN -->
 
 This document is the frozen v6.0.0 source contract for advanced realtime behavior.

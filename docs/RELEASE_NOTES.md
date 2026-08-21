@@ -1,3 +1,27 @@
+<!-- CURRENT-RELEASE-v6.0.0:BEGIN -->
+# v6.0.0 - Provider-neutral realtime lifecycle
+
+The v6.0.0 source is a release candidate and has not yet been published. It
+adds the provider-neutral realtime lifecycle, guarded real-runtime composition,
+natural-turn controls, aggregate conformance, and the frozen v5-to-v6 contract.
+
+The version-fixed release notes are:
+
+```text
+docs/release_notes_v6.0.0.md
+```
+
+Current release status:
+
+```text
+source version: 6.0.0
+latest published release: 5.5.0
+FW-RT6-14c release tooling: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+```
+<!-- CURRENT-RELEASE-v6.0.0:END -->
+
 <!-- CURRENT-RELEASE-v5.5.0:BEGIN -->
 # v5.5.0 - Real Motion Adapter / VTube Studio
 

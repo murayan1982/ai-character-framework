@@ -1,5 +1,14 @@
 # v6 Capability, Event, and Error Reference
 
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
+## Current release metadata note
+
+Source metadata is `6.0.0`; publication remains false and v5.5.0 remains the
+latest published release. FW-RT6-14c changes no capability, event, result,
+error, API/schema version, or root-public export. Public release remains gated
+on separately authorized tag, asset, redownload, and clean-tree verification.
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
 <!-- FW-RT6-14b-CAPABILITY-EVENT-ERROR-REFERENCE:BEGIN -->
 
 This provider-neutral reference freezes the public v6.0.0 source-candidate

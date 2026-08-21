@@ -134,13 +134,13 @@ def check_readme() -> None:
     _require(text.index("FW-RT6-14b-README-CURRENT:BEGIN") < text.index("What this framework provides"), "current README status must precede setup content")
     _require(text.index("README-HISTORICAL-DEVELOPMENT-LOG:BEGIN") > text.index("License"), "historical README log must follow current project content")
     for phrase in (
-        "6.0.0.dev0",
-        "DOCUMENTATION_FROZEN / NOT_RELEASED",
+        "6.0.0",
+        "RELEASE_CANDIDATE / NOT_RELEASED",
         "Latest published release",
         "v5.5.0",
-        BASELINE_HEAD,
-        "FW-RT6-14b documentation freeze",
-        "ACCEPTED / AWAITING_SYNC_COMMIT_PUSH",
+        "799589526aef1a9d903fe4da4c23550b5c12ca38",
+        "FW-RT6-14c release tooling",
+        "IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
         "127 names / unchanged",
         "v5_skeleton",
         "v6_unified",
@@ -151,6 +151,16 @@ def check_readme() -> None:
         _require(phrase in current or phrase in text, f"README freeze fact missing: {phrase}")
     _require("append-only" in history, "historical README log warning missing")
     _require("### v5.1.0 release readiness gate" in history, "historical README content moved outside log")
+    for phrase in (
+        "6.0.0",
+        "RELEASE_CANDIDATE / NOT_RELEASED",
+        "799589526aef1a9d903fe4da4c23550b5c12ca38",
+        "FW-RT6-14c release tooling",
+        "IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
+        "docs/v600_deterministic_release.md",
+        "docs/release_notes_v6.0.0.md",
+    ):
+        _require(phrase in current, f"README current release fact missing: {phrase}")
 
 
 def check_contract_docs() -> None:
@@ -247,6 +257,24 @@ def check_contract_docs() -> None:
         "acceptance-sync commit / push: NOT_AUTHORIZED",
     ):
         _require(phrase in final_combined, f"final acceptance fact missing: {phrase}")
+
+    for relative, text in (
+        ("docs/advanced_runtime.md", advanced),
+        ("docs/v600_v5_to_v6_session_migration.md", migration),
+        ("docs/v600_capability_event_error_reference.md", reference),
+        ("docs/app_integration_contract.md", app),
+        ("docs/public_facade.md", facade),
+    ):
+        current_release = _marker_block(
+            text,
+            "<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->",
+            "<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->",
+        )
+        _require("6.0.0" in current_release, f"14c release metadata missing: {relative}")
+        _require(
+            "not" in current_release.casefold() or "NOT_AUTHORIZED" in current_release,
+            f"14c unpublished boundary missing: {relative}",
+        )
 
     event_values = set(re.findall(r"`(realtime\.[a-z0-9_.]+)`", reference_block))
     _require(len(event_values) == EXPECTED_EVENT_COUNT, "event reference must list exactly 48 unique event values")
@@ -416,7 +444,7 @@ def main() -> None:
     print("final acceptance-sync exact surface: 8 files / PASS")
     print("production Framework source changes: 0 files")
     print("test source changes: 0 files")
-    print("README current v6 source status: FROZEN")
+    print("README current v6 source status: RELEASE_CANDIDATE")
     print("README historical development log: DELIMITED / APPEND_ONLY")
     print("advanced runtime contract: v6 / PASS")
     print("v5-to-v6 migration guide: PASS")
@@ -430,9 +458,11 @@ def main() -> None:
     print("private configuration/evidence read or written: False")
     print("FW-RT6-14b canonical tasks: 8 / 8 ACCEPTED")
     print("FW-RT6-14b final acceptance sync: PASS")
-    print("FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH")
+    print("FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH")
     print("FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
-    print("FW-RT6-14c implementation: NOT_AUTHORIZED")
+    print("FW-RT6-14c implementation: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
+    print("v6 source version metadata: 6.0.0")
+    print("v6.0.0 publication status: RELEASE_CANDIDATE / NOT_RELEASED")
     print("commit / push: NOT_AUTHORIZED")
 
 

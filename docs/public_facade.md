@@ -7036,3 +7036,21 @@ acceptance-sync commit / push: NOT_AUTHORIZED
 This sync records reviewed public-safe facts only. It does not publish v6.0.0
 or authorize FW-RT6-14c implementation.
 <!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
+## FW-RT6-14c release metadata and public facade
+
+`framework.__version__` is now `6.0.0`; the 127-name root-public manifest and
+all API/schema constants remain unchanged. `LATEST_PUBLISHED_RELEASE` remains
+`5.5.0` until public release verification completes.
+
+The deterministic package gate verifies exact committed membership, duplicate
+and private artifact rejection, byte-identical rebuild, SHA-256 integrity, and
+an isolated package import. It creates no public API and executes no provider,
+network, microphone, playback, or VTS path.
+
+```text
+tag / push / GitHub Release: NOT_AUTHORIZED
+official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
+```
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->

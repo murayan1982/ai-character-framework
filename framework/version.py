@@ -7,7 +7,7 @@ separate exact contract explicitly changes those public contracts.
 
 from __future__ import annotations
 
-FRAMEWORK_SOURCE_VERSION = "6.0.0.dev0"
+FRAMEWORK_SOURCE_VERSION = "6.0.0"
 LATEST_PUBLISHED_RELEASE = "5.5.0"
 
 TEXT_CHAT_API_VERSION = "4.0"

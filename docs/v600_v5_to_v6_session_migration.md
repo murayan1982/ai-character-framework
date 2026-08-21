@@ -374,3 +374,13 @@ acceptance-sync commit / push: NOT_AUTHORIZED
 The phased adoption checklist remains application guidance and is not the
 canonical FW-RT6-14b acceptance checklist.
 <!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
+## v6.0.0 package migration note
+
+Current source metadata is `6.0.0`; v6.0.0 is not yet published. The
+deterministic source ZIP contains this committed migration guide and the
+installable SDK sources verified by the package-import smoke. Releasing it
+does not remove v5 standalone factories or change the default provider-free
+`v5_skeleton` profile. Public release execution remains separately authorized.
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->

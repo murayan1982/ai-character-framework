@@ -5315,3 +5315,24 @@ After this exact sync is committed, pushed, and remotely verified, FW-RT6-14b
 is closed. Only FW-RT6-14c exact contract review becomes authorized; package,
 tag, publication, and release execution remain separately gated.
 <!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->
+
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
+## FW-RT6-14c package and app contract
+
+```text
+source version: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+runtime behavior changes: 0
+root-public names: 127 / UNCHANGED
+exact committed membership: PASS
+deterministic rebuild: PASS
+duplicate entry rejection: PASS
+private artifact rejection: PASS
+package-import smoke: PASS
+tag / push / GitHub Release: NOT_AUTHORIZED
+```
+
+Host integrations continue to use the root-public v5/v6 contracts. Release
+tooling does not read app/provider configuration, execute providers/devices, or
+transfer ownership of playback, cancellation, or VTS behavior.
+<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->

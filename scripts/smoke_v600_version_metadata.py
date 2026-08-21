@@ -93,7 +93,7 @@ def check_central_module() -> None:
         VOICE_OUTPUT_BOUNDARY_VERSION,
     )
 
-    _assert(FRAMEWORK_SOURCE_VERSION == "6.0.0.dev0", "source version should be v6 dev")
+    _assert(FRAMEWORK_SOURCE_VERSION == "6.0.0", "source version should be v6.0.0")
     _assert(LATEST_PUBLISHED_RELEASE == "5.5.0", "latest release should remain v5.5.0")
     _assert(TEXT_CHAT_API_VERSION == "4.0", "text API version changed")
     _assert(
@@ -146,7 +146,7 @@ def check_runtime_values() -> None:
     from framework.realtime_session import RealtimeSessionInfo
     from framework.voice_input_session import VoiceInputSessionInfo
 
-    _assert(framework.__version__ == "6.0.0.dev0", "framework.__version__ mismatch")
+    _assert(framework.__version__ == "6.0.0", "framework.__version__ mismatch")
     _assert("__version__" not in framework.__all__, "__version__ changed wildcard API")
     _assert(len(framework.__all__) == 127, "root-public name count drift")
     _assert(
