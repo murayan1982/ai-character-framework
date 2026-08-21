@@ -11410,3 +11410,57 @@ After this exact six-file sync is reviewed, committed, pushed, and remotely
 verified, FW-RT6-13c is fully closed and only FW-RT6-14a exact contract review
 is authorized. FW-RT6-14a implementation remains separately gated.
 <!-- FW-RT6-13c-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE-CANDIDATE:BEGIN -->
+## FW-RT6-14a — aggregate conformance implementation candidate
+
+```text
+checkpoint: FW-RT6-14a
+baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298
+baseline subject: docs: close FW-RT6-13c
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 6 files
+production Framework source changes: 0 files
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+dedicated aggregate tests: 12 / PASS
+root-public manifest gate: PASS
+import safety gate: PASS
+capability truthfulness gate: PASS
+event ordering gate: PASS
+exactly-once terminal gate: PASS
+stale rejection gate: PASS
+interrupt reach gate: PASS
+TTS work-control gate: PASS
+security/redaction gate: PASS
+compatibility gate: PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+tracked smoke_v600 files: 93 / CLASSIFIED
+historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+real operator execution repeated: False
+private evidence imported/read: False
+FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED
+FW-RT6-14a acceptance sync: NOT_AUTHORIZED
+FW-RT6-14b exact contract review: NOT_AUTHORIZED
+FW-RT6-14b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The exact six-file candidate adds one provider-free aggregate checker, one
+twelve-test suite, one dedicated contract, and synchronized app/facade/tasklist
+facts. It changes no production Framework source or public API.
+
+The current smoke suite is an exact eleven-command dependency set: two current
+standalone smokes and nine current high-level acceptance checkers. The other 91
+tracked `smoke_v600` files remain append-only historical source evidence whose
+frozen HEAD, checklist, surface, or test-count assertions are intentionally not
+reinterpreted as current contracts.
+
+All twelve canonical FW-RT6-14a checkboxes remain open until a separately
+authorized final acceptance sync records a reviewed, committed, pushed, and
+remotely verified implementation. FW-RT6-14b remains unauthorized.
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE-CANDIDATE:END -->

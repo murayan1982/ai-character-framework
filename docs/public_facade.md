@@ -6881,3 +6881,45 @@ FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->
+
+
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:BEGIN -->
+## FW-RT6-14a — public facade aggregate conformance
+
+FW-RT6-14a adds documentation, a provider-free checker, and twelve dedicated
+tests only. It adds no root export, facade member, factory parameter, result or
+event field, error code, API/schema version, provider namespace, runtime stage,
+or execution claim.
+
+The frozen `framework.__all__` surface remains 127 names and the machine
+manifest is byte-for-byte unchanged. Default `RealtimeSession` capability
+claims remain mock/unsupported as applicable; natural-turn capability claims
+remain seven independent experimental default-off entries. Compatibility
+profiles remain explicit-only, lazy, silent, and execution-free.
+
+```text
+checkpoint: FW-RT6-14a
+baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 6 files
+production Framework source changes: 0 files
+new root-public names: 0
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+dedicated aggregate tests: 12 / PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+tracked smoke_v600 files: 93 / CLASSIFIED
+historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED
+FW-RT6-14b exact contract review: NOT_AUTHORIZED
+FW-RT6-14b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The aggregate gate is a verification boundary, not a new facade. Historical
+smoke programs remain append-only evidence of the HEAD/checklist/test-count
+state they accepted and are not relabeled as current executable contracts.
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:END -->

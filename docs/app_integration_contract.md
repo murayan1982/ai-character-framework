@@ -5156,3 +5156,45 @@ FW-RT6-14a implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
 <!-- FW-RT6-13c-REAL-RUNTIME-OPERATOR:END -->
+
+
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:BEGIN -->
+## FW-RT6-14a — application integration aggregate conformance
+
+Applications receive no new API or runtime behavior from FW-RT6-14a. The
+provider-free aggregate gate verifies the frozen root surface, isolated import,
+truthful capability projection, event and terminal ordering, stale completion
+rejection, interrupt/TTS work control, recursive public redaction, and the five
+accepted standalone compatibility profiles.
+
+The gate runs twelve dedicated tests, eleven explicitly classified
+current-compatible smoke dependencies, and the complete current 828-test unit
+suite. It does not replay historical HEAD-frozen smoke artifacts as if they
+were current contracts. The complete 93-file `smoke_v600` inventory is instead
+classified as two current standalone smokes and 91 historical source-evidence
+files.
+
+```text
+checkpoint: FW-RT6-14a
+baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 6 files
+production Framework source changes: 0 files
+root-public names: 127 / UNCHANGED
+dedicated aggregate tests: 12 / PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+tracked smoke_v600 files: 93 / CLASSIFIED
+historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED
+FW-RT6-14b exact contract review: NOT_AUTHORIZED
+FW-RT6-14b implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The host retains every previously accepted ownership boundary. Import and gate
+execution do not inspect credentials, instantiate provider clients, read real
+operator evidence, access devices, or perform network, playback, or VTS work.
+<!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:END -->
