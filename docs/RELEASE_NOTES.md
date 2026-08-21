@@ -16,10 +16,12 @@ Current release status:
 ```text
 source version: 6.0.0
 latest published release: 5.5.0
-FW-RT6-14c release tooling: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+FW-RT6-14c release tooling: COMMITTED / PUSHED / VERIFIED
 implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
-release-status sync: 7 / 14 ACCEPTED / AWAITING_SYNC_COMMIT_PUSH
-strict tag readiness: NOT_RUN / REQUIRES_CLEAN_SYNC_COMMIT_AND_OFFICIAL_PACKAGE
+release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95 / COMMITTED / PUSHED / REMOTELY_VERIFIED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
+strict tag readiness: NOT_RUN
 official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
 annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
 ```

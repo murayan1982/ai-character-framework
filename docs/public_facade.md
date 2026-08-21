@@ -7067,10 +7067,30 @@ changes in this sync.
 ```text
 framework.__version__: 6.0.0
 latest published release: 5.5.0 / UNCHANGED
+release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95 / REMOTELY_VERIFIED
 root-public names: 127 / UNCHANGED
 FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
 strict tag readiness: NOT_RUN
 official ZIP + SHA-256 sidecar: NOT_WRITTEN
 annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
 ```
 <!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->
+
+<!-- FW-RT6-14c-PRE-TAG-READINESS:BEGIN -->
+## FW-RT6-14c pre-tag public-surface checkpoint
+
+The release-status sync commit is pushed and remotely verified. The pre-tag
+checkpoint changes no root-public name, signature, result/event/error shape,
+API/schema constant, compatibility profile, or runtime execution behavior.
+
+```text
+pre-tag baseline: 6d83dac01ff406b258e611447ade4c03191b7c95
+pre-tag exact surface: 7 files
+framework.__version__: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+official package build + strict readiness: READY_FOR_SEPARATE_EXECUTION
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+```
+<!-- FW-RT6-14c-PRE-TAG-READINESS:END -->

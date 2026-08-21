@@ -5343,10 +5343,13 @@ transfer ownership of playback, cancellation, or VTS behavior.
 ```text
 implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
 implementation: COMMITTED / PUSHED / REMOTELY_VERIFIED
+release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95
+release-status sync: COMMITTED / PUSHED / REMOTELY_VERIFIED
 verified package controls: 7 / 7 ACCEPTED
 FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
 runtime behavior changes: 0
 root-public names: 127 / UNCHANGED
+pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
 strict tag readiness: NOT_RUN
 official ZIP + SHA-256 sidecar: NOT_WRITTEN
 annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
@@ -5357,3 +5360,25 @@ safety/import/release-note controls. Host integration contracts and ownership
 boundaries remain unchanged. Strict and public-release controls are not inferred
 from implementation acceptance.
 <!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->
+
+<!-- FW-RT6-14c-PRE-TAG-READINESS:BEGIN -->
+## FW-RT6-14c pre-tag application checkpoint
+
+The remotely verified release-status sync at
+`6d83dac01ff406b258e611447ade4c03191b7c95` establishes the clean source
+baseline for the final package. This checkpoint changes no app API, production
+Framework behavior, test source, provider path, playback ownership, or VTS
+ownership.
+
+```text
+pre-tag baseline: 6d83dac01ff406b258e611447ade4c03191b7c95
+pre-tag exact surface: 7 files
+source version: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+official package build + strict readiness: READY_FOR_SEPARATE_EXECUTION
+official ZIP + SHA-256 sidecar: NOT_WRITTEN
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+```
+<!-- FW-RT6-14c-PRE-TAG-READINESS:END -->

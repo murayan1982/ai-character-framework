@@ -11732,3 +11732,37 @@ reviewed from the committed implementation. The remaining seven tasks require a
 clean sync commit, official package generation, strict verification, and explicit
 public-release authorization; they remain open.
 <!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->
+
+
+<!-- FW-RT6-14c-PRE-TAG-READINESS:BEGIN -->
+## FW-RT6-14c — pre-tag readiness checkpoint
+
+```text
+checkpoint: FW-RT6-14c pre-tag readiness
+pre-tag baseline: 6d83dac01ff406b258e611447ade4c03191b7c95
+baseline subject: docs: accept FW-RT6-14c package controls
+implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f / REMOTELY_VERIFIED
+release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95 / REMOTELY_VERIFIED
+pre-tag exact surface: 7 files
+production Framework behavior changes: 0
+test source changes: 0
+source version metadata: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED / UNCHANGED
+pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
+strict tag readiness: NOT_RUN / OPEN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN / OPEN
+annotated tag: NOT_AUTHORIZED / NOT_RUN
+push: NOT_AUTHORIZED / NOT_RUN
+GitHub Release: NOT_AUTHORIZED / NOT_RUN
+published asset redownload verification: NOT_RUN / OPEN
+clean tree confirmation: NOT_RUN / OPEN
+provider/network/microphone/playback/VTS execution: False
+private artifact contents read: False
+```
+
+The canonical checklist remains exactly seven accepted and seven open. This
+checkpoint prepares the source truth that will be placed in the official ZIP;
+it neither writes that ZIP nor performs strict or public-release actions.
+<!-- FW-RT6-14c-PRE-TAG-READINESS:END -->

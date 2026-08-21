@@ -15,7 +15,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE_HEAD = "9ffa623d21e6096213c9beb504f4c06150aeba8f"
+BASELINE_HEAD = "6d83dac01ff406b258e611447ade4c03191b7c95"
 VERSION = "6.0.0"
 TAG = f"v{VERSION}"
 PACKAGE = ROOT / "release" / f"ai-character-framework_v{VERSION}.zip"
@@ -132,6 +132,8 @@ def _check_source_contract() -> None:
         "published asset redownload verification",
         "tag / push / GitHub Release: NOT_AUTHORIZED",
         "FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED",
+        "release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95",
+        "pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK",
     ):
         _require(phrase in combined, f"release contract fact missing: {phrase}")
 
@@ -141,6 +143,17 @@ def _check_source_contract() -> None:
     )[1].split("# 4. Critical path", 1)[0]
     _require(canonical.count("- [x]") == 7, "FW-RT6-14c must accept exactly seven tasks")
     _require(canonical.count("- [ ]") == 7, "FW-RT6-14c must retain exactly seven open tasks")
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_current = readme.split("<!-- FW-RT6-14b-README-CURRENT:BEGIN -->", 1)[1].split(
+        "<!-- FW-RT6-14b-README-CURRENT:END -->", 1
+    )[0]
+    release_notes = (ROOT / "docs/RELEASE_NOTES.md").read_text(encoding="utf-8")
+    notes_current = release_notes.split("<!-- CURRENT-RELEASE-v6.0.0:BEGIN -->", 1)[1].split(
+        "<!-- CURRENT-RELEASE-v6.0.0:END -->", 1
+    )[0]
+    _require("AWAITING_SYNC_COMMIT_PUSH" not in readme_current, "README current status is stale")
+    _require("AWAITING_SYNC_COMMIT_PUSH" not in notes_current, "release notes current status is stale")
 
     for relative in (
         "scripts/build_v600_release_package.py",
@@ -166,7 +179,7 @@ def _check_candidate() -> set[str]:
     _require(origin_main == BASELINE_HEAD, "origin/main differs from candidate baseline")
     _require(branch == "main", "FW-RT6-14c candidate must be reviewed on main")
     changed = changed_paths()
-    _require(changed == EXPECTED_SURFACE, f"exact 7-file sync surface mismatch: {sorted(changed)}")
+    _require(changed == EXPECTED_SURFACE, f"exact 7-file pre-tag surface mismatch: {sorted(changed)}")
     _require(_run("git", "diff", "--check", check=False).returncode == 0, "git diff --check failed")
     _require(not PACKAGE.exists() and not SIDECAR.exists(), "candidate must not create official release assets")
     return changed
@@ -222,7 +235,8 @@ def main() -> None:
 
     print("FW-RT6-14c deterministic release gate: PASS")
     print("deterministic release implementation: 18 files / ACCEPTED")
-    print("release-status sync exact surface: 7 files / PASS")
+    print("release-status sync: 6d83dac01ff406b258e611447ade4c03191b7c95 / COMMITTED / PUSHED / REMOTELY_VERIFIED")
+    print("pre-tag readiness exact surface: 7 files / PASS")
     print("production Framework behavior changes: 0")
     print("source version metadata: 6.0.0")
     print("latest published release: 5.5.0 / UNCHANGED")
@@ -240,10 +254,15 @@ def main() -> None:
     print("official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN")
     print("published asset redownload verification: IMPLEMENTED / NOT_RUN")
     print("FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED")
-    print("FW-RT6-14c release-status sync: PASS / AWAITING_COMMIT_PUSH")
-    print("official package + strict tag readiness: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
+    print("FW-RT6-14c pre-tag source state: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK")
+    if arguments.strict_release:
+        print("FW-RT6-14c pre-tag checkpoint: COMMITTED / STRICT_VERIFIED")
+    elif arguments.source_only:
+        print("FW-RT6-14c pre-tag checkpoint: SOURCE_CONTRACT_PASS")
+    else:
+        print("FW-RT6-14c pre-tag checkpoint: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
     print("tag / push / GitHub Release: NOT_AUTHORIZED")
-    print("sync commit / push: NOT_AUTHORIZED")
+    print("pre-tag checkpoint commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":

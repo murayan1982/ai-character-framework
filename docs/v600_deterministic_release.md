@@ -130,3 +130,31 @@ official package or execute strict/public-release operations. After this exact
 sync is committed, pushed, and remotely verified, official package creation and
 strict tag readiness may be separately authorized from that clean commit.
 <!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->
+
+<!-- FW-RT6-14c-PRE-TAG-READINESS:BEGIN -->
+## Pre-tag readiness checkpoint
+
+```text
+pre-tag baseline: 6d83dac01ff406b258e611447ade4c03191b7c95
+implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f / REMOTELY_VERIFIED
+release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95 / REMOTELY_VERIFIED
+pre-tag exact surface: 7 files
+production Framework behavior changes: 0
+source version metadata: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
+strict tag readiness: NOT_RUN / OPEN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN / OPEN
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+published asset redownload verification: NOT_RUN / OPEN
+final clean tree confirmation: NOT_RUN / OPEN
+```
+
+This exact checkpoint removes the obsolete awaiting-sync state from the source
+that will be packaged. It does not create release assets or accept any of the
+remaining seven canonical tasks. Official package generation and strict
+readiness are the next separate execution boundary; public release operations
+remain separately authorized.
+<!-- FW-RT6-14c-PRE-TAG-READINESS:END -->

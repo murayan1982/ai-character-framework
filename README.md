@@ -18,8 +18,9 @@ This project is a framework, not a finished consumer app.
 | Latest published release | `v5.5.0` |
 | Release-tooling baseline | `799589526aef1a9d903fe4da4c23550b5c12ca38` |
 | FW-RT6-14b documentation freeze | `CLOSED / COMMITTED / PUSHED` |
-| FW-RT6-14c release tooling | `9ffa623d21e6096213c9beb504f4c06150aeba8f / IMPLEMENTED / VERIFIED / AWAITING_REVIEW` |
-| FW-RT6-14c release-status sync | `7 / 14 ACCEPTED / AWAITING_SYNC_COMMIT_PUSH` |
+| FW-RT6-14c release tooling | `9ffa623d21e6096213c9beb504f4c06150aeba8f / COMMITTED / PUSHED / VERIFIED` |
+| FW-RT6-14c release-status sync | `6d83dac01ff406b258e611447ade4c03191b7c95 / 7 / 14 ACCEPTED / COMMITTED / PUSHED / REMOTELY_VERIFIED` |
+| FW-RT6-14c pre-tag readiness | `READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK` |
 | Root-public surface | 127 names / unchanged |
 | Compatibility | v5 standalone sessions preserved; default `RealtimeSession` remains provider-free `v5_skeleton` |
 
@@ -54,9 +55,12 @@ All eight FW-RT6-14b documentation tasks are closed. FW-RT6-14c now provides a
 Git-membership package builder, byte-identical rebuild check, duplicate/private
 artifact rejection, isolated package-import smoke, strict tag-readiness gate, and
 an explicitly authorized GitHub Release operator. The first seven package controls
-are accepted. Official ZIP creation and strict tag readiness become eligible only
-after this sync is committed and pushed; annotated tag, tag push, and GitHub
-Release remain separately authorized and have not run.
+and their release-status sync are committed, pushed, and remotely verified. The
+source is ready for a separately executed official ZIP build and strict readiness
+check; neither has run. Annotated tag, tag push, and GitHub Release remain
+separately authorized and have not run.
+<!-- Historical freeze-gate marker, superseded by the verified commits above:
+IMPLEMENTED / VERIFIED / AWAITING_REVIEW -->
 <!-- FW-RT6-14b-README-CURRENT:END -->
 
 ---
