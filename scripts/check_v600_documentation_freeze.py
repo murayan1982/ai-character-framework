@@ -14,7 +14,7 @@ import sys
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BASELINE_HEAD = "7d65771784ddc5409076909f874d098758486d98"
+BASELINE_HEAD = "72cfa09f6551e1fc3d042777733627c900237cdc"
 EXPECTED_FULL_UNIT_COUNT = 828
 EXPECTED_ROOT_PUBLIC_COUNT = 127
 EXPECTED_EVENT_COUNT = 48
@@ -92,11 +92,10 @@ def _run_checked(command: list[str], *, label: str) -> str:
 def _marker_block(text: str, begin: str, end: str) -> str:
     _require(text.count(begin) == 1, f"marker must be unique: {begin}")
     _require(text.count(end) == 1, f"marker must be unique: {end}")
-    before, separator, remainder = text.partition(begin)
+    _before, separator, remainder = text.partition(begin)
     _require(bool(separator), f"missing marker: {begin}")
     block, separator, _after = remainder.partition(end)
     _require(bool(separator), f"missing marker: {end}")
-    _require(len(before) >= 0, "invalid marker partition")
     return block
 
 
@@ -140,6 +139,8 @@ def check_readme() -> None:
         "Latest published release",
         "v5.5.0",
         BASELINE_HEAD,
+        "FW-RT6-14b documentation freeze",
+        "ACCEPTED / AWAITING_SYNC_COMMIT_PUSH",
         "127 names / unchanged",
         "v5_skeleton",
         "v6_unified",
@@ -184,8 +185,37 @@ def check_contract_docs() -> None:
         "public facade freeze marker must be unique",
     )
 
+    final_blocks = (
+        _marker_block(
+            advanced,
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+        ),
+        _marker_block(
+            migration,
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+        ),
+        _marker_block(
+            reference,
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+        ),
+        _marker_block(
+            app,
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+        ),
+        _marker_block(
+            facade,
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+        ),
+    )
+    final_combined = "\n".join(final_blocks)
+
     for phrase in (
-        BASELINE_HEAD,
+        "7d65771784ddc5409076909f874d098758486d98",
         "production Framework source changes: 0 files",
         "root-public names: 127 / UNCHANGED",
         "provider hard cancel claimed: False",
@@ -196,6 +226,27 @@ def check_contract_docs() -> None:
         "commit / push: NOT_AUTHORIZED",
     ):
         _require(phrase in combined, f"documentation-freeze fact missing: {phrase}")
+
+    for phrase in (
+        BASELINE_HEAD,
+        "implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc",
+        "implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED",
+        "final acceptance-sync exact surface: 8 files",
+        "production Framework source changes: 0 files",
+        "test source changes: 0 files",
+        "root-public names: 127 / UNCHANGED",
+        "documentation-freeze checker: PROVIDER_FREE / PASS",
+        "full Framework unit suite: 828 / PASS",
+        "provider/network/microphone/playback/VTS execution: False",
+        "private configuration/evidence read or written: False",
+        "FW-RT6-14b tasks: 8 / 8 ACCEPTED",
+        "FW-RT6-14b final acceptance sync: PASS",
+        "FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14c implementation: NOT_AUTHORIZED",
+        "acceptance-sync commit / push: NOT_AUTHORIZED",
+    ):
+        _require(phrase in final_combined, f"final acceptance fact missing: {phrase}")
 
     event_values = set(re.findall(r"`(realtime\.[a-z0-9_.]+)`", reference_block))
     _require(len(event_values) == EXPECTED_EVENT_COUNT, "event reference must list exactly 48 unique event values")
@@ -219,8 +270,8 @@ def check_tasklist_boundary() -> None:
     canonical = tasklist.split(
         "## FW-RT6-14b — Documentation and migration freeze", 1
     )[1].split("## FW-RT6-14c", 1)[0]
-    _require(canonical.count("- [ ]") == 8, "14b canonical task count drift")
-    _require(canonical.count("- [x]") == 0, "14b implementation must not close acceptance tasks")
+    _require(canonical.count("- [ ]") == 0, "14b final sync retains an open task")
+    _require(canonical.count("- [x]") == 8, "14b final sync must accept eight tasks")
     candidate = _marker_block(
         tasklist,
         "<!-- FW-RT6-14b-DOCUMENTATION-FREEZE-CANDIDATE:BEGIN -->",
@@ -236,6 +287,29 @@ def check_tasklist_boundary() -> None:
         "FW-RT6-14c exact contract review: NOT_AUTHORIZED",
     ):
         _require(phrase in candidate, f"14b tasklist candidate fact missing: {phrase}")
+
+    final_sync = _marker_block(
+        tasklist,
+        "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+        "<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->",
+    )
+    for phrase in (
+        "acceptance-sync baseline head: 72cfa09f6551e1fc3d042777733627c900237cdc",
+        "implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc",
+        "implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED",
+        "final acceptance-sync exact surface: 8 files",
+        "final acceptance-sync production Framework source changes: 0 files",
+        "final acceptance-sync test source changes: 0 files",
+        "documentation-freeze checker: PROVIDER_FREE / PASS",
+        "full Framework unit suite: 828 / PASS",
+        "FW-RT6-14b tasks: 8 / 8 ACCEPTED",
+        "FW-RT6-14b final acceptance sync: PASS",
+        "FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14c implementation: NOT_AUTHORIZED",
+        "acceptance-sync commit / push: NOT_AUTHORIZED",
+    ):
+        _require(phrase in final_sync, f"14b final-sync fact missing: {phrase}")
 
 
 def check_current_markdown_links() -> None:
@@ -338,7 +412,8 @@ def main() -> None:
     run_aggregate_gate()
 
     print("FW-RT6-14b documentation freeze gate: PASS")
-    print("exact implementation surface: 8 files / PASS")
+    print("implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc / VERIFIED")
+    print("final acceptance-sync exact surface: 8 files / PASS")
     print("production Framework source changes: 0 files")
     print("test source changes: 0 files")
     print("README current v6 source status: FROZEN")
@@ -353,8 +428,10 @@ def main() -> None:
     print("full Framework unit suite: 828 / PASS")
     print("provider/network/microphone/playback/VTS execution: False")
     print("private configuration/evidence read or written: False")
-    print("FW-RT6-14b canonical tasks: 0 / 8 CLOSED / UNCHANGED")
-    print("FW-RT6-14b: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
+    print("FW-RT6-14b canonical tasks: 8 / 8 ACCEPTED")
+    print("FW-RT6-14b final acceptance sync: PASS")
+    print("FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH")
+    print("FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
     print("FW-RT6-14c implementation: NOT_AUTHORIZED")
     print("commit / push: NOT_AUTHORIZED")
 

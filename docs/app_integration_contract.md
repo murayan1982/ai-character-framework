@@ -5278,3 +5278,40 @@ The documentation-freeze checker verifies only public repository source. It does
 not import private real-operator evidence, inspect `.env`, or execute providers and
 devices. v6.0.0 remains not released until separately authorized FW-RT6-14c work.
 <!-- FW-RT6-14b-DOCUMENTATION-FREEZE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b — host integration final acceptance sync
+
+The host integration freeze is accepted without changing application API,
+runtime behavior, stage ownership, or real-execution authorization.
+
+```text
+checkpoint: FW-RT6-14b final acceptance sync
+acceptance-sync baseline head: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 8 files
+application API changes: 0
+production Framework source changes: 0 files
+test source changes: 0 files
+root-public names: 127 / UNCHANGED
+host microphone ownership: UNCHANGED
+host physical playback ownership: UNCHANGED
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+RealtimeSession real orchestration changed/enabled: False
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+After this exact sync is committed, pushed, and remotely verified, FW-RT6-14b
+is closed. Only FW-RT6-14c exact contract review becomes authorized; package,
+tag, publication, and release execution remain separately gated.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->

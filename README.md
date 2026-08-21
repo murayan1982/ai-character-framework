@@ -17,6 +17,8 @@ This project is a framework, not a finished consumer app.
 | v6.0.0 source candidate | `DOCUMENTATION_FROZEN / NOT_RELEASED` |
 | Latest published release | `v5.5.0` |
 | Documentation-freeze baseline | `7d65771784ddc5409076909f874d098758486d98` |
+| FW-RT6-14b implementation commit | `72cfa09f6551e1fc3d042777733627c900237cdc` |
+| FW-RT6-14b documentation freeze | `ACCEPTED / AWAITING_SYNC_COMMIT_PUSH` |
 | Root-public surface | 127 names / unchanged |
 | Compatibility | v5 standalone sessions preserved; default `RealtimeSession` remains provider-free `v5_skeleton` |
 
@@ -45,6 +47,13 @@ The framework remains a developer foundation rather than a finished consumer app
 It does not claim default provider/network/device execution, provider hard cancel,
 Framework-owned physical playback stop, or completion of FW-RT6-14c packaging and
 release work.
+
+All eight FW-RT6-14b documentation and migration tasks passed the provider-free
+documentation gate, the FW-RT6-14a aggregate gate, 12 dedicated aggregate tests,
+11 current-compatible smoke dependencies, and the complete 828-test unit suite.
+The acceptance sync changes no production/test source and does not authorize
+FW-RT6-14c implementation. FW-RT6-14c exact contract review becomes authorized
+only after this sync is committed, pushed, and remotely verified.
 <!-- FW-RT6-14b-README-CURRENT:END -->
 
 ---

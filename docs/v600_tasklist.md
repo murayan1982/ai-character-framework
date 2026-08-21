@@ -3261,14 +3261,14 @@ operator-only
 
 **Tasks:**
 
-- [ ] README current release sectionをv6へ更新する。
-- [ ] append-only historical READMEを整理する。
-- [ ] public facade docsを同期する。
-- [ ] app integration contractを同期する。
-- [ ] advanced runtime docsをv6へ更新する。
-- [ ] migration guideを完成する。
-- [ ] capability/event/error referenceを完成する。
-- [ ] non-goalsとexperimental scopeを明記する。
+- [x] README current release sectionをv6へ更新する。
+- [x] append-only historical READMEを整理する。
+- [x] public facade docsを同期する。
+- [x] app integration contractを同期する。
+- [x] advanced runtime docsをv6へ更新する。
+- [x] migration guideを完成する。
+- [x] capability/event/error referenceを完成する。
+- [x] non-goalsとexperimental scopeを明記する。
 
 ---
 
@@ -11582,3 +11582,60 @@ acceptance sync is required before they can change to 8 / 8 accepted. That sync,
 commit/push, FW-RT6-14c review, package creation, tag creation, and publication are
 not authorized by this implementation candidate.
 <!-- FW-RT6-14b-DOCUMENTATION-FREEZE-CANDIDATE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b — documentation and migration freeze final acceptance sync
+
+```text
+checkpoint: FW-RT6-14b final acceptance sync
+acceptance-sync baseline head: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation subject: docs: freeze FW-RT6-14b documentation
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 8 files
+final acceptance-sync production Framework source changes: 0 files
+final acceptance-sync test source changes: 0 files
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+README current v6 source status: FROZEN / ACCEPTED
+README historical development log: DELIMITED / APPEND_ONLY
+advanced runtime contract: v6 / ACCEPTED
+v5-to-v6 migration guide: ACCEPTED
+capability/event/error reference: 48 EVENTS / ACCEPTED
+app integration contract: SYNCHRONIZED / ACCEPTED
+public facade contract: SYNCHRONIZED / ACCEPTED
+documentation-freeze checker: PROVIDER_FREE / PASS
+FW-RT6-14a aggregate gate: PASS
+dedicated aggregate tests: 12 / PASS
+current-compatible smoke dependencies: 11 / PASS
+full Framework unit suite: 828 / PASS
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+real operator execution repeated: False
+private evidence imported/read: False
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+RealtimeSession real orchestration changed/enabled: False
+v6 source version: 6.0.0.dev0
+v6.0.0 publication status: DOCUMENTATION_FROZEN / NOT_RELEASED
+latest published release: v5.5.0
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This exact sync records the reviewed state of the committed eight-file
+documentation freeze. It changes no production Framework or test source, does
+not repeat real-operator execution, reads no private configuration/evidence,
+and preserves the 127-name root-public manifest.
+
+The eight canonical FW-RT6-14b tasks are accepted. After this sync is reviewed,
+committed, pushed, and remotely verified, FW-RT6-14b is fully closed and only
+FW-RT6-14c exact contract review is authorized. FW-RT6-14c implementation,
+package/release tooling, tag creation, push, GitHub Release, official assets,
+and publication remain separately gated.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->

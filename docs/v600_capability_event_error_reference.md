@@ -238,3 +238,29 @@ snapshot from the active session is authoritative for an application's UI.
 - [`v600_aggregate_conformance.md`](v600_aggregate_conformance.md)
 
 <!-- FW-RT6-14b-CAPABILITY-EVENT-ERROR-REFERENCE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b integrated-reference acceptance
+
+The capability, construction, event-envelope, exact 48-event, public-error,
+outcome, recovery, compatibility, ownership, non-goal, and experimental-scope
+inventory is accepted at implementation commit
+`72cfa09f6551e1fc3d042777733627c900237cdc`.
+
+```text
+final acceptance-sync exact surface: 8 files
+capability/event/error reference: 48 EVENTS / ACCEPTED
+root-public names: 127 / UNCHANGED
+production Framework source changes: 0 files
+test source changes: 0 files
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+The acceptance record changes no API/schema version and adds no event, result,
+error code, capability field, provider namespace, or execution claim.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->

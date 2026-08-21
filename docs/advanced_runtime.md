@@ -198,3 +198,49 @@ read private configuration/evidence or execute provider, network, microphone,
 playback, or VTS operations.
 
 <!-- FW-RT6-14b-ADVANCED-RUNTIME-FREEZE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b final acceptance sync
+
+The advanced-runtime contract above was reviewed without changing its public
+behavior, capability claims, ownership boundaries, or non-goals.
+
+```text
+checkpoint: FW-RT6-14b final acceptance sync
+acceptance-sync baseline head: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation subject: docs: freeze FW-RT6-14b documentation
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 8 files
+final acceptance-sync production Framework source changes: 0 files
+final acceptance-sync test source changes: 0 files
+root-public names: 127 / UNCHANGED
+README current v6 source status: FROZEN / ACCEPTED
+README historical development log: DELIMITED / APPEND_ONLY
+advanced runtime contract: v6 / ACCEPTED
+v5-to-v6 migration guide: ACCEPTED
+capability/event/error reference: 48 EVENTS / ACCEPTED
+app integration contract: SYNCHRONIZED / ACCEPTED
+public facade contract: SYNCHRONIZED / ACCEPTED
+documentation-freeze checker: PROVIDER_FREE / PASS
+FW-RT6-14a aggregate gate: PASS
+dedicated aggregate tests: 12 / PASS
+current-compatible smoke dependencies: 11 / PASS
+full Framework unit suite: 828 / PASS
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+RealtimeSession real orchestration changed/enabled: False
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This record does not publish v6.0.0, execute a provider/device, read private
+configuration/evidence, or authorize package, tag, or release work.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->

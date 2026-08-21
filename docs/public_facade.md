@@ -6998,3 +6998,41 @@ publication. The accepted FW-RT6-13c operator remains dedicated acceptance tooli
 and does not become a new facade execution claim. Natural-turn controls remain
 experimental and independently capability-gated.
 <!-- FW-RT6-14b-DOCUMENTATION-FREEZE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b — public facade final acceptance sync
+
+The documentation freeze adds no facade surface. The implementation commit and
+this acceptance sync preserve the exact 127-name root-public manifest, public
+factory signatures, result/event/error shapes, compatibility profiles, and
+execution truthfulness.
+
+```text
+checkpoint: FW-RT6-14b final acceptance sync
+acceptance-sync baseline head: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation commit: 72cfa09f6551e1fc3d042777733627c900237cdc
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 8 files
+production Framework source changes: 0 files
+test source changes: 0 files
+new root-public names: 0
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+API/schema version changes: 0
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+RealtimeSession real orchestration changed/enabled: False
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This sync records reviewed public-safe facts only. It does not publish v6.0.0
+or authorize FW-RT6-14c implementation.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->

@@ -349,3 +349,28 @@ orchestration. Natural-turn controls remain experimental and capability-gated.
 FW-RT6-14c package, tag, and publication work is outside this freeze.
 
 <!-- FW-RT6-14b-MIGRATION-FREEZE:END -->
+
+
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14b migration-guide acceptance
+
+The provider-neutral migration guide is accepted at implementation commit
+`72cfa09f6551e1fc3d042777733627c900237cdc`. Its v5 compatibility, explicit
+v6 request, capability-first UI, canonical event, typed error/recovery, host
+ownership, security, non-goal, and experimental-scope boundaries are unchanged.
+
+```text
+final acceptance-sync exact surface: 8 files
+v5-to-v6 migration guide: ACCEPTED
+production Framework source changes: 0 files
+test source changes: 0 files
+FW-RT6-14b tasks: 8 / 8 ACCEPTED
+FW-RT6-14b final acceptance sync: PASS
+FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14c implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+The phased adoption checklist remains application guidance and is not the
+canonical FW-RT6-14b acceptance checklist.
+<!-- FW-RT6-14b-FINAL-ACCEPTANCE-SYNC:END -->
