@@ -7054,3 +7054,23 @@ tag / push / GitHub Release: NOT_AUTHORIZED
 official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
 ```
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:BEGIN -->
+## FW-RT6-14c release-status acceptance sync
+
+The committed implementation at
+`9ffa623d21e6096213c9beb504f4c06150aeba8f` is remotely verified. The first
+seven deterministic package controls are accepted; no public facade name,
+signature, event/result/error shape, API/schema constant, or runtime behavior
+changes in this sync.
+
+```text
+framework.__version__: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+strict tag readiness: NOT_RUN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+```
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->

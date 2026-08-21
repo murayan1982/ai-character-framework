@@ -5336,3 +5336,24 @@ Host integrations continue to use the root-public v5/v6 contracts. Release
 tooling does not read app/provider configuration, execute providers/devices, or
 transfer ownership of playback, cancellation, or VTS behavior.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:BEGIN -->
+## FW-RT6-14c release-status acceptance sync
+
+```text
+implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
+implementation: COMMITTED / PUSHED / REMOTELY_VERIFIED
+verified package controls: 7 / 7 ACCEPTED
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+runtime behavior changes: 0
+root-public names: 127 / UNCHANGED
+strict tag readiness: NOT_RUN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN
+annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+```
+
+The accepted controls are provider-free build/membership/determinism/archive
+safety/import/release-note controls. Host integration contracts and ownership
+boundaries remain unchanged. Strict and public-release controls are not inferred
+from implementation acceptance.
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->

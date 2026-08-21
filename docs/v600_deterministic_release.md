@@ -97,3 +97,36 @@ The implementation candidate proves that all fourteen controls exist. It does
 not close any canonical task. Annotated tag creation, push, GitHub Release,
 official asset publication, redownload verification, and final clean-tree
 acceptance require separate review and explicit execution authorization.
+
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:BEGIN -->
+## Release-status acceptance sync
+
+```text
+sync baseline: 9ffa623d21e6096213c9beb504f4c06150aeba8f
+implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
+implementation: COMMITTED / PUSHED / REMOTELY_VERIFIED
+release-status sync exact surface: 7 files
+v6 package builder: ACCEPTED
+exact committed membership: ACCEPTED
+deterministic rebuild: ACCEPTED
+duplicate entry rejection: ACCEPTED
+private artifact rejection: ACCEPTED
+package-import smoke: ACCEPTED
+release notes: ACCEPTED
+strict tag readiness: NOT_RUN / OPEN
+annotated tag: NOT_RUN / OPEN
+tag push: NOT_RUN / OPEN
+GitHub Release: NOT_RUN / OPEN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN / OPEN
+published asset redownload verification: NOT_RUN / OPEN
+final clean tree confirmation: NOT_RUN / OPEN
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+tag / push / GitHub Release: NOT_AUTHORIZED
+sync commit / push: NOT_AUTHORIZED
+```
+
+This provider-free sync records reviewed results only. It does not create the
+official package or execute strict/public-release operations. After this exact
+sync is committed, pushed, and remotely verified, official package creation and
+strict tag readiness may be separately authorized from that clean commit.
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->

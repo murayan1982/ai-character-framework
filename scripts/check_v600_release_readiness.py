@@ -15,7 +15,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE_HEAD = "799589526aef1a9d903fe4da4c23550b5c12ca38"
+BASELINE_HEAD = "9ffa623d21e6096213c9beb504f4c06150aeba8f"
 VERSION = "6.0.0"
 TAG = f"v{VERSION}"
 PACKAGE = ROOT / "release" / f"ai-character-framework_v{VERSION}.zip"
@@ -24,22 +24,11 @@ EXPECTED_SURFACE = frozenset(
     {
         "README.md",
         "docs/RELEASE_NOTES.md",
-        "docs/advanced_runtime.md",
         "docs/app_integration_contract.md",
         "docs/public_facade.md",
-        "docs/release_notes_v6.0.0.md",
-        "docs/release_package_policy.md",
-        "docs/v600_capability_event_error_reference.md",
         "docs/v600_deterministic_release.md",
         "docs/v600_tasklist.md",
-        "docs/v600_v5_to_v6_session_migration.md",
-        "framework/version.py",
-        "scripts/build_v600_release_package.py",
-        "scripts/check_v600_documentation_freeze.py",
         "scripts/check_v600_release_readiness.py",
-        "scripts/operator_v600_github_release.py",
-        "scripts/check_v600_release_package_smoke.py",
-        "scripts/smoke_v600_version_metadata.py",
     }
 )
 FORBIDDEN_IMPORT_ROOTS = frozenset(
@@ -142,9 +131,16 @@ def _check_source_contract() -> None:
         "annotated tag",
         "published asset redownload verification",
         "tag / push / GitHub Release: NOT_AUTHORIZED",
-        "FW-RT6-14c canonical tasks: 0 / 14 CLOSED / UNCHANGED",
+        "FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED",
     ):
         _require(phrase in combined, f"release contract fact missing: {phrase}")
+
+    tasklist = (ROOT / "docs/v600_tasklist.md").read_text(encoding="utf-8")
+    canonical = tasklist.split(
+        "## FW-RT6-14c — Deterministic package and release", 1
+    )[1].split("# 4. Critical path", 1)[0]
+    _require(canonical.count("- [x]") == 7, "FW-RT6-14c must accept exactly seven tasks")
+    _require(canonical.count("- [ ]") == 7, "FW-RT6-14c must retain exactly seven open tasks")
 
     for relative in (
         "scripts/build_v600_release_package.py",
@@ -170,7 +166,7 @@ def _check_candidate() -> set[str]:
     _require(origin_main == BASELINE_HEAD, "origin/main differs from candidate baseline")
     _require(branch == "main", "FW-RT6-14c candidate must be reviewed on main")
     changed = changed_paths()
-    _require(changed == EXPECTED_SURFACE, f"exact 18-file surface mismatch: {sorted(changed)}")
+    _require(changed == EXPECTED_SURFACE, f"exact 7-file sync surface mismatch: {sorted(changed)}")
     _require(_run("git", "diff", "--check", check=False).returncode == 0, "git diff --check failed")
     _require(not PACKAGE.exists() and not SIDECAR.exists(), "candidate must not create official release assets")
     return changed
@@ -225,7 +221,8 @@ def main() -> None:
         _require("FW-RT6-14b documentation freeze gate: PASS" in docs, "documentation freeze PASS marker missing")
 
     print("FW-RT6-14c deterministic release gate: PASS")
-    print("exact implementation surface: 18 files / PASS")
+    print("deterministic release implementation: 18 files / ACCEPTED")
+    print("release-status sync exact surface: 7 files / PASS")
     print("production Framework behavior changes: 0")
     print("source version metadata: 6.0.0")
     print("latest published release: 5.5.0 / UNCHANGED")
@@ -242,9 +239,11 @@ def main() -> None:
     print("annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN")
     print("official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN")
     print("published asset redownload verification: IMPLEMENTED / NOT_RUN")
-    print("FW-RT6-14c canonical tasks: 0 / 14 CLOSED / UNCHANGED")
-    print("FW-RT6-14c: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
-    print("commit / push: NOT_AUTHORIZED")
+    print("FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED")
+    print("FW-RT6-14c release-status sync: PASS / AWAITING_COMMIT_PUSH")
+    print("official package + strict tag readiness: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
+    print("tag / push / GitHub Release: NOT_AUTHORIZED")
+    print("sync commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":

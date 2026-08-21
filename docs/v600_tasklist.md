@@ -3276,13 +3276,13 @@ operator-only
 
 **Tasks:**
 
-- [ ] v6 package builder。
-- [ ] exact committed membership。
-- [ ] deterministic rebuild。
-- [ ] duplicate entry rejection。
-- [ ] private artifact rejection。
-- [ ] package-import smoke。
-- [ ] release notes。
+- [x] v6 package builder。
+- [x] exact committed membership。
+- [x] deterministic rebuild。
+- [x] duplicate entry rejection。
+- [x] private artifact rejection。
+- [x] package-import smoke。
+- [x] release notes。
 - [ ] strict tag readiness。
 - [ ] annotated tag。
 - [ ] push。
@@ -11690,3 +11690,45 @@ Official ZIP creation, strict tag readiness, annotated tag, tag push, public
 GitHub Release, asset upload, published-asset redownload, and final clean-tree
 acceptance remain separately gated.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE-CANDIDATE:END -->
+
+
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:BEGIN -->
+## FW-RT6-14c — release-status acceptance sync
+
+```text
+checkpoint: FW-RT6-14c release-status sync
+sync baseline: 9ffa623d21e6096213c9beb504f4c06150aeba8f
+implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
+implementation subject: build: add FW-RT6-14c deterministic release tooling
+implementation: COMMITTED / PUSHED / REMOTELY_VERIFIED
+release-status sync exact surface: 7 files
+production Framework behavior changes: 0
+source version metadata: 6.0.0
+latest published release: 5.5.0 / UNCHANGED
+root-public names: 127 / UNCHANGED
+v6 package builder: ACCEPTED
+exact committed membership: ACCEPTED
+deterministic rebuild: ACCEPTED
+duplicate entry rejection: ACCEPTED
+private artifact rejection: ACCEPTED
+package-import smoke: ACCEPTED
+release notes: ACCEPTED
+strict tag readiness: NOT_RUN / OPEN
+annotated tag: NOT_RUN / OPEN
+push: NOT_RUN / OPEN
+GitHub Release: NOT_RUN / OPEN
+official ZIP + SHA-256 sidecar: NOT_WRITTEN / OPEN
+published asset redownload verification: NOT_RUN / OPEN
+clean tree confirmation: NOT_RUN / OPEN
+FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
+provider/network/microphone/playback/VTS execution: False
+private artifact contents read: False
+tag / push / GitHub Release: NOT_AUTHORIZED
+sync commit / push: NOT_AUTHORIZED
+```
+
+The first seven canonical tasks correspond exactly to the provider-free results
+reviewed from the committed implementation. The remaining seven tasks require a
+clean sync commit, official package generation, strict verification, and explicit
+public-release authorization; they remain open.
+<!-- FW-RT6-14c-RELEASE-STATUS-SYNC:END -->
