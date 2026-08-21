@@ -45,4 +45,5 @@ v_*.mp3
 
 # Generated release artifacts
 release/*.zip
+release/*.zip.sha256
 release/*.sha256.txt

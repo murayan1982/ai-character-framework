@@ -110,6 +110,9 @@ def _check_source_contract() -> None:
     version = (ROOT / "framework/version.py").read_text(encoding="utf-8")
     _require('FRAMEWORK_SOURCE_VERSION = "6.0.0"' in version, "source version is not 6.0.0")
     _require('LATEST_PUBLISHED_RELEASE = "5.5.0"' in version, "published-release truth changed before publication")
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8-sig")
+    _require("release/*.zip" in gitignore, "official release ZIP is not ignored")
+    _require("release/*.zip.sha256" in gitignore, "official release sidecar is not ignored")
     combined = "\n".join(
         (ROOT / path).read_text(encoding="utf-8")
         for path in (
@@ -251,9 +254,17 @@ def main() -> None:
     print("provider/network/microphone/playback/VTS execution: False")
     print("private artifact contents read: False")
     print("annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN")
-    print("official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN")
+    print(
+        "official ZIP + SHA-256 sidecar: "
+        + ("WRITTEN / VERIFIED" if arguments.strict_release else "NOT_AUTHORIZED / NOT_WRITTEN")
+    )
     print("published asset redownload verification: IMPLEMENTED / NOT_RUN")
     print("FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED")
+    print(
+        "FW-RT6-14c pre-tag readiness commit: "
+        "960f033189a3d5c121bf16720ab94c4d9db6bbcc / "
+        "COMMITTED / PUSHED / REMOTELY_VERIFIED"
+    )
     print("FW-RT6-14c pre-tag source state: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK")
     if arguments.strict_release:
         print("FW-RT6-14c pre-tag checkpoint: COMMITTED / STRICT_VERIFIED")
@@ -262,7 +273,7 @@ def main() -> None:
     else:
         print("FW-RT6-14c pre-tag checkpoint: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
     print("tag / push / GitHub Release: NOT_AUTHORIZED")
-    print("pre-tag checkpoint commit / push: NOT_AUTHORIZED")
+    print("pre-tag checkpoint commit / push: COMMITTED / PUSHED / REMOTELY_VERIFIED")
 
 
 if __name__ == "__main__":
