@@ -3242,18 +3242,18 @@ operator-only
 
 **Tasks:**
 
-- [ ] root-public manifest gate。
-- [ ] import safety gate。
-- [ ] capability truthfulness gate。
-- [ ] event ordering gate。
-- [ ] exactly-once terminal gate。
-- [ ] stale rejection gate。
-- [ ] interrupt reach gate。
-- [ ] TTS work-control gate。
-- [ ] security/redaction gate。
-- [ ] compatibility gate。
-- [ ] full unit suite。
-- [ ] full smoke suite。
+- [x] root-public manifest gate。
+- [x] import safety gate。
+- [x] capability truthfulness gate。
+- [x] event ordering gate。
+- [x] exactly-once terminal gate。
+- [x] stale rejection gate。
+- [x] interrupt reach gate。
+- [x] TTS work-control gate。
+- [x] security/redaction gate。
+- [x] compatibility gate。
+- [x] full unit suite。
+- [x] full smoke suite。
 
 ---
 
@@ -11419,7 +11419,9 @@ is authorized. FW-RT6-14a implementation remains separately gated.
 checkpoint: FW-RT6-14a
 baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298
 baseline subject: docs: close FW-RT6-13c
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation subject: test: add FW-RT6-14a aggregate conformance gate
+status: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
 exact implementation surface: 6 files
 production Framework source changes: 0 files
 root-public names: 127 / UNCHANGED
@@ -11443,9 +11445,9 @@ provider/network/microphone/playback/VTS execution: False
 private configuration/evidence read or written: False
 real operator execution repeated: False
 private evidence imported/read: False
-FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED
-FW-RT6-14a acceptance sync: NOT_AUTHORIZED
-FW-RT6-14b exact contract review: NOT_AUTHORIZED
+FW-RT6-14a canonical tasks: 12 / 12 ACCEPTED
+FW-RT6-14a acceptance sync: IMPLEMENTED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH
+FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
 FW-RT6-14b implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -11460,7 +11462,58 @@ tracked `smoke_v600` files remain append-only historical source evidence whose
 frozen HEAD, checklist, surface, or test-count assertions are intentionally not
 reinterpreted as current contracts.
 
-All twelve canonical FW-RT6-14a checkboxes remain open until a separately
-authorized final acceptance sync records a reviewed, committed, pushed, and
-remotely verified implementation. FW-RT6-14b remains unauthorized.
+The separately authorized final acceptance sync now records all twelve
+canonical FW-RT6-14a tasks as accepted. FW-RT6-14b exact contract review is
+authorized only after this sync is committed, pushed, and remotely verified;
+FW-RT6-14b implementation remains separately gated.
 <!-- FW-RT6-14a-AGGREGATE-CONFORMANCE-CANDIDATE:END -->
+
+
+<!-- FW-RT6-14a-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14a — aggregate conformance final acceptance sync
+
+```text
+checkpoint: FW-RT6-14a final acceptance sync
+acceptance-sync baseline head: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation subject: test: add FW-RT6-14a aggregate conformance gate
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 5 files
+final acceptance-sync production Framework source changes: 0 files
+final acceptance-sync dedicated test changes: 0 files
+root-public manifest gate: PASS
+import safety gate: PASS
+capability truthfulness gate: PASS
+event ordering gate: PASS
+exactly-once terminal gate: PASS
+stale rejection gate: PASS
+interrupt reach gate: PASS
+TTS work-control gate: PASS
+security/redaction gate: PASS
+compatibility gate: PASS
+dedicated aggregate tests: 12 / PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+tracked smoke_v600 files: 93 / CLASSIFIED
+historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+FW-RT6-14a tasks: 12 / 12 ACCEPTED
+FW-RT6-14a final acceptance sync: PASS
+FW-RT6-14a: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+This provider-free sync records only the reviewed public conformance facts.
+It does not modify production Framework source or dedicated tests, repeat the
+real operator run, read private evidence, execute providers/devices, reinterpret
+historical HEAD-frozen smokes, or change the 127-name root-public manifest.
+
+After this exact five-file sync is reviewed, committed, pushed, and remotely
+verified, FW-RT6-14a is fully closed and only FW-RT6-14b exact contract review
+is authorized. FW-RT6-14b implementation remains separately gated.
+<!-- FW-RT6-14a-FINAL-ACCEPTANCE-SYNC:END -->

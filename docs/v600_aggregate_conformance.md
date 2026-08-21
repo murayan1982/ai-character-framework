@@ -2,10 +2,9 @@
 # FW-RT6-14a aggregate conformance gate
 
 FW-RT6-14a adds one deterministic, provider-free release-readiness gate over
-the already accepted v6 contracts. It does not add runtime behavior or close
-the canonical FW-RT6-14a checklist. Closing those twelve tasks requires a
-separate acceptance sync after this implementation candidate is reviewed,
-committed, pushed, and remotely verified.
+the already accepted v6 contracts. It does not add runtime behavior. The
+separately authorized final acceptance sync records the reviewed implementation
+and closes the twelve canonical conformance tasks.
 
 ## Frozen candidate boundary
 
@@ -13,7 +12,9 @@ committed, pushed, and remotely verified.
 checkpoint: FW-RT6-14a
 baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298
 baseline subject: docs: close FW-RT6-13c
-status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation subject: test: add FW-RT6-14a aggregate conformance gate
+status: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
 exact implementation surface: 6 files
 production Framework source changes: 0 files
 root-public names: 127 / UNCHANGED
@@ -31,8 +32,8 @@ tracked smoke_v600 files: 93 / CLASSIFIED
 historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
 provider/network/microphone/playback/VTS execution: False
 private configuration/evidence read or written: False
-FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED
-FW-RT6-14b exact contract review: NOT_AUTHORIZED
+FW-RT6-14a canonical tasks: 12 / 12 ACCEPTED
+FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
 FW-RT6-14b implementation: NOT_AUTHORIZED
 commit / push: NOT_AUTHORIZED
 ```
@@ -109,6 +110,35 @@ Every subprocess runs with credential-like environment variables removed and
 all real-provider/device execution guards forced off. Output is captured and
 only fixed public-safe pass/fail markers are emitted.
 
+## Final acceptance sync
+
+```text
+acceptance-sync baseline head: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741
+implementation: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED
+final acceptance-sync exact surface: 5 files
+final acceptance-sync production Framework source changes: 0 files
+final acceptance-sync dedicated test changes: 0 files
+dedicated aggregate tests: 12 / PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+tracked smoke_v600 files: 93 / CLASSIFIED
+historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14a tasks: 12 / 12 ACCEPTED
+FW-RT6-14a final acceptance sync: PASS
+FW-RT6-14a: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH
+FW-RT6-14b implementation: NOT_AUTHORIZED
+acceptance-sync commit / push: NOT_AUTHORIZED
+```
+
+The sync changes only the three conformance documents, the tasklist state, and
+the aggregate checker. It does not change the twelve-test suite or production
+Framework source. It records no private evidence and performs no real runtime
+or provider/device action.
+
 ## Invocation and non-actions
 
 From the repository root:
@@ -124,5 +154,7 @@ and all 828 unit tests.
 This gate does not install dependencies, read `.env`, access private operator
 state, repeat the real FW-RT6-13c run, read its evidence, contact a provider,
 capture audio, perform playback, or connect to VTube Studio. It does not stage,
-commit, push, tag, build a package, publish a release, or authorize FW-RT6-14b.
+commit, push, tag, build a package, or publish a release. FW-RT6-14b exact
+contract review is authorized only after this sync commit is pushed and
+remotely verified; FW-RT6-14b implementation remains separately gated.
 <!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:END -->

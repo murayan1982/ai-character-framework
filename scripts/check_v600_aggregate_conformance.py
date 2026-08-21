@@ -11,7 +11,7 @@ import unittest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BASELINE_HEAD = "8f0be2cdcdf92d039c2d957f6d1eaf90e7388298"
+BASELINE_HEAD = "c4b0bc7e00d08d9e89e6336b9545c3b2cb375741"
 UNIT_TEST_PATTERN = "test*.py"
 EXPECTED_DEDICATED_TEST_COUNT = 12
 EXPECTED_FULL_UNIT_COUNT = 828
@@ -24,7 +24,6 @@ EXPECTED_SURFACE = frozenset(
         "docs/v600_aggregate_conformance.md",
         "docs/v600_tasklist.md",
         "scripts/check_v600_aggregate_conformance.py",
-        "tests/test_aggregate_conformance.py",
     }
 )
 CURRENT_STANDALONE_SMOKE_FILES = (
@@ -107,8 +106,8 @@ def check_repository_surface() -> None:
         ["git", "branch", "--show-current"],
         label="git branch",
     ).strip()
-    _require(head == BASELINE_HEAD, "aggregate candidate baseline drift")
-    _require(branch == "main", "aggregate candidate must be reviewed on main")
+    _require(head == BASELINE_HEAD, "aggregate acceptance-sync baseline drift")
+    _require(branch == "main", "aggregate acceptance sync must be reviewed on main")
 
     status = _run_checked(
         ["git", "status", "--porcelain", "--untracked-files=all"],
@@ -119,7 +118,7 @@ def check_repository_surface() -> None:
         for line in status.splitlines()
         if len(line) >= 4
     }
-    _require(changed_paths == EXPECTED_SURFACE, "aggregate exact surface drift")
+    _require(changed_paths == EXPECTED_SURFACE, "aggregate acceptance-sync surface drift")
     _run_checked(["git", "diff", "--check"], label="git diff check")
 
 
@@ -136,7 +135,10 @@ def check_contract_docs() -> None:
     )
     for phrase in (
         "baseline head: 8f0be2cdcdf92d039c2d957f6d1eaf90e7388298",
+        "implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741",
+        "acceptance-sync baseline: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741",
         "exact implementation surface: 6 files",
+        "exact acceptance-sync surface: 5 files",
         "production Framework source changes: 0 files",
         "dedicated aggregate tests: 12 / PASS",
         "full Framework unit suite: 828 / PASS",
@@ -144,7 +146,9 @@ def check_contract_docs() -> None:
         "tracked smoke_v600 files: 93 / CLASSIFIED",
         "historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY",
         "provider/network/microphone/playback/VTS execution: False",
-        "FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED",
+        "FW-RT6-14a canonical tasks: 12 / 12 ACCEPTED",
+        "FW-RT6-14a final acceptance sync: PASS",
+        "FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
         "FW-RT6-14b implementation: NOT_AUTHORIZED",
         "commit / push: NOT_AUTHORIZED",
     ):
@@ -157,21 +161,30 @@ def check_tasklist_boundary() -> None:
         "## FW-RT6-14a — Aggregate conformance gate",
         1,
     )[1].split("## FW-RT6-14b", 1)[0]
-    _require(canonical.count("- [ ]") == 12, "14a must retain twelve open tasks")
-    _require(canonical.count("- [x]") == 0, "14a implementation cannot close tasks")
+    _require(canonical.count("- [ ]") == 0, "14a final sync retains an open task")
+    _require(canonical.count("- [x]") == 12, "14a final sync must close twelve tasks")
     _require(
         tasklist.count("FW-RT6-14a-AGGREGATE-CONFORMANCE-CANDIDATE:BEGIN") == 1,
         "14a candidate marker must be unique",
     )
+    _require(
+        tasklist.count("FW-RT6-14a-FINAL-ACCEPTANCE-SYNC:BEGIN") == 1,
+        "14a final acceptance marker must be unique",
+    )
     for phrase in (
         "checkpoint: FW-RT6-14a",
-        "status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
+        "status: COMPLETED / VERIFIED / COMMITTED / PUSHED / REMOTELY_VERIFIED",
+        "acceptance-sync baseline head: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741",
         "exact implementation surface: 6 files",
+        "final acceptance-sync exact surface: 5 files",
         "dedicated aggregate tests: 12 / PASS",
         "full Framework unit suite: 828 / PASS",
         "current-compatible smoke dependencies: 11 / PASS",
-        "FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED",
-        "FW-RT6-14b exact contract review: NOT_AUTHORIZED",
+        "FW-RT6-14a canonical tasks: 12 / 12 ACCEPTED",
+        "FW-RT6-14a tasks: 12 / 12 ACCEPTED",
+        "FW-RT6-14a final acceptance sync: PASS",
+        "FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH",
+        "FW-RT6-14b implementation: NOT_AUTHORIZED",
         "commit / push: NOT_AUTHORIZED",
     ):
         _require(phrase in tasklist, f"aggregate tasklist fact missing: {phrase}")
@@ -274,7 +287,8 @@ def main() -> None:
     run_full_unit_suite()
 
     print("FW-RT6-14a aggregate conformance gate: PASS")
-    print("exact implementation surface: 6 files / PASS")
+    print("implementation commit: c4b0bc7e00d08d9e89e6336b9545c3b2cb375741 / VERIFIED")
+    print("final acceptance-sync exact surface: 5 files / PASS")
     print("production Framework source changes: 0 files")
     print("root-public manifest gate: PASS / 127 UNCHANGED")
     print("import safety gate: PASS")
@@ -293,10 +307,12 @@ def main() -> None:
     print("historical smoke_v600 files: 91 / SOURCE_EVIDENCE_ONLY")
     print("provider/network/microphone/playback/VTS execution: False")
     print("private configuration/evidence read or written: False")
-    print("FW-RT6-14a canonical tasks: 0 / 12 CLOSED / UNCHANGED")
-    print("FW-RT6-14a: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
-    print("FW-RT6-14b exact contract review: NOT_AUTHORIZED")
-    print("commit / push: NOT_AUTHORIZED")
+    print("FW-RT6-14a canonical tasks: 12 / 12 ACCEPTED")
+    print("FW-RT6-14a final acceptance sync: PASS")
+    print("FW-RT6-14a: COMPLETED / VERIFIED / ACCEPTED / AWAITING_COMMIT_PUSH")
+    print("FW-RT6-14b exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
+    print("FW-RT6-14b implementation: NOT_AUTHORIZED")
+    print("acceptance-sync commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":
