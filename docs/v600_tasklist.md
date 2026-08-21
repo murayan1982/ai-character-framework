@@ -11517,3 +11517,68 @@ After this exact five-file sync is reviewed, committed, pushed, and remotely
 verified, FW-RT6-14a is fully closed and only FW-RT6-14b exact contract review
 is authorized. FW-RT6-14b implementation remains separately gated.
 <!-- FW-RT6-14a-FINAL-ACCEPTANCE-SYNC:END -->
+
+
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE-CANDIDATE:BEGIN -->
+## FW-RT6-14b — documentation and migration freeze implementation candidate
+
+```text
+checkpoint: FW-RT6-14b
+baseline head: 7d65771784ddc5409076909f874d098758486d98
+baseline subject: docs: close FW-RT6-14a
+exact contract review: COMPLETED
+implementation: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 8 files
+production Framework source changes: 0 files
+test source changes: 0 files
+root-public names: 127 / UNCHANGED
+root-public manifest changed: False
+README current v6 source status: FROZEN
+README historical development log: DELIMITED / APPEND_ONLY
+advanced runtime contract: v6 UPDATED
+v5-to-v6 migration guide: FROZEN
+capability/event/error reference: COMPLETE / 48 EVENTS
+app integration contract: SYNCHRONIZED
+public facade contract: SYNCHRONIZED
+documentation-freeze checker: PROVIDER_FREE / PASS
+FW-RT6-14a aggregate gate: PASS
+dedicated aggregate tests: 12 / PASS
+current-compatible smoke dependencies: 11 / PASS
+full Framework unit suite: 828 / PASS
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+v6 source version: 6.0.0.dev0
+v6.0.0 publication status: DOCUMENTATION_FROZEN / NOT_RELEASED
+latest published release: v5.5.0
+RealtimeSession real orchestration changed/enabled: False
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+FW-RT6-14b canonical tasks: 0 / 8 CLOSED / UNCHANGED
+FW-RT6-14b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-14c exact contract review: NOT_AUTHORIZED
+FW-RT6-14c implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The exact eight-file surface is:
+
+1. `README.md`
+2. `docs/advanced_runtime.md`
+3. `docs/app_integration_contract.md`
+4. `docs/public_facade.md`
+5. `docs/v600_v5_to_v6_session_migration.md`
+6. `docs/v600_capability_event_error_reference.md`
+7. `docs/v600_tasklist.md`
+8. `scripts/check_v600_documentation_freeze.py`
+
+This candidate updates the current README entry point while preserving the old
+append-only development log, replaces the obsolete v3 advanced-runtime page with
+the v6 contract, finishes the migration guide, adds one integrated reference, and
+synchronizes the facade/app contracts. It changes no production source or test.
+
+All eight canonical checkboxes in the original FW-RT6-14b task block remain open.
+Implementation verification is not acceptance closure. A separately reviewed final
+acceptance sync is required before they can change to 8 / 8 accepted. That sync,
+commit/push, FW-RT6-14c review, package creation, tag creation, and publication are
+not authorized by this implementation candidate.
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE-CANDIDATE:END -->

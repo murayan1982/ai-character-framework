@@ -6930,3 +6930,71 @@ state they accepted and are not relabeled as current executable contracts.
 After this exact five-file sync is committed, pushed, and remotely verified,
 only FW-RT6-14b exact contract review is authorized.
 <!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:END -->
+
+
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE:BEGIN -->
+## FW-RT6-14b — public facade documentation freeze candidate
+
+FW-RT6-14b changes documentation and its provider-free checker only. It adds no
+root-public name, factory parameter, facade member, result/event/error field,
+API/schema version, provider namespace, runtime stage, or execution behavior. The
+frozen root-public surface remains exactly 127 names.
+
+The public facade is capability-first:
+
+- v5 standalone sessions remain supported;
+- default `RealtimeSession` remains the provider-free `v5_skeleton` profile;
+- `real_runtime_enabled=True` explicitly requests `v6_unified`;
+- incomplete configuration and failed preflight produce typed public
+  unavailability and never silently execute the mock path as real work;
+- session/turn/generation identity, monotonic event ordering, exactly-once
+  terminality, and stale-result rejection remain Framework contract boundaries;
+- microphone capture and physical playback remain host-owned;
+- cooperative cancellation is not a provider hard-cancel claim;
+- a host playback-stop request/acknowledgement is not a claim that Framework
+  physically stopped a media engine or speaker.
+
+The current integration set is:
+
+- `README.md` — current v6 source status plus a clearly delimited append-only
+  historical development log;
+- `docs/advanced_runtime.md` — frozen lifecycle, interruption, TTS-work, playback,
+  recovery, security, and experimental-scope behavior;
+- `docs/app_integration_contract.md` — host ownership and integration rules;
+- `docs/public_facade.md` — compatibility and public-facade truth;
+- `docs/v600_v5_to_v6_session_migration.md` — phased capability-first migration;
+- `docs/v600_capability_event_error_reference.md` — exact capability, 48-event,
+  error, outcome, and recovery vocabulary;
+- `docs/v600_tasklist.md` — append-only implementation/acceptance state;
+- `scripts/check_v600_documentation_freeze.py` — provider-free exact-surface and
+  documentation gate.
+
+```text
+checkpoint: FW-RT6-14b / IMPLEMENTATION_CANDIDATE
+baseline head: 7d65771784ddc5409076909f874d098758486d98
+baseline subject: docs: close FW-RT6-14a
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 8 files
+production Framework source changes: 0 files
+test source changes: 0 files
+root-public names: 127 / UNCHANGED
+v6 source version: 6.0.0.dev0
+v6.0.0 publication status: DOCUMENTATION_FROZEN / NOT_RELEASED
+latest published release: v5.5.0
+dedicated aggregate tests: 12 / PASS
+full Framework unit suite: 828 / PASS
+current-compatible smoke dependencies: 11 / PASS
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+RealtimeSession real orchestration changed/enabled: False
+FW-RT6-14b canonical tasks: 0 / 8 CLOSED / UNCHANGED
+FW-RT6-14b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-14c implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The v6.0.0 source documentation freeze is not a package, tag, GitHub Release, or
+publication. The accepted FW-RT6-13c operator remains dedicated acceptance tooling
+and does not become a new facade execution claim. Natural-turn controls remain
+experimental and independently capability-gated.
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE:END -->

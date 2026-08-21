@@ -1,155 +1,200 @@
 # Advanced Runtime Behavior
 
-This document describes the advanced runtime behavior introduced for the v3.0 runtime foundation.
+<!-- FW-RT6-14b-ADVANCED-RUNTIME-FREEZE:BEGIN -->
 
-These features are intended for developers extending the framework.
+This document is the frozen v6.0.0 source contract for advanced realtime behavior.
+It describes the repository at implementation baseline
+`7d65771784ddc5409076909f874d098758486d98`.
 
-## Runtime Conversation State
+The source version is `6.0.0.dev0`. The v6.0.0 source candidate is documentation
+frozen, but v6.0.0 has not been published. The latest published release remains
+v5.5.0.
 
-The framework tracks high-level conversation state during the runtime loop.
+## Execution profiles
 
-Current states:
+`RealtimeSession` preserves two deliberately different profiles:
 
-| State | Meaning |
-| --- | --- |
-| `idle` | The session is idle between turns. |
-| `listening` | The session is collecting user input. |
-| `thinking` | The framework is waiting for LLM output. |
-| `responding` | The assistant text response is being displayed or streamed. |
-| `speaking` | The framework is waiting for queued TTS playback. |
-| `interrupted` | A response interruption has been requested or is being handled. |
-| `exiting` | The session is shutting down. |
-| `error` | The session is handling an error. |
+| Profile | Selection | Contract |
+| --- | --- | --- |
+| `v5_skeleton` | Default, including omitted `real_runtime_enabled` | Provider-free compatibility behavior; existing v5 standalone runtimes remain valid. |
+| `v6_unified` | Explicit `real_runtime_enabled=True` | Guarded v6 composition and preflight contract. Incomplete configuration is rejected with typed public results rather than silently falling back. |
 
-Expected text-only flow:
+Selecting `v6_unified` does not by itself claim that production provider
+orchestration is available through `RealtimeSession.run_turn()`. Real provider
+acceptance for FW-RT6-13c used the dedicated guarded operator surface; it did not
+enable unified real-provider orchestration in `RealtimeSession`.
 
-```text
-idle -> listening -> thinking -> responding -> idle
-```
-
-Expected voice/TTS flow:
-
-```text
-idle -> listening -> thinking -> responding -> speaking -> idle
-```
-
-## Runtime State Events
-
-Plugins can observe state changes through:
+Applications should inspect the public construction result and capability snapshot
+before exposing controls:
 
 ```python
-on_state_change(old_state, new_state)
+from framework import RealtimeSession, RealtimeSessionConfig
+
+session = RealtimeSession(RealtimeSessionConfig(real_runtime_enabled=True))
+construction = session.construction_result
+capabilities = session.capabilities()
+
+if construction.runtime_executable and capabilities.real_runtime_enabled:
+    # Continue to the application-specific preflight and execution boundary.
+    pass
+else:
+    # Keep the UI unavailable and surface the public reason/code only.
+    pass
 ```
 
-State changes are emitted through the runtime hook registry.
+Do not infer availability from the presence of credentials, provider packages, or
+private configuration files.
 
-Plugins should treat runtime state as read-only.
+## Identity, ordering, and terminality
 
-For plugin event details, see:
+Runtime-emitted canonical events carry stable session identity and a monotonic
+sequence. Turn and generation identity are present where the event belongs to a
+turn; session-level events can omit them. Consumers must use the applicable
+identity and sequence fields instead of timing or provider callbacks to order work.
+
+The canonical lifecycle is:
 
 ```text
-plugin_events.md
+session created/started
+  -> turn started
+  -> zero or more stage events
+  -> exactly one terminal turn event
+  -> optional later turns
+  -> session closed
 ```
 
-## Interruption Boundary
+The public terminal outcomes are `completed`, `interrupted`, `cancelled`, `failed`,
+`rejected`, and `closed`. A turn has exactly one terminal outcome. Late stage
+results and late provider artifacts are rejected after terminalization and can be
+reported as `realtime.stale_result.dropped` or
+`realtime.audio.invalidated` without reopening the turn.
 
-The runtime provides an interruption request boundary for future barge-in support.
+Applications must not:
 
-Current helper behavior:
+- synthesize a second terminal outcome;
+- treat arrival time as ordering authority;
+- attach an artifact to a different session or turn;
+- mutate an event envelope or capability snapshot;
+- expose private provider payloads through public metadata.
 
-```python
-request_interruption(runtime)
-clear_interruption(runtime)
-is_interruption_requested(runtime)
+## Interruption and barge-in
+
+Interruption is cooperative unless a capability explicitly states otherwise.
+`RealtimeSession.interrupt(...)` reaches active framework work, suppresses future LLM
+delivery, clears pending TTS work, invalidates late audio, and completes with a
+typed interrupt result.
+
+`provider_hard_cancel_supported=False` means exactly that: the framework does not
+claim that an already-sent provider request was physically cancelled. The public
+contract is delivery suppression and deterministic terminalization.
+
+The natural-turn controls introduced during FW-RT6-12 are capability-gated. Their
+default posture remains disabled or unsupported. They are experimental input
+controls, not a promise of concurrent microphone capture, provider cancellation,
+or production barge-in UX.
+
+## TTS work and host playback
+
+Generation ownership and playback ownership are separate:
+
+- the framework can cancel queued generation work, flush pending work, reject late
+  artifacts, and request that the host stop playback;
+- the host owns physical playback unless an explicit adapter says otherwise;
+- a playback-stop request is not a playback-stop acknowledgement;
+- the framework does not claim physical speaker stop from an unacknowledged
+  request.
+
+Hosts should acknowledge the matching session/turn request only after their player
+has stopped or invalidated the relevant audio.
+
+## Recovery, reset, and close
+
+Use typed public results and recovery actions rather than parsing exception text.
+The public recovery actions are `none`, `reuse_session`, `reset_turn`,
+`reset_session`, `reconnect`, `close_session`, and `permanent_failure`.
+
+Reset and close are distinct:
+
+- turn reset clears turn-scoped state and does not reopen an already terminal turn;
+- session reset follows the public lifecycle transition contract;
+- close is idempotent, rejects new work, cleans pending work, and emits the session
+  terminal boundary exactly once;
+- stale provider callbacks after reset or close are ignored or reported through
+  sanitized public events.
+
+## Guarded real-runtime composition
+
+`framework.guarded_real_runtime` provides the composition boundary used by the
+real-runtime acceptance tooling. It validates explicit stage ownership,
+configuration completeness, compatible capabilities, and cleanup behavior before
+execution.
+
+The composition boundary does not:
+
+- read `.env` or private evidence on import;
+- import provider SDKs on the provider-free path;
+- own microphone capture or host playback;
+- print credentials, private paths, prompts, transcripts, model identifiers,
+  hotkey selectors, raw audio, provider payloads, or raw exceptions;
+- turn the FW-RT6-13c operator into general `RealtimeSession` orchestration.
+
+## Capability-first integration
+
+Applications should build UI and control flow from `session.capabilities()`.
+Important capability areas include text generation, voice input, voice output,
+motion, streaming, cooperative cancellation, backpressure, accepted audio formats,
+pending flush, audio invalidation, playback ownership, and host stop handshakes.
+
+The exact field and event inventory is frozen in
+[`v600_capability_event_error_reference.md`](v600_capability_event_error_reference.md).
+Integration ownership and compatibility rules are in
+[`app_integration_contract.md`](app_integration_contract.md), and migration steps
+are in [`v600_v5_to_v6_session_migration.md`](v600_v5_to_v6_session_migration.md).
+
+## Security and redaction
+
+Public diagnostics are an allowlisted surface. Keep these values outside the
+repository and outside public events/logs:
+
+- API keys, tokens, and `.env` contents;
+- private configuration and evidence paths;
+- raw audio and provider request/response bodies;
+- transcripts, LLM text, prompts, model identifiers, voice identifiers, and VTS
+  hotkey selectors;
+- raw provider exceptions that could contain private material.
+
+Use stable public codes, stage names, booleans, and sanitized summaries instead.
+
+## Non-goals and experimental scope
+
+The v6.0.0 source freeze does not claim:
+
+- a published v6.0.0 package or release artifact;
+- default activation of real providers, network, microphone, playback, or VTS;
+- provider hard-cancel guarantees;
+- framework ownership of physical playback stop;
+- production `RealtimeSession` unified real-provider orchestration;
+- replacement or removal of v5 standalone runtimes;
+- a finished consumer application;
+- completion of FW-RT6-14c packaging and release work.
+
+Natural-turn controls and guarded real-runtime/operator surfaces stay explicitly
+capability-gated. Provider-specific behavior remains adapter and host policy.
+
+## Verification
+
+From the repository root:
+
+```bash
+python scripts/check_v600_documentation_freeze.py
+python scripts/check_v600_aggregate_conformance.py --source-only
+python -m unittest discover -s tests
 ```
 
-Current responsibility split:
+The documentation checker is provider-free. It validates the exact FW-RT6-14b
+surface, documentation links and freeze markers, the 127-name root-public manifest,
+the FW-RT6-14a aggregate gate, and the 828-test Framework unit suite. It does not
+read private configuration/evidence or execute provider, network, microphone,
+playback, or VTS operations.
 
-- `request_interruption(runtime)` requests interruption and transitions to `interrupted`.
-- `clear_interruption(runtime)` clears only the pending interruption flag.
-- `clear_interruption(runtime)` does not reset runtime state.
-- Final state reset is owned by the session loop.
-
-## Manual Interruption Debug Command
-
-The interactive runtime supports a development-only manual interruption command:
-
-```text
-/interrupt
-```
-
-This command verifies the interruption request/state boundary from user input.
-
-Expected debug flow:
-
-```text
-listening -> interrupted -> idle
-```
-
-Important:
-
-This is not full concurrent voice barge-in yet.
-
-The command is handled as normal user input before an assistant response starts.
-It does not interrupt an already-running response from another thread or audio stream.
-
-## TTS Stop Boundary
-
-TTS playback has a best-effort stop boundary for future interruption handling.
-
-The runtime may call:
-
-```python
-tts.stop()
-```
-
-Expected behavior:
-
-- stop active local playback when possible
-- clear queued speech segments
-- clear pending TTS text buffer
-- avoid crashing if nothing is playing
-
-Provider-specific hard cancellation is still a future implementation detail.
-
-## Voice Output Policy
-
-When voice/TTS output is enabled, the prompt builder can add a voice-friendly output policy.
-
-The policy is intended to improve TTS readability.
-
-It is separate from:
-
-- output language instruction
-- character personality prompt
-- provider-specific pronunciation settings
-
-Prompt layer order:
-
-```text
-language instruction
-voice output policy
-emotion tag instruction
-character system prompt
-```
-
-Text-only sessions do not receive the voice output policy by default.
-
-For details, see:
-
-```text
-voice_output_policy.md
-```
-
-## Current Limitations
-
-The v3.0 runtime foundation does not yet provide:
-
-- full concurrent voice barge-in
-- microphone listening while TTS is speaking
-- provider-level LLM request cancellation
-- provider-specific TTS cancellation guarantees
-- SSML or pronunciation dictionary support
-- production-grade interruption UX
-
-These are future v3.x work items.
+<!-- FW-RT6-14b-ADVANCED-RUNTIME-FREEZE:END -->

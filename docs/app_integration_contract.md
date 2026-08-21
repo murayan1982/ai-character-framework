@@ -5205,3 +5205,76 @@ operator evidence, access devices, or perform network, playback, or VTS work.
 After this exact five-file sync is committed, pushed, and remotely verified,
 only FW-RT6-14b exact contract review is authorized.
 <!-- FW-RT6-14a-AGGREGATE-CONFORMANCE:END -->
+
+
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE:BEGIN -->
+## FW-RT6-14b — host integration documentation freeze candidate
+
+FW-RT6-14b freezes documentation without changing application API or runtime
+behavior. Host applications should migrate by capability and typed result, not by
+package version, provider name, credential presence, or optional SDK import.
+
+### Host integration sequence
+
+1. Create the default provider-free session or explicitly request the guarded real
+   composition.
+2. Inspect `construction_result`; an incomplete or failed composition keeps real
+   controls unavailable.
+3. Inspect `capabilities()` and render only independently supported controls.
+4. Correlate canonical events by session ID, turn ID, generation ID, and monotonic
+   sequence.
+5. Accept exactly one terminal turn outcome and reject late artifacts.
+6. Treat interruption as cooperative unless hard cancellation is explicitly
+   advertised.
+7. Stop host-owned playback in response to the matching request, then acknowledge
+   that request; do not acknowledge before stop/invalidation.
+8. Reset or close through the typed lifecycle boundary and ignore sanitized stale
+   callbacks after terminalization.
+
+### Ownership remains explicit
+
+| Concern | Owner |
+| --- | --- |
+| Session/turn/generation identity and terminal contract | Framework |
+| Capability snapshot and canonical public events | Framework |
+| Pending TTS work control and late-artifact rejection | Framework boundary |
+| Microphone/device capture | Host application |
+| Physical media playback and actual device stop | Host application |
+| Credentials, provider configuration, and SDK lifecycle | Private adapter/operator boundary |
+| Character-specific VTS hotkey/motion mapping | Host/plugin/operator |
+| Private operator evidence | Outside the repository |
+
+The FW-RT6-13c real operator acceptance completed its dedicated scenarios but did
+not execute or enable production unified provider orchestration through
+`RealtimeSession`. The framework does not claim provider hard cancel or physical
+playback stop.
+
+Current frozen integration documents are
+[`advanced_runtime.md`](advanced_runtime.md),
+[`v600_v5_to_v6_session_migration.md`](v600_v5_to_v6_session_migration.md), and
+[`v600_capability_event_error_reference.md`](v600_capability_event_error_reference.md).
+
+```text
+checkpoint: FW-RT6-14b / IMPLEMENTATION_CANDIDATE
+baseline head: 7d65771784ddc5409076909f874d098758486d98
+status: IMPLEMENTED / VERIFIED / AWAITING_REVIEW
+exact implementation surface: 8 files
+production Framework source changes: 0 files
+test source changes: 0 files
+root-public names: 127 / UNCHANGED
+default realtime profile: v5_skeleton / PROVIDER_FREE
+explicit unified profile: v6_unified / GUARDED
+provider hard cancel claimed: False
+Framework physical playback stop claimed: False
+provider/network/microphone/playback/VTS execution: False
+private configuration/evidence read or written: False
+FW-RT6-14b canonical tasks: 0 / 8 CLOSED / UNCHANGED
+FW-RT6-14b final acceptance sync: NOT_AUTHORIZED
+FW-RT6-14c implementation: NOT_AUTHORIZED
+commit / push: NOT_AUTHORIZED
+```
+
+The documentation-freeze checker verifies only public repository source. It does
+not import private real-operator evidence, inspect `.env`, or execute providers and
+devices. v6.0.0 remains not released until separately authorized FW-RT6-14c work.
+<!-- FW-RT6-14b-DOCUMENTATION-FREEZE:END -->

@@ -8,6 +8,47 @@ This project is a framework, not a finished consumer app.
 
 ---
 
+<!-- FW-RT6-14b-README-CURRENT:BEGIN -->
+## Current v6.0.0 source status
+
+| Item | Current truth |
+| --- | --- |
+| Source version | `6.0.0.dev0` |
+| v6.0.0 source candidate | `DOCUMENTATION_FROZEN / NOT_RELEASED` |
+| Latest published release | `v5.5.0` |
+| Documentation-freeze baseline | `7d65771784ddc5409076909f874d098758486d98` |
+| Root-public surface | 127 names / unchanged |
+| Compatibility | v5 standalone sessions preserved; default `RealtimeSession` remains provider-free `v5_skeleton` |
+
+v6 adds a provider-neutral realtime lifecycle, capability snapshots, canonical
+events, typed results and errors, cooperative interruption, stale-result rejection,
+host playback coordination, guarded real-runtime composition, and provider-free
+aggregate conformance. Real execution is always explicit and capability-gated.
+
+An explicit `real_runtime_enabled=True` request selects the guarded `v6_unified`
+profile. Missing or failed stage configuration is rejected with a typed result; it
+does not silently run the mock path as real work. The completed FW-RT6-13c operator
+acceptance does not enable production unified real-provider orchestration through
+`RealtimeSession`.
+
+Start with these current documents:
+
+- [Advanced runtime behavior](docs/advanced_runtime.md)
+- [v5-to-v6 migration guide](docs/v600_v5_to_v6_session_migration.md)
+- [Capability, event, and error reference](docs/v600_capability_event_error_reference.md)
+- [App integration contract](docs/app_integration_contract.md)
+- [Public facade contract](docs/public_facade.md)
+- [Aggregate conformance gate](docs/v600_aggregate_conformance.md)
+- [v6 implementation tasklist](docs/v600_tasklist.md)
+
+The framework remains a developer foundation rather than a finished consumer app.
+It does not claim default provider/network/device execution, provider hard cancel,
+Framework-owned physical playback stop, or completion of FW-RT6-14c packaging and
+release work.
+<!-- FW-RT6-14b-README-CURRENT:END -->
+
+---
+
 ## What this framework provides
 
 The framework provides a modular foundation for:
@@ -27,7 +68,7 @@ The goal is to let developers focus on character behavior, app features, and int
 
 ## Conversation flow
 
-The current minimum conversation flow is:
+The minimum application flow remains:
 
 ```text
 User input
@@ -38,9 +79,12 @@ User input
 -> optional VTS expression trigger
 ```
 
-When voice and Live2D features are enabled, the same flow can drive speech output and expression changes.
-
-The current runtime is intended to be understandable and extendable. More advanced real-time voice behavior, such as latency-oriented streaming speech, interruption, and richer conversation state handling, is tracked as future runtime work.
+When explicitly configured capabilities are available, the same application can add
+voice input, streaming response delivery, synthesis, host-owned playback, motion,
+and cooperative interruption. v6 assigns session/turn/generation identity,
+monotonic event ordering, exactly-once terminal outcomes, and stale-result rejection
+to the realtime contract. Provider SDKs, microphone capture, physical playback, and
+character-specific VTS mapping remain adapter or host responsibilities.
 
 ---
 
@@ -697,6 +741,19 @@ A simple rule:
 
 ## Validation and smoke checks
 
+Current v6 documentation and aggregate gates are provider-free:
+
+```bash
+python scripts/check_v600_documentation_freeze.py
+python scripts/check_v600_aggregate_conformance.py --source-only
+python -m unittest discover -s tests
+```
+
+The documentation checker verifies the exact FW-RT6-14b surface and invokes the
+aggregate contract, including the complete 828-test unit suite. It does not read
+private configuration/evidence or execute provider, network, microphone, playback,
+or VTS operations.
+
 Compile check:
 
 ```bash
@@ -845,13 +902,25 @@ main.py
 Detailed documentation is split by responsibility:
 
 - `docs/public_facade.md`
-  - Public text chat facade details
+  - Frozen public facade, compatibility, capability, event, and ownership details
 
 - `docs/app_integration_contract.md`
-  - External app integration boundaries
+  - External app integration and host-owned execution boundaries
 
 - `docs/advanced_runtime.md`
-  - Runtime state, interruption boundaries, TTS stop behavior, and voice output policy
+  - v6 runtime profiles, lifecycle, interruption, TTS work, playback, and security
+
+- `docs/v600_v5_to_v6_session_migration.md`
+  - Capability-first migration from retained v5 standalone sessions to v6
+
+- `docs/v600_capability_event_error_reference.md`
+  - Frozen capability fields, event types, outcomes, errors, and recovery actions
+
+- `docs/v600_aggregate_conformance.md`
+  - Provider-free v6 aggregate conformance contract and current smoke classification
+
+- `docs/v600_tasklist.md`
+  - Append-only v6 implementation and acceptance history
 
 - `docs/plugin_events.md`
   - Runtime plugin event hooks such as `on_state_change`
@@ -889,9 +958,11 @@ Detailed documentation is split by responsibility:
 - `docs/voice_output_v500_package_readiness.md`
   - v5.0.0 package readiness and final verification command set
 
-The README is intended to stay as the project entry point. Current release details should live in `docs/RELEASE_NOTES.md` instead of being accumulated here.
-
-Historical release notes are preserved by Git tags and GitHub Releases.
+The top of this README is the current project entry point. The material after the
+`Historical development log (append-only)` heading is retained source evidence and
+must not be used as the current setup, API, test-count, or release-status contract.
+Published release details remain in `docs/RELEASE_NOTES.md`, Git tags, and GitHub
+Releases.
 
 ---
 
@@ -902,6 +973,7 @@ Current major roadmap topics are tracked in:
 ```text
 docs/roadmap_feature_v4.0.0.md
 docs/roadmap_feature_v5.0.0.md
+docs/roadmap_feature_v6.0.0.md
 ```
 
 v4.0.0 focuses on App Integration SDK Foundation:
@@ -921,6 +993,19 @@ v5.0.0 focuses on Public Voice Output / TTS Boundary Foundation:
 - host app integration guidance before deeper realtime voice runtime work
 
 v5.0.0 is not the full realtime voice runtime release. Realtime interruption, stronger TTS stop/flush behavior, and always-on microphone / barge-in work remain follow-up runtime topics.
+
+v6.0.0 freezes a provider-neutral realtime foundation:
+
+- shared session, turn, generation, event, and terminal semantics;
+- capability-first integration and typed unavailability;
+- cooperative interruption, TTS work control, and stale-result rejection;
+- explicit host ownership of microphone capture and physical playback;
+- retained v5 standalone compatibility profiles;
+- guarded real-runtime composition and provider-free aggregate conformance.
+
+The source candidate is documentation frozen but not released. FW-RT6-14c package,
+release, tag, and publication work remains separately gated and is not authorized by
+the FW-RT6-14b documentation freeze.
 
 ---
 
@@ -949,6 +1034,14 @@ Please see `LICENSE.txt` for the full license terms.
 This project may be used as a component in larger applications, including commercial products and services, as long as the use follows the license terms.
 
 Redistribution, repackaging, or resale of the framework itself as a standalone product, starter kit, template, boilerplate, or similar package is restricted by the license.
+
+<!-- README-HISTORICAL-DEVELOPMENT-LOG:BEGIN -->
+## Historical development log (append-only)
+
+Everything below this heading is preserved chronological implementation evidence.
+It may describe older versions, baselines, test counts, authorization states, or
+future plans that have since changed. Use the current v6 section and linked frozen
+documents above for present behavior.
 
 ### v5.1.0 release readiness gate
 
@@ -2909,3 +3002,5 @@ commit / push: NOT_AUTHORIZED
 FW-RT6-3c accepts a fast provider-neutral regression layer. It does not claim
 real provider execution, production stage orchestration, or release readiness.
 <!-- FW-RT6-3c-C-RUNTIME-UNIT-TEST-ACCEPTANCE:END -->
+
+<!-- README-HISTORICAL-DEVELOPMENT-LOG:END -->

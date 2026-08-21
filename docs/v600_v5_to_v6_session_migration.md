@@ -4,6 +4,10 @@ This guide records the public, provider-neutral migration boundary for
 FW-RT6-11c. It does not enable provider execution or claim that the current
 source can run production unified orchestration.
 
+> Current freeze note: the FW-RT6-11c sections below are retained historical
+> implementation evidence. The FW-RT6-14b migration freeze at the end of this
+> document is the current v6.0.0 source-candidate migration contract.
+
 ## Choose the target deliberately
 
 The v5 standalone sessions remain supported throughout v6:
@@ -196,3 +200,152 @@ Control B changes no root-public name, factory signature, runtime source, API
 or schema version. All eight FW-RT6-11c aggregate tasks remain open until the
 separately reviewed aggregate acceptance control.
 <!-- FW-RT6-11c-B-MIGRATION-EXAMPLES:END -->
+
+
+<!-- FW-RT6-14b-MIGRATION-FREEZE:BEGIN -->
+## v6.0.0 migration freeze
+
+This section freezes the migration contract at baseline
+`7d65771784ddc5409076909f874d098758486d98`. The source version is
+`6.0.0.dev0`; v6.0.0 is not yet a published release, and the latest published
+release remains v5.5.0.
+
+### Decision path
+
+1. Keep the existing v5 standalone session if it already owns the required
+   text, voice-input, voice-output, or motion lifecycle.
+2. Adopt default `RealtimeSession` first when the application needs shared
+   identity, ordering, terminality, interruption, stale rejection, or aggregate
+   close semantics without real providers.
+3. Inspect `construction_result` and `capabilities()` before exposing any v6
+   control.
+4. Request `real_runtime_enabled=True` only when the host has an explicit
+   guarded stage composition and preflight policy.
+5. Treat `configuration_incomplete` and `preflight_failed` as typed
+   unavailability. Never reinterpret them as permission to execute the mock path
+   under a real-runtime label.
+
+### Minimal compatibility migration
+
+Before:
+
+```python
+from framework import create_text_chat_session
+
+with create_text_chat_session() as session:
+    result = session.ask("hello")
+```
+
+Provider-free v6 lifecycle adoption:
+
+```python
+import framework
+
+with framework.create_realtime_session() as session:
+    capability_snapshot = session.capabilities()
+    result = session.run_turn(input_text="hello")
+
+    assert session.compatibility_profile.mode.value == "v5_skeleton"
+    assert result.outcome.value == "completed"
+    assert result.public_metadata["mock_runtime"] is True
+```
+
+This is a compatibility and integration path, not real-provider evidence.
+
+### Explicit unified request
+
+```python
+import framework
+
+session = framework.create_realtime_session(real_runtime_enabled=True)
+construction = session.construction_result
+
+if not construction.runtime_executable:
+    # Display only the public status, safe message, and retryability.
+    # Keep provider configuration and exceptions private.
+    unavailable_status = construction.status.value
+else:
+    capability_snapshot = session.capabilities()
+    # Continue through the host's separately reviewed execution boundary.
+```
+
+An executable construction result proves that the selected composition passed
+the public construction contract. It does not transfer microphone, physical
+playback, credential, private evidence, or provider-client ownership to the
+Framework.
+
+### Capability-first UI migration
+
+Replace version tests and provider-name tests with capability tests:
+
+| UI decision | Public source of truth |
+| --- | --- |
+| Enable text streaming | `text_generation.streaming_supported` |
+| Enable audio chunk submission | `voice_input.audio_chunk_input_supported` plus accepted formats and limits |
+| Show partial transcript | `voice_input.partial_transcript_supported` |
+| Offer interrupt | cooperative-cancel and stage-specific capability fields |
+| Offer output flush | `voice_output.pending_flush_supported` |
+| Stop a host player | playback ownership plus stop-request/ack capabilities |
+| Offer motion | `motion.provider_neutral_intent_supported` and configured runtime state |
+
+Capability snapshots are immutable observations. A false or unsupported value
+must disable the feature or route to a typed fallback; it must not be replaced by
+provider knowledge hidden in the app.
+
+### Event adapter migration
+
+Legacy callbacks may be adapted to the canonical event stream, but the canonical
+event envelope owns session ID, turn ID, sequence, and public timestamp/order
+semantics. During migration:
+
+- process each sequence once;
+- correlate work by session and turn identity;
+- accept exactly one terminal event per turn;
+- drop artifacts after terminalization or generation invalidation;
+- keep all event metadata public-safe and recursively allowlisted;
+- do not treat `realtime.playback_stop.requested_to_host` as proof of physical
+  stop; wait for the matching host acknowledgement.
+
+The frozen event inventory is in
+[`v600_capability_event_error_reference.md`](v600_capability_event_error_reference.md).
+
+### Error and recovery migration
+
+Do not parse exception strings. Branch on public enums and typed results:
+
+- construction status for composition availability;
+- `RealtimeErrorCode` for public operation failure class;
+- `RealtimeExecutionErrorCode` for invalid blocking execution context;
+- `LifecycleTransitionErrorCode` for lifecycle violations;
+- `TurnOutcome`, `InterruptOutcome`, and `OutputFlushOutcome` for terminal results;
+- `RecoveryAction` for the next safe host action.
+
+Log stable codes, stage kinds, booleans, and counts only. Provider exceptions,
+payloads, prompts, transcripts, credentials, private paths, model/voice identifiers,
+audio, VTS hotkeys, and selectors remain outside public events and repository
+evidence.
+
+### Phased adoption checklist
+
+- [ ] Record current v5 owners and close behavior.
+- [ ] Add provider-free `RealtimeSession` lifecycle tests.
+- [ ] Gate every control from `capabilities()`.
+- [ ] Correlate events by session/turn/sequence.
+- [ ] Enforce exactly-once terminal handling and stale rejection.
+- [ ] Keep microphone capture and physical playback host-owned.
+- [ ] Add stop-request acknowledgement only after the host stops or invalidates
+      matching audio.
+- [ ] Add explicit real-runtime request, private configuration, and preflight only
+      after provider-free behavior is accepted.
+- [ ] Retain a visible v5 or mock fallback; never disguise it as real execution.
+- [ ] Run the documentation and aggregate gates before release preparation.
+
+### Non-goals
+
+Migration does not remove v5 standalone APIs, enable providers by default, promise
+provider hard cancel, make the Framework own physical playback stop, or claim that
+the accepted FW-RT6-13c operator is unified production `RealtimeSession`
+orchestration. Natural-turn controls remain experimental and capability-gated.
+FW-RT6-14c package, tag, and publication work is outside this freeze.
+
+<!-- FW-RT6-14b-MIGRATION-FREEZE:END -->
