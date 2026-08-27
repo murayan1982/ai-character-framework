@@ -158,3 +158,32 @@ remaining seven canonical tasks. Official package generation and strict
 readiness are the next separate execution boundary; public release operations
 remain separately authorized.
 <!-- FW-RT6-14c-PRE-TAG-READINESS:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## Final published-release acceptance sync
+
+```text
+final-sync baseline: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd / REMOTELY_VERIFIED
+release tag: v6.0.0 / ANNOTATED / PUSHED / VERIFIED
+strict tag readiness: PASS
+GitHub Release: PUBLIC / VERIFIED
+official asset membership: 2 / EXACT
+official ZIP: ai-character-framework_v6.0.0.zip
+official sidecar: ai-character-framework_v6.0.0.zip.sha256
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
+published asset redownload: VERIFIED
+final clean tree confirmation: VERIFIED
+source version metadata: 6.0.0
+latest published release: 6.0.0
+root-public names: 127 / UNCHANGED
+production Framework behavior changes: 0
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+FW-RT6-14c final acceptance sync: PASS / AWAITING_SYNC_COMMIT_PUSH
+final-sync commit / push: NOT_AUTHORIZED
+```
+
+The published asset remains the exact package built from the tagged release
+commit. This post-release sync records public facts and updates current metadata;
+it is not a replacement package and performs no tag, Release, or asset mutation.
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->

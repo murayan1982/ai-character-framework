@@ -135,12 +135,13 @@ def check_readme() -> None:
     _require(text.index("README-HISTORICAL-DEVELOPMENT-LOG:BEGIN") > text.index("License"), "historical README log must follow current project content")
     for phrase in (
         "6.0.0",
-        "RELEASE_CANDIDATE / NOT_RELEASED",
+        "PUBLISHED / VERIFIED",
         "Latest published release",
-        "v5.5.0",
+        "v6.0.0",
         "799589526aef1a9d903fe4da4c23550b5c12ca38",
         "FW-RT6-14c release tooling",
-        "IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
+        "14 / 14 ACCEPTED",
+        "6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2",
         "127 names / unchanged",
         "v5_skeleton",
         "v6_unified",
@@ -153,10 +154,11 @@ def check_readme() -> None:
     _require("### v5.1.0 release readiness gate" in history, "historical README content moved outside log")
     for phrase in (
         "6.0.0",
-        "RELEASE_CANDIDATE / NOT_RELEASED",
+        "PUBLISHED / VERIFIED",
         "799589526aef1a9d903fe4da4c23550b5c12ca38",
         "FW-RT6-14c release tooling",
-        "IMPLEMENTED / VERIFIED / AWAITING_REVIEW",
+        "14 / 14 ACCEPTED",
+        "61e15f62d1ecc5faee016abae82200f8de56c5dd",
         "docs/v600_deterministic_release.md",
         "docs/release_notes_v6.0.0.md",
     ):
@@ -271,10 +273,19 @@ def check_contract_docs() -> None:
             "<!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->",
         )
         _require("6.0.0" in current_release, f"14c release metadata missing: {relative}")
-        _require(
-            "not" in current_release.casefold() or "NOT_AUTHORIZED" in current_release,
-            f"14c unpublished boundary missing: {relative}",
+        final_release = _marker_block(
+            text,
+            "<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+            "<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->",
         )
+        for phrase in (
+            "latest published release: 6.0.0",
+            "v6.0.0",
+            "14 / 14 ACCEPTED",
+            "127 / UNCHANGED",
+            "AWAITING_SYNC_COMMIT_PUSH",
+        ):
+            _require(phrase in final_release, f"14c final publication fact missing in {relative}: {phrase}")
 
     event_values = set(re.findall(r"`(realtime\.[a-z0-9_.]+)`", reference_block))
     _require(len(event_values) == EXPECTED_EVENT_COUNT, "event reference must list exactly 48 unique event values")
@@ -338,6 +349,33 @@ def check_tasklist_boundary() -> None:
         "acceptance-sync commit / push: NOT_AUTHORIZED",
     ):
         _require(phrase in final_sync, f"14b final-sync fact missing: {phrase}")
+
+    canonical_14c = tasklist.split(
+        "## FW-RT6-14c — Deterministic package and release", 1
+    )[1].split("# 4. Critical path", 1)[0]
+    _require(canonical_14c.count("- [ ]") == 0, "14c final sync retains an open task")
+    _require(canonical_14c.count("- [x]") == 14, "14c final sync must accept fourteen tasks")
+    release_sync = _marker_block(
+        tasklist,
+        "<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->",
+        "<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->",
+    )
+    for phrase in (
+        "final-sync baseline: 61e15f62d1ecc5faee016abae82200f8de56c5dd",
+        "release tag: v6.0.0 / ANNOTATED / PUSHED / VERIFIED",
+        "strict tag readiness: PASS",
+        "GitHub Release: PUBLIC / VERIFIED",
+        "official ZIP + SHA-256 sidecar: 2 ASSETS / VERIFIED",
+        "official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2",
+        "published asset redownload verification: PASS",
+        "clean tree confirmation: PASS",
+        "latest published release: 6.0.0",
+        "FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED",
+        "FW-RT6-14c final acceptance sync: PASS",
+        "final-sync exact surface: 15 files",
+        "final-sync commit / push: NOT_AUTHORIZED",
+    ):
+        _require(phrase in release_sync, f"14c final-sync fact missing: {phrase}")
 
 
 def check_current_markdown_links() -> None:
@@ -444,7 +482,7 @@ def main() -> None:
     print("final acceptance-sync exact surface: 8 files / PASS")
     print("production Framework source changes: 0 files")
     print("test source changes: 0 files")
-    print("README current v6 source status: RELEASE_CANDIDATE")
+    print("README current v6 source status: PUBLISHED / VERIFIED")
     print("README historical development log: DELIMITED / APPEND_ONLY")
     print("advanced runtime contract: v6 / PASS")
     print("v5-to-v6 migration guide: PASS")
@@ -459,10 +497,11 @@ def main() -> None:
     print("FW-RT6-14b canonical tasks: 8 / 8 ACCEPTED")
     print("FW-RT6-14b final acceptance sync: PASS")
     print("FW-RT6-14b: COMPLETED / VERIFIED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH")
-    print("FW-RT6-14c exact contract review: AUTHORIZED_AFTER_SYNC_COMMIT_PUSH")
-    print("FW-RT6-14c implementation: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
+    print("FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED")
+    print("FW-RT6-14c final acceptance sync: PASS / AWAITING_SYNC_COMMIT_PUSH")
     print("v6 source version metadata: 6.0.0")
-    print("v6.0.0 publication status: RELEASE_CANDIDATE / NOT_RELEASED")
+    print("v6.0.0 publication status: PUBLISHED / VERIFIED")
+    print("latest published release: 6.0.0")
     print("commit / push: NOT_AUTHORIZED")
 
 

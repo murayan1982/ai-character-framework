@@ -7094,3 +7094,27 @@ official package build + strict readiness: READY_FOR_SEPARATE_EXECUTION
 annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
 ```
 <!-- FW-RT6-14c-PRE-TAG-READINESS:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c final published-release facade acceptance
+
+`framework.__version__` and `LATEST_PUBLISHED_RELEASE` are now both `6.0.0`.
+Publication adds no root-public name and changes no facade signature,
+event/result/error shape, API/schema version, compatibility profile, or runtime
+execution behavior.
+
+```text
+latest published release: 6.0.0
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+release tag: v6.0.0 / PUSHED / VERIFIED
+GitHub Release: PUBLIC / VERIFIED
+official assets: 2 / VERIFIED
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
+published asset redownload: VERIFIED
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+root-public names: 127 / UNCHANGED
+API/schema version changes: 0
+runtime behavior changes: 0
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
+```
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->

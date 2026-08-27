@@ -3,11 +3,26 @@
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
 ## Current release metadata note
 
-Source metadata is `6.0.0`; publication remains false and v5.5.0 remains the
-latest published release. FW-RT6-14c changes no capability, event, result,
-error, API/schema version, or root-public export. Public release remains gated
-on separately authorized tag, asset, redownload, and clean-tree verification.
+Source metadata and the latest published release are both `6.0.0`. FW-RT6-14c
+changed no capability, event, result, error, API/schema version, or root-public
+export. The separately authorized tag, asset, redownload, and clean-tree
+verification completed without changing this reference vocabulary.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c reference publication acceptance
+
+```text
+latest published release: 6.0.0
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+release tag: v6.0.0 / PUSHED / VERIFIED
+GitHub Release: PUBLIC / VERIFIED
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+capability/event/error changes from publication: 0
+root-public names: 127 / UNCHANGED
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
+```
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->
 
 <!-- FW-RT6-14b-CAPABILITY-EVENT-ERROR-REFERENCE:BEGIN -->
 

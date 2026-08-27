@@ -378,9 +378,24 @@ canonical FW-RT6-14b acceptance checklist.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
 ## v6.0.0 package migration note
 
-Current source metadata is `6.0.0`; v6.0.0 is not yet published. The
-deterministic source ZIP contains this committed migration guide and the
-installable SDK sources verified by the package-import smoke. Releasing it
-does not remove v5 standalone factories or change the default provider-free
-`v5_skeleton` profile. Public release execution remains separately authorized.
+Current source metadata and the latest published release are both `6.0.0`.
+The deterministic source ZIP contains the migration guide as committed at
+release tag `v6.0.0` and the installable SDK sources verified by the
+package-import smoke. Publication does not remove v5 standalone factories or
+change the default provider-free `v5_skeleton` profile.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c migration publication acceptance
+
+```text
+latest published release: 6.0.0
+release tag: v6.0.0 / PUSHED / VERIFIED
+official package import smoke: PASS
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+root-public names: 127 / UNCHANGED
+v5 standalone compatibility: PRESERVED
+default RealtimeSession profile: v5_skeleton / UNCHANGED
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
+```
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->

@@ -1,9 +1,9 @@
 <!-- CURRENT-RELEASE-v6.0.0:BEGIN -->
 # v6.0.0 - Provider-neutral realtime lifecycle
 
-The v6.0.0 source is a release candidate and has not yet been published. It
-adds the provider-neutral realtime lifecycle, guarded real-runtime composition,
-natural-turn controls, aggregate conformance, and the frozen v5-to-v6 contract.
+v6.0.0 is published. It adds the provider-neutral realtime lifecycle, guarded
+real-runtime composition, natural-turn controls, aggregate conformance, and the
+frozen v5-to-v6 contract.
 
 The version-fixed release notes are:
 
@@ -15,15 +15,18 @@ Current release status:
 
 ```text
 source version: 6.0.0
-latest published release: 5.5.0
+latest published release: 6.0.0
 FW-RT6-14c release tooling: COMMITTED / PUSHED / VERIFIED
 implementation commit: 9ffa623d21e6096213c9beb504f4c06150aeba8f
 release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95 / COMMITTED / PUSHED / REMOTELY_VERIFIED
-FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED
-pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK
-strict tag readiness: NOT_RUN
-official ZIP + SHA-256 sidecar: NOT_AUTHORIZED / NOT_WRITTEN
-annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+release tag: v6.0.0 / PUSHED / VERIFIED
+GitHub Release: PUBLIC / VERIFIED
+official ZIP + SHA-256 sidecar: 2 ASSETS / VERIFIED
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
+published asset redownload: VERIFIED
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
 ```
 <!-- CURRENT-RELEASE-v6.0.0:END -->
 

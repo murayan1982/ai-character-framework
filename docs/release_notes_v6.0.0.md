@@ -54,5 +54,8 @@ ai-character-framework_v6.0.0.zip
 ai-character-framework_v6.0.0.zip.sha256
 ```
 
-The annotated `v6.0.0` tag, tag push, public GitHub Release, asset upload, and
-published asset redownload require a separate explicit operator authorization.
+The separately authorized operator completed the annotated `v6.0.0` tag push,
+public GitHub Release, ZIP and sidecar upload, and published-asset redownload.
+The release tag targets `61e15f62d1ecc5faee016abae82200f8de56c5dd` and the
+official ZIP SHA-256 is
+`6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2`.

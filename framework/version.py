@@ -8,7 +8,7 @@ separate exact contract explicitly changes those public contracts.
 from __future__ import annotations
 
 FRAMEWORK_SOURCE_VERSION = "6.0.0"
-LATEST_PUBLISHED_RELEASE = "5.5.0"
+LATEST_PUBLISHED_RELEASE = "6.0.0"
 
 TEXT_CHAT_API_VERSION = "4.0"
 VOICE_OUTPUT_BOUNDARY_VERSION = "v5.lazy_provider_adapter"

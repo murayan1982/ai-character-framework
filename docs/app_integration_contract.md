@@ -5382,3 +5382,31 @@ official ZIP + SHA-256 sidecar: NOT_WRITTEN
 annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN
 ```
 <!-- FW-RT6-14c-PRE-TAG-READINESS:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c final published-release application contract
+
+The public v6.0.0 Release was created from the reviewed release commit. The
+post-release metadata sync changes no application API, runtime behavior,
+provider/device execution path, playback ownership, cancellation ownership,
+or VTS ownership.
+
+```text
+source version: 6.0.0
+latest published release: 6.0.0
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+release tag: v6.0.0 / PUSHED / VERIFIED
+GitHub Release: PUBLIC / VERIFIED
+official ZIP + SHA-256 sidecar: 2 ASSETS / VERIFIED
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
+published asset redownload: VERIFIED
+clean tree confirmation: VERIFIED
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+runtime behavior changes: 0
+root-public names: 127 / UNCHANGED
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
+```
+
+Applications continue to gate real execution from runtime capabilities rather
+than package version or publication status.
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->

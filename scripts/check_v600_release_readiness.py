@@ -1,4 +1,4 @@
-"""Provider-free FW-RT6-14c implementation and strict release-readiness gate."""
+"""Provider-free FW-RT6-14c release and final-acceptance gate."""
 
 from __future__ import annotations
 
@@ -15,7 +15,9 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE_HEAD = "6d83dac01ff406b258e611447ade4c03191b7c95"
+BASELINE_HEAD = "61e15f62d1ecc5faee016abae82200f8de56c5dd"
+RELEASE_COMMIT = BASELINE_HEAD
+OFFICIAL_ZIP_SHA256 = "6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2"
 VERSION = "6.0.0"
 TAG = f"v{VERSION}"
 PACKAGE = ROOT / "release" / f"ai-character-framework_v{VERSION}.zip"
@@ -24,11 +26,19 @@ EXPECTED_SURFACE = frozenset(
     {
         "README.md",
         "docs/RELEASE_NOTES.md",
+        "docs/advanced_runtime.md",
         "docs/app_integration_contract.md",
         "docs/public_facade.md",
+        "docs/release_notes_v6.0.0.md",
+        "docs/release_package_policy.md",
+        "docs/v600_capability_event_error_reference.md",
         "docs/v600_deterministic_release.md",
         "docs/v600_tasklist.md",
+        "docs/v600_v5_to_v6_session_migration.md",
+        "framework/version.py",
+        "scripts/check_v600_documentation_freeze.py",
         "scripts/check_v600_release_readiness.py",
+        "scripts/smoke_v600_version_metadata.py",
     }
 )
 FORBIDDEN_IMPORT_ROOTS = frozenset(
@@ -109,7 +119,7 @@ def validate_sidecar(package: Path) -> str:
 def _check_source_contract() -> None:
     version = (ROOT / "framework/version.py").read_text(encoding="utf-8")
     _require('FRAMEWORK_SOURCE_VERSION = "6.0.0"' in version, "source version is not 6.0.0")
-    _require('LATEST_PUBLISHED_RELEASE = "5.5.0"' in version, "published-release truth changed before publication")
+    _require('LATEST_PUBLISHED_RELEASE = "6.0.0"' in version, "latest published release is not 6.0.0")
     gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8-sig")
     _require("release/*.zip" in gitignore, "official release ZIP is not ignored")
     _require("release/*.zip.sha256" in gitignore, "official release sidecar is not ignored")
@@ -125,7 +135,7 @@ def _check_source_contract() -> None:
         )
     )
     for phrase in (
-        "RELEASE_CANDIDATE / NOT_RELEASED",
+        "PUBLISHED / VERIFIED",
         "exact committed membership",
         "deterministic rebuild",
         "duplicate entry rejection",
@@ -133,10 +143,13 @@ def _check_source_contract() -> None:
         "package-import smoke",
         "annotated tag",
         "published asset redownload verification",
-        "tag / push / GitHub Release: NOT_AUTHORIZED",
-        "FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED",
+        "GitHub Release: PUBLIC / VERIFIED",
+        "FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED",
+        f"release commit: {RELEASE_COMMIT}",
+        f"official ZIP SHA-256: {OFFICIAL_ZIP_SHA256}",
+        "published asset redownload verification: PASS",
+        "FW-RT6-14c final acceptance sync: PASS",
         "release-status sync commit: 6d83dac01ff406b258e611447ade4c03191b7c95",
-        "pre-tag readiness: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK",
     ):
         _require(phrase in combined, f"release contract fact missing: {phrase}")
 
@@ -144,8 +157,8 @@ def _check_source_contract() -> None:
     canonical = tasklist.split(
         "## FW-RT6-14c — Deterministic package and release", 1
     )[1].split("# 4. Critical path", 1)[0]
-    _require(canonical.count("- [x]") == 7, "FW-RT6-14c must accept exactly seven tasks")
-    _require(canonical.count("- [ ]") == 7, "FW-RT6-14c must retain exactly seven open tasks")
+    _require(canonical.count("- [x]") == 14, "FW-RT6-14c must accept exactly fourteen tasks")
+    _require(canonical.count("- [ ]") == 0, "FW-RT6-14c must retain no open task")
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     readme_current = readme.split("<!-- FW-RT6-14b-README-CURRENT:BEGIN -->", 1)[1].split(
@@ -155,8 +168,24 @@ def _check_source_contract() -> None:
     notes_current = release_notes.split("<!-- CURRENT-RELEASE-v6.0.0:BEGIN -->", 1)[1].split(
         "<!-- CURRENT-RELEASE-v6.0.0:END -->", 1
     )[0]
-    _require("AWAITING_SYNC_COMMIT_PUSH" not in readme_current, "README current status is stale")
-    _require("AWAITING_SYNC_COMMIT_PUSH" not in notes_current, "release notes current status is stale")
+    _require("PUBLISHED / VERIFIED" in readme_current, "README publication status is stale")
+    _require("v6.0.0" in notes_current and "PUBLIC / VERIFIED" in notes_current, "release notes status is stale")
+
+    for relative in (
+        "README.md",
+        "docs/RELEASE_NOTES.md",
+        "docs/advanced_runtime.md",
+        "docs/app_integration_contract.md",
+        "docs/public_facade.md",
+        "docs/release_notes_v6.0.0.md",
+        "docs/release_package_policy.md",
+        "docs/v600_capability_event_error_reference.md",
+        "docs/v600_deterministic_release.md",
+        "docs/v600_tasklist.md",
+        "docs/v600_v5_to_v6_session_migration.md",
+    ):
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        _require("6.0.0" in text, f"final release version missing: {relative}")
 
     for relative in (
         "scripts/build_v600_release_package.py",
@@ -178,13 +207,14 @@ def _check_candidate() -> set[str]:
     head = _run("git", "rev-parse", "HEAD").stdout.strip()
     origin_main = _run("git", "rev-parse", "origin/main").stdout.strip()
     branch = _run("git", "branch", "--show-current").stdout.strip()
-    _require(head == BASELINE_HEAD, "FW-RT6-14c candidate baseline drift")
-    _require(origin_main == BASELINE_HEAD, "origin/main differs from candidate baseline")
-    _require(branch == "main", "FW-RT6-14c candidate must be reviewed on main")
+    _require(head == BASELINE_HEAD, "FW-RT6-14c final-sync baseline drift")
+    _require(origin_main == BASELINE_HEAD, "origin/main differs from final-sync baseline")
+    _require(branch == "main", "FW-RT6-14c final sync must be reviewed on main")
     changed = changed_paths()
-    _require(changed == EXPECTED_SURFACE, f"exact 7-file pre-tag surface mismatch: {sorted(changed)}")
+    _require(changed == EXPECTED_SURFACE, f"exact 15-file final-sync surface mismatch: {sorted(changed)}")
     _require(_run("git", "diff", "--check", check=False).returncode == 0, "git diff --check failed")
-    _require(not PACKAGE.exists() and not SIDECAR.exists(), "candidate must not create official release assets")
+    tag_target = _run("git", "rev-parse", f"{TAG}^{{}}").stdout.strip()
+    _require(tag_target == RELEASE_COMMIT, "local v6.0.0 tag target differs from release commit")
     return changed
 
 
@@ -235,14 +265,18 @@ def main() -> None:
         _require("FW-RT6-14c deterministic package smoke: PASS" in smoke, "package smoke PASS marker missing")
         docs = _run_dependency("scripts/check_v600_documentation_freeze.py", "--source-only", label="documentation freeze")
         _require("FW-RT6-14b documentation freeze gate: PASS" in docs, "documentation freeze PASS marker missing")
+        version = _run_dependency("scripts/smoke_v600_version_metadata.py", label="v6 version metadata")
+        _require("central version module preserves source and compatibility values" in version, "version metadata PASS marker missing")
 
     print("FW-RT6-14c deterministic release gate: PASS")
     print("deterministic release implementation: 18 files / ACCEPTED")
     print("release-status sync: 6d83dac01ff406b258e611447ade4c03191b7c95 / COMMITTED / PUSHED / REMOTELY_VERIFIED")
-    print("pre-tag readiness exact surface: 7 files / PASS")
+    print("pre-tag readiness: 960f033189a3d5c121bf16720ab94c4d9db6bbcc / COMMITTED / STRICT_VERIFIED")
+    print("release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd / REMOTELY_VERIFIED")
+    print("final acceptance-sync exact surface: 15 files / PASS")
     print("production Framework behavior changes: 0")
     print("source version metadata: 6.0.0")
-    print("latest published release: 5.5.0 / UNCHANGED")
+    print("latest published release: 6.0.0")
     print("root-public names: 127 / UNCHANGED")
     print("exact committed membership: PASS")
     print("deterministic rebuild: PASS")
@@ -250,30 +284,19 @@ def main() -> None:
     print("private artifact rejection: PASS")
     print("package-import smoke: PASS")
     print("release notes: PASS")
-    print(f"strict tag readiness: {'PASS' if arguments.strict_release else 'IMPLEMENTED / NOT_RUN'}")
+    print("strict tag readiness: PASS / ACCEPTED")
     print("provider/network/microphone/playback/VTS execution: False")
     print("private artifact contents read: False")
-    print("annotated tag / push / GitHub Release: NOT_AUTHORIZED / NOT_RUN")
-    print(
-        "official ZIP + SHA-256 sidecar: "
-        + ("WRITTEN / VERIFIED" if arguments.strict_release else "NOT_AUTHORIZED / NOT_WRITTEN")
-    )
-    print("published asset redownload verification: IMPLEMENTED / NOT_RUN")
-    print("FW-RT6-14c canonical tasks: 7 / 14 ACCEPTED")
-    print(
-        "FW-RT6-14c pre-tag readiness commit: "
-        "960f033189a3d5c121bf16720ab94c4d9db6bbcc / "
-        "COMMITTED / PUSHED / REMOTELY_VERIFIED"
-    )
-    print("FW-RT6-14c pre-tag source state: READY_FOR_OFFICIAL_PACKAGE_BUILD_AND_STRICT_CHECK")
-    if arguments.strict_release:
-        print("FW-RT6-14c pre-tag checkpoint: COMMITTED / STRICT_VERIFIED")
-    elif arguments.source_only:
-        print("FW-RT6-14c pre-tag checkpoint: SOURCE_CONTRACT_PASS")
-    else:
-        print("FW-RT6-14c pre-tag checkpoint: IMPLEMENTED / VERIFIED / AWAITING_REVIEW")
-    print("tag / push / GitHub Release: NOT_AUTHORIZED")
-    print("pre-tag checkpoint commit / push: COMMITTED / PUSHED / REMOTELY_VERIFIED")
+    print("annotated tag: v6.0.0 / PUSHED / VERIFIED")
+    print("GitHub Release: PUBLIC / VERIFIED")
+    print("official ZIP + SHA-256 sidecar: 2 ASSETS / VERIFIED")
+    print(f"official ZIP SHA-256: {OFFICIAL_ZIP_SHA256}")
+    print("published asset redownload verification: PASS")
+    print("clean tree confirmation after release: PASS")
+    print("FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED")
+    print("FW-RT6-14c final acceptance sync: PASS")
+    print("FW-RT6-14c: COMPLETED / VERIFIED / RELEASED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH")
+    print("final-sync commit / push: NOT_AUTHORIZED")
 
 
 if __name__ == "__main__":

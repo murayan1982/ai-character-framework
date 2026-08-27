@@ -5,8 +5,10 @@
 ```text
 target: v6.0.0
 source version: 6.0.0
-publication status: RELEASE_CANDIDATE / NOT_RELEASED
-latest published release: v5.5.0
+publication status: PUBLISHED / VERIFIED
+latest published release: v6.0.0
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
 ```
 
 The official public artifact is a deterministic source ZIP plus an ASCII
@@ -73,7 +75,7 @@ framework.__version__ == 6.0.0
 framework.__all__ count == 127
 ```
 
-## Release execution boundary
+## Release execution result
 
 The builder and readiness gates never create tags, push, or call GitHub. The
 release operator requires a clean `main`, `HEAD == origin/main`, an absent tag
@@ -82,4 +84,7 @@ then creates an annotated tag, pushes only that tag, publishes the ZIP and
 sidecar, redownloads both assets into a temporary directory, verifies them, and
 confirms the repository remains clean.
 
-Implementation review does not authorize public release operations.
+For v6.0.0 this boundary was explicitly authorized and completed. The annotated
+tag targets `61e15f62d1ecc5faee016abae82200f8de56c5dd`; the public Release contains
+exactly the ZIP and sidecar above; both were redownloaded and matched byte for
+byte. Later `main` metadata updates do not replace or rebuild the tagged asset.

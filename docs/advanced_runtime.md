@@ -1,18 +1,37 @@
 # Advanced Runtime Behavior
 
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:BEGIN -->
-## Current v6.0.0 release-candidate note
+## Current v6.0.0 published-release note
 
-Source metadata is now `6.0.0`; the latest published release remains v5.5.0.
-FW-RT6-14c changes version metadata and provider-free release tooling only. It
-does not alter runtime behavior. Package membership is derived from Git, builds
-are byte-identical, archives reject duplicates/private paths, and an extracted
-package must import `framework` with 127 root-public names.
+Source metadata and the latest published release are both `6.0.0`. FW-RT6-14c
+changed version/publication metadata and provider-free release tooling only; it
+did not alter runtime behavior. Package membership was derived from Git, the
+strict same-environment rebuild was byte-identical, the archive rejected
+duplicate/private paths, and the extracted package imported `framework` with
+127 root-public names.
 
-Annotated tag creation, push, GitHub Release publication, official assets, and
-published-asset redownload are implemented but not authorized or run by this
-candidate. The accepted 14b freeze below remains historical baseline evidence.
+The annotated `v6.0.0` tag targets release commit
+`61e15f62d1ecc5faee016abae82200f8de56c5dd`. The public ZIP and SHA-256
+sidecar were redownloaded and verified. The accepted 14b freeze below remains
+historical baseline evidence; publication changes none of its execution or
+ownership boundaries.
 <!-- FW-RT6-14c-DETERMINISTIC-RELEASE:END -->
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c final release acceptance
+
+```text
+latest published release: 6.0.0
+release tag: v6.0.0 / PUSHED / VERIFIED
+GitHub Release: PUBLIC / VERIFIED
+official assets: 2 / VERIFIED
+published asset redownload: VERIFIED
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+runtime behavior changes: 0
+root-public names: 127 / UNCHANGED
+final acceptance sync: AWAITING_SYNC_COMMIT_PUSH
+```
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->
 
 <!-- FW-RT6-14b-ADVANCED-RUNTIME-FREEZE:BEGIN -->
 

@@ -3283,13 +3283,13 @@ operator-only
 - [x] private artifact rejection。
 - [x] package-import smoke。
 - [x] release notes。
-- [ ] strict tag readiness。
-- [ ] annotated tag。
-- [ ] push。
-- [ ] GitHub Release。
-- [ ] official ZIP + SHA-256 sidecar。
-- [ ] published asset redownload verification。
-- [ ] clean tree confirmation。
+- [x] strict tag readiness。
+- [x] annotated tag。
+- [x] push。
+- [x] GitHub Release。
+- [x] official ZIP + SHA-256 sidecar。
+- [x] published asset redownload verification。
+- [x] clean tree confirmation。
 
 ---
 
@@ -11766,3 +11766,41 @@ The canonical checklist remains exactly seven accepted and seven open. This
 checkpoint prepares the source truth that will be placed in the official ZIP;
 it neither writes that ZIP nor performs strict or public-release actions.
 <!-- FW-RT6-14c-PRE-TAG-READINESS:END -->
+
+
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:BEGIN -->
+## FW-RT6-14c — final published-release acceptance sync
+
+```text
+checkpoint: FW-RT6-14c final acceptance sync
+final-sync baseline: 61e15f62d1ecc5faee016abae82200f8de56c5dd
+baseline subject: fix: unblock FW-RT6-14c strict release readiness
+release commit: 61e15f62d1ecc5faee016abae82200f8de56c5dd / REMOTELY_VERIFIED
+release tag: v6.0.0 / ANNOTATED / PUSHED / VERIFIED
+strict tag readiness: PASS
+GitHub Release: PUBLIC / VERIFIED
+GitHub Release URL: https://github.com/murayan1982/ai-character-framework/releases/tag/v6.0.0
+official ZIP + SHA-256 sidecar: 2 ASSETS / VERIFIED
+official ZIP SHA-256: 6b303dba53830dc9bd65ec881bac6f498dbf80f0d0adf1385cea728a86e066f2
+published asset redownload verification: PASS
+clean tree confirmation: PASS
+source version metadata: 6.0.0
+latest published release: 6.0.0
+root-public names: 127 / UNCHANGED
+production Framework behavior changes: 0
+API/schema version changes: 0
+provider/network/microphone/playback/VTS execution during sync: False
+private configuration/evidence read during sync: False
+FW-RT6-14c canonical tasks: 14 / 14 ACCEPTED
+FW-RT6-14c final acceptance sync: PASS
+FW-RT6-14c: COMPLETED / VERIFIED / RELEASED / ACCEPTED / CLOSED_AFTER_SYNC_COMMIT_PUSH
+final-sync exact surface: 15 files
+final-sync commit / push: NOT_AUTHORIZED
+```
+
+The release operator and an independent read-only verification both confirmed
+the annotated tag target, public non-draft/non-prerelease Release, exact two-asset
+membership, ZIP digest, sidecar contents, redownloaded bytes, and clean working
+tree. This sync updates current public metadata and records those accepted facts.
+It does not change or rebuild the package published from the release commit.
+<!-- FW-RT6-14c-FINAL-ACCEPTANCE-SYNC:END -->

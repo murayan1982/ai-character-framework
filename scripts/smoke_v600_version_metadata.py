@@ -94,7 +94,7 @@ def check_central_module() -> None:
     )
 
     _assert(FRAMEWORK_SOURCE_VERSION == "6.0.0", "source version should be v6.0.0")
-    _assert(LATEST_PUBLISHED_RELEASE == "5.5.0", "latest release should remain v5.5.0")
+    _assert(LATEST_PUBLISHED_RELEASE == "6.0.0", "latest release should be v6.0.0")
     _assert(TEXT_CHAT_API_VERSION == "4.0", "text API version changed")
     _assert(
         VOICE_OUTPUT_BOUNDARY_VERSION == "v5.lazy_provider_adapter",
@@ -403,8 +403,8 @@ def main() -> None:
     check_docs()
 
     print("v600_version_metadata_status: accepted")
-    print("v600_framework_source_version: 6.0.0.dev0")
-    print("v600_latest_published_release: 5.5.0")
+    print("v600_framework_source_version: 6.0.0")
+    print("v600_latest_published_release: 6.0.0")
     print("v600_root_public_name_count: 127")
     print("v600_public_api_values_changed: additive-identity-lifecycle-event-payload-capability-and-construction-models-only")
     print("v600_capability_truthfulness_changed: global-builder-and-session-adoption-accepted")
